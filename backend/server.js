@@ -7173,8 +7173,13 @@ app.get('/', (req, res) => {
 app.get('/listings.html', (req, res) => {
     const consolidatedListingsPath = path.join(__dirname, '..', 'frontend', 'listings.html');
     console.log('🔍 DIRECT /listings.html route - serving consolidated version');
+    console.log(`🕐 TIMESTAMP: ${new Date().toISOString()}`);
     if (fs.existsSync(consolidatedListingsPath)) {
         console.log(`📄 SUCCESS: Serving consolidated listings from: ${consolidatedListingsPath}`);
+        // Add cache-busting headers
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         return res.sendFile(consolidatedListingsPath);
     } else {
         console.log(`❌ ERROR: Consolidated listings file not found at: ${consolidatedListingsPath}`);
@@ -7185,8 +7190,13 @@ app.get('/listings.html', (req, res) => {
 app.get('/listings', (req, res) => {
     const consolidatedListingsPath = path.join(__dirname, '..', 'frontend', 'listings.html');
     console.log('🔍 DIRECT /listings route - serving consolidated version');
+    console.log(`🕐 TIMESTAMP: ${new Date().toISOString()}`);
     if (fs.existsSync(consolidatedListingsPath)) {
         console.log(`📄 SUCCESS: Serving consolidated listings from: ${consolidatedListingsPath}`);
+        // Add cache-busting headers
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
         return res.sendFile(consolidatedListingsPath);
     } else {
         console.log(`❌ ERROR: Consolidated listings file not found at: ${consolidatedListingsPath}`);
