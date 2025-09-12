@@ -38,7 +38,7 @@ class ChatService: ObservableObject {
     
     func fetchConversations() async throws -> [ChatConversation] {
         // Get current user email from auth or settings
-        let currentUserEmail = "zcod1@hotmail.com" // You can make this dynamic later
+        let currentUserEmail = "zacoda1@hotmail.com" // You can make this dynamic later
         
         // Set user context for RLS (Row Level Security)
         _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
@@ -124,7 +124,7 @@ class ChatService: ObservableObject {
     // MARK: - Message Management
     
     func fetchMessages(for conversationId: String) async throws -> [ChatMessage] {
-        let currentUserEmail = "zcod1@hotmail.com"
+        let currentUserEmail = "zacoda1@hotmail.com"
         
         // Set user context for RLS (Row Level Security)
         _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
@@ -157,7 +157,7 @@ class ChatService: ObservableObject {
     }
     
     func sendMessage(request: SendMessageRequest) async throws -> ChatMessage {
-        let currentUserEmail = "zcod1@hotmail.com" // Make this dynamic later
+        let currentUserEmail = "zacoda1@hotmail.com" // Make this dynamic later
         let messageId = UUID().uuidString
         
         // Set user context for RLS (Row Level Security)
