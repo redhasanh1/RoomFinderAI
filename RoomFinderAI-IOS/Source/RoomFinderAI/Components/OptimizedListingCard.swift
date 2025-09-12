@@ -1,5 +1,11 @@
 import SwiftUI
 
+// MARK: - Property Type Info
+struct PropertyTypeInfo {
+    let iconName: String
+    let displayName: String
+}
+
 // MARK: - Optimized Listing Card with Performance Improvements
 struct OptimizedListingCard: View {
     let listing: HomePageListing
@@ -25,54 +31,36 @@ struct OptimizedListingCard: View {
     // MARK: - Image Section
     private var imageSection: some View {
         ZStack {
-            // Placeholder while loading
-            if !isImageLoaded {
-                Rectangle()
-                    .fill(Color(.systemGray5))
-                    .frame(height: 120)
-                    .overlay(
-                        Image(systemName: "photo")
-                            .foregroundColor(.gray)
-                            .font(.title2)
-                    )
-            }
-            
-            // Actual Image with Lazy Loading
-            AsyncImage(url: URL(string: listing.coverURLString ?? "")) { phase in
-                switch phase {
-                case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 120)
-                        .clipped()
-                        .onAppear {
-                            withAnimation(.easeInOut(duration: 0.3)) {
-                                isImageLoaded = true
-                            }
-                        }
-                case .failure(_):
-                    Rectangle()
-                        .fill(Color(.systemGray5))
-                        .frame(height: 120)
-                        .overlay(
-                            Image(systemName: "photo.badge.exclamationmark")
-                                .foregroundColor(.gray)
-                                .font(.title3)
-                        )
-                case .empty:
-                    Rectangle()
-                        .fill(Color(.systemGray5))
-                        .frame(height: 120)
-                        .overlay(
-                            ProgressView()
-                                .scaleEffect(0.8)
-                        )
-                @unknown default:
-                    Rectangle()
-                        .fill(Color(.systemGray5))
-                        .frame(height: 120)
+            // Show either image or themed default
+            if let urlString = listing.coverURLString, !urlString.isEmpty,
+               let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(height: 120)
+                            .clipped()
+                    case .failure(_):
+                        getDefaultImageView()
+                    case .empty:
+                        Rectangle()
+                            .fill(Color(.systemGray5))
+                            .frame(height: 120)
+                            .overlay(
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                            )
+                    @unknown default:
+                        Rectangle()
+                            .fill(Color(.systemGray5))
+                            .frame(height: 120)
+                    }
                 }
+            } else {
+                // No image URL available - show themed default
+                getDefaultImageView()
             }
             
             // Price Badge Overlay
@@ -92,6 +80,50 @@ struct OptimizedListingCard: View {
                 }
                 Spacer()
             }
+        }
+    }
+    
+    // MARK: - Property Type Helper
+    private func getDefaultImageView() -> some View {
+        let propertyType = determinePropertyType()
+        
+        return ZStack {
+            // Purple gradient background matching RoomFinderAI theme
+            LinearGradient(
+                colors: [
+                    Color(red: 0.6, green: 0.4, blue: 0.8),  // Light purple
+                    Color(red: 0.4, green: 0.2, blue: 0.7)   // Darker purple
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .frame(height: 120)
+            
+            VStack(spacing: 8) {
+                // Property type specific icon
+                Image(systemName: propertyType.iconName)
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundColor(.white)
+                
+                Text(propertyType.displayName)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white.opacity(0.9))
+            }
+        }
+        .clipped()
+    }
+    
+    private func determinePropertyType() -> PropertyTypeInfo {
+        let houseType = listing.house_type?.lowercased() ?? ""
+        
+        switch houseType {
+        case let type where type.contains("apartment") || type.contains("studio") || type.contains("condo"):
+            return PropertyTypeInfo(iconName: "building.2.fill", displayName: "Apartment")
+        case let type where type.contains("house") || type.contains("townhouse"):
+            return PropertyTypeInfo(iconName: "house.fill", displayName: "House")
+        default:
+            return PropertyTypeInfo(iconName: "building.fill", displayName: "Property")
         }
     }
     
@@ -205,9 +237,9 @@ struct SkeletonListingCard: View {
     private var shimmerGradient: LinearGradient {
         LinearGradient(
             colors: [
-                Color(.systemGray5),
-                Color(.systemGray4).opacity(isAnimating ? 0.3 : 1.0),
-                Color(.systemGray5)
+                Color(red: 0.85, green: 0.80, blue: 0.95),  // Light purple-tinted gray
+                Color(red: 0.75, green: 0.65, blue: 0.85).opacity(isAnimating ? 0.4 : 1.0),  // Medium purple-tinted gray
+                Color(red: 0.85, green: 0.80, blue: 0.95)   // Light purple-tinted gray
             ],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
