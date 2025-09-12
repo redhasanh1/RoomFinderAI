@@ -15,7 +15,7 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "A01234567890123456789063"
+               BlueprintIdentifier = "S0W3SJVYRNUWEGW2BOLRYQ15"
                BuildableName = "RoomFinderAI.app"
                BlueprintName = "RoomFinderAI"
                ReferencedContainer = "container:RoomFinderAI.xcodeproj">
@@ -44,7 +44,7 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A01234567890123456789063"
+            BlueprintIdentifier = "S0W3SJVYRNUWEGW2BOLRYQ15"
             BuildableName = "RoomFinderAI.app"
             BlueprintName = "RoomFinderAI"
             ReferencedContainer = "container:RoomFinderAI.xcodeproj">
@@ -60,7 +60,7 @@
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "A01234567890123456789063"
+            BlueprintIdentifier = "S0W3SJVYRNUWEGW2BOLRYQ15"
             BuildableName = "RoomFinderAI.app"
             BlueprintName = "RoomFinderAI"
             ReferencedContainer = "container:RoomFinderAI.xcodeproj">
