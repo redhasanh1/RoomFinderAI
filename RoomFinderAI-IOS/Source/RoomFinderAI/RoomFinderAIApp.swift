@@ -1506,360 +1506,8 @@ struct RoomFinderAIApp: App {
 
 // MARK: - Chat System Implementation
 
-// MARK: - Chat Data Models
-
-struct ChatConversation: Identifiable, Codable {
-    let id: String
-    let participantIds: [String]
-    let lastMessage: ChatMessage?
-    let lastActivity: Date
-    let isRead: Bool
-    let conversationType: ConversationType
-    let title: String?
-    let groupImage: String?
-    
-    enum ConversationType: String, Codable {
-        case direct = "direct"
-        case group = "group"
-        case landlord = "landlord"
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case participantIds = "participant_ids"
-        case lastMessage = "last_message"
-        case lastActivity = "last_activity"
-        case isRead = "is_read"
-        case conversationType = "conversation_type"
-        case title
-        case groupImage = "group_image"
-    }
-}
-
-struct ChatMessage: Identifiable, Codable {
-    let id: String
-    let conversationId: String
-    let senderId: String
-    let content: String
-    let messageType: MessageType
-    let timestamp: Date
-    let isRead: Bool
-    let replyToId: String?
-    let attachments: [ChatAttachment]?
-    
-    enum MessageType: String, Codable {
-        case text = "text"
-        case image = "image"
-        case file = "file"
-        case system = "system"
-        case propertyCard = "property_card"
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case conversationId = "conversation_id"
-        case senderId = "sender_id"
-        case content
-        case messageType = "message_type"
-        case timestamp
-        case isRead = "is_read"
-        case replyToId = "reply_to_id"
-        case attachments
-    }
-}
-
-struct ChatAttachment: Identifiable, Codable {
-    let id: String
-    let messageId: String
-    let fileName: String
-    let fileSize: Int
-    let mimeType: String
-    let url: String
-    let thumbnailUrl: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case messageId = "message_id"
-        case fileName = "file_name"
-        case fileSize = "file_size"
-        case mimeType = "mime_type"
-        case url
-        case thumbnailUrl = "thumbnail_url"
-    }
-}
-
-struct ChatUser: Identifiable, Codable {
-    let id: String
-    let email: String
-    let displayName: String?
-    let avatarUrl: String?
-    let isOnline: Bool
-    let lastSeen: Date?
-    let userType: UserType
-    
-    enum UserType: String, Codable {
-        case tenant = "tenant"
-        case landlord = "landlord"
-        case agent = "agent"
-    }
-    
-    enum CodingKeys: String, CodingKey {
-        case id
-        case email
-        case displayName = "display_name"
-        case avatarUrl = "avatar_url"
-        case isOnline = "is_online"
-        case lastSeen = "last_seen"
-        case userType = "user_type"
-    }
-    
-    var displayNameOrEmail: String {
-        return displayName ?? email
-    }
-}
-
-// MARK: - Chat Service Request/Response Models
-
-struct CreateConversationRequest: Codable {
-    let participantIds: [String]
-    let conversationType: ChatConversation.ConversationType
-    let title: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case participantIds = "participant_ids"
-        case conversationType = "conversation_type"
-        case title
-    }
-}
-
-struct SendMessageRequest: Codable {
-    let conversationId: String
-    let content: String
-    let messageType: ChatMessage.MessageType
-    let replyToId: String?
-    
-    enum CodingKeys: String, CodingKey {
-        case conversationId = "conversation_id"
-        case content
-        case messageType = "message_type"
-        case replyToId = "reply_to_id"
-    }
-}
-
-// MARK: - Chat Extensions
-
-extension ChatMessage {
-    var isFromCurrentUser: Bool {
-        return senderId == "current_user_id"
-    }
-    
-    var timeAgo: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: timestamp, relativeTo: Date())
-    }
-}
-
-extension ChatConversation {
-    var displayTitle: String {
-        return title ?? "Chat"
-    }
-    
-    var lastMessagePreview: String {
-        guard let lastMessage = lastMessage else {
-            return "No messages yet"
-        }
-        
-        switch lastMessage.messageType {
-        case .text:
-            return lastMessage.content
-        case .image:
-            return "📷 Image"
-        case .file:
-            return "📎 File"
-        case .system:
-            return lastMessage.content
-        case .propertyCard:
-            return "🏠 Property"
-        }
-    }
-    
-    var timeAgo: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: lastActivity, relativeTo: Date())
-    }
-}
-
-// MARK: - Chat Service
-
-class ChatService: ObservableObject {
-    var supabase: SupabaseClient
-    
-    init(supabase: SupabaseClient) {
-        self.supabase = supabase
-    }
-    
-    // MARK: - Conversation Management
-    
-    func fetchConversations() async throws -> [ChatConversation] {
-        return mockConversations()
-    }
-    
-    func createConversation(request: CreateConversationRequest) async throws -> ChatConversation {
-        let conversation = ChatConversation(
-            id: UUID().uuidString,
-            participantIds: request.participantIds,
-            lastMessage: nil,
-            lastActivity: Date(),
-            isRead: true,
-            conversationType: request.conversationType,
-            title: request.title,
-            groupImage: nil
-        )
-        return conversation
-    }
-    
-    // MARK: - Message Management
-    
-    func fetchMessages(for conversationId: String) async throws -> [ChatMessage] {
-        return mockMessages(for: conversationId)
-    }
-    
-    func sendMessage(request: SendMessageRequest) async throws -> ChatMessage {
-        let message = ChatMessage(
-            id: UUID().uuidString,
-            conversationId: request.conversationId,
-            senderId: "current_user_id",
-            content: request.content,
-            messageType: request.messageType,
-            timestamp: Date(),
-            isRead: false,
-            replyToId: request.replyToId,
-            attachments: nil
-        )
-        return message
-    }
-    
-    func markMessageAsRead(messageId: String) async throws {
-        // Would update message status in Supabase
-    }
-    
-    // MARK: - User Management
-    
-    func fetchUsers() async throws -> [ChatUser] {
-        return mockUsers()
-    }
-    
-    func searchUsers(query: String) async throws -> [ChatUser] {
-        let allUsers = try await fetchUsers()
-        return allUsers.filter { user in
-            user.displayNameOrEmail.localizedCaseInsensitiveContains(query)
-        }
-    }
-    
-    // MARK: - Mock Data (for development)
-    
-    private func mockConversations() -> [ChatConversation] {
-        return [
-            ChatConversation(
-                id: "conv1",
-                participantIds: ["user1", "current_user"],
-                lastMessage: ChatMessage(
-                    id: "msg1",
-                    conversationId: "conv1",
-                    senderId: "user1",
-                    content: "Hi! Is the apartment still available?",
-                    messageType: .text,
-                    timestamp: Date().addingTimeInterval(-3600),
-                    isRead: false,
-                    replyToId: nil,
-                    attachments: nil
-                ),
-                lastActivity: Date().addingTimeInterval(-3600),
-                isRead: false,
-                conversationType: .landlord,
-                title: "John Smith (Landlord)",
-                groupImage: nil
-            ),
-            ChatConversation(
-                id: "conv2",
-                participantIds: ["user2", "current_user"],
-                lastMessage: ChatMessage(
-                    id: "msg2",
-                    conversationId: "conv2",
-                    senderId: "current_user",
-                    content: "Thanks for the info!",
-                    messageType: .text,
-                    timestamp: Date().addingTimeInterval(-7200),
-                    isRead: true,
-                    replyToId: nil,
-                    attachments: nil
-                ),
-                lastActivity: Date().addingTimeInterval(-7200),
-                isRead: true,
-                conversationType: .direct,
-                title: "Sarah Wilson",
-                groupImage: nil
-            )
-        ]
-    }
-    
-    private func mockMessages(for conversationId: String) -> [ChatMessage] {
-        switch conversationId {
-        case "conv1":
-            return [
-                ChatMessage(
-                    id: "msg1_1",
-                    conversationId: conversationId,
-                    senderId: "current_user",
-                    content: "Hello! I'm interested in your 2BR apartment listing.",
-                    messageType: .text,
-                    timestamp: Date().addingTimeInterval(-7200),
-                    isRead: true,
-                    replyToId: nil,
-                    attachments: nil
-                ),
-                ChatMessage(
-                    id: "msg1_2",
-                    conversationId: conversationId,
-                    senderId: "user1",
-                    content: "Hi! Yes, it's still available. When would you like to schedule a viewing?",
-                    messageType: .text,
-                    timestamp: Date().addingTimeInterval(-5400),
-                    isRead: true,
-                    replyToId: nil,
-                    attachments: nil
-                )
-            ]
-        default:
-            return []
-        }
-    }
-    
-    private func mockUsers() -> [ChatUser] {
-        return [
-            ChatUser(
-                id: "user1",
-                email: "john.smith@email.com",
-                displayName: "John Smith",
-                avatarUrl: nil,
-                isOnline: true,
-                lastSeen: Date(),
-                userType: .landlord
-            ),
-            ChatUser(
-                id: "user2",
-                email: "sarah.wilson@email.com",
-                displayName: "Sarah Wilson",
-                avatarUrl: nil,
-                isOnline: false,
-                lastSeen: Date().addingTimeInterval(-3600),
-                userType: .tenant
-            )
-        ]
-    }
-}
+// The real ChatService is imported from Services/ChatService.swift
+// The chat models are imported from ChatModels.swift
 
 // MARK: - ChatView Implementation
 
@@ -1868,75 +1516,108 @@ struct ChatView: View {
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Header
-                    VStack(spacing: 8) {
-                        Text("Chat Hub")
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Text("Choose how you want to communicate")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.top, 20)
+            VStack(spacing: 32) {
+                // Clean Header
+                VStack(spacing: 12) {
+                    Text("Chat")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
                     
-                    // Chat Options
-                    VStack(spacing: 16) {
-                        // AI Negotiator Card
-                        NavigationLink(destination: AINegotiatorView()) {
-                            ChatOptionCard(
-                                title: "AI Negotiator",
-                                subtitle: "Smart property search & negotiation assistance",
-                                description: "Let our AI help you find properties, negotiate prices, and contact landlords automatically",
-                                icon: "brain.head.profile",
-                                iconColor: .blue,
-                                backgroundColor: Color.blue.opacity(0.1),
-                                features: ["Property Search", "Price Negotiation", "Automated Contact"]
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                        
-                        // Normal Chat Card
-                        NavigationLink(destination: NormalChatView()) {
-                            ChatOptionCard(
-                                title: "Direct Messages",
-                                subtitle: "Chat directly with landlords & other users",
-                                description: "Send messages, share photos, and communicate directly with property owners and other users",
-                                icon: "message.fill",
-                                iconColor: .green,
-                                backgroundColor: Color.green.opacity(0.1),
-                                features: ["Direct Messaging", "Photo Sharing", "Real-time Chat"]
-                            )
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
-                    .padding(.horizontal, 20)
-                    
-                    Spacer(minLength: 40)
-                    
-                    // Quick Stats or Recent Activity
-                    VStack(alignment: .leading, spacing: 12) {
-                        Text("Recent Activity")
-                            .font(.headline)
-                            .fontWeight(.semibold)
-                        
-                        HStack(spacing: 20) {
-                            ChatStatCard(title: "AI Conversations", value: "0", icon: "brain")
-                            ChatStatCard(title: "Messages", value: "0", icon: "message")
-                            ChatStatCard(title: "Active Chats", value: "0", icon: "person.2")
-                        }
-                    }
-                    .padding(.horizontal, 20)
+                    Text("Connect and communicate")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
                 }
+                .padding(.top, 40)
+                
+                // Simple Chat Options
+                VStack(spacing: 20) {
+                    // AI Negotiator Card
+                    NavigationLink(destination: AINegotiatorView()) {
+                        CleanChatCard(
+                            title: "AI Negotiator",
+                            subtitle: "Smart property assistance",
+                            icon: "brain.head.profile",
+                            gradientColors: [
+                                Color(red: 0.4, green: 0.2, blue: 0.8),
+                                Color(red: 0.6, green: 0.4, blue: 0.9)
+                            ]
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    
+                    // Direct Messages Card
+                    NavigationLink(destination: NormalChatView()) {
+                        CleanChatCard(
+                            title: "Direct Messages",
+                            subtitle: "Chat with landlords",
+                            icon: "message.fill",
+                            gradientColors: [
+                                Color(red: 0.5, green: 0.3, blue: 0.8),
+                                Color(red: 0.7, green: 0.5, blue: 0.9)
+                            ]
+                        )
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                }
+                .padding(.horizontal, 24)
+                
+                Spacer()
             }
         }
         .navigationBarHidden(true)
     }
 }
 
-// MARK: - Chat Option Card
+// MARK: - Clean Chat Card
+struct CleanChatCard: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let gradientColors: [Color]
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icon with gradient background
+            Image(systemName: icon)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 50, height: 50)
+                .background(
+                    LinearGradient(
+                        colors: gradientColors,
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            
+            // Content
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.headline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            // Chevron
+            Image(systemName: "chevron.right")
+                .font(.title3)
+                .foregroundColor(.secondary)
+        }
+        .padding(20)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.08), radius: 4, x: 0, y: 2)
+    }
+}
+
+// MARK: - Chat Option Card (Legacy)
 struct ChatOptionCard: View {
     let title: String
     let subtitle: String
@@ -2063,17 +1744,17 @@ struct NormalChatView: View {
         NavigationView {
             VStack(spacing: 0) {
                 if isLoading {
-                    ProgressView("Loading conversations...")
+                    ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if conversations.isEmpty {
-                    emptyStateView
+                    cleanEmptyStateView
                 } else {
                     conversationListView
                 }
             }
         }
-        .navigationTitle("Direct Messages")
-        .navigationBarTitleDisplayMode(.large)
+        .navigationTitle("Messages")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -2090,6 +1771,25 @@ struct NormalChatView: View {
             chatService.supabase = supabase
             loadConversations()
         }
+    }
+    
+    private var cleanEmptyStateView: some View {
+        VStack(spacing: 24) {
+            Image(systemName: "message.circle")
+                .font(.system(size: 48))
+                .foregroundColor(Color(red: 0.5, green: 0.3, blue: 0.8))
+            
+            VStack(spacing: 8) {
+                Text("No conversations yet")
+                    .font(.title3)
+                    .fontWeight(.semibold)
+                
+                Text("Start chatting with landlords")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
     
     private var emptyStateView: some View {
