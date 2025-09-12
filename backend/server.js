@@ -387,6 +387,27 @@ app.get('/listings', (req, res) => {
     }
 });
 
+// TEST ROUTE - completely bypass any caching issues
+app.get('/listings-new', (req, res) => {
+    const consolidatedListingsPath = path.join(__dirname, '..', 'frontend', 'listings.html');
+    console.log('🧪 TEST ROUTE /listings-new - serving consolidated version');
+    console.log(`🕐 TIMESTAMP: ${new Date().toISOString()}`);
+    console.log(`📂 File path: ${consolidatedListingsPath}`);
+    if (fs.existsSync(consolidatedListingsPath)) {
+        console.log(`✅ TEST SUCCESS: File exists, serving consolidated listings`);
+        // Super strong cache-busting headers
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        res.setHeader('Last-Modified', new Date().toUTCString());
+        res.setHeader('ETag', Date.now().toString());
+        return res.sendFile(consolidatedListingsPath);
+    } else {
+        console.log(`❌ TEST ERROR: Consolidated listings file not found`);
+        return res.status(404).send('Test listings not found');
+    }
+});
+
 // Serve static files from parent directory (frontend files)
 const staticPath = path.join(__dirname, '..');
 console.log('📁 Serving static files from:', staticPath);
@@ -400,6 +421,16 @@ app.use(express.static(staticPath, {
 // Serve frontend files specifically (for /js/, /css/, etc.)
 const frontendPath = path.join(__dirname, '..', 'frontend');
 console.log('🌐 Serving frontend files from:', frontendPath);
+// Custom middleware to block static serving of listings.html
+app.use((req, res, next) => {
+    if (req.path === '/listings.html' || req.path === '/listings') {
+        console.log('🚫 BLOCKING static serve of listings.html - forcing route handling');
+        console.log(`📍 Request path: ${req.path}, method: ${req.method}`);
+        return next(); // Let it fall through to our custom routes
+    }
+    next();
+});
+
 app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
         // Disable caching for JavaScript and HTML files to ensure updates are loaded immediately
