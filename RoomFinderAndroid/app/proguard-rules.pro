@@ -81,3 +81,23 @@
 # Keep line numbers for crash reports
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
+
+# Apache HTTP Client - Fix R8 missing classes
+-dontwarn javax.naming.**
+-dontwarn org.ietf.jgss.**
+-dontwarn org.apache.http.**
+-dontwarn org.slf4j.**
+
+# Keep classes that R8 is removing but are needed
+-keep class javax.naming.** { *; }
+-keep class org.ietf.jgss.** { *; }
+-keep class org.apache.http.** { *; }
+-keep class org.slf4j.** { *; }
+
+# Alternative: Just suppress the warnings if classes aren't actually used
+-dontwarn javax.naming.InvalidNameException
+-dontwarn javax.naming.NamingException
+-dontwarn javax.naming.directory.**
+-dontwarn javax.naming.ldap.**
+-dontwarn org.ietf.jgss.**
+-dontwarn org.slf4j.impl.StaticLoggerBinder
