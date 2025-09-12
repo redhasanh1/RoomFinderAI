@@ -81,6 +81,23 @@ struct AuthenticatedProfileView: View {
     @ObservedObject var authService: AuthService
     @Binding var showingEditProfile: Bool
     @State private var isRotating = false
+    @StateObject private var userStatsService: UserStatsService
+    @State private var showingSavedListings = false
+    @State private var showingSearchHistory = false
+    @State private var showingNotifications = false
+    @State private var showingSettings = false
+    
+    init(authService: AuthService, showingEditProfile: Binding<Bool>) {
+        self.authService = authService
+        self._showingEditProfile = showingEditProfile
+        
+        // Create UserStatsService with proper Supabase client
+        let supabaseClient = SupabaseClient(
+            supabaseURL: URL(string: "https://fkktwhjybuflxqzopaex.supabase.co")!,
+            supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+        )
+        self._userStatsService = StateObject(wrappedValue: UserStatsService(client: supabaseClient, authService: authService))
+    }
     
     var body: some View {
         VStack(spacing: 24) {
@@ -169,25 +186,47 @@ struct AuthenticatedProfileView: View {
                 .padding(24)
             }
             
-            // Stats Cards
+            // Stats Cards - Now showing real data
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: 16) {
-                ProfileStatCard(title: "Listings", value: "12", icon: "house.fill", color: .blue)
-                ProfileStatCard(title: "Favorites", value: "24", icon: "heart.fill", color: .red)
-                ProfileStatCard(title: "Messages", value: "8", icon: "message.fill", color: .green)
-                ProfileStatCard(title: "Reviews", value: "45", icon: "star.fill", color: .orange)
+                ProfileStatCard(
+                    title: "Listings", 
+                    value: "\(userStatsService.userStats?.listingsCount ?? 0)", 
+                    icon: "house.fill", 
+                    color: .blue
+                )
+                ProfileStatCard(
+                    title: "Favorites", 
+                    value: "\(userStatsService.userStats?.savedListingsCount ?? 0)", 
+                    icon: "heart.fill", 
+                    color: .red
+                )
+                ProfileStatCard(
+                    title: "Messages", 
+                    value: "\(userStatsService.userStats?.messagesCount ?? 0)", 
+                    icon: "message.fill", 
+                    color: .green
+                )
+                ProfileStatCard(
+                    title: "Reviews", 
+                    value: "\(userStatsService.userStats?.reviewsCount ?? 0)", 
+                    icon: "star.fill", 
+                    color: .orange
+                )
             }
             
-            // Menu Items
+            // Menu Items - Now with real navigation
             GlassmorphismCard {
                 VStack(spacing: 0) {
                     ProfileMenuItem(
                         icon: "heart.fill",
                         title: "Saved Listings",
                         subtitle: "Your favorite properties",
-                        action: { /* Navigate to favorites */ }
+                        action: { 
+                            showingSavedListings = true
+                        }
                     )
                     
                     Divider().padding(.horizontal, 20)
@@ -196,7 +235,9 @@ struct AuthenticatedProfileView: View {
                         icon: "clock.fill",
                         title: "Search History",
                         subtitle: "Recent searches",
-                        action: { /* Navigate to history */ }
+                        action: { 
+                            showingSearchHistory = true
+                        }
                     )
                     
                     Divider().padding(.horizontal, 20)
@@ -205,7 +246,9 @@ struct AuthenticatedProfileView: View {
                         icon: "bell.fill",
                         title: "Notifications",
                         subtitle: "Manage alerts",
-                        action: { /* Navigate to notifications */ }
+                        action: { 
+                            showingNotifications = true
+                        }
                     )
                     
                     Divider().padding(.horizontal, 20)
@@ -214,7 +257,9 @@ struct AuthenticatedProfileView: View {
                         icon: "gearshape.fill",
                         title: "Settings",
                         subtitle: "App preferences",
-                        action: { /* Navigate to settings */ }
+                        action: { 
+                            showingSettings = true
+                        }
                     )
                 }
                 .padding(.vertical, 12)
@@ -245,6 +290,50 @@ struct AuthenticatedProfileView: View {
             }
             
             Spacer(minLength: 40)
+        }
+        .sheet(isPresented: $showingSavedListings) {
+            SavedListingsView(
+                authService: authService,
+                supabaseClient: SupabaseClient(
+                    supabaseURL: URL(string: "https://fkktwhjybuflxqzopaex.supabase.co")!,
+                    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+                )
+            )
+        }
+        .sheet(isPresented: $showingSearchHistory) {
+            SearchHistoryView(
+                authService: authService,
+                supabaseClient: SupabaseClient(
+                    supabaseURL: URL(string: "https://fkktwhjybuflxqzopaex.supabase.co")!,
+                    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+                )
+            )
+        }
+        .sheet(isPresented: $showingNotifications) {
+            NotificationsView(
+                authService: authService,
+                supabaseClient: SupabaseClient(
+                    supabaseURL: URL(string: "https://fkktwhjybuflxqzopaex.supabase.co")!,
+                    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+                )
+            )
+        }
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(
+                authService: authService,
+                supabaseClient: SupabaseClient(
+                    supabaseURL: URL(string: "https://fkktwhjybuflxqzopaex.supabase.co")!,
+                    supabaseKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+                )
+            )
+        }
+        .task {
+            // Load user statistics when the profile view appears
+            await userStatsService.fetchUserStats()
+        }
+        .refreshable {
+            // Allow pull-to-refresh to update statistics
+            await userStatsService.refreshStats()
         }
     }
 }
