@@ -256,7 +256,7 @@ struct ListingCardNew: View {
                 // Content
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Text(listing.title ?? "Unknown")
+                        Text(listing.title)
                             .font(.headline)
                             .fontWeight(.semibold)
                             .foregroundColor(.primary)
@@ -264,22 +264,22 @@ struct ListingCardNew: View {
                         
                         Spacer()
                         
-                        Text("$\(listing.price ?? 0)")
+                        Text("$\(listing.price)")
                             .font(.headline)
                             .fontWeight(.bold)
                             .foregroundColor(.blue)
                     }
                     
                     HStack {
-                        Label(listing.city ?? "Unknown", systemImage: "location")
+                        Label(listing.city, systemImage: "location")
                             .font(.subheadline)
                             .foregroundColor(.secondary)
                         
                         Spacer()
                         
                         HStack(spacing: 12) {
-                            Label("\(listing.bedrooms ?? 0)", systemImage: "bed.double")
-                            Label(listing.houseType ?? "Unknown", systemImage: "house")
+                            Label("\(listing.bedrooms)", systemImage: "bed.double")
+                            Label(listing.houseType, systemImage: "house")
                         }
                         .font(.caption)
                         .foregroundColor(.secondary)

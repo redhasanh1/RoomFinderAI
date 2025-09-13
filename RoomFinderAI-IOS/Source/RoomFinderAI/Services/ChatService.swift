@@ -7,7 +7,7 @@ struct DatabaseConversation: Codable {
     let listing_id: String
     let sender_email: String
     let receiver_email: String
-    let created_at: Date
+    let created_at: String  // Changed from Date to String for proper Supabase decoding
 }
 
 struct DatabaseMessage: Codable {
@@ -15,7 +15,7 @@ struct DatabaseMessage: Codable {
     let sender_email: String
     let content: String
     let message_type: String
-    let created_at: Date
+    let created_at: String  // Changed from Date to String for proper Supabase decoding
 }
 
 struct DatabaseMessageInsert: Codable {
@@ -36,12 +36,12 @@ class ChatService: ObservableObject {
     
     // MARK: - Conversation Management
     
-    func fetchConversations() async throws -> [ChatConversation] {
+    func fetchPropertyConversations() async throws -> [ChatConversation] {
         // Get current user email from auth or settings
         let currentUserEmail = "zacoda1@hotmail.com" // You can make this dynamic later
         
         // Set user context for RLS (Row Level Security)
-        _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        _ = try supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
         
         // Query conversations where user is either sender or receiver
         let conversationsResponse: [DatabaseConversation] = try await supabase
@@ -54,7 +54,7 @@ class ChatService: ObservableObject {
         
         var chatConversations: [ChatConversation] = []
         
-        // For each conversation, get the latest message and other participant info
+        // For each conversation, get the latest message, listing, and user info
         for conversation in conversationsResponse {
             let otherUserEmail = conversation.sender_email == currentUserEmail 
                 ? conversation.receiver_email 
@@ -73,30 +73,40 @@ class ChatService: ObservableObject {
             let latestMessage = latestMessages.first
             
             let chatMessage: ChatMessage? = latestMessage.map { msg in
-                ChatMessage(
+                let formatter = ISO8601DateFormatter()
+                let messageDate = formatter.date(from: msg.created_at) ?? Date()
+                
+                return ChatMessage(
                     id: msg.id,
                     conversationId: conversation.id,
                     senderId: msg.sender_email,
                     content: msg.content,
                     messageType: ChatMessage.MessageType(rawValue: msg.message_type) ?? .text,
-                    timestamp: msg.created_at,
-                    isRead: msg.sender_email == currentUserEmail, // Assume own messages are read
+                    timestamp: messageDate,
+                    isRead: msg.sender_email == currentUserEmail,
                     replyToId: nil,
                     attachments: nil
                 )
             }
             
+            // Parse conversation date
+            let formatter = ISO8601DateFormatter()
+            let conversationDate = formatter.date(from: conversation.created_at) ?? Date()
+            let lastActivityDate = latestMessage.flatMap { formatter.date(from: $0.created_at) } ?? conversationDate
+            
+            // Create basic chat conversation
             let chatConversation = ChatConversation(
                 id: conversation.id,
                 participantIds: [conversation.sender_email, conversation.receiver_email],
                 lastMessage: chatMessage,
-                lastActivity: latestMessage?.created_at ?? conversation.created_at,
+                lastActivity: lastActivityDate,
                 isRead: latestMessage?.sender_email == currentUserEmail ? true : false,
                 conversationType: .direct,
-                title: otherUserEmail, // Use the other user's email as title
+                title: otherUserEmail,
                 groupImage: nil
             )
             
+            // Add the chat conversation to our results
             chatConversations.append(chatConversation)
         }
         
@@ -104,6 +114,11 @@ class ChatService: ObservableObject {
         chatConversations.sort { $0.lastActivity > $1.lastActivity }
         
         return chatConversations
+    }
+    
+    // Keep the original method for backwards compatibility
+    func fetchConversations() async throws -> [ChatConversation] {
+        return try await fetchPropertyConversations()
     }
     
     func createConversation(request: CreateConversationRequest) async throws -> ChatConversation {
@@ -127,7 +142,7 @@ class ChatService: ObservableObject {
         let currentUserEmail = "zacoda1@hotmail.com"
         
         // Set user context for RLS (Row Level Security)
-        _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        _ = try supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
         
         // Query all messages for this conversation
         let messagesResponse: [DatabaseMessage] = try await supabase
@@ -140,13 +155,16 @@ class ChatService: ObservableObject {
         
         // Convert to ChatMessage objects
         let chatMessages = messagesResponse.map { msg in
-            ChatMessage(
+            let formatter = ISO8601DateFormatter()
+            let messageDate = formatter.date(from: msg.created_at) ?? Date()
+            
+            return ChatMessage(
                 id: msg.id,
                 conversationId: conversationId,
                 senderId: msg.sender_email,
                 content: msg.content,
                 messageType: ChatMessage.MessageType(rawValue: msg.message_type) ?? .text,
-                timestamp: msg.created_at,
+                timestamp: messageDate,
                 isRead: true, // Assume messages are read when viewing conversation
                 replyToId: nil,
                 attachments: nil
@@ -161,7 +179,7 @@ class ChatService: ObservableObject {
         let messageId = UUID().uuidString
         
         // Set user context for RLS (Row Level Security)
-        _ = try await supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        _ = try supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
         
         // Insert message into database
         let messageData = DatabaseMessageInsert(
@@ -337,6 +355,7 @@ class ChatService: ObservableObject {
                 id: "user1",
                 email: "john.smith@email.com",
                 displayName: "John Smith",
+                username: nil,
                 avatarUrl: nil,
                 isOnline: true,
                 lastSeen: Date(),
@@ -346,6 +365,7 @@ class ChatService: ObservableObject {
                 id: "user2",
                 email: "sarah.wilson@email.com",
                 displayName: "Sarah Wilson",
+                username: nil,
                 avatarUrl: nil,
                 isOnline: false,
                 lastSeen: Date().addingTimeInterval(-3600),
@@ -355,6 +375,7 @@ class ChatService: ObservableObject {
                 id: "user3",
                 email: "mike.johnson@email.com",
                 displayName: "Mike Johnson",
+                username: nil,
                 avatarUrl: nil,
                 isOnline: true,
                 lastSeen: Date(),

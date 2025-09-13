@@ -16,6 +16,8 @@ struct ChatConversation: Identifiable, Codable {
         case direct = "direct"
         case group = "group"
         case landlord = "landlord"
+        case agent = "agent"
+        case listing = "listing"
     }
     
     enum CodingKeys: String, CodingKey {
@@ -86,6 +88,7 @@ struct ChatUser: Identifiable, Codable {
     let id: String
     let email: String
     let displayName: String?
+    let username: String?
     let avatarUrl: String?
     let isOnline: Bool
     let lastSeen: Date?
@@ -101,6 +104,7 @@ struct ChatUser: Identifiable, Codable {
         case id
         case email
         case displayName = "display_name"
+        case username
         case avatarUrl = "avatar_url"
         case isOnline = "is_online"
         case lastSeen = "last_seen"
@@ -108,7 +112,18 @@ struct ChatUser: Identifiable, Codable {
     }
     
     var displayNameOrEmail: String {
-        return displayName ?? email
+        return displayName ?? username ?? email
+    }
+    
+    var initials: String {
+        if let displayName = displayName, !displayName.isEmpty {
+            let names = displayName.components(separatedBy: " ")
+            return names.compactMap { $0.first }.map(String.init).joined()
+        } else if let username = username, !username.isEmpty {
+            return String(username.prefix(2).uppercased())
+        } else {
+            return String(email.prefix(2).uppercased())
+        }
     }
 }
 
