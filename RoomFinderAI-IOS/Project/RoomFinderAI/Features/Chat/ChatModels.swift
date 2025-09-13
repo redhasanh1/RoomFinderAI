@@ -140,6 +140,47 @@ struct SendMessageRequest: Codable {
     }
 }
 
+// MARK: - Property-Enhanced Chat Models
+
+struct PropertyChatConversation: Identifiable {
+    let id: String
+    let conversation: ChatConversation
+    let listing: Listing?
+    let otherUser: User?
+    
+    // Convenience properties
+    var displayTitle: String {
+        return listing?.title ?? conversation.title ?? (otherUser?.name ?? "Unknown")
+    }
+    
+    var displaySubtitle: String {
+        if let listing = listing {
+            return "$\(Int(listing.price))/month • \(listing.city)"
+        }
+        return conversation.lastMessage?.content ?? "No messages"
+    }
+    
+    var userName: String {
+        return otherUser?.name ?? otherUser?.email ?? "Unknown User"
+    }
+    
+    var propertyImage: String? {
+        return listing?.media?.first
+    }
+    
+    var lastActivity: Date {
+        return conversation.lastActivity
+    }
+    
+    var isRead: Bool {
+        return conversation.isRead
+    }
+    
+    var lastMessagePreview: String {
+        return conversation.lastMessage?.content ?? "No messages"
+    }
+}
+
 // MARK: - Chat Extensions
 
 extension ChatMessage {

@@ -1492,7 +1492,7 @@ struct RoomFinderAIApp: App {
           .tabItem { Label("Post", systemImage: "plus.circle.fill") }
         
         // 4. Chat Tab - AI Chat hub (like Android ChatFragment)
-        NavigationView { ChatView() }
+        ChatView()
           .tabItem { Label("Chat", systemImage: "bubble.left.and.bubble.right.fill") }
         
         // 5. Profile Tab - User profile (like Android ProfileFragment)
@@ -1515,7 +1515,7 @@ struct ChatView: View {
     @Environment(\.supabase) private var supabase
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 32) {
                 // Clean Header
                 VStack(spacing: 12) {
@@ -1741,7 +1741,7 @@ struct NormalChatView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 if isLoading {
                     ProgressView()
@@ -1753,7 +1753,7 @@ struct NormalChatView: View {
                 }
             }
         }
-        .navigationTitle("Messages")
+        .navigationTitle("Property Messages")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -1854,59 +1854,202 @@ struct ConversationRowView: View {
     let conversation: ChatConversation
     
     var body: some View {
-        HStack(spacing: 12) {
-            // Avatar
+        HStack(spacing: 16) {
+            // Avatar with proper user image support
             ZStack {
-                Circle()
-                    .fill(Color(.systemGray5))
-                    .frame(width: 50, height: 50)
+                if conversation.conversationType == .listing {
+                    // Property thumbnail for listing conversations
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(Color.blue.opacity(0.2))
+                        .frame(width: 56, height: 56)
+                        .overlay(
+                            Image(systemName: "building.2.fill")
+                                .font(.title2)
+                                .foregroundColor(.blue)
+                        )
+                } else {
+                    // User avatar for regular conversations
+                    UserAvatarView(user: mockChatUser, size: 56)
+                }
                 
-                Image(systemName: avatarIcon)
-                    .font(.title2)
-                    .foregroundColor(.secondary)
+                // Online status indicator for direct conversations
+                if conversation.conversationType == .direct {
+                    Circle()
+                        .fill(Color.green)
+                        .frame(width: 16, height: 16)
+                        .overlay(
+                            Circle()
+                                .stroke(Color(.systemBackground), lineWidth: 3)
+                        )
+                        .offset(x: 20, y: 20)
+                }
             }
             
             // Content
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(conversation.displayTitle)
-                        .font(.headline)
-                        .fontWeight(.semibold)
-                        .lineLimit(1)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(conversation.displayTitle)
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                            .lineLimit(1)
+                        
+                        // Conversation type badge
+                        ConversationTypeBadge(type: conversation.conversationType)
+                    }
                     
                     Spacer()
                     
-                    Text(conversation.timeAgo)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                
-                HStack {
-                    Text(conversation.lastMessagePreview)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .lineLimit(2)
-                    
-                    Spacer()
-                    
-                    if !conversation.isRead {
-                        Circle()
-                            .fill(Color.blue)
-                            .frame(width: 8, height: 8)
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text(conversation.timeAgo)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if !conversation.isRead {
+                            Circle()
+                                .fill(Color.blue)
+                                .frame(width: 10, height: 10)
+                        }
                     }
                 }
+                
+                Text(conversation.lastMessagePreview)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 8)
+        .padding(.horizontal, 4)
     }
     
-    private var avatarIcon: String {
-        switch conversation.conversationType {
+    // Mock user data - in a real app this would come from the conversation participants
+    private var mockChatUser: ChatUser {
+        ChatUser(
+            id: "mock",
+            email: "user@example.com",
+            displayName: conversation.displayTitle,
+            username: nil,
+            avatarUrl: nil,
+            isOnline: true,
+            lastSeen: Date(),
+            userType: conversation.conversationType == .landlord ? .landlord : .tenant
+        )
+    }
+}
+
+
+// MARK: - User Avatar Component
+struct UserAvatarView: View {
+    let user: ChatUser?
+    let size: CGFloat
+    
+    init(user: ChatUser? = nil, size: CGFloat = 40) {
+        self.user = user
+        self.size = size
+    }
+    
+    var body: some View {
+        Group {
+            if let user = user, let avatarUrl = user.avatarUrl, !avatarUrl.isEmpty {
+                AsyncImage(url: URL(string: avatarUrl)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    initialsView
+                }
+            } else {
+                initialsView
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(Circle())
+        .overlay(
+            Circle()
+                .stroke(Color(.systemGray4), lineWidth: 1)
+        )
+    }
+    
+    private var initialsView: some View {
+        ZStack {
+            Circle()
+                .fill(Color.blue.opacity(0.8))
+            
+            Text(user?.initials ?? "U")
+                .font(.system(size: size * 0.4, weight: .semibold))
+                .foregroundColor(.white)
+        }
+    }
+}
+
+// MARK: - Conversation Type Badge
+struct ConversationTypeBadge: View {
+    let type: ChatConversation.ConversationType
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(systemName: iconName)
+                .font(.caption2)
+            Text(displayName)
+                .font(.caption)
+                .fontWeight(.medium)
+        }
+        .foregroundColor(textColor)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(backgroundColor.opacity(0.2))
+        .clipShape(Capsule())
+    }
+    
+    private var iconName: String {
+        switch type {
         case .landlord:
             return "house.fill"
-        case .direct, .group:
+        case .agent:
+            return "person.badge.key.fill"
+        case .listing:
+            return "building.2.fill"
+        case .direct:
             return "person.fill"
+        case .group:
+            return "person.2.fill"
         }
+    }
+    
+    private var displayName: String {
+        switch type {
+        case .landlord:
+            return "Landlord"
+        case .agent:
+            return "Agent"
+        case .listing:
+            return "Property"
+        case .direct:
+            return "Direct"
+        case .group:
+            return "Group"
+        }
+    }
+    
+    private var backgroundColor: Color {
+        switch type {
+        case .landlord:
+            return .green
+        case .agent:
+            return .orange
+        case .listing:
+            return .blue
+        case .direct:
+            return .gray
+        case .group:
+            return .purple
+        }
+    }
+    
+    private var textColor: Color {
+        backgroundColor
     }
 }
 
@@ -1918,65 +2061,126 @@ struct IndividualChatView: View {
     @State private var messages: [ChatMessage] = []
     @State private var messageText = ""
     @State private var isLoading = true
+    // @State private var propertyConversation: PropertyChatConversation?
     
     var body: some View {
         VStack(spacing: 0) {
+            // Property Header (if available) - temporarily disabled
+            // if let propertyConversation = propertyConversation {
+            //     PropertyChatHeader(propertyConversation: propertyConversation)
+            //     Divider()
+            // }
+            
             // Messages List
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 16) {
                         if isLoading {
-                            ProgressView("Loading messages...")
-                                .padding()
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                                Text("Loading messages...")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding()
+                        } else if messages.isEmpty {
+                            VStack(spacing: 16) {
+                                Image(systemName: "bubble.left.and.bubble.right")
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.secondary)
+                                    .opacity(0.5)
+                                
+                                Text("No messages yet")
+                                    .font(.headline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.secondary)
+                                
+                                Text("Start the conversation!")
+                                    .font(.subheadline)
+                                    .foregroundColor(.secondary)
+                            }
+                            .padding(.top, 100)
                         } else {
                             ForEach(messages) { message in
                                 ChatBubbleView(message: message)
                                     .id(message.id)
+                                    .transition(.asymmetric(
+                                        insertion: .move(edge: .bottom).combined(with: .opacity),
+                                        removal: .opacity
+                                    ))
                             }
                         }
                     }
                     .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.vertical, 16)
                 }
+                .background(Color(.systemGroupedBackground))
                 .onChange(of: messages.count) { _ in
                     if let lastMessage = messages.last {
-                        withAnimation(.easeOut(duration: 0.3)) {
+                        withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
                             proxy.scrollTo(lastMessage.id, anchor: .bottom)
                         }
                     }
                 }
-            }
-            
-            Divider()
-            
-            // Message Input
-            HStack(spacing: 12) {
-                TextField("Type a message...", text: $messageText, axis: .vertical)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .lineLimit(1...4)
-                
-                Button {
-                    sendMessage()
-                } label: {
-                    Image(systemName: "paperplane.fill")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(width: 36, height: 36)
-                        .background(
-                            messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? Color.gray : Color.blue,
-                            in: RoundedRectangle(cornerRadius: 8)
-                        )
+                .onAppear {
+                    if let lastMessage = messages.last {
+                        proxy.scrollTo(lastMessage.id, anchor: .bottom)
+                    }
                 }
-                .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color(.systemGray6))
+            
+            // Modern Message Input
+            VStack(spacing: 0) {
+                Divider()
+                    .opacity(0.5)
+                
+                HStack(alignment: .bottom, spacing: 12) {
+                    // Text Input with modern styling
+                    HStack(alignment: .bottom, spacing: 8) {
+                        TextField("Message...", text: $messageText, axis: .vertical)
+                            .textFieldStyle(.plain)
+                            .font(.body)
+                            .lineLimit(1...5)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Color(.systemGray6))
+                            .clipShape(RoundedRectangle(cornerRadius: 22))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 22)
+                                    .stroke(Color.blue.opacity(0.3), lineWidth: messageText.isEmpty ? 0 : 1)
+                            )
+                    }
+                    
+                    // Send Button with animation
+                    Button {
+                        sendMessage()
+                    } label: {
+                        Image(systemName: "paperplane.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(
+                                messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 
+                                    LinearGradient(colors: [Color.gray.opacity(0.5), Color.gray.opacity(0.3)], startPoint: .topLeading, endPoint: .bottomTrailing) : 
+                                    LinearGradient(colors: [Color.blue, Color.blue.opacity(0.8)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            )
+                            .clipShape(Circle())
+                            .scaleEffect(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.9 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: messageText.isEmpty)
+                    }
+                    .disabled(messageText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(.systemBackground))
+            }
         }
         .navigationTitle(conversation.displayTitle)
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             loadMessages()
+            // loadPropertyData()
         }
     }
     
@@ -1992,6 +2196,17 @@ struct IndividualChatView: View {
             isLoading = false
         }
     }
+    
+    // private func loadPropertyData() {
+    //     Task {
+    //         do {
+    //             let propertyConversations = try await chatService.fetchPropertyConversations()
+    //             propertyConversation = propertyConversations.first { $0.id == conversation.id }
+    //         } catch {
+    //             print("Error loading property data: \(error)")
+    //         }
+    //     }
+    // }
     
     private func sendMessage() {
         let content = messageText.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -2020,51 +2235,126 @@ struct IndividualChatView: View {
 // MARK: - Chat Bubble View
 struct ChatBubbleView: View {
     let message: ChatMessage
+    @State private var isVisible = false
     
     var body: some View {
-        HStack {
+        HStack(alignment: .bottom, spacing: 8) {
             if message.isFromCurrentUser {
-                Spacer()
+                Spacer(minLength: 60)
                 currentUserBubble
             } else {
+                // Avatar for other users
+                UserAvatarView(user: mockSender, size: 32)
+                    .padding(.bottom, 20)
+                
                 otherUserBubble
-                Spacer()
+                Spacer(minLength: 60)
+            }
+        }
+        .opacity(isVisible ? 1 : 0)
+        .offset(y: isVisible ? 0 : 20)
+        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: isVisible)
+        .onAppear {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7).delay(0.1)) {
+                isVisible = true
             }
         }
     }
     
     private var currentUserBubble: some View {
-        VStack(alignment: .trailing, spacing: 4) {
-            Text(message.content)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+        VStack(alignment: .trailing, spacing: 2) {
+            HStack {
+                Text(message.content)
+                    .font(.body)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                    .background(
+                        LinearGradient(
+                            colors: [Color.blue, Color.blue.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .foregroundColor(.white)
+                    .clipShape(ChatBubbleShape(isFromCurrentUser: true))
+                    .shadow(color: Color.blue.opacity(0.3), radius: 2, x: 0, y: 1)
+            }
             
-            Text(message.timestamp, style: .time)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+            HStack(spacing: 4) {
+                Text(message.timestamp, style: .time)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                
+                // Message status indicators
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.caption2)
+                    .foregroundColor(.blue)
+            }
         }
-        .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: .trailing)
+        .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: .trailing)
     }
     
     private var otherUserBubble: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(message.content)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .background(Color(.systemGray5))
-                .foregroundColor(.primary)
-                .clipShape(RoundedRectangle(cornerRadius: 18))
+        VStack(alignment: .leading, spacing: 2) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    if !message.isFromCurrentUser {
+                        Text("User") // In real app, would get sender name
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Text(message.content)
+                        .font(.body)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color(.systemGray6))
+                        .foregroundColor(.primary)
+                        .clipShape(ChatBubbleShape(isFromCurrentUser: false))
+                        .shadow(color: Color.black.opacity(0.05), radius: 2, x: 0, y: 1)
+                }
+            }
             
             Text(message.timestamp, style: .time)
                 .font(.caption2)
                 .foregroundColor(.secondary)
+                .padding(.leading, 4)
         }
-        .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: .leading)
+        .frame(maxWidth: UIScreen.main.bounds.width * 0.75, alignment: .leading)
+    }
+    
+    // Mock sender for avatar display
+    private var mockSender: ChatUser {
+        ChatUser(
+            id: message.senderId,
+            email: "sender@example.com",
+            displayName: "User",
+            username: nil,
+            avatarUrl: nil,
+            isOnline: true,
+            lastSeen: Date(),
+            userType: .tenant
+        )
     }
 }
+
+// MARK: - Chat Bubble Shape
+struct ChatBubbleShape: Shape {
+    let isFromCurrentUser: Bool
+    
+    func path(in rect: CGRect) -> Path {
+        let path = UIBezierPath(
+            roundedRect: rect,
+            byRoundingCorners: isFromCurrentUser ? 
+                [.topLeft, .topRight, .bottomLeft] : 
+                [.topLeft, .topRight, .bottomRight],
+            cornerRadii: CGSize(width: 18, height: 18)
+        )
+        return Path(path.cgPath)
+    }
+}
+
 
 // MARK: - New Chat View
 struct NewChatView: View {
@@ -2075,7 +2365,7 @@ struct NewChatView: View {
     @State private var isLoading = false
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 HStack {
                     Image(systemName: "magnifyingglass")
@@ -3175,7 +3465,7 @@ struct EnhancedAINegotiatorView: View {
     }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack(spacing: 0) {
                 // Header
                 headerView
@@ -3337,12 +3627,6 @@ struct EnhancedAINegotiatorView: View {
                         messages.append("AI: \(aiResponse.error ?? "I'm having trouble understanding. Could you try rephrasing your request?")")
                     }
                     isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    isLoading = false
-                    messages.append("AI: I'm having technical difficulties. Please try again.")
-                    print("❌ AI processing error: \(error)")
                 }
             }
         }
