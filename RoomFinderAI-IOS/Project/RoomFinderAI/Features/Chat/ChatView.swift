@@ -195,19 +195,17 @@ struct NormalChatView: View {
     }
     
     var body: some View {
-        NavigationView {
-            VStack(spacing: 0) {
-                if isLoading {
-                    ProgressView("Loading conversations...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else if conversations.isEmpty {
-                    emptyStateView
-                } else {
-                    conversationListView
-                }
+        VStack(spacing: 0) {
+            if isLoading {
+                ProgressView("Loading conversations...")
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if conversations.isEmpty {
+                emptyStateView
+            } else {
+                conversationListView
             }
         }
-        .navigationTitle("Direct Messages")
+        .navigationTitle("Property Messages")
         .navigationBarTitleDisplayMode(.large)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -355,9 +353,16 @@ struct IndividualChatView: View {
     @State private var messages: [ChatMessage] = []
     @State private var messageText = ""
     @State private var isLoading = true
+    @State private var propertyData: (listing: Listing?, user: User?)?
     
     var body: some View {
         VStack(spacing: 0) {
+            // Property Header (if available) - temporarily disabled
+            // if let propertyData = propertyData {
+            //     PropertyChatHeader(listing: propertyData.listing, user: propertyData.user)
+            //     Divider()
+            // }
+            
             // Messages List
             ScrollViewReader { proxy in
                 ScrollView {
@@ -414,6 +419,7 @@ struct IndividualChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             loadMessages()
+            loadPropertyConversation()
         }
     }
     
@@ -428,6 +434,10 @@ struct IndividualChatView: View {
             }
             isLoading = false
         }
+    }
+    
+    private func loadPropertyConversation() {
+        // Temporarily disabled - will implement property data loading later
     }
     
     private func sendMessage() {
@@ -518,6 +528,7 @@ struct ChatBubbleView: View {
         .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: .leading)
     }
 }
+
 
 // MARK: - New Chat View
 struct NewChatView: View {

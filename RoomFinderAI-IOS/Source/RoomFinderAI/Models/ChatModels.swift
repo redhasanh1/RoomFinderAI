@@ -16,6 +16,7 @@ struct ChatConversation: Identifiable, Codable {
         case direct = "direct"
         case group = "group"
         case landlord = "landlord"
+        case agent = "agent"
     }
     
     enum CodingKeys: String, CodingKey {
@@ -144,9 +145,8 @@ struct SendMessageRequest: Codable {
 
 extension ChatMessage {
     var isFromCurrentUser: Bool {
-        // This would be determined by comparing with current user ID
-        // For now, we'll use a placeholder
-        return senderId == "current_user_id"
+        // Check if sender is the current user (zacoda1@hotmail.com)
+        return senderId == "zacoda1@hotmail.com"
     }
     
     var timeAgo: String {
@@ -186,3 +186,4 @@ extension ChatConversation {
         return formatter.localizedString(for: lastActivity, relativeTo: Date())
     }
 }
+
