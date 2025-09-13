@@ -76,8 +76,14 @@ extension EnvironmentValues {
 }
 
 // MARK: - Models
-struct MediaItem: Decodable, Equatable {
-  let url: String?
+struct MediaItem: Codable, Equatable {
+  let url: String
+  let type: String?
+  let caption: String?
+  
+  enum CodingKeys: String, CodingKey {
+    case url, type, caption
+  }
 }
 
 struct HomePageListing: Identifiable, Decodable, Equatable {
@@ -1849,40 +1855,232 @@ struct NormalChatView: View {
     }
 }
 
+// MARK: - User Property Thumbnail View
+struct UserPropertyThumbnailView: View {
+    let userEmail: String
+    let size: CGFloat
+    @State private var userListing: Listing?
+    @Environment(\.supabase) private var supabase
+    
+    var body: some View {
+        Group {
+            if let userListing = userListing,
+               let images = userListing.images,
+               let firstImage = images.first,
+               !firstImage.isEmpty {
+                AsyncImage(url: URL(string: firstImage)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .onAppear {
+                            print("✅ UserPropertyThumbnailView: AsyncImage loaded successfully for \(userEmail)")
+                        }
+                } placeholder: {
+                    userPlaceholder
+                        .onAppear {
+                            print("⏳ UserPropertyThumbnailView: AsyncImage showing placeholder for \(userEmail)")
+                        }
+                }
+            } else {
+                let _ = print("🔍 UserPropertyThumbnailView: Showing placeholder for \(userEmail) because:")
+                let _ = print("  - userListing exists: \(userListing != nil)")
+                let _ = print("  - userListing.images exists: \(userListing?.images != nil)")
+                let _ = print("  - first image exists: \(userListing?.images?.first != nil)")
+                let _ = print("  - first image not empty: \(!(userListing?.images?.first?.isEmpty ?? true))")
+                userPlaceholder
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .onAppear {
+            loadUserListing()
+        }
+    }
+    
+    private var userPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color.gray.opacity(0.2))
+            .overlay(
+                Text(userInitials)
+                    .font(.title2)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.gray)
+            )
+    }
+    
+    private var userInitials: String {
+        let components = userEmail.components(separatedBy: "@")
+        let username = components.first ?? userEmail
+        let initials = username.prefix(2).uppercased()
+        return String(initials)
+    }
+    
+    private func loadUserListing() {
+        print("🔍 UserPropertyThumbnailView: Starting load for user: '\(userEmail)'")
+        print("🔍 UserPropertyThumbnailView: User email length: \(userEmail.count)")
+        print("🔍 UserPropertyThumbnailView: User email contains @: \(userEmail.contains("@"))")
+        
+        Task {
+            do {
+                print("🔍 UserPropertyThumbnailView: About to query Supabase...")
+                let response: [Listing] = try await supabase.database
+                    .from("listings")
+                    .select("id,title,price,city,street,postalCode,house_type,bedrooms,utilities,description,media,user_email,created_at,updated_at")
+                    .eq("user_email", value: userEmail)
+                    .order("created_at", ascending: false)
+                    .limit(1)
+                    .execute()
+                    .value
+                
+                print("✅ UserPropertyThumbnailView: Database query successful!")
+                print("📊 UserPropertyThumbnailView: Found \(response.count) listings for '\(userEmail)'")
+                
+                if let foundListing = response.first {
+                    print("🏠 UserPropertyThumbnailView: Listing found!")
+                    print("  - ID: \(foundListing.id)")
+                    print("  - Title: \(foundListing.title)")
+                    print("  - User Email: \(foundListing.userEmail)")
+                    print("  - Media array count: \(foundListing.media?.count ?? 0)")
+                    print("  - Media array: \(foundListing.media ?? [])")
+                    print("  - First image URL: '\(foundListing.images?.first ?? "nil")'")
+                    
+                    if let firstImage = foundListing.images?.first, !firstImage.isEmpty {
+                        print("✅ UserPropertyThumbnailView: Will show property image: \(firstImage)")
+                    } else {
+                        print("⚠️ UserPropertyThumbnailView: No valid image found, will show placeholder")
+                    }
+                } else {
+                    print("❌ UserPropertyThumbnailView: No listings found for user: '\(userEmail)'")
+                    print("💡 UserPropertyThumbnailView: This means either:")
+                    print("   1. User has no listings in database")
+                    print("   2. Email doesn't match exactly")
+                    print("   3. Query failed silently")
+                }
+                
+                await MainActor.run {
+                    userListing = response.first
+                    print("🔄 UserPropertyThumbnailView: UI updated with listing: \(userListing?.title ?? "nil")")
+                }
+            } catch {
+                print("💥 UserPropertyThumbnailView: Database error!")
+                print("❌ Error: \(error)")
+                print("❌ User email that failed: '\(userEmail)'")
+                print("❌ Error type: \(type(of: error))")
+                
+                if let supabaseError = error as? PostgrestError {
+                    print("❌ Supabase error details: \(supabaseError)")
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Property Thumbnail View
+struct PropertyThumbnailView: View {
+    let listingId: String
+    let size: CGFloat
+    @State private var listing: Listing?
+    @Environment(\.supabase) private var supabase
+    
+    var body: some View {
+        Group {
+            if let listing = listing, 
+               let images = listing.images,
+               let firstImage = images.first,
+               !firstImage.isEmpty {
+                AsyncImage(url: URL(string: firstImage)) { image in
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } placeholder: {
+                    propertyPlaceholder
+                }
+            } else {
+                propertyPlaceholder
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .onAppear {
+            loadListing()
+        }
+    }
+    
+    private var propertyPlaceholder: some View {
+        RoundedRectangle(cornerRadius: 12)
+            .fill(Color.blue.opacity(0.2))
+            .overlay(
+                Image(systemName: "building.2.fill")
+                    .font(.title2)
+                    .foregroundColor(.blue)
+            )
+    }
+    
+    private func loadListing() {
+        print("🖼️ PropertyThumbnailView: Loading listing with ID: \(listingId)")
+        
+        Task {
+            do {
+                let response: [Listing] = try await supabase.database
+                    .from("listings")
+                    .select("id,title,price,city,street,postalCode,house_type,bedrooms,utilities,description,media,user_email,created_at,updated_at")
+                    .eq("id", value: listingId)
+                    .limit(1)
+                    .execute()
+                    .value
+                
+                print("🖼️ PropertyThumbnailView: Database response - Found \(response.count) listings")
+                
+                if let foundListing = response.first {
+                    print("🖼️ PropertyThumbnailView: Listing found - Title: \(foundListing.title)")
+                    print("🖼️ PropertyThumbnailView: Media array: \(foundListing.media ?? [])")
+                    print("🖼️ PropertyThumbnailView: First image: \(foundListing.images?.first ?? "nil")")
+                } else {
+                    print("❌ PropertyThumbnailView: No listing found for ID: \(listingId)")
+                }
+                
+                await MainActor.run {
+                    listing = response.first
+                }
+            } catch {
+                print("❌ PropertyThumbnailView: Error loading listing for thumbnail: \(error)")
+                print("❌ PropertyThumbnailView: Listing ID that failed: \(listingId)")
+            }
+        }
+    }
+}
+
 // MARK: - Conversation Row View
 struct ConversationRowView: View {
     let conversation: ChatConversation
+    
+    // Extract the other user's email from participants (assume current user is "zacoda1@hotmail.com")
+    private var otherUserEmail: String {
+        let currentUserEmail = "zacoda1@hotmail.com"
+        let foundEmail = conversation.participantIds.first { $0 != currentUserEmail } ?? conversation.participantIds.first ?? "unknown@email.com"
+        
+        print("🔍 ConversationRowView: Extracting other user email")
+        print("  - Current user: '\(currentUserEmail)'")
+        print("  - All participants: \(conversation.participantIds)")
+        print("  - Other user email: '\(foundEmail)'")
+        print("  - Conversation ID: \(conversation.id)")
+        print("  - Conversation type: \(conversation.conversationType)")
+        
+        return foundEmail
+    }
     
     var body: some View {
         HStack(spacing: 16) {
             // Avatar with proper user image support
             ZStack {
-                if conversation.conversationType == .listing {
+                if conversation.conversationType == .listing, let listingId = conversation.listingId {
                     // Property thumbnail for listing conversations
-                    RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.blue.opacity(0.2))
-                        .frame(width: 56, height: 56)
-                        .overlay(
-                            Image(systemName: "building.2.fill")
-                                .font(.title2)
-                                .foregroundColor(.blue)
-                        )
+                    PropertyThumbnailView(listingId: listingId, size: 56)
                 } else {
-                    // User avatar for regular conversations
-                    UserAvatarView(user: mockChatUser, size: 56)
+                    // User property thumbnail for regular conversations
+                    UserPropertyThumbnailView(userEmail: otherUserEmail, size: 56)
                 }
                 
-                // Online status indicator for direct conversations
-                if conversation.conversationType == .direct {
-                    Circle()
-                        .fill(Color.green)
-                        .frame(width: 16, height: 16)
-                        .overlay(
-                            Circle()
-                                .stroke(Color(.systemBackground), lineWidth: 3)
-                        )
-                        .offset(x: 20, y: 20)
-                }
             }
             
             // Content
@@ -1894,8 +2092,10 @@ struct ConversationRowView: View {
                             .fontWeight(.semibold)
                             .lineLimit(1)
                         
-                        // Conversation type badge
-                        ConversationTypeBadge(type: conversation.conversationType)
+                        // Conversation type badge - only show for special types
+                        if shouldShowTypeBadge {
+                            ConversationTypeBadge(type: conversation.conversationType)
+                        }
                     }
                     
                     Spacer()
@@ -1924,19 +2124,16 @@ struct ConversationRowView: View {
         .padding(.horizontal, 4)
     }
     
-    // Mock user data - in a real app this would come from the conversation participants
-    private var mockChatUser: ChatUser {
-        ChatUser(
-            id: "mock",
-            email: "user@example.com",
-            displayName: conversation.displayTitle,
-            username: nil,
-            avatarUrl: nil,
-            isOnline: true,
-            lastSeen: Date(),
-            userType: conversation.conversationType == .landlord ? .landlord : .tenant
-        )
+    // Only show type badges for special conversation types
+    private var shouldShowTypeBadge: Bool {
+        switch conversation.conversationType {
+        case .landlord, .agent, .listing:
+            return true
+        case .user, .group:
+            return false
+        }
     }
+    
 }
 
 
@@ -2011,7 +2208,7 @@ struct ConversationTypeBadge: View {
             return "person.badge.key.fill"
         case .listing:
             return "building.2.fill"
-        case .direct:
+        case .user:
             return "person.fill"
         case .group:
             return "person.2.fill"
@@ -2026,8 +2223,8 @@ struct ConversationTypeBadge: View {
             return "Agent"
         case .listing:
             return "Property"
-        case .direct:
-            return "Direct"
+        case .user:
+            return "User"
         case .group:
             return "Group"
         }
@@ -2041,7 +2238,7 @@ struct ConversationTypeBadge: View {
             return .orange
         case .listing:
             return .blue
-        case .direct:
+        case .user:
             return .gray
         case .group:
             return .purple
@@ -2448,7 +2645,7 @@ struct NewChatView: View {
             do {
                 let request = CreateConversationRequest(
                     participantIds: [user.id, "current_user_id"],
-                    conversationType: .direct,
+                    conversationType: .user,
                     title: user.displayNameOrEmail
                 )
                 _ = try await chatService.createConversation(request: request)

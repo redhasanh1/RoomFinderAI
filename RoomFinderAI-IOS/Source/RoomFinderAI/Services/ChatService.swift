@@ -94,6 +94,9 @@ class ChatService: ObservableObject {
             let conversationDate = formatter.date(from: conversation.created_at) ?? Date()
             let lastActivityDate = latestMessage.flatMap { formatter.date(from: $0.created_at) } ?? conversationDate
             
+            // Determine conversation type based on whether it has a listing_id
+            let conversationType: ChatConversation.ConversationType = conversation.listing_id != nil ? .listing : .user
+            
             // Create basic chat conversation
             let chatConversation = ChatConversation(
                 id: conversation.id,
@@ -101,9 +104,10 @@ class ChatService: ObservableObject {
                 lastMessage: chatMessage,
                 lastActivity: lastActivityDate,
                 isRead: latestMessage?.sender_email == currentUserEmail ? true : false,
-                conversationType: .direct,
+                conversationType: conversationType,
                 title: otherUserEmail,
-                groupImage: nil
+                groupImage: nil,
+                listingId: conversation.listing_id
             )
             
             // Add the chat conversation to our results
@@ -131,7 +135,8 @@ class ChatService: ObservableObject {
             isRead: true,
             conversationType: request.conversationType,
             title: request.title,
-            groupImage: nil
+            groupImage: nil,
+            listingId: nil
         )
         return conversation
     }
@@ -248,9 +253,10 @@ class ChatService: ObservableObject {
                 ),
                 lastActivity: Date().addingTimeInterval(-3600),
                 isRead: false,
-                conversationType: .landlord,
+                conversationType: .listing,
                 title: "John Smith (Landlord)",
-                groupImage: nil
+                groupImage: nil,
+                listingId: "550e8400-e29b-41d4-a716-446655440000"
             ),
             ChatConversation(
                 id: "conv2",
@@ -268,9 +274,10 @@ class ChatService: ObservableObject {
                 ),
                 lastActivity: Date().addingTimeInterval(-7200),
                 isRead: true,
-                conversationType: .direct,
+                conversationType: .user,
                 title: "Sarah Wilson",
-                groupImage: nil
+                groupImage: nil,
+                listingId: nil
             ),
             ChatConversation(
                 id: "conv3",
@@ -288,9 +295,10 @@ class ChatService: ObservableObject {
                 ),
                 lastActivity: Date().addingTimeInterval(-86400),
                 isRead: true,
-                conversationType: .landlord,
+                conversationType: .listing,
                 title: "Mike Johnson (Agent)",
-                groupImage: nil
+                groupImage: nil,
+                listingId: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
             )
         ]
     }

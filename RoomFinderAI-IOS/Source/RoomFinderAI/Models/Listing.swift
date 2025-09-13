@@ -2,6 +2,7 @@ import Foundation
 import CoreLocation
 
 // MARK: - Supporting Types
+
 enum PropertyType: String, CaseIterable, Codable {
     case apartment = "Apartment"
     case house = "House"
@@ -91,7 +92,7 @@ struct Listing: Codable, Identifiable, Equatable {
     let bedrooms: Int
     let utilities: String
     let description: String?
-    let media: [String]?
+    let media: [MediaItem]?
     let userEmail: String
     let createdAt: Date
     let updatedAt: Date
@@ -100,7 +101,7 @@ struct Listing: Codable, Identifiable, Equatable {
         case id, title, price, city, street, description, media, bedrooms, utilities
         case houseType = "house_type"
         case userEmail = "user_email"
-        case postalCode = "postal_code"
+        case postalCode = "postalCode"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -111,7 +112,7 @@ struct Listing: Codable, Identifiable, Equatable {
     }
     
     var images: [String]? {
-        return media // Backwards compatibility - media is the actual database field
+        return media?.map { $0.url } // Extract URLs from MediaItem array
     }
 }
 
