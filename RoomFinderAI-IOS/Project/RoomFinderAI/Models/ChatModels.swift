@@ -11,13 +11,14 @@ struct ChatConversation: Identifiable, Codable {
     let conversationType: ConversationType
     let title: String?
     let groupImage: String?
+    let listingId: String?
     
     enum ConversationType: String, Codable {
-        case direct = "direct"
         case group = "group"
         case landlord = "landlord"
         case agent = "agent"
         case listing = "listing"
+        case user = "user"
     }
     
     enum CodingKeys: String, CodingKey {
@@ -29,6 +30,7 @@ struct ChatConversation: Identifiable, Codable {
         case conversationType = "conversation_type"
         case title
         case groupImage = "group_image"
+        case listingId = "listing_id"
     }
 }
 
@@ -173,7 +175,25 @@ extension ChatMessage {
 
 extension ChatConversation {
     var displayTitle: String {
-        return title ?? "Chat"
+        if let title = title, !title.isEmpty {
+            // If title contains @ symbol, it's likely an email - extract username part
+            if title.contains("@") {
+                return String(title.split(separator: "@").first ?? "User")
+            }
+            return title
+        }
+        
+        // Fallback based on conversation type
+        switch conversationType {
+        case .listing:
+            return "Property Chat"
+        case .landlord:
+            return "Landlord"
+        case .agent:
+            return "Agent"
+        default:
+            return "Chat"
+        }
     }
     
     var lastMessagePreview: String {
