@@ -1,5 +1,6 @@
 import SwiftUI
 import Supabase
+import PhotosUI
 
 // MARK: - Configuration
 enum AppConfig {
@@ -76,7 +77,7 @@ extension EnvironmentValues {
 }
 
 // MARK: - Models
-struct MediaItem: Codable, Equatable {
+struct MediaItem: Codable, Equatable, Hashable {
   let url: String
   let type: String?
   let caption: String?
@@ -283,6 +284,17 @@ struct SearchView: View {
     @State private var isLoading = false
     @State private var showingAdvanced = false
     @State private var searchWorkItem: DispatchWorkItem?
+    
+    // Pagination state
+    @State private var currentPage = 0
+    @State private var itemsPerPage = 20
+    @State private var hasMoreResults = true
+    @State private var isLoadingMore = false
+    @State private var totalCount = 0
+    
+    // Error handling
+    @State private var searchError: String?
+    @State private var showingRetry = false
     
     // Essential Filter State
     @State private var selectedPriceRanges: Set<String> = []
@@ -577,6 +589,59 @@ struct SearchView: View {
                                 ForEach(searchResults) { listing in
                                     SearchListingCardView(listing: listing)
                                         .padding(.horizontal, 20)
+                                        .onAppear {
+                                            // Load more when near end of list
+                                            if searchResults.last?.id == listing.id && hasMoreResults && !isLoadingMore {
+                                                loadMoreResults()
+                                            }
+                                        }
+                                }
+                                
+                                // Load More section
+                                if hasMoreResults {
+                                    VStack(spacing: 16) {
+                                        if isLoadingMore {
+                                            HStack(spacing: 12) {
+                                                ProgressView()
+                                                    .scaleEffect(0.8)
+                                                Text("Loading more properties...")
+                                                    .font(.subheadline)
+                                                    .foregroundColor(.secondary)
+                                            }
+                                            .padding(.vertical, 20)
+                                        } else {
+                                            Button(action: {
+                                                loadMoreResults()
+                                            }) {
+                                                HStack(spacing: 8) {
+                                                    Image(systemName: "arrow.down.circle.fill")
+                                                        .font(.title3)
+                                                    Text("Load More Properties")
+                                                        .font(.subheadline)
+                                                        .fontWeight(.medium)
+                                                }
+                                                .foregroundColor(.blue)
+                                                .padding(.vertical, 12)
+                                                .padding(.horizontal, 24)
+                                                .background(Color(.systemGray6))
+                                                .clipShape(RoundedRectangle(cornerRadius: 25))
+                                            }
+                                            .padding(.vertical, 20)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                } else if searchResults.count >= itemsPerPage {
+                                    // End of results indicator
+                                    VStack(spacing: 8) {
+                                        Image(systemName: "checkmark.circle.fill")
+                                            .font(.title2)
+                                            .foregroundColor(.green)
+                                        Text("You've seen all properties")
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.vertical, 20)
+                                    .frame(maxWidth: .infinity)
                                 }
                             }
                         }
@@ -601,6 +666,40 @@ struct SearchView: View {
                             }
                         }
                         .padding(.top, 60)
+                    } else if let error = searchError {
+                        // Error state with retry
+                        VStack(spacing: 20) {
+                            Image(systemName: "exclamationmark.triangle")
+                                .font(.system(size: 50))
+                                .foregroundColor(.orange)
+                            
+                            Text("Unable to load properties")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            
+                            Text(error)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 32)
+                            
+                            Button(action: {
+                                searchError = nil
+                                performSearch()
+                            }) {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "arrow.clockwise")
+                                    Text("Try Again")
+                                        .fontWeight(.medium)
+                                }
+                                .foregroundColor(.white)
+                                .padding(.horizontal, 24)
+                                .padding(.vertical, 12)
+                                .background(Color.blue)
+                                .clipShape(RoundedRectangle(cornerRadius: 25))
+                            }
+                        }
+                        .padding(.top, 60)
                     }
                     
                     Spacer(minLength: 100)
@@ -609,7 +708,8 @@ struct SearchView: View {
             .navigationBarHidden(true)
             .onAppear {
                 // Load initial results on appear
-                if searchResults.isEmpty {
+                if searchResults.isEmpty && !isLoading {
+                    print("🔄 SearchView onAppear: Loading initial results...")
                     performSearch()
                 }
             }
@@ -633,6 +733,14 @@ struct SearchView: View {
         showingAdvanced = false
         showingPriceFilter = false
         showingBedroomFilter = false
+        
+        // Reset pagination state
+        currentPage = 0
+        searchResults = []
+        hasMoreResults = true
+        isLoadingMore = false
+        searchError = nil
+        
         performSearch()
     }
     
@@ -753,73 +861,143 @@ struct SearchView: View {
     }
     
     private func performSearch() {
+        // Reset pagination for new search
+        currentPage = 0
+        searchResults = []
+        hasMoreResults = true
         isLoading = true
+        searchError = nil // Clear any previous errors
         Task {
-            await searchListings()
+            await searchListings(isLoadingMore: false)
         }
     }
     
-    private func searchListings() async {
+    private func loadMoreResults() {
+        guard hasMoreResults && !isLoadingMore else { return }
+        isLoadingMore = true
+        currentPage += 1
+        Task {
+            await searchListings(isLoadingMore: true)
+        }
+    }
+    
+    private func searchListings(isLoadingMore: Bool) async {
         do {
-            // Fetch all listings from database
-            let allListings: [HomePageListing] = try await supabase
-                .from("listings")
-                .select("*")
+            // Calculate pagination range
+            let startIndex = currentPage * itemsPerPage
+            let endIndex = startIndex + itemsPerPage - 1
+            
+            print("📄 Fetching page \(currentPage), items \(startIndex) to \(endIndex)")
+            
+            // Build query with pagination
+            var query = supabase.from("listings").select("*")
+            
+            // Apply filters at database level for better performance
+            if !searchText.isEmpty {
+                // Search in multiple fields
+                query = query.or("title.ilike.%\(searchText)%,city.ilike.%\(searchText)%,description.ilike.%\(searchText)%")
+            }
+            
+            // Apply price filters
+            if !selectedPriceRanges.isEmpty {
+                let priceFilters = selectedPriceRanges.compactMap { range -> String? in
+                    switch range {
+                    case "Under $1,000":
+                        return "price.lt.1000"
+                    case "$1,000 - $1,500":
+                        return "and(price.gte.1000,price.lt.1500)"
+                    case "$1,500 - $2,000":
+                        return "and(price.gte.1500,price.lt.2000)"
+                    case "$2,000 - $3,000":
+                        return "and(price.gte.2000,price.lt.3000)"
+                    case "Over $3,000":
+                        return "price.gte.3000"
+                    default:
+                        return nil
+                    }
+                }
+                if !priceFilters.isEmpty {
+                    let priceQuery = priceFilters.joined(separator: ",")
+                    query = query.or(priceQuery)
+                }
+            }
+            
+            // Apply bedroom filters
+            if !selectedBedroomTypes.isEmpty {
+                let bedroomValues = selectedBedroomTypes.compactMap { type -> Int? in
+                    switch type {
+                    case "Studio": return 0
+                    case "1 Bedroom": return 1
+                    case "2 Bedrooms": return 2
+                    case "3 Bedrooms": return 3
+                    case "4+ Bedrooms": return 4
+                    default: return nil
+                    }
+                }
+                if !bedroomValues.isEmpty {
+                    let bedroomQuery = bedroomValues.map { "bedrooms.eq.\($0)" }.joined(separator: ",")
+                    query = query.or(bedroomQuery)
+                }
+            }
+            
+            // Apply property type filters
+            if !selectedPropertyTypes.isEmpty {
+                let typeQuery = selectedPropertyTypes.map { "house_type.ilike.*\($0)*" }.joined(separator: ",")
+                query = query.or(typeQuery)
+            }
+            
+            // Add sorting and pagination, then execute
+            let sortedQuery: PostgrestTransformBuilder
+            switch selectedSort {
+            case "Recent":
+                sortedQuery = query.order("created_at", ascending: false)
+            case "Price: Low":
+                sortedQuery = query.order("price", ascending: true)
+            case "Price: High":
+                sortedQuery = query.order("price", ascending: false)
+            case "Alphabetical":
+                sortedQuery = query.order("title", ascending: true)
+            default:
+                sortedQuery = query.order("created_at", ascending: false)
+            }
+            
+            // Add pagination and execute
+            let newListings: [HomePageListing] = try await sortedQuery
+                .range(from: startIndex, to: endIndex)
                 .execute()
                 .value
             
-            // Apply filtering and smart search
-            var filtered = allListings.filter { listing in
-                // Smart search patterns (if search text exists)
-                if !searchText.isEmpty {
-                    return matchesSmartSearch(listing, searchText)
-                }
-                return true
-            }
-            
-            // Apply price filter
-            filtered = filtered.filter { listing in
-                return matchesPriceFilter(listing)
-            }
-            
-            // Apply bedroom filter
-            filtered = filtered.filter { listing in
-                return matchesBedroomFilter(listing)
-            }
-            
-            // Apply property type filter
-            if !selectedPropertyTypes.isEmpty {
-                filtered = filtered.filter { listing in
-                    selectedPropertyTypes.contains { type in
-                        listing.house_type?.lowercased().contains(type.lowercased()) ?? false
-                    }
-                }
-            }
-            
-            // Apply sorting
-            switch selectedSort {
-            case "Recent":
-                filtered.sort { ($0.created_at ?? "") > ($1.created_at ?? "") }
-            case "Price: Low":
-                filtered.sort { ($0.price ?? 0) < ($1.price ?? 0) }
-            case "Price: High":
-                filtered.sort { ($0.price ?? 0) > ($1.price ?? 0) }
-            case "Alphabetical":
-                filtered.sort { ($0.title ?? "") < ($1.title ?? "") }
-            default:
-                break
-            }
+            print("📊 Received \(newListings.count) listings for page \(currentPage)")
             
             await MainActor.run {
-                self.searchResults = filtered
-                self.isLoading = false
+                if isLoadingMore {
+                    // Append to existing results
+                    self.searchResults.append(contentsOf: newListings)
+                    self.isLoadingMore = false
+                } else {
+                    // Replace results for new search
+                    self.searchResults = newListings
+                    self.isLoading = false
+                }
+                
+                // Update hasMoreResults
+                self.hasMoreResults = newListings.count == self.itemsPerPage
+                
+                print("✅ Total results: \(self.searchResults.count), hasMore: \(self.hasMoreResults)")
             }
             
         } catch {
-            print("Search error: \(error)")
+            print("❌ Search error: \(error)")
             await MainActor.run {
-                self.searchResults = []
-                self.isLoading = false
+                if !isLoadingMore {
+                    self.searchResults = []
+                    self.isLoading = false
+                    self.searchError = "Failed to load properties. Please check your connection and try again."
+                } else {
+                    self.isLoadingMore = false
+                    // Revert currentPage on error
+                    self.currentPage = max(0, self.currentPage - 1)
+                }
             }
         }
     }
@@ -882,371 +1060,6 @@ struct SearchFilterChip: View {
     }
 }
 
-// MARK: - Post View
-struct PostView: View {
-    @State private var title = ""
-    @State private var description = ""
-    @State private var price = ""
-    @State private var location = ""
-    @State private var bedrooms = 1
-    @State private var bathrooms = 1
-    @State private var selectedPropertyType = "Apartment"
-    @State private var isSubmitting = false
-    @State private var showingSuccessAlert = false
-    @State private var showingErrorAlert = false
-    @State private var errorMessage = ""
-    
-    // Form validation
-    @State private var titleError = ""
-    @State private var priceError = ""
-    @State private var locationError = ""
-    
-    @Environment(\.supabase) private var supabase
-    
-    let propertyTypes = ["Studio", "Apartment", "House", "Condo", "Townhouse", "Loft"]
-    
-    var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                // Header
-                VStack(spacing: 12) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(.system(size: 50))
-                        .foregroundColor(.green)
-                    
-                    Text("Post Your Property")
-                        .font(.title)
-                        .fontWeight(.bold)
-                    
-                    Text("List your room or property for rent")
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.top)
-                
-                VStack(spacing: 20) {
-                    // Basic Information Card
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Image(systemName: "house.fill")
-                                .foregroundColor(.blue)
-                            Text("Basic Information")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Property Title *")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            TextField("e.g., Spacious 1BR near campus", text: $title)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                            if !titleError.isEmpty {
-                                Text(titleError)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Location *")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            TextField("City, neighborhood, or address", text: $location)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                            if !locationError.isEmpty {
-                                Text(locationError)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Monthly Rent *")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            HStack {
-                                Text("$")
-                                    .foregroundColor(.secondary)
-                                TextField("1200", text: $price)
-                                    .keyboardType(.numberPad)
-                            }
-                            .textFieldStyle(RoundedBorderTextFieldStyle())
-                            if !priceError.isEmpty {
-                                Text(priceError)
-                                    .font(.caption)
-                                    .foregroundColor(.red)
-                            }
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemGray6).opacity(0.3))
-                    .cornerRadius(12)
-                    
-                    // Property Details Card
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Image(systemName: "building.2.fill")
-                                .foregroundColor(.green)
-                            Text("Property Details")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Property Type")
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(propertyTypes, id: \.self) { type in
-                                        Button(action: {
-                                            selectedPropertyType = type
-                                        }) {
-                                            Text(type)
-                                                .font(.subheadline)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(selectedPropertyType == type ? .white : .primary)
-                                                .padding(.horizontal, 16)
-                                                .padding(.vertical, 8)
-                                                .background(selectedPropertyType == type ? Color.blue : Color(.systemGray6))
-                                                .cornerRadius(20)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal, 4)
-                            }
-                        }
-                        
-                        HStack(spacing: 30) {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Bedrooms")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                
-                                HStack(spacing: 12) {
-                                    Button("-") {
-                                        if bedrooms > 0 { bedrooms -= 1 }
-                                    }
-                                    .frame(width: 36, height: 36)
-                                    .background(Color(.systemGray6))
-                                    .foregroundColor(.blue)
-                                    .cornerRadius(18)
-                                    
-                                    Text("\(bedrooms)")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .frame(minWidth: 30)
-                                    
-                                    Button("+") {
-                                        if bedrooms < 10 { bedrooms += 1 }
-                                    }
-                                    .frame(width: 36, height: 36)
-                                    .background(Color(.systemGray6))
-                                    .foregroundColor(.blue)
-                                    .cornerRadius(18)
-                                }
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Bathrooms")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                
-                                HStack(spacing: 12) {
-                                    Button("-") {
-                                        if bathrooms > 0 { bathrooms -= 1 }
-                                    }
-                                    .frame(width: 36, height: 36)
-                                    .background(Color(.systemGray6))
-                                    .foregroundColor(.blue)
-                                    .cornerRadius(18)
-                                    
-                                    Text("\(bathrooms)")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .frame(minWidth: 30)
-                                    
-                                    Button("+") {
-                                        if bathrooms < 10 { bathrooms += 1 }
-                                    }
-                                    .frame(width: 36, height: 36)
-                                    .background(Color(.systemGray6))
-                                    .foregroundColor(.blue)
-                                    .cornerRadius(18)
-                                }
-                            }
-                            
-                            Spacer()
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemGray6).opacity(0.3))
-                    .cornerRadius(12)
-                    
-                    // Description Card
-                    VStack(alignment: .leading, spacing: 16) {
-                        HStack {
-                            Image(systemName: "text.alignleft")
-                                .foregroundColor(.orange)
-                            Text("Description")
-                                .font(.headline)
-                                .fontWeight(.semibold)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Tell potential renters about your property")
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
-                            TextField("Describe your property, amenities, nearby attractions...", text: $description, axis: .vertical)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .lineLimit(4...8)
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemGray6).opacity(0.3))
-                    .cornerRadius(12)
-                    
-                    // Submit Button
-                    Button(action: {
-                        submitListing()
-                    }) {
-                        HStack {
-                            if isSubmitting {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                    .foregroundColor(.white)
-                            } else {
-                                Image(systemName: "paperplane.fill")
-                            }
-                            Text(isSubmitting ? "Posting..." : "Post Property")
-                                .fontWeight(.semibold)
-                        }
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(
-                            LinearGradient(
-                                colors: isFormValid() ? [.green, .blue] : [.gray, .gray],
-                                startPoint: .leading,
-                                endPoint: .trailing
-                            )
-                        )
-                        .cornerRadius(12)
-                    }
-                    .disabled(!isFormValid() || isSubmitting)
-                }
-                .padding(.horizontal)
-            }
-        }
-        .navigationBarHidden(true)
-        .alert("Success!", isPresented: $showingSuccessAlert) {
-            Button("OK") {
-                clearForm()
-            }
-        } message: {
-            Text("Your property has been posted successfully!")
-        }
-        .alert("Error", isPresented: $showingErrorAlert) {
-            Button("OK") { }
-        } message: {
-            Text(errorMessage)
-        }
-    }
-    
-    // MARK: - Helper Functions
-    
-    private func isFormValid() -> Bool {
-        return !title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               !location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               !price.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-               Int(price) != nil &&
-               Int(price) ?? 0 > 0
-    }
-    
-    private func validateForm() {
-        titleError = title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Title is required" : ""
-        locationError = location.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "Location is required" : ""
-        
-        if price.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            priceError = "Price is required"
-        } else if Int(price) == nil {
-            priceError = "Please enter a valid price"
-        } else if Int(price) ?? 0 <= 0 {
-            priceError = "Price must be greater than 0"
-        } else {
-            priceError = ""
-        }
-    }
-    
-    private func clearForm() {
-        title = ""
-        description = ""
-        price = ""
-        location = ""
-        bedrooms = 1
-        bathrooms = 1
-        selectedPropertyType = "Apartment"
-        titleError = ""
-        priceError = ""
-        locationError = ""
-    }
-    
-    private func submitListing() {
-        validateForm()
-        
-        guard isFormValid() else {
-            return
-        }
-        
-        isSubmitting = true
-        
-        Task {
-            do {
-                // Create a new listing struct that can be encoded
-                struct NewListing: Codable {
-                    let title: String
-                    let price: Int
-                    let city: String
-                    let house_type: String
-                    let bedrooms: Int
-                    let bathrooms: Int
-                    let description: String?
-                }
-                
-                let newListing = NewListing(
-                    title: title.trimmingCharacters(in: .whitespacesAndNewlines),
-                    price: Int(price) ?? 0,
-                    city: location.trimmingCharacters(in: .whitespacesAndNewlines),
-                    house_type: selectedPropertyType,
-                    bedrooms: bedrooms,
-                    bathrooms: bathrooms,
-                    description: description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? nil : description.trimmingCharacters(in: .whitespacesAndNewlines)
-                )
-                
-                // Submit to Supabase
-                try await supabase
-                    .from("listings")
-                    .insert(newListing)
-                    .execute()
-                
-                await MainActor.run {
-                    isSubmitting = false
-                    showingSuccessAlert = true
-                }
-                
-            } catch {
-                await MainActor.run {
-                    isSubmitting = false
-                    errorMessage = "Failed to post listing: \(error.localizedDescription)"
-                    showingErrorAlert = true
-                }
-            }
-        }
-    }
-}
 
 // MARK: - Search-Optimized Listing Card
 struct SearchListingCardView: View {
@@ -1256,47 +1069,34 @@ struct SearchListingCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Image with price overlay
-            ZStack(alignment: .topTrailing) {
-                AsyncImage(url: imageURL) { image in
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } placeholder: {
-                    Rectangle()
-                        .fill(Color(.systemGray5))
-                        .overlay(
-                            Image(systemName: "photo")
-                                .font(.title)
-                                .foregroundColor(.secondary)
-                        )
-                }
-                .frame(height: 180)
-                .aspectRatio(16/9, contentMode: .fill)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                
-                // Price Badge
-                if let price = listing.price {
-                    Text("$\(price)")
-                        .font(.headline)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color.black.opacity(0.7))
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                        .padding(12)
-                }
+            // Clean image without price overlay
+            AsyncImage(url: imageURL) { image in
+                image
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            } placeholder: {
+                Rectangle()
+                    .fill(Color(.systemGray5))
+                    .overlay(
+                        Image(systemName: "photo")
+                            .font(.title)
+                            .foregroundColor(.secondary)
+                    )
             }
+            .frame(height: 180)
+            .aspectRatio(16/9, contentMode: .fill)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
             
-            // Content section - optimized spacing for search
-            VStack(alignment: .leading, spacing: 8) {
+            // Content section
+            VStack(alignment: .leading, spacing: 12) {
+                // Title
                 Text(listing.title ?? "Untitled")
                     .font(.headline)
                     .fontWeight(.semibold)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
                 
+                // Location
                 if let city = listing.city {
                     HStack(spacing: 4) {
                         Image(systemName: "location.fill")
@@ -1308,6 +1108,7 @@ struct SearchListingCardView: View {
                     }
                 }
                 
+                // Property details
                 HStack(spacing: 16) {
                     if let bedrooms = listing.bedrooms {
                         HStack(spacing: 4) {
@@ -1333,6 +1134,21 @@ struct SearchListingCardView: View {
                     
                     Spacer()
                 }
+                
+                // Price at bottom - prominent and easy to scan
+                HStack {
+                    if let price = listing.price {
+                        Text("$\(price)")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.primary)
+                        Text("/ month")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                }
+                .padding(.top, 4)
             }
             .padding(12)
         }
@@ -3898,6 +3714,460 @@ struct MessageBubble: View {
             
             if !isUser { Spacer(minLength: 60) }
         }
+    }
+}
+
+// MARK: - Post View (Enhanced with Photo Upload)
+struct PostView: View {
+    @State private var title = ""
+    @State private var description = ""
+    @State private var price = ""
+    @State private var location = ""
+    @State private var street = ""
+    @State private var postalCode = ""
+    @State private var utilities = ""
+    @State private var bedrooms = 1
+    @State private var bathrooms = 1
+    @State private var selectedPropertyType = "Apartment"
+    @State private var isSubmitting = false
+    @State private var showingSuccessAlert = false
+    @State private var showingErrorAlert = false
+    @State private var errorMessage = ""
+    
+    // Photo handling
+    @State private var selectedImages: [UIImage] = []
+    @State private var photoPickerItems: [PhotosPickerItem] = []
+    @State private var showingPhotoPicker = false
+    @State private var isUploadingPhotos = false
+    
+    // Form validation
+    @State private var titleError = ""
+    @State private var priceError = ""
+    @State private var locationError = ""
+    
+    @Environment(\.supabase) private var supabase
+    
+    let propertyTypes = ["Studio", "Apartment", "House", "Condo", "Townhouse", "Loft"]
+    
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 20) {
+                // Header
+                VStack(spacing: 12) {
+                    Image(systemName: "plus.circle.fill")
+                        .font(.system(size: 50))
+                        .foregroundColor(.green)
+                    
+                    Text("🏠 Post Your Property 📸")
+                        .font(.title)
+                        .fontWeight(.bold)
+                    
+                    Text("List your room or property for rent")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top)
+                
+                VStack(spacing: 20) {
+                    // Basic Information Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "house.fill")
+                                .foregroundColor(.blue)
+                            Text("Basic Information")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Property Title *")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            TextField("e.g., Spacious 1BR near campus", text: $title)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !titleError.isEmpty {
+                                Text(titleError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Location *")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            TextField("City, neighborhood, or address", text: $location)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !locationError.isEmpty {
+                                Text(locationError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Monthly Rent *")
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            HStack {
+                                Text("$")
+                                    .foregroundColor(.secondary)
+                                TextField("1200", text: $price)
+                                    .keyboardType(.numberPad)
+                            }
+                            .textFieldStyle(RoundedBorderTextFieldStyle())
+                            if !priceError.isEmpty {
+                                Text(priceError)
+                                    .font(.caption)
+                                    .foregroundColor(.red)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
+                    // Property Type Selection
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "building.2.fill")
+                                .foregroundColor(.green)
+                            Text("Property Type")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 12) {
+                                ForEach(propertyTypes, id: \.self) { type in
+                                    Button(action: {
+                                        selectedPropertyType = type
+                                    }) {
+                                        Text(type)
+                                            .font(.subheadline)
+                                            .fontWeight(.medium)
+                                            .foregroundColor(selectedPropertyType == type ? .white : .primary)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 8)
+                                            .background(selectedPropertyType == type ? Color.blue : Color(.systemGray6))
+                                            .cornerRadius(20)
+                                    }
+                                }
+                            }
+                            .padding(.horizontal, 4)
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
+                    // Description Card
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "text.alignleft")
+                                .foregroundColor(.orange)
+                            Text("Description")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                        }
+                        
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Tell potential renters about your property")
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                            TextField("Describe your property, amenities, nearby attractions...", text: $description, axis: .vertical)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                                .lineLimit(4...8)
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
+                    // Photos Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Image(systemName: "camera.fill")
+                                .foregroundColor(.purple)
+                            Text("Photos")
+                                .font(.headline)
+                                .fontWeight(.semibold)
+                            Spacer()
+                            Text("\(selectedImages.count)/10")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                        
+                        Text("Add photos to attract more renters")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        
+                        // Photo Grid
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 12) {
+                            // Add Photo Button
+                            Button(action: {
+                                showingPhotoPicker = true
+                            }) {
+                                VStack(spacing: 8) {
+                                    Image(systemName: "plus.circle.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.blue)
+                                    Text("Add Photos")
+                                        .font(.caption)
+                                        .foregroundColor(.primary)
+                                }
+                                .frame(height: 80)
+                                .frame(maxWidth: .infinity)
+                                .background(Color(.systemGray6))
+                                .cornerRadius(8)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.blue, style: StrokeStyle(lineWidth: 2, dash: [5]))
+                                )
+                            }
+                            .disabled(selectedImages.count >= 10)
+                            
+                            // Selected Photos
+                            ForEach(Array(selectedImages.enumerated()), id: \.offset) { index, image in
+                                ZStack(alignment: .topTrailing) {
+                                    Image(uiImage: image)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(height: 80)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    
+                                    Button(action: {
+                                        selectedImages.remove(at: index)
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.caption)
+                                            .foregroundColor(.white)
+                                            .background(Color.red)
+                                            .clipShape(Circle())
+                                    }
+                                    .padding(4)
+                                }
+                            }
+                        }
+                        
+                        if isUploadingPhotos {
+                            HStack {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Text("Uploading photos...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6).opacity(0.3))
+                    .cornerRadius(12)
+                    
+                    // Submit Button
+                    Button(action: {
+                        Task {
+                            await submitProperty()
+                        }
+                    }) {
+                        HStack {
+                            if isSubmitting {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                    .foregroundColor(.white)
+                            } else {
+                                Image(systemName: "paperplane.fill")
+                            }
+                            Text(isSubmitting ? "Posting..." : "Post Property")
+                                .fontWeight(.semibold)
+                        }
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(
+                            LinearGradient(
+                                colors: [.green, .blue],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(12)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .navigationBarHidden(true)
+        .photosPicker(isPresented: $showingPhotoPicker, selection: $photoPickerItems, maxSelectionCount: 10 - selectedImages.count, matching: .images)
+        .onChange(of: photoPickerItems) { items in
+            Task {
+                await loadSelectedPhotos(from: items)
+            }
+        }
+        .alert("Success!", isPresented: $showingSuccessAlert) {
+            Button("OK") {}
+        } message: {
+            Text("Your property has been posted successfully!")
+        }
+        .alert("Error", isPresented: $showingErrorAlert) {
+            Button("OK") {}
+        } message: {
+            Text(errorMessage)
+        }
+    }
+    
+    // MARK: - Photo Loading Functions
+    
+    @MainActor
+    private func loadSelectedPhotos(from items: [PhotosPickerItem]) async {
+        for item in items {
+            guard let imageData = try? await item.loadTransferable(type: Data.self),
+                  let uiImage = UIImage(data: imageData) else { continue }
+            
+            // Resize image for better performance
+            let resizedImage = resizeImage(uiImage, maxSize: CGSize(width: 1200, height: 1200))
+            selectedImages.append(resizedImage)
+        }
+        photoPickerItems = []
+    }
+    
+    private func resizeImage(_ image: UIImage, maxSize: CGSize) -> UIImage {
+        let size = image.size
+        let aspectRatio = size.width / size.height
+        
+        var newSize = maxSize
+        if aspectRatio > 1 {
+            newSize.height = maxSize.width / aspectRatio
+        } else {
+            newSize.width = maxSize.height * aspectRatio
+        }
+        
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
+    }
+    
+    // MARK: - Form Submission
+    
+    private func submitProperty() async {
+        guard validateForm() else { return }
+        
+        isSubmitting = true
+        
+        do {
+            // Upload photos first
+            var uploadedImageUrls: [String] = []
+            if !selectedImages.isEmpty {
+                isUploadingPhotos = true
+                uploadedImageUrls = try await uploadPhotos()
+                isUploadingPhotos = false
+            }
+            
+            // Create media items
+            let mediaItems = uploadedImageUrls.map { url in
+                MediaItem(
+                    url: url,
+                    type: "image",
+                    caption: nil
+                )
+            }
+            
+            // Convert price to Double
+            let priceValue = Double(price) ?? 0.0
+            
+            // Create a proper Codable struct for insertion
+            struct ListingInsert: Codable {
+                let id: String
+                let title: String
+                let price: Double
+                let city: String
+                let street: String
+                let postalCode: String
+                let house_type: String
+                let bedrooms: Int
+                let utilities: String
+                let description: String?
+                let media: [MediaItem]?
+                let user_email: String
+                let created_at: String
+                let updated_at: String
+            }
+            
+            let currentTime = ISO8601DateFormatter().string(from: Date())
+            let listingData = ListingInsert(
+                id: UUID().uuidString,
+                title: title,
+                price: priceValue,
+                city: location,
+                street: street,
+                postalCode: postalCode,
+                house_type: selectedPropertyType,
+                bedrooms: bedrooms,
+                utilities: utilities,
+                description: description.isEmpty ? nil : description,
+                media: mediaItems.isEmpty ? nil : mediaItems,
+                user_email: "zacoda1@hotmail.com",
+                created_at: currentTime,
+                updated_at: currentTime
+            )
+            
+            // Insert into Supabase
+            try await supabase
+                .from("listings")
+                .insert(listingData)
+                .execute()
+            
+            // Reset form
+            resetForm()
+            showingSuccessAlert = true
+            
+        } catch {
+            errorMessage = "Failed to post property: \(error.localizedDescription)"
+            showingErrorAlert = true
+        }
+        
+        isSubmitting = false
+    }
+    
+    private func uploadPhotos() async throws -> [String] {
+        // For now, return placeholder URLs until Supabase storage is properly configured
+        // TODO: Implement actual photo upload to Supabase Storage
+        var uploadedUrls: [String] = []
+        
+        for (index, _) in selectedImages.enumerated() {
+            let placeholderUrl = "https://via.placeholder.com/400x300.jpg?text=Photo\(index+1)"
+            uploadedUrls.append(placeholderUrl)
+        }
+        
+        return uploadedUrls
+    }
+    
+    private func validateForm() -> Bool {
+        titleError = title.isEmpty ? "Title is required" : ""
+        priceError = price.isEmpty || Double(price) == nil ? "Valid price is required" : ""
+        locationError = location.isEmpty ? "Location is required" : ""
+        
+        return titleError.isEmpty && priceError.isEmpty && locationError.isEmpty
+    }
+    
+    private func resetForm() {
+        title = ""
+        description = ""
+        price = ""
+        location = ""
+        street = ""
+        postalCode = ""
+        utilities = ""
+        bedrooms = 1
+        bathrooms = 1
+        selectedPropertyType = "Apartment"
+        selectedImages = []
+        photoPickerItems = []
+        titleError = ""
+        priceError = ""
+        locationError = ""
     }
 }
 
