@@ -2853,8 +2853,8 @@
                 });
 
                 const isImage = (file) => {
-                    const byType = file.type.startsWith('image/');
-                    const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                    const byType = file.type && file.type.startsWith('image/');
+                    const byExtension = file.name && file.name.match(/\.(jpg|jpeg|png)$/i);
                     return byType || byExtension;
                 };
 
@@ -4892,8 +4892,8 @@
             });
 
             const isImage = (file) => {
-                const byType = file.type.startsWith('image/');
-                const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                const byType = file.type && file.type.startsWith('image/');
+                const byExtension = file.name && file.name.match(/\.(jpg|jpeg|png)$/i);
                 return byType || byExtension;
             };
 
