@@ -76,7 +76,7 @@
             const backup = localStorage.getItem('currentUser_backup');
             
             if (!currentUser && backup) {
-                console.log('🔄 Restoring user from backup');
+                console.log('Restoring user from backup');
                 localStorage.setItem('currentUser', backup);
                 return true;
             }
@@ -89,7 +89,7 @@
         // Continuous monitoring and restoration
         setInterval(() => {
             if (restoreUserIfNeeded()) {
-                console.log('🔄 User data restored automatically');
+                console.log('User data restored automatically');
             }
             createUserBackup(); // Refresh backup
         }, 5000);
@@ -100,7 +100,7 @@
     <!-- UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js?v=2.0.2"></script>
     
-    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <!-- UNIVERSAL AUTHENTICATION MANAGER -->
     <script src="universal-auth-manager.js?v=2.0.1"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -606,7 +606,7 @@
                 
                 <div class="mobile-menu-items">
                     <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">Home</a>
-                    <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
+                    <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">Dashboard</a>
                     
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -751,7 +751,7 @@
                 <div class="border-b border-gray-200">
                     <nav class="flex space-x-8" aria-label="Tabs">
                         <button onclick="switchTab('documents')" id="tab-documents" class="feature-tab active border-b-2 border-blue-500 py-2 px-1 text-sm font-medium text-blue-600">
-                            📄 Smart Documents
+                            Smart Documents
                         </button>
                         <button onclick="switchTab('financial')" id="tab-financial" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
                             Financial Tools
@@ -766,7 +766,7 @@
                             📅 Timeline & Duration
                         </button>
                         <button onclick="switchTab('transfer')" id="tab-transfer" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-                            🔄 Transfer My Lease
+                            Transfer My Lease
                         </button>
                         <button onclick="switchTab('seeking')" id="tab-seeking" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
                             Find a Sublease
@@ -786,7 +786,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">🤖 AI Contract Detail Extractor</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">AI Contract Detail Extractor</h3>
                             <p class="text-gray-600 mb-4">Upload your lease contract and let our AI extract all the property details automatically</p>
                             <label for="contractFile" class="cursor-pointer modern-button inline-block">
                                 Upload Contract
@@ -814,7 +814,7 @@
                         
                         <!-- Compatibility Results -->
                         <div id="compatibilityResults" class="hidden mt-6 p-4 bg-white rounded-lg border">
-                            <h4 class="font-semibold text-gray-800 mb-3">📋 Lease Compatibility Report</h4>
+                            <h4 class="font-semibold text-gray-800 mb-3">Lease Compatibility Report</h4>
                             <div id="compatibilityContent"></div>
                         </div>
                     </div>
@@ -824,17 +824,17 @@
                         <h4 class="text-lg font-semibold text-gray-800 mb-4">Legal Document Generator</h4>
                         <div class="grid md:grid-cols-3 gap-4">
                             <button type="button" onclick="generateDocument('sublease')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
-                                <div class="text-2xl mb-2">📋</div>
+                                <div class="text-2xl mb-2"></div>
                                 <div class="font-medium">Sublease Agreement</div>
                                 <div class="text-sm text-gray-600">Legal sublease contract</div>
                             </button>
                             <button type="button" onclick="generateDocument('consent')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
-                                <div class="text-2xl mb-2">✍️</div>
+                                <div class="text-2xl mb-2"></div>
                                 <div class="font-medium">Landlord Consent</div>
                                 <div class="text-sm text-gray-600">Permission form</div>
                             </button>
                             <button type="button" onclick="generateDocument('addendum')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
-                                <div class="text-2xl mb-2">📄</div>
+                                <div class="text-2xl mb-2"></div>
                                 <div class="font-medium">Lease Addendum</div>
                                 <div class="text-sm text-gray-600">Additional terms</div>
                             </button>
@@ -867,7 +867,7 @@
                         </div>
                         
                         <div class="mt-6 p-4 bg-white rounded-lg">
-                            <h5 class="font-medium text-gray-800 mb-3">📊 Financial Breakdown</h5>
+                            <h5 class="font-medium text-gray-800 mb-3">Financial Breakdown</h5>
                             <div id="financialBreakdown" class="space-y-2 text-sm">
                                 <div class="flex justify-between">
                                     <span>Recommended Sublease Rent:</span>
@@ -977,7 +977,7 @@
                             <div>
                                 <label class="flex items-center mb-2">
                                     <input type="checkbox" name="handoverItems" value="inventory" class="mr-3 text-green-600">
-                                    <span class="text-sm">📋 Inventory Documentation</span>
+                                    <span class="text-sm">Inventory Documentation</span>
                                 </label>
                                 <label class="flex items-center mb-2">
                                     <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
@@ -1002,7 +1002,7 @@
 
                     <!-- Inventory Documentation -->
                     <div class="bg-orange-50 border border-orange-200 rounded-xl p-6 mb-6">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">📋 Inventory Documentation</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Inventory Documentation</h4>
                         <p class="text-gray-600 mb-4">Document the condition of furniture and appliances before handover</p>
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
@@ -1147,7 +1147,7 @@
                         <h4 class="text-lg font-semibold text-gray-800 mb-4">Tenant Screening Requirements</h4>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <h5 class="font-medium mb-3">📋 Required Documents</h5>
+                                <h5 class="font-medium mb-3">Required Documents</h5>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
                                         <input type="checkbox" name="requirements" value="id" class="mr-3">
@@ -1236,10 +1236,10 @@
 
                     <!-- Duration Options -->
                     <div class="bg-cyan-50 border border-cyan-200 rounded-xl p-6">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">⏱️ Sublease Duration Options</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Sublease Duration Options</h4>
                         <div class="grid md:grid-cols-3 gap-4">
                             <div>
-                                <h5 class="font-medium mb-3">📋 Minimum Stay</h5>
+                                <h5 class="font-medium mb-3">Minimum Stay</h5>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
                                         <input type="radio" name="minStay" value="1month" class="mr-3">
@@ -1292,7 +1292,7 @@
                 <!-- Transfer My Lease Section -->
                 <div id="section-transfer" class="feature-section hidden">
                     <div class="bg-gradient-to-r from-red-50 to-orange-50 p-6 rounded-xl border-2 border-dashed border-red-300 mb-6">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔄 Transfer Your Lease</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Transfer Your Lease</h4>
                         <p class="text-gray-600 mb-4">Need to get out of your lease? Find someone to take over your sublease with our matching system.</p>
                         
                         <div class="grid md:grid-cols-2 gap-6">
@@ -1449,7 +1449,7 @@
                         </div>
                         
                         <button type="button" onclick="submitTransferRequest()" class="mt-6 w-full modern-button">
-                            🔄 List My Transfer Request
+                            List My Transfer Request
                         </button>
                         
                         <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
@@ -1692,7 +1692,7 @@
                     </div>
                     
                     <div class="mt-6 p-4 bg-white rounded-lg">
-                        <h5 class="font-medium text-gray-800 mb-3">📊 Financial Breakdown</h5>
+                        <h5 class="font-medium text-gray-800 mb-3">Financial Breakdown</h5>
                         <div id="financialBreakdown" class="space-y-2 text-sm">
                             <div class="flex justify-between">
                                 <span>Recommended Sublease Rent:</span>
@@ -1813,7 +1813,7 @@
                         <div>
                             <label class="flex items-center mb-2">
                                 <input type="checkbox" name="handoverItems" value="inventory" class="mr-3 text-green-600">
-                                <span class="text-sm">📋 Inventory Documentation</span>
+                                <span class="text-sm">Inventory Documentation</span>
                             </label>
                             <label class="flex items-center mb-2">
                                 <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
@@ -2755,7 +2755,7 @@
                 ${compatibilityData.requiresConsent ? `
                     <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-blue-800">📄 Need landlord consent form?</span>
+                            <span class="text-sm font-medium text-blue-800">Need landlord consent form?</span>
                             <button onclick="generateConsentForm()" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition">
                                 Generate Form
                             </button>
@@ -2806,7 +2806,7 @@
         }
 
         function generateConsentForm() {
-            alert('📄 Landlord consent form template has been generated and emailed to you! (Feature in development)');
+            alert('Landlord consent form template has been generated and emailed to you! (Feature in development)');
         }
 
         // Tab Navigation Functions
@@ -2849,7 +2849,7 @@
                 'inventory': 'Inventory & Condition Report'
             };
             
-            alert(`📄 ${documentTypes[selectedType]} has been generated! (Feature in development)`);
+            alert(`${documentTypes[selectedType]} has been generated! (Feature in development)`);
         }
 
         // Compatibility Check Button Handler
