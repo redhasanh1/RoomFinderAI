@@ -116,19 +116,23 @@
         const ORIGINAL_LOCATION_RELOAD = window.location.reload;
         
         // Emergency protection: Block ALL redirects to login pages
-        Object.defineProperty(window.location, 'href', {
-            set: function(url) {
-                if (typeof url === 'string' && url.includes('/login')) {
-                    console.error('🚫 BLOCKED location.href redirect to login:', url);
-                    console.trace('Stack trace for blocked redirect:');
-                    return; // Block the redirect
+        try {
+            Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                    if (typeof url === 'string' && url.includes('/login')) {
+                        console.error('🚫 BLOCKED location.href redirect to login:', url);
+                        console.trace('Stack trace for blocked redirect:');
+                        return; // Block the redirect
+                    }
+                    return ORIGINAL_LOCATION_HREF.set.call(this, url);
+                },
+                get: function() {
+                    return ORIGINAL_LOCATION_HREF.get.call(this);
                 }
-                return ORIGINAL_LOCATION_HREF.set.call(this, url);
-            },
-            get: function() {
-                return ORIGINAL_LOCATION_HREF.get.call(this);
-            }
-        });
+            });
+        } catch (e) {
+            console.warn('Could not redefine location.href property (already defined):', e);
+        }
         
         window.location.assign = function(url) {
             if (typeof url === 'string' && url.includes('/login')) {
@@ -2858,7 +2862,7 @@
                     return byType || byExtension;
                 };
 
-                const primaryImage = media.length > 0 && isImage(media[0])
+                const primaryImage = media.length > 0 && media[0] && isImage(media[0])
                     ? media[0].url
                     : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
 
@@ -4897,7 +4901,7 @@
                 return byType || byExtension;
             };
 
-            const primaryImage = media.length > 0 && isImage(media[0])
+            const primaryImage = media.length > 0 && media[0] && isImage(media[0])
                 ? media[0].url
                 : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
 
