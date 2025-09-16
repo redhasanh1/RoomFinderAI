@@ -7,9 +7,9 @@
     <meta name="keywords" content="sublease, room rental, apartment sublease, housing">
     <title>Sublease Your Space - RoomFinderAI</title>
     
-    <!-- 🛡️ EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
+    <!-- EMERGENCY AUTHENTICATION PROTECTION SYSTEM -->
     <script>
-        console.log('🛡️ Initializing Emergency Authentication Protection System for Sublease Page...');
+        console.log('Initializing Emergency Authentication Protection System for Sublease Page...');
         
         // Store original functions to prevent blocking
         const ORIGINAL_LOCATION_HREF = Object.getOwnPropertyDescriptor(window.location, 'href');
@@ -20,7 +20,7 @@
         Object.defineProperty(window.location, 'href', {
             set: function(url) {
                 if (typeof url === 'string' && url.includes('/login')) {
-                    console.error('🚫 BLOCKED location.href redirect to login:', url);
+                    console.error('BLOCKED location.href redirect to login:', url);
                     console.trace('Stack trace for blocked redirect:');
                     return; // Block the redirect
                 }
@@ -33,7 +33,7 @@
         
         window.location.assign = function(url) {
             if (typeof url === 'string' && url.includes('/login')) {
-                console.error('🚫 BLOCKED location.assign to login:', url);
+                console.error('BLOCKED location.assign to login:', url);
                 console.trace('Stack trace for blocked redirect:');
                 return; // Block the redirect
             }
@@ -42,7 +42,7 @@
         
         window.location.replace = function(url) {
             if (typeof url === 'string' && url.includes('/login')) {
-                console.error('🚫 BLOCKED location.replace to login:', url);
+                console.error('BLOCKED location.replace to login:', url);
                 console.trace('Stack trace for blocked redirect:');
                 return; // Block the redirect
             }
@@ -94,10 +94,10 @@
             createUserBackup(); // Refresh backup
         }, 5000);
         
-        console.log('✅ Emergency Authentication Protection System Active');
+        console.log('Emergency Authentication Protection System Active');
     </script>
     
-    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
+    <!-- UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js?v=2.0.2"></script>
     
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
@@ -605,13 +605,13 @@
                 </div>
                 
                 <div class="mobile-menu-items">
-                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">Home</a>
                     <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
                     
                     <!-- Browse Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
-                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                            Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
@@ -668,7 +668,7 @@
                 </p>
                 <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
                     <button onclick="document.getElementById('subleaseForm').scrollIntoView({behavior: 'smooth'})" class="cta-button">
-                        📝 Create Listing
+                        Create Listing
                     </button>
                     <button onclick="document.getElementById('howItWorks').scrollIntoView({behavior: 'smooth'})" class="bg-white text-gray-800 px-8 py-4 rounded-full font-semibold hover:bg-gray-100 transition-all duration-300">
                         How It Works
@@ -754,7 +754,7 @@
                             📄 Smart Documents
                         </button>
                         <button onclick="switchTab('financial')" id="tab-financial" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-                            💰 Financial Tools
+                            Financial Tools
                         </button>
                         <button onclick="switchTab('handover')" id="tab-handover" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
                             🤝 Handover & Coordination
@@ -769,7 +769,7 @@
                             🔄 Transfer My Lease
                         </button>
                         <button onclick="switchTab('seeking')" id="tab-seeking" class="feature-tab border-b-2 border-transparent py-2 px-1 text-sm font-medium text-gray-500 hover:text-gray-700">
-                            🔍 Find a Sublease
+                            Find a Sublease
                         </button>
                     </nav>
                 </div>
@@ -805,10 +805,10 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                 </svg>
                             </div>
-                            <h3 class="text-lg font-semibold text-gray-900 mb-2">🔍 Smart Lease Compatibility Checker</h3>
+                            <h3 class="text-lg font-semibold text-gray-900 mb-2">Smart Lease Compatibility Checker</h3>
                             <p class="text-gray-600 mb-4">Check if your lease allows subletting and get legal guidance</p>
                             <button type="button" id="compatibilityCheckBtn" class="modern-button bg-gradient-to-r from-yellow-500 to-orange-600">
-                                🔍 Check Subletting Rights
+                                Check Subletting Rights
                             </button>
                         </div>
                         
@@ -821,7 +821,7 @@
 
                     <!-- Legal Document Generator -->
                     <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl border border-green-200">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">📝 Legal Document Generator</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Legal Document Generator</h4>
                         <div class="grid md:grid-cols-3 gap-4">
                             <button type="button" onclick="generateDocument('sublease')" class="p-4 bg-white rounded-lg border border-green-200 hover:border-green-400 transition text-center">
                                 <div class="text-2xl mb-2">📋</div>
@@ -846,7 +846,7 @@
                 <div id="section-financial" class="feature-section hidden">
                     <!-- Sublease Financial Calculator -->
                     <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-6 mb-6">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">💰 Sublease Financial Calculator</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Sublease Financial Calculator</h4>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
@@ -981,7 +981,7 @@
                                 </label>
                                 <label class="flex items-center mb-2">
                                     <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
-                                    <span class="text-sm">💰 Security Deposit Transfer</span>
+                                    <span class="text-sm">Security Deposit Transfer</span>
                                 </label>
                                 <label class="flex items-center mb-2">
                                     <input type="checkbox" name="handoverItems" value="cleaning" class="mr-3 text-green-600">
@@ -996,7 +996,7 @@
                         
                         <div class="mt-4 p-3 bg-white rounded-lg">
                             <p class="text-sm text-gray-600 mb-2">📅 We'll create a custom handover timeline and checklist for your selected items.</p>
-                            <p class="text-sm text-green-600 font-medium">✅ Professional handover reduces disputes and ensures smooth transitions</p>
+                            <p class="text-sm text-green-600 font-medium">Professional handover reduces disputes and ensures smooth transitions</p>
                         </div>
                     </div>
 
@@ -1069,7 +1069,7 @@
                         
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <h5 class="font-medium mb-3">🏠 Living Style Preferences</h5>
+                                <h5 class="font-medium mb-3">Living Style Preferences</h5>
                                 <div class="space-y-2">
                                     <label class="flex items-center">
                                         <input type="radio" name="lifestyle" value="quiet" class="mr-3">
@@ -1114,7 +1114,7 @@
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" name="cleanliness" value="moderate" class="mr-3">
-                                        <span class="text-sm">🏠 Moderately Tidy</span>
+                                        <span class="text-sm">Moderately Tidy</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="radio" name="cleanliness" value="relaxed" class="mr-3">
@@ -1144,7 +1144,7 @@
 
                     <!-- Tenant Screening Requirements -->
                     <div class="bg-indigo-50 border border-indigo-200 rounded-xl p-6">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔍 Tenant Screening Requirements</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Tenant Screening Requirements</h4>
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <h5 class="font-medium mb-3">📋 Required Documents</h5>
@@ -1155,15 +1155,15 @@
                                     </label>
                                     <label class="flex items-center">
                                         <input type="checkbox" name="requirements" value="income" class="mr-3">
-                                        <span class="text-sm">💰 Income Verification</span>
+                                        <span class="text-sm">Income Verification</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="checkbox" name="requirements" value="references" class="mr-3">
-                                        <span class="text-sm">📞 References (2-3)</span>
+                                        <span class="text-sm">References (2-3)</span>
                                     </label>
                                     <label class="flex items-center">
                                         <input type="checkbox" name="requirements" value="background" class="mr-3">
-                                        <span class="text-sm">🔍 Background Check</span>
+                                        <span class="text-sm">Background Check</span>
                                     </label>
                                 </div>
                             </div>
@@ -1226,7 +1226,7 @@
                                     <div>
                                         <label class="flex items-center">
                                             <input type="checkbox" name="flexibleDates" value="negotiable" class="mr-3">
-                                            <span class="text-sm">📝 Dates Negotiable</span>
+                                            <span class="text-sm">Dates Negotiable</span>
                                         </label>
                                     </div>
                                 </div>
@@ -1277,7 +1277,7 @@
                                 <div class="space-y-2">
                                     <label class="flex items-center">
                                         <input type="checkbox" name="earlyTermination" value="allowed" class="mr-3">
-                                        <span class="text-sm">✅ Allowed with Notice</span>
+                                        <span class="text-sm">Allowed with Notice</span>
                                     </label>
                                     <div class="ml-6">
                                         <label class="block text-sm text-gray-600 mb-1">Notice Period (days)</label>
@@ -1297,11 +1297,11 @@
                         
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <label for="transferAddress" class="block text-sm font-medium text-gray-700 mb-2">📍 Property Address</label>
+                                <label for="transferAddress" class="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
                                 <input type="text" id="transferAddress" class="modern-input w-full" placeholder="123 Main St, City, State">
                             </div>
                             <div>
-                                <label for="transferRent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
+                                <label for="transferRent" class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
                                 <input type="number" id="transferRent" class="modern-input w-full" placeholder="1200">
                             </div>
                             <div>
@@ -1315,7 +1315,7 @@
                         </div>
                         
                         <div class="mt-6">
-                            <label for="transferReason" class="block text-sm font-medium text-gray-700 mb-2">📝 Reason for Transfer</label>
+                            <label for="transferReason" class="block text-sm font-medium text-gray-700 mb-2">Reason for Transfer</label>
                             <select id="transferReason" class="modern-input w-full">
                                 <option value="">Select a reason...</option>
                                 <option value="job_relocation">Job Relocation</option>
@@ -1328,7 +1328,7 @@
                         </div>
                         
                         <div class="mt-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Property Type</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
                             <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
                                     <input type="radio" name="transferPropertyType" value="apartment" class="mr-2">
@@ -1336,7 +1336,7 @@
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
                                     <input type="radio" name="transferPropertyType" value="house" class="mr-2">
-                                    <span class="text-sm">🏠 House</span>
+                                    <span class="text-sm">House</span>
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
                                     <input type="radio" name="transferPropertyType" value="room" class="mr-2">
@@ -1344,7 +1344,7 @@
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
                                     <input type="radio" name="transferPropertyType" value="studio" class="mr-2">
-                                    <span class="text-sm">🏠 Studio</span>
+                                    <span class="text-sm">Studio</span>
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-red-300 cursor-pointer transition">
                                     <input type="radio" name="transferPropertyType" value="condo" class="mr-2">
@@ -1375,7 +1375,7 @@
                         </div>
                         
                         <div class="mt-6">
-                            <label for="transferDescription" class="block text-sm font-medium text-gray-700 mb-2">📝 Property Description</label>
+                            <label for="transferDescription" class="block text-sm font-medium text-gray-700 mb-2">Property Description</label>
                             <textarea id="transferDescription" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..."></textarea>
                         </div>
                         
@@ -1465,7 +1465,7 @@
                 <!-- Find a Sublease Section -->
                 <div id="section-seeking" class="feature-section hidden">
                     <div class="bg-gradient-to-r from-green-50 to-teal-50 p-6 rounded-xl border-2 border-dashed border-green-300 mb-6">
-                        <h4 class="text-lg font-semibold text-gray-800 mb-4">🔍 Find a Sublease</h4>
+                        <h4 class="text-lg font-semibold text-gray-800 mb-4">Find a Sublease</h4>
                         <p class="text-gray-600 mb-4">Looking for a sublease? Tell us what you need and we'll match you with available transfers.</p>
                         
                         <div class="grid md:grid-cols-2 gap-6">
@@ -1474,15 +1474,15 @@
                                 <input type="text" id="seekingCity" class="modern-input w-full" placeholder="Enter city name">
                             </div>
                             <div>
-                                <label for="seekingState" class="block text-sm font-medium text-gray-700 mb-2">📍 State/Province</label>
+                                <label for="seekingState" class="block text-sm font-medium text-gray-700 mb-2">State/Province</label>
                                 <input type="text" id="seekingState" class="modern-input w-full" placeholder="Enter state or province">
                             </div>
                             <div>
-                                <label for="seekingMinBudget" class="block text-sm font-medium text-gray-700 mb-2">💰 Min Budget</label>
+                                <label for="seekingMinBudget" class="block text-sm font-medium text-gray-700 mb-2">Min Budget</label>
                                 <input type="number" id="seekingMinBudget" class="modern-input w-full" placeholder="800">
                             </div>
                             <div>
-                                <label for="seekingMaxBudget" class="block text-sm font-medium text-gray-700 mb-2">💰 Max Budget</label>
+                                <label for="seekingMaxBudget" class="block text-sm font-medium text-gray-700 mb-2">Max Budget</label>
                                 <input type="number" id="seekingMaxBudget" class="modern-input w-full" placeholder="1500">
                             </div>
                             <div>
@@ -1496,7 +1496,7 @@
                         </div>
                         
                         <div class="mt-6">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">🏠 Property Type Preference</label>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Property Type Preference</label>
                             <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
                                     <input type="checkbox" name="seekingPropertyType" value="apartment" class="mr-2">
@@ -1504,7 +1504,7 @@
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
                                     <input type="checkbox" name="seekingPropertyType" value="house" class="mr-2">
-                                    <span class="text-sm">🏠 House</span>
+                                    <span class="text-sm">House</span>
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
                                     <input type="checkbox" name="seekingPropertyType" value="room" class="mr-2">
@@ -1512,7 +1512,7 @@
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
                                     <input type="checkbox" name="seekingPropertyType" value="studio" class="mr-2">
-                                    <span class="text-sm">🏠 Studio</span>
+                                    <span class="text-sm">Studio</span>
                                 </label>
                                 <label class="flex items-center p-3 border border-gray-200 rounded-lg hover:border-green-300 cursor-pointer transition">
                                     <input type="checkbox" name="seekingPropertyType" value="condo" class="mr-2">
@@ -1555,7 +1555,7 @@
                         </div>
                         
                         <div class="mt-6">
-                            <label for="seekingDescription" class="block text-sm font-medium text-gray-700 mb-2">📝 What You're Looking For</label>
+                            <label for="seekingDescription" class="block text-sm font-medium text-gray-700 mb-2">What You're Looking For</label>
                             <textarea id="seekingDescription" rows="4" class="modern-input w-full" placeholder="Describe your ideal living situation, preferences, and any specific requirements..."></textarea>
                         </div>
                         
@@ -1636,7 +1636,7 @@
                         </div>
                         
                         <button type="button" onclick="submitSeekingRequest()" class="mt-6 w-full modern-button" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-                            🔍 Create My Seeking Request
+                            Create My Seeking Request
                         </button>
                         
                         <button type="button" onclick="testSupabaseConnection()" class="mt-3 w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">
@@ -1655,11 +1655,11 @@
                 <!-- Manual Entry Fields -->
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
-                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">📍 Property Address</label>
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
                         <input type="text" id="address" name="address" class="modern-input w-full" placeholder="123 Main St, Toronto, ON" required aria-required="true">
                     </div>
                     <div>
-                        <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">💰 Monthly Rent</label>
+                        <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
                         <div class="relative">
                             <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
                             <button type="button" id="calculateRentBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 text-sm font-medium">
@@ -1671,7 +1671,7 @@
                 
                 <!-- Sublease Financial Calculator -->
                 <div id="financialCalculator" class="hidden bg-yellow-50 border border-yellow-200 rounded-xl p-6">
-                    <h4 class="text-lg font-semibold text-gray-800 mb-4">💰 Sublease Financial Calculator</h4>
+                    <h4 class="text-lg font-semibold text-gray-800 mb-4">Sublease Financial Calculator</h4>
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
@@ -1728,7 +1728,7 @@
                     </div>
                 </div>
                 <div>
-                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">📝 Property Description</label>
+                    <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Property Description</label>
                     <textarea id="description" name="description" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..." required aria-required="true"></textarea>
                     <p class="text-sm text-gray-500 mt-2">💡 Tip: Our AI can help optimize your description for better visibility</p>
                 </div>
@@ -1817,7 +1817,7 @@
                             </label>
                             <label class="flex items-center mb-2">
                                 <input type="checkbox" name="handoverItems" value="deposit" class="mr-3 text-green-600">
-                                <span class="text-sm">💰 Security Deposit Transfer</span>
+                                <span class="text-sm">Security Deposit Transfer</span>
                             </label>
                             <label class="flex items-center mb-2">
                                 <input type="checkbox" name="handoverItems" value="cleaning" class="mr-3 text-green-600">
@@ -1832,7 +1832,7 @@
                     
                     <div class="mt-4 p-3 bg-white rounded-lg">
                         <p class="text-sm text-gray-600 mb-2">📅 We'll create a custom handover timeline and checklist for your selected items.</p>
-                        <p class="text-sm text-green-600 font-medium">✅ Professional handover reduces disputes and ensures smooth transitions</p>
+                        <p class="text-sm text-green-600 font-medium">Professional handover reduces disputes and ensures smooth transitions</p>
                     </div>
                 </div>
 
@@ -2377,7 +2377,7 @@
             if (data.amenities.length > 0) results.push(`✓ <strong>Amenities:</strong> ${data.amenities.join(', ')}`);
             
             if (results.length === 0) {
-                results.push('❌ No data could be extracted from the document. Please check file quality and try again.');
+                results.push('No data could be extracted from the document. Please check file quality and try again.');
             }
 
             content.innerHTML = `
@@ -2714,11 +2714,11 @@
             let statusIcon, statusColor, statusText;
             
             if (compatibilityData.sublettingAllowed === true) {
-                statusIcon = '✅';
+                statusIcon = 'Success';
                 statusColor = 'text-green-600';
                 statusText = compatibilityData.requiresConsent ? 'Allowed with Consent' : 'Subletting Allowed';
             } else if (compatibilityData.sublettingAllowed === false) {
-                statusIcon = '❌';
+                statusIcon = 'Error';
                 statusColor = 'text-red-600';
                 statusText = 'Subletting Prohibited';
             } else {
@@ -2765,7 +2765,7 @@
 
                 ${extractedData.address && extractedData.rent ? `
                     <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                        <p class="text-sm text-green-800 font-medium">✅ Property details extracted and pre-filled</p>
+                        <p class="text-sm text-green-800 font-medium">Property details extracted and pre-filled</p>
                     </div>
                 ` : ''}
             `;
@@ -3118,13 +3118,13 @@
                 console.log('Supabase test result:', result);
                 
                 if (result.success) {
-                    alert('✅ Supabase Connection Test PASSED\n\nConnection is working correctly.\nFound ' + result.rowCount + ' existing records.');
+                    alert('Supabase Connection Test PASSED\n\nConnection is working correctly.\nFound ' + result.rowCount + ' existing records.');
                 } else {
-                    alert('❌ Supabase Connection Test FAILED\n\nError: ' + result.error + '\nCode: ' + result.code + '\n\nThis indicates a database permission or RLS policy issue.');
+                    alert('Supabase Connection Test FAILED\n\nError: ' + result.error + '\nCode: ' + result.code + '\n\nThis indicates a database permission or RLS policy issue.');
                 }
             } catch (error) {
                 console.error('Connection test error:', error);
-                alert('❌ Connection test failed. Check console for details.');
+                alert('Connection test failed. Check console for details.');
             }
         }
 
@@ -3140,10 +3140,10 @@
                 
                 if (result.success) {
                     let message = '🔧 Database Debug Results:\n\n';
-                    message += `✅ Supabase Connection: ${result.checks.supabase_connection ? 'OK' : 'FAILED'}\n`;
-                    message += `✅ sublease_requests table: ${result.checks.sublease_requests_table ? 'OK' : 'MISSING'}\n`;
-                    message += `✅ sublease_matches table: ${result.checks.sublease_matches_table ? 'OK' : 'MISSING'}\n`;
-                    message += `✅ set_user_context function: ${result.checks.user_context_function ? 'OK' : 'MISSING'}\n\n`;
+                    message += `Supabase Connection: ${result.checks.supabase_connection ? 'OK' : 'FAILED'}\n`;
+                    message += `sublease_requests table: ${result.checks.sublease_requests_table ? 'OK' : 'MISSING'}\n`;
+                    message += `sublease_matches table: ${result.checks.sublease_matches_table ? 'OK' : 'MISSING'}\n`;
+                    message += `set_user_context function: ${result.checks.user_context_function ? 'OK' : 'MISSING'}\n\n`;
                     
                     message += 'Recommendations:\n';
                     result.recommendations.forEach((rec, index) => {
