@@ -2092,7 +2092,7 @@
             modal.classList.add('active'); // Use class for animation
             console.log('✅ Modal shown for listing:', listing.title);
 
-            // Debug: Check if chat button exists after modal is shown
+            // Enhanced modal ready state verification and multiple event listener strategies
             setTimeout(() => {
                 const chatBtn = document.getElementById('modalChatButton');
                 console.log('🔍 Modal debug info:', {
@@ -2100,31 +2100,98 @@
                     chatButtonExists: !!chatBtn,
                     chatButtonText: chatBtn?.textContent,
                     chatButtonClasses: chatBtn?.className,
-                    modalInnerHTML: modal.innerHTML.includes('modalChatButton')
+                    modalInnerHTML: modal.innerHTML.includes('modalChatButton'),
+                    chatButtonParent: chatBtn?.parentElement?.tagName,
+                    modalZIndex: window.getComputedStyle(modal).zIndex
                 });
 
-                // Add fallback click listener directly to the modal
-                if (chatBtn && !chatBtn.hasAttribute('data-click-listener-added')) {
-                    chatBtn.setAttribute('data-click-listener-added', 'true');
-                    chatBtn.addEventListener('click', function(e) {
-                        console.log('🎯 Direct chat button click detected!');
-                        e.preventDefault();
-                        e.stopPropagation();
+                if (chatBtn) {
+                    // Strategy 1: Direct click listener (if not already added)
+                    if (!chatBtn.hasAttribute('data-direct-listener-added')) {
+                        chatBtn.setAttribute('data-direct-listener-added', 'true');
+                        chatBtn.addEventListener('click', function(e) {
+                            console.log('🎯 Direct chat button click detected!');
+                            e.preventDefault();
+                            e.stopPropagation();
 
-                        if (currentListing) {
-                            console.log('🏠 Starting conversation for current listing:', currentListing.title);
-                            try {
-                                startConversation(currentListing);
-                            } catch (error) {
-                                console.error('💥 Error calling startConversation:', error);
-                                alert('Error starting chat: ' + error.message);
+                            if (currentListing) {
+                                console.log('🏠 Starting conversation for current listing:', currentListing.title);
+                                try {
+                                    startConversation(currentListing);
+                                } catch (error) {
+                                    console.error('💥 Error calling startConversation:', error);
+                                    alert('Error starting chat: ' + error.message);
+                                }
+                            } else {
+                                console.error('❌ No current listing available for chat');
+                                alert('Please select a listing first to start a chat.');
                             }
-                        } else {
-                            console.error('❌ No current listing available for chat');
-                            alert('Please select a listing first to start a chat.');
+                        });
+                        console.log('🔧 Added direct click listener to chat button');
+                    }
+
+                    // Strategy 2: Mousedown and touchstart events for better mobile support
+                    if (!chatBtn.hasAttribute('data-mobile-listeners-added')) {
+                        chatBtn.setAttribute('data-mobile-listeners-added', 'true');
+
+                        ['mousedown', 'touchstart'].forEach(eventType => {
+                            chatBtn.addEventListener(eventType, function(e) {
+                                console.log(`📱 ${eventType} event on chat button`);
+
+                                // Add visual feedback
+                                this.style.transform = 'scale(0.95)';
+                                setTimeout(() => {
+                                    this.style.transform = '';
+                                }, 150);
+                            });
+                        });
+                        console.log('📱 Added mobile support listeners to chat button');
+                    }
+
+                    // Strategy 3: Make button highly interactive with CSS pointer events
+                    chatBtn.style.pointerEvents = 'auto';
+                    chatBtn.style.cursor = 'pointer';
+                    chatBtn.style.userSelect = 'none';
+
+                    // Strategy 4: Add aria attributes for accessibility
+                    chatBtn.setAttribute('role', 'button');
+                    chatBtn.setAttribute('tabindex', '0');
+
+                    // Strategy 5: Keyboard support
+                    if (!chatBtn.hasAttribute('data-keyboard-listener-added')) {
+                        chatBtn.setAttribute('data-keyboard-listener-added', 'true');
+                        chatBtn.addEventListener('keydown', function(e) {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                console.log('⌨️ Keyboard activation of chat button');
+                                this.click();
+                            }
+                        });
+                        console.log('⌨️ Added keyboard support to chat button');
+                    }
+
+                    // Strategy 6: Fallback timer-based verification
+                    setTimeout(() => {
+                        if (modal.classList.contains('active') && chatBtn.offsetParent === null) {
+                            console.warn('⚠️ Chat button appears to be hidden, attempting to make visible');
+                            chatBtn.style.display = 'block';
+                            chatBtn.style.visibility = 'visible';
                         }
-                    });
-                    console.log('🔧 Added direct click listener to chat button');
+                    }, 200);
+
+                } else {
+                    console.error('❌ Chat button not found in modal after 100ms delay');
+                    // Try to recreate the button if it's missing
+                    const buttonContainer = modal.querySelector('.flex.justify-center');
+                    if (buttonContainer && !document.getElementById('modalChatButton')) {
+                        console.log('🔧 Recreating missing chat button...');
+                        const newChatButton = document.createElement('button');
+                        newChatButton.id = 'modalChatButton';
+                        newChatButton.className = 'w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg';
+                        newChatButton.textContent = 'Chat with Landlord';
+                        buttonContainer.appendChild(newChatButton);
+                        console.log('✅ Recreated chat button');
+                    }
                 }
             }, 100);
         };
@@ -4809,16 +4876,37 @@
             };
         };
 
-        // Function to manually trigger chat button click for testing
+        // Enhanced fallback mechanisms and comprehensive testing functions
         window.testChatButtonClick = function() {
             console.log('🔘 Manually testing chat button click...');
             const chatButton = document.getElementById('modalChatButton');
             if (chatButton) {
                 console.log('✅ Chat button found, simulating click...');
+
+                // Test multiple click strategies
+                console.log('📋 Testing Strategy 1: Direct click()');
                 chatButton.click();
+
+                setTimeout(() => {
+                    console.log('📋 Testing Strategy 2: Programmatic event dispatch');
+                    const clickEvent = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    chatButton.dispatchEvent(clickEvent);
+                }, 100);
+
+                setTimeout(() => {
+                    console.log('📋 Testing Strategy 3: Manual startConversation call');
+                    if (currentListing && typeof startConversation === 'function') {
+                        startConversation(currentListing);
+                    }
+                }, 200);
+
             } else {
                 console.error('❌ Chat button not found! Make sure a listing modal is open.');
-                // Try to open a listing modal first
+                // Fallback: Try to open a listing modal first
                 const firstListing = document.querySelector('.listing-card');
                 if (firstListing) {
                     console.log('🔄 Opening first listing to test chat...');
@@ -4827,11 +4915,113 @@
                         const chatBtn = document.getElementById('modalChatButton');
                         if (chatBtn) {
                             console.log('✅ Chat button now available, clicking...');
-                            chatBtn.click();
+                            window.testChatButtonClick(); // Recursive call
+                        } else {
+                            console.error('❌ Still no chat button after opening modal');
+                            window.forceChatButtonCreation();
                         }
                     }, 500);
+                } else {
+                    console.error('❌ No listing cards found to open');
+                    window.debugFullChatFlow();
                 }
             }
+        };
+
+        // Fallback mechanism: Force chat button creation
+        window.forceChatButtonCreation = function() {
+            console.log('🛠️ Force creating chat button as fallback...');
+            const modal = document.getElementById('listingModal');
+            if (!modal) {
+                console.error('❌ No modal found to add chat button to');
+                return;
+            }
+
+            let buttonContainer = modal.querySelector('.flex.justify-center');
+            if (!buttonContainer) {
+                // Create button container if it doesn't exist
+                buttonContainer = document.createElement('div');
+                buttonContainer.className = 'flex justify-center';
+                modal.querySelector('.modal-content')?.appendChild(buttonContainer);
+            }
+
+            // Remove existing chat button if any
+            const existingButton = document.getElementById('modalChatButton');
+            if (existingButton) {
+                existingButton.remove();
+            }
+
+            // Create new chat button
+            const chatButton = document.createElement('button');
+            chatButton.id = 'modalChatButton';
+            chatButton.className = 'w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg';
+            chatButton.textContent = 'Chat with Landlord';
+
+            // Add all event listeners
+            chatButton.addEventListener('click', function(e) {
+                console.log('🔧 Force-created button clicked!');
+                e.preventDefault();
+                e.stopPropagation();
+                if (currentListing && typeof startConversation === 'function') {
+                    startConversation(currentListing);
+                } else {
+                    alert('Chat system not ready. Please try again.');
+                }
+            });
+
+            buttonContainer.appendChild(chatButton);
+            console.log('✅ Force-created chat button added to modal');
+            return chatButton;
+        };
+
+        // Comprehensive chat flow debugging
+        window.debugFullChatFlow = function() {
+            console.log('🔍 === COMPREHENSIVE CHAT FLOW DEBUG ===');
+
+            const results = {
+                listingCards: document.querySelectorAll('.listing-card').length,
+                listingModal: !!document.getElementById('listingModal'),
+                chatModal: !!document.getElementById('chatModal'),
+                chatButton: !!document.getElementById('modalChatButton'),
+                currentListing: !!currentListing,
+                startConversationFunction: typeof startConversation,
+                supabaseClient: !!window.supabase,
+                currentUser: !!localStorage.getItem('currentUser'),
+                modalVisible: document.getElementById('listingModal')?.classList.contains('active'),
+                chatSystemStatus: window.chatSystemStatus || 'undefined'
+            };
+
+            console.table(results);
+
+            // Additional detailed checks
+            if (currentListing) {
+                console.log('📋 Current Listing Details:', {
+                    id: currentListing.id,
+                    title: currentListing.title,
+                    userEmail: currentListing.user_email,
+                    price: currentListing.price
+                });
+            }
+
+            const chatBtn = document.getElementById('modalChatButton');
+            if (chatBtn) {
+                console.log('🔍 Chat Button Analysis:', {
+                    visible: chatBtn.offsetParent !== null,
+                    bounds: chatBtn.getBoundingClientRect(),
+                    styles: {
+                        display: window.getComputedStyle(chatBtn).display,
+                        visibility: window.getComputedStyle(chatBtn).visibility,
+                        pointerEvents: window.getComputedStyle(chatBtn).pointerEvents
+                    },
+                    listeners: {
+                        directListener: chatBtn.hasAttribute('data-direct-listener-added'),
+                        mobileListeners: chatBtn.hasAttribute('data-mobile-listeners-added'),
+                        keyboardListener: chatBtn.hasAttribute('data-keyboard-listener-added')
+                    }
+                });
+            }
+
+            return results;
         };
 
         // Removed duplicate scroll functions - now using window.* versions defined at top
@@ -6882,7 +7072,7 @@
             }, 5000); // 5-second safety timeout
         });
         
-        // Enhanced chat button handler with debugging
+        // Enhanced chat button handler with multiple strategies and robust error handling
         document.addEventListener('click', function(e) {
             console.log('💬 Click detected on element:', e.target.id, e.target.tagName, 'Classes:', e.target.className);
 
@@ -6901,34 +7091,269 @@
                     startConversationFunction: typeof startConversation,
                     chatSystemStatus: window.chatSystemStatus || 'undefined',
                     clickedElement: e.target.tagName,
-                    buttonElement: chatButton.tagName
+                    buttonElement: chatButton.tagName,
+                    modalVisible: document.getElementById('listingModal')?.classList.contains('active'),
+                    chatButtonVisible: chatButton.offsetParent !== null,
+                    chatButtonBounds: chatButton.getBoundingClientRect()
                 });
 
                 // Prevent any default behavior
                 e.preventDefault();
                 e.stopPropagation();
 
-                // Check if we have a current listing
-                if (currentListing) {
-                    console.log('🏠 Starting conversation for current listing:', currentListing.title);
-                    console.log('📊 Listing details:', {
-                        id: currentListing.id,
-                        title: currentListing.title,
-                        userEmail: currentListing.user_email
-                    });
-
-                    try {
-                        startConversation(currentListing);
-                    } catch (error) {
-                        console.error('💥 Error calling startConversation:', error);
-                        alert('Error starting chat: ' + error.message);
-                    }
-                } else {
+                // Multiple verification steps with detailed logging
+                if (!currentListing) {
                     console.error('❌ No current listing available for chat');
-                    alert('Please select a listing first to start a chat.');
+                    console.log('🔍 Attempting to recover listing from modal state...');
+
+                    // Try to recover listing from modal title or other sources
+                    const modalTitle = document.getElementById('modalTitle')?.textContent;
+                    if (modalTitle) {
+                        console.log('🔄 Found modal title:', modalTitle, 'but no currentListing object');
+                    }
+
+                    alert('Please select a listing first to start a chat. If this error persists, try refreshing the page.');
+                    return;
+                }
+
+                // Verify startConversation function exists
+                if (typeof startConversation !== 'function') {
+                    console.error('❌ startConversation function not available');
+                    alert('Chat system not ready. Please refresh the page and try again.');
+                    return;
+                }
+
+                // Verify listing has required properties
+                if (!currentListing.user_email) {
+                    console.error('❌ Listing missing user_email:', currentListing);
+                    alert('Cannot start chat: Listing owner information not available.');
+                    return;
+                }
+
+                console.log('🏠 Starting conversation for current listing:', currentListing.title);
+                console.log('📊 Listing details:', {
+                    id: currentListing.id,
+                    title: currentListing.title,
+                    userEmail: currentListing.user_email,
+                    hasSupabase: !!window.supabase
+                });
+
+                try {
+                    // Add a visual indicator that chat is being started
+                    chatButton.textContent = 'Starting Chat...';
+                    chatButton.disabled = true;
+
+                    const result = startConversation(currentListing);
+
+                    // Handle both promise and non-promise results
+                    if (result && typeof result.then === 'function') {
+                        result.catch(error => {
+                            console.error('💥 Promise error in startConversation:', error);
+                            alert('Error starting chat: ' + error.message);
+                            // Reset button state
+                            chatButton.textContent = 'Chat with Landlord';
+                            chatButton.disabled = false;
+                        });
+                    }
+                } catch (error) {
+                    console.error('💥 Error calling startConversation:', error);
+                    alert('Error starting chat: ' + error.message);
+                    // Reset button state
+                    chatButton.textContent = 'Chat with Landlord';
+                    chatButton.disabled = false;
                 }
             }
         });
+
+        // Startup verification system for chat functionality
+        window.verifyChatSystemOnStartup = function() {
+            console.log('🚀 === CHAT SYSTEM STARTUP VERIFICATION ===');
+
+            const checks = [];
+
+            // Check 1: Essential DOM elements
+            checks.push({
+                name: 'Listing Modal',
+                status: !!document.getElementById('listingModal'),
+                element: 'listingModal'
+            });
+
+            checks.push({
+                name: 'Chat Modal',
+                status: !!document.getElementById('chatModal'),
+                element: 'chatModal'
+            });
+
+            // Check 2: Essential functions
+            checks.push({
+                name: 'showListingModal Function',
+                status: typeof window.showListingModal === 'function',
+                element: 'window.showListingModal'
+            });
+
+            checks.push({
+                name: 'startConversation Function',
+                status: typeof startConversation === 'function',
+                element: 'startConversation'
+            });
+
+            // Check 3: External dependencies
+            checks.push({
+                name: 'Supabase Client',
+                status: !!window.supabase,
+                element: 'window.supabase'
+            });
+
+            // Check 4: Listing system
+            const listingCards = document.querySelectorAll('.listing-card');
+            checks.push({
+                name: 'Listing Cards',
+                status: listingCards.length > 0,
+                element: `${listingCards.length} cards found`
+            });
+
+            // Display results
+            console.table(checks);
+
+            const failedChecks = checks.filter(check => !check.status);
+            if (failedChecks.length === 0) {
+                console.log('✅ All chat system components verified successfully!');
+                return true;
+            } else {
+                console.warn('⚠️ Some chat system components failed verification:', failedChecks);
+                return false;
+            }
+        };
+
+        // End-to-end chat flow test
+        window.testCompleteE2EChatFlow = function() {
+            console.log('🧪 === END-TO-END CHAT FLOW TEST ===');
+
+            return new Promise((resolve, reject) => {
+                const testResults = {
+                    startup: false,
+                    listingClick: false,
+                    modalOpen: false,
+                    chatButtonFound: false,
+                    chatButtonClick: false,
+                    conversationStart: false
+                };
+
+                // Step 1: Startup verification
+                testResults.startup = window.verifyChatSystemOnStartup();
+                if (!testResults.startup) {
+                    console.error('❌ Startup verification failed');
+                    resolve(testResults);
+                    return;
+                }
+
+                // Step 2: Find and click a listing
+                const firstListing = document.querySelector('.listing-card');
+                if (!firstListing) {
+                    console.error('❌ No listing cards found for testing');
+                    resolve(testResults);
+                    return;
+                }
+
+                console.log('🎯 Clicking first listing card...');
+                firstListing.click();
+                testResults.listingClick = true;
+
+                setTimeout(() => {
+                    // Step 3: Verify modal opened
+                    const modal = document.getElementById('listingModal');
+                    if (modal && modal.classList.contains('active')) {
+                        console.log('✅ Modal opened successfully');
+                        testResults.modalOpen = true;
+
+                        // Step 4: Find chat button
+                        const chatButton = document.getElementById('modalChatButton');
+                        if (chatButton) {
+                            console.log('✅ Chat button found in modal');
+                            testResults.chatButtonFound = true;
+
+                            // Step 5: Test chat button click
+                            console.log('🎯 Testing chat button click...');
+
+                            // Add temporary listener to detect conversation start
+                            const originalStartConversation = window.startConversation;
+                            let conversationStarted = false;
+
+                            window.startConversation = function(...args) {
+                                conversationStarted = true;
+                                console.log('✅ startConversation called successfully');
+                                testResults.conversationStart = true;
+
+                                // Restore original function
+                                window.startConversation = originalStartConversation;
+
+                                // Call original if it exists
+                                if (typeof originalStartConversation === 'function') {
+                                    return originalStartConversation.apply(this, args);
+                                }
+                            };
+
+                            // Click the button
+                            chatButton.click();
+                            testResults.chatButtonClick = true;
+
+                            setTimeout(() => {
+                                if (!conversationStarted) {
+                                    console.log('🔄 Direct click failed, trying programmatic event...');
+                                    const clickEvent = new MouseEvent('click', {
+                                        bubbles: true,
+                                        cancelable: true,
+                                        view: window
+                                    });
+                                    chatButton.dispatchEvent(clickEvent);
+                                }
+
+                                setTimeout(() => {
+                                    // Final verification
+                                    console.log('📊 === E2E TEST RESULTS ===');
+                                    console.table(testResults);
+
+                                    const successCount = Object.values(testResults).filter(Boolean).length;
+                                    const totalTests = Object.keys(testResults).length;
+
+                                    if (successCount === totalTests) {
+                                        console.log('🎉 ALL TESTS PASSED! Chat system fully functional.');
+                                    } else {
+                                        console.warn(`⚠️ ${successCount}/${totalTests} tests passed. Some issues remain.`);
+
+                                        // Attempt automatic fixes for failed tests
+                                        if (!testResults.chatButtonFound || !testResults.chatButtonClick) {
+                                            console.log('🛠️ Attempting to fix chat button issues...');
+                                            window.forceChatButtonCreation();
+                                        }
+                                    }
+
+                                    resolve(testResults);
+                                }, 1000);
+                            }, 500);
+
+                        } else {
+                            console.error('❌ Chat button not found in modal');
+                            console.log('🛠️ Attempting to create chat button...');
+                            window.forceChatButtonCreation();
+                            resolve(testResults);
+                        }
+                    } else {
+                        console.error('❌ Modal did not open after listing click');
+                        resolve(testResults);
+                    }
+                }, 300);
+            });
+        };
+
+        // Auto-run startup verification when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                console.log('🔍 Running automatic chat system verification...');
+                window.verifyChatSystemOnStartup();
+            }, 2000);
+        });
+
     </script>
     
     <!-- Android Navigation Fix -->
