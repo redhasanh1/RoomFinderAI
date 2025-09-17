@@ -211,7 +211,7 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     }
 
     console.log('✅ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM ACTIVE');
-        }
+
     } catch (error) {
         console.error('🚫 Error initializing auth protection:', error);
     }
