@@ -269,19 +269,23 @@
         const ORIGINAL_LOCATION_RELOAD = window.location.reload;
         
         // Emergency protection: Block ALL redirects to login pages
-        Object.defineProperty(window.location, 'href', {
-            set: function(url) {
-                if (typeof url === 'string' && url.includes('/login')) {
-                    console.error('🚫 BLOCKED location.href redirect to login:', url);
-                    console.trace('Stack trace for blocked redirect:');
-                    return; // Block the redirect
+        try {
+            Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                    if (typeof url === 'string' && url.includes('/login')) {
+                        console.error('🚫 BLOCKED location.href redirect to login:', url);
+                        console.trace('Stack trace for blocked redirect:');
+                        return; // Block the redirect
+                    }
+                    return ORIGINAL_LOCATION_HREF.set.call(this, url);
+                },
+                get: function() {
+                    return ORIGINAL_LOCATION_HREF.get.call(this);
                 }
-                return ORIGINAL_LOCATION_HREF.set.call(this, url);
-            },
-            get: function() {
-                return ORIGINAL_LOCATION_HREF.get.call(this);
-            }
-        });
+            });
+        } catch (e) {
+            console.warn('Could not redefine location.href property (already defined):', e);
+        }
         
         window.location.assign = function(url) {
             if (typeof url === 'string' && url.includes('/login')) {
@@ -2372,7 +2376,7 @@
                     </a>
                 `;
                 // Continue loading page without authentication
-                loadListings();
+                displayListings();
                 return;
             }
 
@@ -3186,7 +3190,7 @@
 
                 media = media.map(item => {
                     if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
-                        const extension = item.name.split('.').pop().toLowerCase();
+                        const extension = item.name && item.name.split ? item.name.split('.').pop().toLowerCase() : '';
                         let correctedType;
                         switch (extension) {
                             case 'jpg':
@@ -4922,14 +4926,18 @@
                 
                 // FORCE hide notifications if totalUnread is 0
                 if (totalUnread === 0) {
-                    messageNotificationBadge.classList.add('hidden');
-                    profileNotificationBadge.classList.add('hidden');
+                    if (messageNotificationBadge) messageNotificationBadge.classList.add('hidden');
+                    if (profileNotificationBadge) profileNotificationBadge.classList.add('hidden');
                     console.log('🔥 FORCING notifications to hide - totalUnread is 0');
                 } else {
-                    messageNotificationBadge.textContent = totalUnread;
-                    messageNotificationBadge.classList.remove('hidden');
-                    profileNotificationBadge.textContent = totalUnread;
-                    profileNotificationBadge.classList.remove('hidden');
+                    if (messageNotificationBadge) {
+                        messageNotificationBadge.textContent = totalUnread;
+                        messageNotificationBadge.classList.remove('hidden');
+                    }
+                    if (profileNotificationBadge) {
+                        profileNotificationBadge.textContent = totalUnread;
+                        profileNotificationBadge.classList.remove('hidden');
+                    }
                     console.log('✅ Showing notifications:', totalUnread);
                 }
                 
@@ -5609,7 +5617,7 @@
                     } else {
                         console.log('ℹ️ Anonymous user, loading listings...');
                     }
-                    loadListings().then(() => {
+                    displayListings().then(() => {
                         // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
                         setTimeout(() => {
                             loadFavoriteStates();
@@ -5618,7 +5626,7 @@
                 })
                 .catch(error => {
                     console.error('Auth initialization error:', error);
-                    loadListings().then(() => {
+                    displayListings().then(() => {
                         // Load favorite states after listings are loaded, with a small delay to ensure DOM is ready
                         setTimeout(() => {
                             loadFavoriteStates();
