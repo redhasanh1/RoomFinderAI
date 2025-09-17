@@ -2379,6 +2379,10 @@
                         Login/Register
                     </a>
                 `;
+
+                // Update chat button to indicate login required
+                updateChatButtonForAnonymousUser();
+
                 // Continue loading page without authentication
                 displayListings();
                 return;
@@ -4343,6 +4347,34 @@
             await updateMap(listings);
         }
 
+        // Function to update chat button for anonymous users
+        function updateChatButtonForAnonymousUser() {
+            // Update chat button appearance and text to indicate login required
+            const updateButton = () => {
+                const chatButton = document.getElementById('modalChatButton');
+                if (chatButton) {
+                    chatButton.textContent = 'Login to Chat with Landlord';
+                    chatButton.className = 'w-full bg-gray-500 hover:bg-gray-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-200 shadow-md hover:shadow-lg';
+                    console.log('🔄 Updated chat button for anonymous user');
+                }
+            };
+
+            // Update immediately if button exists, otherwise wait for modal to be shown
+            updateButton();
+
+            // Also set up a periodic check in case the modal loads later
+            const checkInterval = setInterval(() => {
+                const chatButton = document.getElementById('modalChatButton');
+                if (chatButton && chatButton.textContent !== 'Login to Chat with Landlord') {
+                    updateButton();
+                    clearInterval(checkInterval);
+                }
+            }, 500);
+
+            // Clear interval after 10 seconds to avoid memory leaks
+            setTimeout(() => clearInterval(checkInterval), 10000);
+        }
+
         // Function to start conversation from map popup
         function startConversationFromMap(listing) {
             // Parse the listing if it's a string (from onclick)
@@ -4371,8 +4403,10 @@
             
             if (!currentUser) {
                 console.error('❌ No authenticated user found');
-                alert('Please log in to start a chat.');
-                window.location.href = '/login';
+                const proceed = confirm('You need to be logged in to chat with property owners. Would you like to go to the login page now?');
+                if (proceed) {
+                    window.location.href = 'login.html';
+                }
                 return;
             }
 
@@ -4595,7 +4629,7 @@
         window.debugChatSystem = function() {
             console.log('🔍 Chat System Debug Information:');
             console.log('- Chat Modal Element:', !!document.getElementById('chatModal'));
-            console.log('- Chat Close Button:', !!document.querySelector('.chat-close-button'));  
+            console.log('- Chat Close Button:', !!document.querySelector('.chat-close-button'));
             console.log('- Chat Input:', !!document.getElementById('chatInput'));
             console.log('- Chat Send Button:', !!document.getElementById('chatSendBtn'));
             console.log('- Supabase Client:', !!supabase);
@@ -4603,6 +4637,41 @@
             console.log('- Chat System Status:', chatSystemStatus);
             console.log('- Active Chat Buttons:', document.querySelectorAll('.chat-btn:not([disabled])').length);
             console.log('- Disabled Chat Buttons:', document.querySelectorAll('.chat-btn[disabled]').length);
+            console.log('- Modal Chat Button:', !!document.getElementById('modalChatButton'));
+            console.log('- Current Listing:', currentListing);
+        };
+
+        // Function to test complete chat flow
+        window.testChatFlow = function() {
+            console.log('🧪 Testing complete chat flow...');
+
+            const chatButton = document.getElementById('modalChatButton');
+            const chatModal = document.getElementById('chatModal');
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+
+            console.log('📋 Test Results:', {
+                chatButtonExists: !!chatButton,
+                chatButtonText: chatButton?.textContent,
+                chatModalExists: !!chatModal,
+                currentListingSet: !!currentListing,
+                userLoggedIn: !!currentUser,
+                supabaseReady: !!window.supabase,
+                startConversationFunction: typeof startConversation
+            });
+
+            if (!currentUser) {
+                console.log('🟡 Test result: Chat will prompt for login (expected for anonymous users)');
+            } else if (!currentListing) {
+                console.log('🟡 Test result: Chat will prompt to select a listing first');
+            } else {
+                console.log('🟢 Test result: Chat should work when button is clicked');
+            }
+
+            return {
+                status: currentUser && currentListing ? 'ready' : 'needs-auth-or-listing',
+                userLoggedIn: !!currentUser,
+                listingSelected: !!currentListing
+            };
         };
 
         // Removed duplicate scroll functions - now using window.* versions defined at top
@@ -6653,16 +6722,32 @@
             }, 5000); // 5-second safety timeout
         });
         
-        // Enhanced chat button handler
+        // Enhanced chat button handler with debugging
         document.addEventListener('click', function(e) {
             console.log('💬 Click detected on element:', e.target.id, e.target.tagName);
             if (e.target.id === 'modalChatButton') {
                 console.log('💬 Chat button clicked successfully!');
+                console.log('🔍 Debug info:', {
+                    currentListing: currentListing,
+                    startConversationFunction: typeof startConversation,
+                    chatSystemStatus: window.chatSystemStatus || 'undefined'
+                });
 
                 // Check if we have a current listing
                 if (currentListing) {
                     console.log('🏠 Starting conversation for current listing:', currentListing.title);
-                    startConversation(currentListing);
+                    console.log('📊 Listing details:', {
+                        id: currentListing.id,
+                        title: currentListing.title,
+                        userEmail: currentListing.user_email
+                    });
+
+                    try {
+                        startConversation(currentListing);
+                    } catch (error) {
+                        console.error('💥 Error calling startConversation:', error);
+                        alert('Error starting chat: ' + error.message);
+                    }
                 } else {
                     console.error('❌ No current listing available for chat');
                     alert('Please select a listing first to start a chat.');
