@@ -156,6 +156,24 @@
         // Start coordinated initialization
         coordinatedInitialization();
 
+        // Function to check if Supabase is ready
+        async function waitForSupabase(maxWaitTime = 10000) {
+            console.log('🔍 Checking Supabase readiness...');
+            const startTime = Date.now();
+
+            while (Date.now() - startTime < maxWaitTime) {
+                if (supabase && typeof supabase.from === 'function') {
+                    console.log('✅ Supabase client is ready');
+                    return true;
+                }
+                console.log('⏳ Waiting for Supabase client... elapsed:', Date.now() - startTime, 'ms');
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+
+            console.warn('⚠️ Supabase readiness timeout after', maxWaitTime, 'ms');
+            return false;
+        }
+
         // Safe initialization function with retry mechanism
         async function attemptInitialization() {
             console.log('🚀 Attempting initialization...', {
@@ -2419,6 +2437,15 @@
                 // Update chat button to indicate login required
                 updateChatButtonForAnonymousUser();
 
+                // Wait for Supabase before loading listings (critical for data access)
+                console.log('🔄 Waiting for Supabase client before loading listings...');
+                const supabaseReady = await waitForSupabase();
+                if (!supabaseReady) {
+                    console.error('❌ Supabase not ready, showing error message');
+                    displayListingsError('Database connection failed. Please refresh the page.');
+                    return;
+                }
+
                 // Continue loading page without authentication
                 displayListings();
                 return;
@@ -2578,6 +2605,15 @@
                     configLoaded: isConfigLoaded,
                     domReady: isDOMReady
                 });
+
+                // Wait for Supabase before loading listings (critical for data access)
+                console.log('🔄 Waiting for Supabase client before loading listings (authenticated user)...');
+                const supabaseReady = await waitForSupabase();
+                if (!supabaseReady) {
+                    console.error('❌ Supabase not ready, showing error message');
+                    displayListingsError('Database connection failed. Please refresh the page.');
+                    return;
+                }
 
                 await displayListings();
 
@@ -3184,24 +3220,58 @@
             });
 
             let listings = [];
-            try {
-                console.log('📡 About to fetch listings...');
-                listings = await fetchListings();
-                console.log('📋 Fetched listings successfully:', {
-                    count: listings?.length || 0,
-                    hasData: !!listings,
-                    isArray: Array.isArray(listings),
-                    firstListing: listings?.[0]?.id || 'none',
-                    timestamp: new Date().toISOString()
-                });
-            } catch (fetchError) {
-                console.error('❌ Error fetching listings:', {
-                    error: fetchError.message,
-                    stack: fetchError.stack,
-                    timestamp: new Date().toISOString()
-                });
-                // Set empty array as fallback
-                listings = [];
+            let retryCount = 0;
+            const maxRetries = 3;
+
+            while (retryCount <= maxRetries) {
+                try {
+                    console.log(`📡 About to fetch listings... (attempt ${retryCount + 1}/${maxRetries + 1})`);
+                    listings = await fetchListings();
+                    console.log('📋 Fetched listings successfully:', {
+                        count: listings?.length || 0,
+                        hasData: !!listings,
+                        isArray: Array.isArray(listings),
+                        firstListing: listings?.[0]?.id || 'none',
+                        timestamp: new Date().toISOString(),
+                        attempt: retryCount + 1
+                    });
+
+                    // If we got listings, break out of retry loop
+                    if (listings && listings.length > 0) {
+                        console.log('✅ Successfully loaded', listings.length, 'listings');
+                        break;
+                    }
+
+                    // If we got 0 listings and this isn't the last attempt, retry
+                    if (retryCount < maxRetries) {
+                        console.warn(`⚠️ Got 0 listings, retrying in ${1000 * (retryCount + 1)}ms... (attempt ${retryCount + 1}/${maxRetries})`);
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1))); // Exponential backoff
+                        retryCount++;
+                        continue;
+                    } else {
+                        console.warn('⚠️ Got 0 listings after all retries');
+                    }
+
+                } catch (fetchError) {
+                    console.error(`❌ Error fetching listings (attempt ${retryCount + 1}):`, {
+                        error: fetchError.message,
+                        stack: fetchError.stack,
+                        timestamp: new Date().toISOString(),
+                        attempt: retryCount + 1
+                    });
+
+                    if (retryCount < maxRetries) {
+                        console.log(`🔄 Retrying in ${1000 * (retryCount + 1)}ms...`);
+                        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+                        retryCount++;
+                        continue;
+                    } else {
+                        console.error('❌ All retry attempts exhausted');
+                        // Set empty array as fallback
+                        listings = [];
+                        break;
+                    }
+                }
             }
             
             // Check for highlight parameter in URL
@@ -4381,6 +4451,31 @@
             console.log('🔄 Manual map refresh requested');
             const listings = await fetchListings();
             await updateMap(listings);
+        }
+
+        // Function to display listings error
+        function displayListingsError(message) {
+            console.error('🔴 Displaying listings error:', message);
+            const listingsContainer = document.getElementById('listingsContainer');
+            const emptyState = document.getElementById('emptyState');
+
+            if (listingsContainer) {
+                listingsContainer.innerHTML = '';
+            }
+
+            if (emptyState) {
+                emptyState.innerHTML = `
+                    <div class="text-center py-12">
+                        <div class="text-red-500 text-6xl mb-4">⚠️</div>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-2">Connection Error</h3>
+                        <p class="text-gray-600 mb-4">${message}</p>
+                        <button onclick="location.reload()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors duration-200">
+                            Refresh Page
+                        </button>
+                    </div>
+                `;
+                emptyState.style.display = 'block';
+            }
         }
 
         // Function to update chat button for anonymous users
