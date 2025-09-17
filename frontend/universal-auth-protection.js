@@ -132,7 +132,7 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
     // 🔄 AUTOMATIC USER DATA RESTORATION
     window.restoreUserIfNeeded = function() {
         // Check if this is a legitimate logout - if so, don't restore
-        if (// sessionStorage removed === 'true') {
+        if (sessionStorage.getItem('legitimateLogout') === 'true') {
             console.log('✅ Legitimate logout detected, skipping restore');
             return false;
         }

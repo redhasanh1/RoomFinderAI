@@ -3121,8 +3121,12 @@
             });
 
             // Show loading state
-            updateListingCount(0, false, true);
-            console.log('📊 Set loading state for listing count');
+            if (typeof updateListingCount === 'function') {
+                updateListingCount(0, false, true);
+                console.log('📊 Set loading state for listing count');
+            } else {
+                console.warn('⚠️ updateListingCount function not available yet');
+            }
 
             // Check if we need to open a modal (skip heavy operations for fast modal opening)
             const urlParams = new URLSearchParams(window.location.search);
@@ -3163,7 +3167,9 @@
             container.innerHTML = '';
 
             // Update listing count with actual data
-            updateListingCount(listings.length, false);
+            if (typeof updateListingCount === 'function') {
+                updateListingCount(listings.length, false);
+            }
 
             if (listings.length === 0) {
                 console.log('📝 No listings found in database');
@@ -3214,8 +3220,9 @@
                 });
 
                 const isImage = (file) => {
-                    const byType = file.type.startsWith('image/');
-                    const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                    if (!file) return false;
+                    const byType = file.type && file.type.startsWith('image/');
+                    const byExtension = file.name && file.name.match && file.name.match(/\.(jpg|jpeg|png)$/i);
                     return byType || byExtension;
                 };
 
