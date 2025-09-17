@@ -2028,7 +2028,11 @@
                 console.error('❌ Modal element not found!');
                 return;
             }
-            
+
+            // Set current listing for chat functionality
+            currentListing = listing;
+            console.log('🏠 Current listing set for modal:', listing.title);
+
             document.getElementById('modalTitle').textContent = listing.title;
             document.getElementById('modalPrice').textContent = `$${listing.price?.toLocaleString() || 'N/A'}/mo`;
             document.getElementById('modalLocation').textContent = `${listing.street || ''}, ${listing.city || ''}, ${listing.postalCode || ''}`;
@@ -3365,36 +3369,6 @@
         // Modal handling for listings
         const modal = document.getElementById('listingModal');
         const closeButton = document.querySelector('.close-button');
-
-        window.showListingModal = function(listing) {
-            document.getElementById('modalTitle').textContent = listing.title;
-            document.getElementById('modalPrice').textContent = `$${listing.price.toLocaleString()}/mo`;
-            document.getElementById('modalLocation').textContent = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
-            document.getElementById('modalDetails').innerHTML = `
-                <span>${listing.bedrooms} Bed</span> • <span>${listing.house_type}</span> • <span>${listing.utilities}</span>
-            `;
-            document.getElementById('modalDescription').textContent = listing.description || 'No description provided';
-            
-            const modalImage = document.getElementById('modalImage');
-            modalImage.src = listing.media && listing.media.length > 0 && listing.media[0].type.startsWith('image/')
-                ? listing.media[0].url
-                : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
-            
-            const modalMedia = document.getElementById('modalMedia');
-            modalMedia.innerHTML = listing.media && listing.media.length > 0
-                ? listing.media.map(file => 
-                    file.type.startsWith('image/')
-                        ? `<img src="${file.url}" alt="${file.name}">`
-                        : `<video src="${file.url}" controls></video>`
-                ).join('')
-                : '';
-
-            document.getElementById('modalViewDetails').href = `/listing_details?id=${listing.id}`;
-            
-            // modal.style.display = 'block';
-            modal.classList.add('active'); // Use class for animation
-            console.log('Modal shown for listing:', listing.title);
-        }
 
         closeButton.addEventListener('click', () => {
             // modal.style.display = 'none';
@@ -6679,12 +6653,20 @@
             }, 5000); // 5-second safety timeout
         });
         
-        // Simple chat button handler
+        // Enhanced chat button handler
         document.addEventListener('click', function(e) {
             console.log('💬 Click detected on element:', e.target.id, e.target.tagName);
             if (e.target.id === 'modalChatButton') {
                 console.log('💬 Chat button clicked successfully!');
-                alert('Chat functionality available - modern chat interface will be implemented');
+
+                // Check if we have a current listing
+                if (currentListing) {
+                    console.log('🏠 Starting conversation for current listing:', currentListing.title);
+                    startConversation(currentListing);
+                } else {
+                    console.error('❌ No current listing available for chat');
+                    alert('Please select a listing first to start a chat.');
+                }
             }
         });
     </script>
