@@ -32,29 +32,30 @@ if (!window.AUTH_PROTECTION_INITIALIZED) {
         if (descriptor && descriptor.set === window.ORIGINAL_LOCATION_HREF?.set) {
             console.log('✅ Auth protection already initialized, skipping...');
         } else {
-        
-        Object.defineProperty(window.location, 'href', {
-            set: function(url) {
-                if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
-                    // Check if this is a legitimate logout request
-                    if (sessionStorage.getItem('legitimateLogout') === 'true') {
-                        console.log('✅ Allowing legitimate logout redirect');
-                        sessionStorage.removeItem('legitimateLogout');
-                        return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
+        try {
+            Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                    if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
+                        // Check if this is a legitimate logout request
+                        if (sessionStorage.getItem('legitimateLogout') === 'true') {
+                            console.log('✅ Allowing legitimate logout redirect');
+                            sessionStorage.removeItem('legitimateLogout');
+                            return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
+                        }
+                        console.error('🚫 BLOCKED location.href redirect to login:', url);
+                        console.trace('Stack trace for blocked redirect:');
+                        return; // Block the redirect
                     }
-                    console.error('🚫 BLOCKED location.href redirect to login:', url);
-                    console.trace('Stack trace for blocked redirect:');
-                    return; // Block the redirect
+                    return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
+                },
+                get: function() {
+                    return window.ORIGINAL_LOCATION_HREF.get.call(this);
                 }
-                return window.ORIGINAL_LOCATION_HREF.set.call(this, url);
-            },
-            get: function() {
-                return window.ORIGINAL_LOCATION_HREF.get.call(this);
-            }
-        });
-    } catch (e) {
-        console.warn('⚠️ Cannot override location.href (browser security restriction)');
-    }
+            });
+        } catch (e) {
+            console.warn('⚠️ Cannot override location.href (browser security restriction)');
+        }
+        }
 
     window.location.assign = function(url) {
         if (typeof url === 'string' && (url.includes('/login') || url.includes('login.html'))) {
