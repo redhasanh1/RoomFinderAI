@@ -284,7 +284,7 @@
                 }
             });
         } catch (e) {
-            console.warn('Could not redefine location.href property (already defined):', e);
+            console.log('ℹ️ location.href property already protected by universal-auth-protection.js');
         }
         
         window.location.assign = function(url) {
@@ -2073,6 +2073,42 @@
             // modal.style.display = 'block';
             modal.classList.add('active'); // Use class for animation
             console.log('✅ Modal shown for listing:', listing.title);
+
+            // Debug: Check if chat button exists after modal is shown
+            setTimeout(() => {
+                const chatBtn = document.getElementById('modalChatButton');
+                console.log('🔍 Modal debug info:', {
+                    modalVisible: modal.classList.contains('active'),
+                    chatButtonExists: !!chatBtn,
+                    chatButtonText: chatBtn?.textContent,
+                    chatButtonClasses: chatBtn?.className,
+                    modalInnerHTML: modal.innerHTML.includes('modalChatButton')
+                });
+
+                // Add fallback click listener directly to the modal
+                if (chatBtn && !chatBtn.hasAttribute('data-click-listener-added')) {
+                    chatBtn.setAttribute('data-click-listener-added', 'true');
+                    chatBtn.addEventListener('click', function(e) {
+                        console.log('🎯 Direct chat button click detected!');
+                        e.preventDefault();
+                        e.stopPropagation();
+
+                        if (currentListing) {
+                            console.log('🏠 Starting conversation for current listing:', currentListing.title);
+                            try {
+                                startConversation(currentListing);
+                            } catch (error) {
+                                console.error('💥 Error calling startConversation:', error);
+                                alert('Error starting chat: ' + error.message);
+                            }
+                        } else {
+                            console.error('❌ No current listing available for chat');
+                            alert('Please select a listing first to start a chat.');
+                        }
+                    });
+                    console.log('🔧 Added direct click listener to chat button');
+                }
+            }, 100);
         };
         
         // Function to open listing modal by ID - defined early for global access
@@ -4647,12 +4683,16 @@
 
             const chatButton = document.getElementById('modalChatButton');
             const chatModal = document.getElementById('chatModal');
+            const listingModal = document.getElementById('listingModal');
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
 
             console.log('📋 Test Results:', {
                 chatButtonExists: !!chatButton,
                 chatButtonText: chatButton?.textContent,
+                chatButtonVisible: chatButton ? (chatButton.offsetParent !== null) : false,
                 chatModalExists: !!chatModal,
+                listingModalExists: !!listingModal,
+                listingModalVisible: listingModal ? listingModal.classList.contains('active') : false,
                 currentListingSet: !!currentListing,
                 userLoggedIn: !!currentUser,
                 supabaseReady: !!window.supabase,
@@ -4672,6 +4712,31 @@
                 userLoggedIn: !!currentUser,
                 listingSelected: !!currentListing
             };
+        };
+
+        // Function to manually trigger chat button click for testing
+        window.testChatButtonClick = function() {
+            console.log('🔘 Manually testing chat button click...');
+            const chatButton = document.getElementById('modalChatButton');
+            if (chatButton) {
+                console.log('✅ Chat button found, simulating click...');
+                chatButton.click();
+            } else {
+                console.error('❌ Chat button not found! Make sure a listing modal is open.');
+                // Try to open a listing modal first
+                const firstListing = document.querySelector('.listing-card');
+                if (firstListing) {
+                    console.log('🔄 Opening first listing to test chat...');
+                    firstListing.click();
+                    setTimeout(() => {
+                        const chatBtn = document.getElementById('modalChatButton');
+                        if (chatBtn) {
+                            console.log('✅ Chat button now available, clicking...');
+                            chatBtn.click();
+                        }
+                    }, 500);
+                }
+            }
         };
 
         // Removed duplicate scroll functions - now using window.* versions defined at top
@@ -6724,14 +6789,29 @@
         
         // Enhanced chat button handler with debugging
         document.addEventListener('click', function(e) {
-            console.log('💬 Click detected on element:', e.target.id, e.target.tagName);
+            console.log('💬 Click detected on element:', e.target.id, e.target.tagName, 'Classes:', e.target.className);
+
+            // Check if click is on chat button or its children
+            let chatButton = null;
             if (e.target.id === 'modalChatButton') {
-                console.log('💬 Chat button clicked successfully!');
+                chatButton = e.target;
+            } else if (e.target.closest('#modalChatButton')) {
+                chatButton = e.target.closest('#modalChatButton');
+            }
+
+            if (chatButton) {
+                console.log('💬 Chat button clicked successfully! (Direct or child element)');
                 console.log('🔍 Debug info:', {
                     currentListing: currentListing,
                     startConversationFunction: typeof startConversation,
-                    chatSystemStatus: window.chatSystemStatus || 'undefined'
+                    chatSystemStatus: window.chatSystemStatus || 'undefined',
+                    clickedElement: e.target.tagName,
+                    buttonElement: chatButton.tagName
                 });
+
+                // Prevent any default behavior
+                e.preventDefault();
+                e.stopPropagation();
 
                 // Check if we have a current listing
                 if (currentListing) {
