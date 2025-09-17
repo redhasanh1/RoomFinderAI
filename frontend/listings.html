@@ -29,77 +29,230 @@
         let initializationAttempts = 0;
         const MAX_INIT_ATTEMPTS = 3;
 
-        // Load configuration from Railway API
-        fetch('/api/config')
-            .then(response => response.json())
+        // Promise-based initialization tracking to prevent race conditions
+        let configPromise = null;
+        let domReadyPromise = null;
+        let initializationPromise = null;
+
+        // Load configuration from Railway API with promise tracking
+        console.log('🔄 Starting configuration fetch from /api/config');
+        configPromise = fetch('/api/config')
+            .then(response => {
+                console.log('📡 Config response received:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok,
+                    url: response.url
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                return response.json();
+            })
             .then(config => {
+                console.log('📋 Raw config received:', config);
+
                 SUPABASE_URL = config.SUPABASE_URL;
                 SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
                 GOOGLE_API_KEY = config.GOOGLE_API_KEY;
-                
-                // Debug config loading
-                console.log('🔧 Listings config loaded:', {
+
+                // Enhanced debug config loading
+                console.log('🔧 Listings config processed:', {
                     hasSupabaseURL: !!SUPABASE_URL,
                     hasSupabaseKey: !!SUPABASE_ANON_KEY,
-                    hasGoogleKey: !!GOOGLE_API_KEY
+                    hasGoogleKey: !!GOOGLE_API_KEY,
+                    supabaseURLLength: SUPABASE_URL?.length || 0,
+                    supabaseKeyLength: SUPABASE_ANON_KEY?.length || 0,
+                    timestamp: new Date().toISOString()
                 });
 
-                // Initialize Supabase client
+                // Initialize Supabase client with validation
+                if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+                    throw new Error('Missing required Supabase configuration');
+                }
+
+                if (typeof window.supabase === 'undefined') {
+                    throw new Error('Supabase library not loaded');
+                }
+
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('📡 Supabase client initialized');
-                
+                console.log('📡 Supabase client initialized successfully:', {
+                    hasClient: !!supabase,
+                    timestamp: new Date().toISOString()
+                });
+
                 isConfigLoaded = true;
-                // Only initialize if DOM is also ready
-                attemptInitialization();
+                console.log('✅ Configuration loading completed - coordinated initialization will handle the rest');
             })
             .catch(error => {
                 console.error('❌ Failed to load configuration:', error);
+                console.error('❌ Error details:', {
+                    message: error.message,
+                    stack: error.stack,
+                    timestamp: new Date().toISOString()
+                });
                 showError('Failed to load configuration. Please refresh the page.');
+
+                // Add fallback mechanism
+                console.log('🔄 Attempting fallback configuration loading in 3 seconds...');
+                setTimeout(() => {
+                    console.log('🔄 Retrying configuration load...');
+                    location.reload();
+                }, 3000);
             });
 
-        // Wait for DOM to be ready
+        // Wait for DOM to be ready with promise tracking
+        console.log('📄 Checking DOM readiness state:', document.readyState);
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', () => {
-                console.log('📄 DOM Content Loaded');
-                isDOMReady = true;
-                attemptInitialization();
+            console.log('📄 DOM still loading - creating promise for DOMContentLoaded');
+            domReadyPromise = new Promise(resolve => {
+                document.addEventListener('DOMContentLoaded', () => {
+                    console.log('📄 DOM Content Loaded event fired:', {
+                        readyState: document.readyState,
+                        timestamp: new Date().toISOString()
+                    });
+                    isDOMReady = true;
+                    resolve();
+                });
             });
         } else {
-            console.log('📄 DOM already ready');
+            console.log('📄 DOM already ready:', {
+                readyState: document.readyState,
+                timestamp: new Date().toISOString()
+            });
             isDOMReady = true;
-            attemptInitialization();
+            domReadyPromise = Promise.resolve();
         }
 
+        // Coordinate initialization using promises to prevent race conditions
+        async function coordinatedInitialization() {
+            console.log('🤝 Starting coordinated initialization...');
+
+            try {
+                // Wait for both config and DOM to be ready
+                console.log('⏳ Waiting for config and DOM promises...');
+                await Promise.all([configPromise, domReadyPromise]);
+
+                console.log('✅ Both config and DOM are ready, proceeding with initialization');
+
+                if (!initializationPromise) {
+                    initializationPromise = attemptInitialization();
+                }
+
+                await initializationPromise;
+                console.log('🎉 Coordinated initialization completed successfully');
+
+            } catch (error) {
+                console.error('❌ Coordinated initialization failed:', {
+                    error: error.message,
+                    stack: error.stack,
+                    timestamp: new Date().toISOString()
+                });
+            }
+        }
+
+        // Start coordinated initialization
+        coordinatedInitialization();
+
         // Safe initialization function with retry mechanism
-        function attemptInitialization() {
+        async function attemptInitialization() {
             console.log('🚀 Attempting initialization...', {
                 configLoaded: isConfigLoaded,
                 domReady: isDOMReady,
-                attempt: initializationAttempts + 1
+                attempt: initializationAttempts + 1,
+                hasSupabase: !!supabase,
+                timestamp: new Date().toISOString()
             });
 
             if (!isConfigLoaded || !isDOMReady) {
-                console.log('⏳ Waiting for prerequisites...');
+                console.log('⏳ Waiting for prerequisites...', {
+                    configLoaded: isConfigLoaded,
+                    domReady: isDOMReady,
+                    missingConfig: !isConfigLoaded,
+                    missingDOM: !isDOMReady
+                });
                 return;
             }
 
+            // Verify essential DOM elements exist before proceeding
+            const requiredElements = {
+                listingsContainer: document.getElementById('listingsContainer'),
+                authSection: document.getElementById('authSection'),
+                listingCount: document.getElementById('listingCount'),
+                emptyState: document.getElementById('emptyState')
+            };
+
+            console.log('🔍 Checking required DOM elements:', {
+                listingsContainer: !!requiredElements.listingsContainer,
+                authSection: !!requiredElements.authSection,
+                listingCount: !!requiredElements.listingCount,
+                emptyState: !!requiredElements.emptyState
+            });
+
+            const missingElements = Object.entries(requiredElements)
+                .filter(([key, element]) => !element)
+                .map(([key]) => key);
+
+            if (missingElements.length > 0) {
+                console.warn('⚠️ Missing required DOM elements:', missingElements);
+                // Create missing elements as fallback
+                missingElements.forEach(elementId => {
+                    if (elementId === 'listingsContainer') {
+                        const container = document.createElement('div');
+                        container.id = 'listingsContainer';
+                        container.className = 'listing-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6';
+                        document.body.appendChild(container);
+                        console.log('✅ Created missing listingsContainer element');
+                    }
+                });
+            }
+
             initializationAttempts++;
-            
+
             try {
-                console.log(`🔄 Starting initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`);
-                initializeListingsPage();
-                console.log('✅ Initialization completed successfully');
+                console.log(`🔄 Starting initialization attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS}`, {
+                    timestamp: new Date().toISOString(),
+                    supabaseReady: !!supabase,
+                    configKeys: {
+                        url: !!SUPABASE_URL,
+                        key: !!SUPABASE_ANON_KEY
+                    }
+                });
+
+                await initializeListingsPage();
+                console.log('✅ Initialization completed successfully', {
+                    timestamp: new Date().toISOString(),
+                    attempt: initializationAttempts
+                });
             } catch (error) {
-                console.error(`❌ Initialization attempt ${initializationAttempts} failed:`, error);
-                
+                console.error(`❌ Initialization attempt ${initializationAttempts} failed:`, {
+                    error: error.message,
+                    stack: error.stack,
+                    timestamp: new Date().toISOString(),
+                    attempt: initializationAttempts
+                });
+
                 if (initializationAttempts < MAX_INIT_ATTEMPTS) {
                     console.log(`🔄 Retrying in 1 second... (${MAX_INIT_ATTEMPTS - initializationAttempts} attempts remaining)`);
-                    setTimeout(() => {
-                        attemptInitialization();
-                    }, 1000);
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    return await attemptInitialization();
                 } else {
-                    console.error('💥 All initialization attempts failed. Chat system may not work properly.');
+                    console.error('💥 All initialization attempts failed. Listings system may not work properly.');
                     showError('Application initialization failed. Some features may not work. Please refresh the page.');
+
+                    // Add manual retry button as last resort
+                    const retryButton = document.createElement('button');
+                    retryButton.textContent = 'Retry Loading Listings';
+                    retryButton.className = 'bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg';
+                    retryButton.onclick = async () => {
+                        console.log('🔄 Manual retry triggered');
+                        initializationAttempts = 0;
+                        initializationPromise = null;
+                        await coordinatedInitialization();
+                    };
+                    document.body.insertBefore(retryButton, document.body.firstChild);
                 }
             }
         }
@@ -2375,18 +2528,156 @@
 
             // Load listings with error handling
             try {
-                console.log('🔄 Attempting to load listings automatically...');
+                console.log('🔄 Attempting to load listings automatically in initializeListingsPage...', {
+                    timestamp: new Date().toISOString(),
+                    hasSupabase: !!supabase,
+                    configLoaded: isConfigLoaded,
+                    domReady: isDOMReady
+                });
+
                 await displayListings();
-                console.log('✅ Listings loaded successfully in initializeListingsPage()');
-                
+
+                console.log('✅ Listings loaded successfully in initializeListingsPage()', {
+                    timestamp: new Date().toISOString(),
+                    containerExists: !!document.getElementById('listingsContainer'),
+                    containerHasContent: document.getElementById('listingsContainer')?.children.length > 0
+                });
+
                 console.log('🔍 URL params:', window.location.search);
                 console.log('🔍 viewListing parameter:', viewListingId);
             } catch (error) {
-                console.error('❌ Failed to load listings in initializeListingsPage():', error);
+                console.error('❌ Failed to load listings in initializeListingsPage():', {
+                    error: error.message,
+                    stack: error.stack,
+                    timestamp: new Date().toISOString(),
+                    hasSupabase: !!supabase,
+                    configState: {
+                        url: !!SUPABASE_URL,
+                        key: !!SUPABASE_ANON_KEY
+                    }
+                });
                 // Don't throw the error - let the fallback mechanism handle it
             }
         }
 
+        // Debug and Fallback Mechanisms
+        function createDebugPanel() {
+            console.log('🛠️ Creating debug panel for listings troubleshooting');
+
+            const debugPanel = document.createElement('div');
+            debugPanel.id = 'debug-panel';
+            debugPanel.style.cssText = `
+                position: fixed;
+                top: 10px;
+                right: 10px;
+                background: rgba(0,0,0,0.9);
+                color: white;
+                padding: 15px;
+                border-radius: 8px;
+                z-index: 10000;
+                font-family: monospace;
+                font-size: 12px;
+                max-width: 300px;
+                display: none;
+            `;
+
+            debugPanel.innerHTML = `
+                <div style="margin-bottom: 10px;">
+                    <strong>🛠️ Debug Panel</strong>
+                    <button onclick="document.getElementById('debug-panel').style.display='none'" style="float: right; background: red; color: white; border: none; padding: 2px 6px; border-radius: 3px;">×</button>
+                </div>
+                <div id="debug-status" style="margin-bottom: 10px; font-size: 11px;"></div>
+                <button onclick="manualRetryListings()" style="background: #4CAF50; color: white; border: none; padding: 5px 10px; border-radius: 3px; margin: 2px; width: 100%;">🔄 Retry Loading Listings</button>
+                <button onclick="checkConfiguration()" style="background: #2196F3; color: white; border: none; padding: 5px 10px; border-radius: 3px; margin: 2px; width: 100%;">🔧 Check Configuration</button>
+                <button onclick="clearCacheAndReload()" style="background: #FF9800; color: white; border: none; padding: 5px 10px; border-radius: 3px; margin: 2px; width: 100%;">🗑️ Clear Cache & Reload</button>
+                <button onclick="showConsoleLog()" style="background: #9C27B0; color: white; border: none; padding: 5px 10px; border-radius: 3px; margin: 2px; width: 100%;">📝 Show Console Log</button>
+            `;
+
+            document.body.appendChild(debugPanel);
+
+            // Show debug panel if listings aren't loading after 10 seconds
+            setTimeout(() => {
+                const container = document.getElementById('listingsContainer');
+                if (!container || container.children.length === 0) {
+                    debugPanel.style.display = 'block';
+                    updateDebugStatus();
+                }
+            }, 10000);
+        }
+
+        function updateDebugStatus() {
+            const statusDiv = document.getElementById('debug-status');
+            if (statusDiv) {
+                const container = document.getElementById('listingsContainer');
+                statusDiv.innerHTML = `
+                    Config: ${isConfigLoaded ? '✅' : '❌'}<br>
+                    DOM: ${isDOMReady ? '✅' : '❌'}<br>
+                    Supabase: ${!!supabase ? '✅' : '❌'}<br>
+                    Container: ${!!container ? '✅' : '❌'}<br>
+                    Listings: ${container?.children.length || 0}<br>
+                    Time: ${new Date().toLocaleTimeString()}
+                `;
+            }
+        }
+
+        async function manualRetryListings() {
+            console.log('🔄 Manual retry triggered by user');
+            try {
+                updateDebugStatus();
+                await displayListings();
+                console.log('✅ Manual retry successful');
+                updateDebugStatus();
+            } catch (error) {
+                console.error('❌ Manual retry failed:', error);
+                updateDebugStatus();
+            }
+        }
+
+        function checkConfiguration() {
+            console.log('🔧 Configuration check triggered by user');
+            console.log('Configuration state:', {
+                isConfigLoaded,
+                isDOMReady,
+                hasSupabase: !!supabase,
+                SUPABASE_URL: !!SUPABASE_URL,
+                SUPABASE_ANON_KEY: !!SUPABASE_ANON_KEY,
+                windowSupabase: typeof window.supabase,
+                timestamp: new Date().toISOString()
+            });
+            updateDebugStatus();
+        }
+
+        function clearCacheAndReload() {
+            console.log('🗑️ Clearing cache and reloading...');
+            localStorage.clear();
+            sessionStorage.clear();
+            location.reload();
+        }
+
+        function showConsoleLog() {
+            console.log('📝 Opening console for debugging - press F12 to view detailed logs');
+            alert('Please open your browser console (F12) to view detailed debug logs for troubleshooting.');
+        }
+
+        // Create debug panel after DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', createDebugPanel);
+        } else {
+            createDebugPanel();
+        }
+
+        // Add keyboard shortcut to show debug panel (Ctrl+Shift+D)
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'D') {
+                const panel = document.getElementById('debug-panel');
+                if (panel) {
+                    panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+                    if (panel.style.display === 'block') {
+                        updateDebugStatus();
+                    }
+                }
+            }
+        });
 
         // Initialize Typo.js for autocorrect
         const typo = new Typo('en_US', false, false, {
@@ -2713,24 +3004,60 @@
 
         // Fetch listings from Supabase
         async function fetchListings() {
-            console.log('Fetching listings from all sources');
+            console.log('🔄 Fetching listings from all sources', {
+                timestamp: new Date().toISOString(),
+                hasSupabase: !!supabase,
+                supabaseType: typeof supabase
+            });
             let allListings = [];
-            
+
             // Try to fetch from Supabase first
             if (typeof supabase !== 'undefined' && supabase) {
+                console.log('📡 Attempting Supabase fetch...');
                 try {
                     const { data, error } = await supabase
                         .from('listings')
                         .select('*')
                         .order('created_at', { ascending: false });
-                    console.log('Supabase fetch result:', { data, error });
+
+                    console.log('📊 Supabase fetch result:', {
+                        hasData: !!data,
+                        dataCount: data?.length || 0,
+                        hasError: !!error,
+                        error: error?.message || null,
+                        errorCode: error?.code || null,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    if (error) {
+                        console.error('❌ Supabase error details:', {
+                            message: error.message,
+                            details: error.details,
+                            hint: error.hint,
+                            code: error.code
+                        });
+                    }
+
                     if (!error && data) {
                         allListings = data || [];
-                        console.log('✅ Loaded', allListings.length, 'listings from Supabase');
+                        console.log('✅ Successfully loaded', allListings.length, 'listings from Supabase');
+                    } else if (error) {
+                        console.warn('⚠️ Supabase fetch returned error, continuing with localStorage fallback');
                     }
                 } catch (supabaseError) {
-                    console.log('Supabase fetch failed:', supabaseError);
+                    console.error('❌ Supabase fetch failed with exception:', {
+                        error: supabaseError.message,
+                        stack: supabaseError.stack,
+                        timestamp: new Date().toISOString()
+                    });
                 }
+            } else {
+                console.warn('⚠️ Supabase not available:', {
+                    supabaseUndefined: typeof supabase === 'undefined',
+                    supabaseFalsy: !supabase,
+                    windowSupabase: typeof window.supabase,
+                    timestamp: new Date().toISOString()
+                });
             }
             
             // Also include localStorage listings from all users
@@ -2787,18 +3114,47 @@
 
         // Display listings
         async function displayListings() {
-            console.log('🔄 Starting displayListings function');
-            
+            console.log('🔄 Starting displayListings function', {
+                timestamp: new Date().toISOString(),
+                hasSupabase: !!supabase,
+                url: window.location.href
+            });
+
             // Show loading state
             updateListingCount(0, false, true);
-            
+            console.log('📊 Set loading state for listing count');
+
             // Check if we need to open a modal (skip heavy operations for fast modal opening)
             const urlParams = new URLSearchParams(window.location.search);
             const viewListingId = urlParams.get('viewListing');
             const shouldOpenModal = !!viewListingId;
-            
-            let listings = await fetchListings();
-            console.log('📋 Fetched listings:', listings);
+
+            console.log('🔍 URL parameters:', {
+                viewListingId,
+                shouldOpenModal,
+                fullParams: Object.fromEntries(urlParams)
+            });
+
+            let listings = [];
+            try {
+                console.log('📡 About to fetch listings...');
+                listings = await fetchListings();
+                console.log('📋 Fetched listings successfully:', {
+                    count: listings?.length || 0,
+                    hasData: !!listings,
+                    isArray: Array.isArray(listings),
+                    firstListing: listings?.[0]?.id || 'none',
+                    timestamp: new Date().toISOString()
+                });
+            } catch (fetchError) {
+                console.error('❌ Error fetching listings:', {
+                    error: fetchError.message,
+                    stack: fetchError.stack,
+                    timestamp: new Date().toISOString()
+                });
+                // Set empty array as fallback
+                listings = [];
+            }
             
             // Check for highlight parameter in URL
             const highlightListingId = urlParams.get('highlight');
