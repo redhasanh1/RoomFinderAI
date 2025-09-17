@@ -109,8 +109,15 @@ Use `gemini -p` when:
 ## Commit Message Format
 
 - Push changes with descriptive commit messages that explain what was changed
-- Don't include "claude" or "generated" in commit messages
-- **When Claude commits**: use only a short summary of what was edited/changed/fixed (no "EricT2003" in message content)
+- **NEVER include any AI references in commit messages**
+  - No mentions of "Claude", "AI", "generated", "automated", "bot", etc.
+  - No "Generated with [tool name]" or "Co-Authored-By: Claude" footers
+  - No emojis like 🤖 or references to AI assistance
+- **Use professional, technical language only**
+  - Focus on WHAT was changed, not HOW it was created
+  - Example: "Fix listings loading issues with enhanced debugging" ✅
+  - Example: "Generated with Claude Code" ❌
+- **When committing**: use only a short summary of what was edited/changed/fixed
 - **When user pushes from their laptop**: EricT2003 appears as git author only
 
 ## Project Scope
