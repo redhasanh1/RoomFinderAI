@@ -7076,12 +7076,47 @@
         document.addEventListener('click', function(e) {
             console.log('💬 Click detected on element:', e.target.id, e.target.tagName, 'Classes:', e.target.className);
 
-            // Check if click is on chat button or its children
+            // Enhanced check for chat button clicks, including SVG elements
             let chatButton = null;
+
+            // Direct button click
             if (e.target.id === 'modalChatButton') {
                 chatButton = e.target;
-            } else if (e.target.closest('#modalChatButton')) {
+                console.log('🎯 Direct chat button click detected');
+            }
+            // Click on child element (including SVG, text, icons)
+            else if (e.target.closest('#modalChatButton')) {
                 chatButton = e.target.closest('#modalChatButton');
+                console.log('🎯 Chat button child element clicked:', e.target.tagName);
+            }
+            // Special handling for SVG elements that might not bubble properly
+            else if (e.target.tagName === 'svg' || e.target.tagName === 'SVG') {
+                const parentButton = e.target.closest('button');
+                if (parentButton && parentButton.id === 'modalChatButton') {
+                    chatButton = parentButton;
+                    console.log('🎯 SVG inside chat button clicked');
+                }
+            }
+            // Check if we're clicking inside a modal and look for chat button
+            else if (e.target.closest('#listingModal')) {
+                const modalChatBtn = document.getElementById('modalChatButton');
+                // If we clicked something that might be related to chat button
+                if (modalChatBtn && (
+                    e.target.textContent?.includes('Chat') ||
+                    e.target.closest('.flex.justify-center')
+                )) {
+                    console.log('🔍 Potential chat-related click detected, checking proximity to chat button');
+                    const rect = modalChatBtn.getBoundingClientRect();
+                    const clickX = e.clientX;
+                    const clickY = e.clientY;
+
+                    // Check if click is within chat button bounds
+                    if (clickX >= rect.left && clickX <= rect.right &&
+                        clickY >= rect.top && clickY <= rect.bottom) {
+                        chatButton = modalChatBtn;
+                        console.log('🎯 Click detected within chat button bounds');
+                    }
+                }
             }
 
             if (chatButton) {
@@ -7353,6 +7388,32 @@
                 window.verifyChatSystemOnStartup();
             }, 2000);
         });
+
+        // Quick debug function to check current modal state
+        window.debugChatButton = function() {
+            const modal = document.getElementById('listingModal');
+            const chatBtn = document.getElementById('modalChatButton');
+
+            console.log('🔍 === CHAT BUTTON DEBUG ===');
+            console.log('Modal active:', modal?.classList.contains('active'));
+            console.log('Chat button exists:', !!chatBtn);
+            console.log('Current listing:', !!currentListing);
+
+            if (chatBtn) {
+                console.log('Chat button details:', {
+                    text: chatBtn.textContent,
+                    visible: chatBtn.offsetParent !== null,
+                    bounds: chatBtn.getBoundingClientRect(),
+                    innerHTML: chatBtn.innerHTML
+                });
+
+                // Test click the button programmatically
+                console.log('🧪 Testing programmatic click...');
+                chatBtn.click();
+            } else {
+                console.log('❌ No chat button found - open a listing modal first');
+            }
+        };
 
     </script>
     
