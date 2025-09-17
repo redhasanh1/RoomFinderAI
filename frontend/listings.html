@@ -3180,8 +3180,9 @@
                 }
             }
 
-            listings.forEach(listing => {
-                console.log('Processing listing:', listing.id, listing.title);
+            console.log('🔄 About to process', listings.length, 'listings for display');
+            listings.forEach((listing, index) => {
+                console.log(`📋 Processing listing ${index + 1}/${listings.length}:`, listing.id, listing.title);
                 let media = listing.media || [];
                 if (!Array.isArray(media)) {
                     console.warn('Media is not an array, resetting to empty array:', media);
@@ -3295,6 +3296,7 @@
                 });
                 
                 container.appendChild(listingCard);
+                console.log(`✅ Added listing card ${index + 1} to container:`, listing.title);
                 
                 // If this is the highlighted listing, scroll to it and add a badge
                 if (isHighlighted) {
@@ -3335,6 +3337,21 @@
                 await updateMap(listings);
             }
             console.log('✅ Listings display complete:', listings.length, 'listings processed');
+
+            // Verify DOM elements were actually added
+            const finalContainer = document.getElementById('listingsContainer');
+            const cardCount = finalContainer ? finalContainer.children.length : 0;
+            console.log('📊 Final verification - DOM elements in container:', cardCount);
+
+            if (cardCount === 0 && listings.length > 0) {
+                console.error('🚨 CRITICAL: Listings were processed but no DOM elements found in container!');
+                console.log('🔍 Container element:', finalContainer);
+                console.log('🔍 Container innerHTML length:', finalContainer ? finalContainer.innerHTML.length : 'N/A');
+            } else if (cardCount === listings.length) {
+                console.log('✅ SUCCESS: All listings successfully added to DOM');
+            } else {
+                console.warn('⚠️ MISMATCH: Expected', listings.length, 'but found', cardCount, 'in DOM');
+            }
         }
 
 
@@ -6657,7 +6674,9 @@
         
         // Simple chat button handler
         document.addEventListener('click', function(e) {
+            console.log('💬 Click detected on element:', e.target.id, e.target.tagName);
             if (e.target.id === 'modalChatButton') {
+                console.log('💬 Chat button clicked successfully!');
                 alert('Chat functionality available - modern chat interface will be implemented');
             }
         });
