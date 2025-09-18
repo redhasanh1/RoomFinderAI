@@ -7106,7 +7106,7 @@
                 const parentButton = e.target.closest('button');
                 console.log('🔍 Parent button found:', parentButton?.id || 'no-button-parent');
 
-                if (parentButton && parentButton.id === 'modalChatButton') {
+                if (parentButton && (parentButton.id === 'modalChatButton' || parentButton.id === 'messageToggleBtn')) {
                     chatButton = parentButton;
                     console.log('🎯 SVG/Path inside chat button clicked!');
                 } else {
@@ -7152,6 +7152,13 @@
 
             if (chatButton) {
                 console.log('💬 Chat button clicked successfully! (Direct or child element)');
+
+                // Handle messageToggleBtn differently - let it bubble to its own event listener
+                if (chatButton.id === 'messageToggleBtn') {
+                    console.log('🔄 messageToggleBtn detected, allowing event to bubble to dedicated handler');
+                    return; // Let the dedicated messageToggleBtn event listener handle this
+                }
+
                 console.log('🔍 Debug info:', {
                     currentListing: currentListing,
                     startConversationFunction: typeof startConversation,
@@ -7163,7 +7170,7 @@
                     chatButtonBounds: chatButton.getBoundingClientRect()
                 });
 
-                // Prevent any default behavior
+                // Prevent any default behavior (only for modalChatButton)
                 e.preventDefault();
                 e.stopPropagation();
 
