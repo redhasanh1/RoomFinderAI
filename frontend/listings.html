@@ -398,12 +398,12 @@
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Available Properties</h2>
                 <div class="text-sm text-gray-600">
-                    <span id="results-count">Loading listings...</span>
+                    <span id="listingCount">Loading listings...</span>
                 </div>
             </div>
 
             <!-- Listings Grid -->
-            <div id="listings-display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div id="listingsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <!-- Listings will be populated here -->
             </div>
 
@@ -461,8 +461,12 @@
                 <button id="forceHideNotifications" class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded" title="Force hide notifications">🔥</button>
             </div>
         </div>
-        <div class="message-panel-content" id="conversationsList">
-            <!-- Conversations will be populated here -->
+        <div class="message-panel-content">
+            <div id="conversationTabs" class="max-h-96 overflow-y-auto">
+                <div id="noConversations" class="p-4 text-gray-500 text-center">
+                    No conversations yet
+                </div>
+            </div>
         </div>
     </div>
 
@@ -471,7 +475,7 @@
         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.563-.37l-3.726 1.035a.75.75 0 01-.954-.954l1.035-3.726A8.955 8.955 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"/>
         </svg>
-        <span id="unreadBadge" class="notification-badge hidden">0</span>
+        <span id="messageNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 text-xs flex items-center justify-center hidden">0</span>
     </button>
 
     <!-- Load Modular JavaScript -->
