@@ -7101,13 +7101,13 @@
             let chatButton = null;
 
             // Direct button click
-            if (e.target.id === 'modalChatButton') {
+            if (e.target.id === 'modalChatButton' || e.target.id === 'messageToggleBtn') {
                 chatButton = e.target;
                 console.log('🎯 Direct chat button click detected');
             }
             // Click on child element (including SVG, text, icons)
-            else if (e.target.closest('#modalChatButton')) {
-                chatButton = e.target.closest('#modalChatButton');
+            else if (e.target.closest('#modalChatButton') || e.target.closest('#messageToggleBtn')) {
+                chatButton = e.target.closest('#modalChatButton') || e.target.closest('#messageToggleBtn');
                 console.log('🎯 Chat button child element clicked:', e.target.tagName);
             }
             // Special handling for SVG elements that might not bubble properly
