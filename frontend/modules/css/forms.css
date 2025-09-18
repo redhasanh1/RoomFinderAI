@@ -1,0 +1,505 @@
+/**
+ * Form Styles
+ * Input fields, buttons, form layouts, and validation states
+ */
+
+/* ==================== FORM ELEMENTS ==================== */
+
+/* Form Inputs */
+.form-input {
+    border-radius: var(--border-radius-sm);
+    border: 2px solid var(--color-gray-200);
+    transition: var(--transition);
+    padding: 0.75rem 1rem;
+    width: 100%;
+    font-size: 1rem;
+    background: white;
+}
+
+.form-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    outline: none;
+}
+
+.form-input:invalid {
+    border-color: var(--color-danger);
+}
+
+.form-input:disabled {
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-500);
+    cursor: not-allowed;
+}
+
+/* Modern Input Styling */
+.modern-input {
+    background: white;
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--border-radius-sm);
+    padding: 1rem 1.5rem;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    font-size: 1rem;
+    width: 100%;
+}
+
+.modern-input:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
+    outline: none;
+}
+
+/* Input Groups */
+.input-group {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.input-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: var(--color-gray-700);
+}
+
+.input-group .form-input {
+    margin-bottom: 0;
+}
+
+/* Input with Icon */
+.input-with-icon {
+    position: relative;
+}
+
+.input-with-icon input {
+    padding-left: 3rem;
+}
+
+.input-with-icon .input-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--color-gray-400);
+    pointer-events: none;
+}
+
+/* ==================== BUTTONS ==================== */
+
+/* Primary Button */
+.btn-primary {
+    background: var(--primary-gradient);
+    color: white;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    text-align: center;
+    justify-content: center;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Secondary Button */
+.btn-secondary {
+    background: rgba(102, 126, 234, 0.1);
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--border-radius-sm);
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    transition: var(--transition);
+    cursor: pointer;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    text-align: center;
+    justify-content: center;
+}
+
+.btn-secondary:hover {
+    background: var(--primary-gradient);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn-secondary:active {
+    transform: translateY(0);
+}
+
+.btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Modern Button */
+.modern-button {
+    background: var(--primary-gradient);
+    border: none;
+    border-radius: var(--border-radius-sm);
+    padding: 1rem 2rem;
+    color: white;
+    font-weight: 600;
+    transition: var(--transition);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+    cursor: pointer;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+}
+
+.modern-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+}
+
+/* Button Sizes */
+.btn-sm {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.btn-lg {
+    padding: 1rem 2.5rem;
+    font-size: 1.125rem;
+}
+
+.btn-xl {
+    padding: 1.25rem 3rem;
+    font-size: 1.25rem;
+}
+
+/* Button Variants */
+.btn-success {
+    background: var(--success-gradient);
+}
+
+.btn-warning {
+    background: var(--warning-gradient);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, var(--color-danger) 0%, #dc2626 100%);
+}
+
+.btn-outline {
+    background: transparent;
+    border: 2px solid currentColor;
+}
+
+.btn-outline:hover {
+    background: currentColor;
+    color: white;
+}
+
+/* Icon Buttons */
+.btn-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon-sm {
+    width: 2rem;
+    height: 2rem;
+}
+
+.btn-icon-lg {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* ==================== FORM LAYOUTS ==================== */
+
+/* Form Grid */
+.form-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+.form-grid-2 {
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.form-grid-3 {
+    grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+    .form-grid-2,
+    .form-grid-3 {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.form-actions.centered {
+    justify-content: center;
+}
+
+.form-actions.start {
+    justify-content: flex-start;
+}
+
+.form-actions.between {
+    justify-content: space-between;
+}
+
+/* ==================== FORM VALIDATION ==================== */
+
+/* Validation States */
+.form-input.valid {
+    border-color: var(--color-success);
+}
+
+.form-input.invalid {
+    border-color: var(--color-danger);
+}
+
+.form-input.warning {
+    border-color: var(--warning-gradient);
+}
+
+/* Form Errors */
+.form-errors {
+    background: #fee2e2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+    padding: 1rem;
+    border-radius: var(--border-radius-sm);
+    margin-bottom: 1rem;
+}
+
+.form-errors h4 {
+    margin: 0 0 0.5rem 0;
+    font-weight: 600;
+}
+
+.form-errors ul {
+    margin: 0;
+    padding-left: 1.5rem;
+}
+
+/* Field Errors */
+.field-error {
+    color: var(--color-danger);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* Field Success */
+.field-success {
+    color: var(--color-success);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+/* ==================== SPECIAL FORM ELEMENTS ==================== */
+
+/* File Upload */
+.file-upload {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    overflow: hidden;
+    border: 2px dashed var(--color-gray-300);
+    border-radius: var(--border-radius-sm);
+    padding: 2rem;
+    text-align: center;
+    transition: var(--transition);
+    background: var(--color-gray-50);
+}
+
+.file-upload:hover {
+    border-color: var(--color-primary);
+    background: rgba(102, 126, 234, 0.05);
+}
+
+.file-upload input[type="file"] {
+    position: absolute;
+    left: -9999px;
+}
+
+.file-upload-text {
+    color: var(--color-gray-600);
+    font-weight: 500;
+}
+
+.file-upload-icon {
+    font-size: 2rem;
+    color: var(--color-gray-400);
+    margin-bottom: 0.5rem;
+}
+
+/* Checkbox and Radio */
+.checkbox,
+.radio {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.checkbox input,
+.radio input {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+}
+
+/* Custom Checkbox */
+.custom-checkbox {
+    position: relative;
+    display: inline-block;
+    width: 1.25rem;
+    height: 1.25rem;
+}
+
+.custom-checkbox input {
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    cursor: pointer;
+}
+
+.custom-checkbox .checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    background-color: white;
+    border: 2px solid var(--color-gray-300);
+    border-radius: 0.25rem;
+    transition: var(--transition);
+}
+
+.custom-checkbox input:checked ~ .checkmark {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.custom-checkbox .checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+    left: 0.25rem;
+    top: 0.125rem;
+    width: 0.25rem;
+    height: 0.5rem;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.custom-checkbox input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* ==================== AUTOCOMPLETE ==================== */
+
+.autocomplete-container {
+    position: relative;
+}
+
+.custom-autocomplete {
+    position: absolute;
+    z-index: 1000;
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--border-radius-sm);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: calc(100% - 2rem);
+    max-width: 400px;
+    margin-top: 2px;
+    max-height: 300px;
+    overflow-y: auto;
+    border-top: none;
+}
+
+.autocomplete-item {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+    color: var(--color-gray-700);
+    cursor: pointer;
+    border-bottom: 1px solid var(--color-gray-100);
+    transition: var(--transition-fast);
+}
+
+.autocomplete-item:hover,
+.autocomplete-item.selected {
+    background-color: var(--color-gray-50);
+    color: var(--color-primary);
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+/* ==================== FORM RESPONSIVE DESIGN ==================== */
+
+@media (max-width: 768px) {
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .form-actions.between {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .btn-primary,
+    .btn-secondary,
+    .modern-button {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .modern-input,
+    .form-input {
+        font-size: 16px; /* Prevents zoom on iOS */
+    }
+}
