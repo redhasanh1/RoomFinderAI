@@ -113,19 +113,23 @@
         const ORIGINAL_LOCATION_RELOAD = window.location.reload;
         
         // Emergency protection: Block ALL redirects to login pages
-        Object.defineProperty(window.location, 'href', {
-            set: function(url) {
-                if (typeof url === 'string' && url.includes('/login')) {
-                    console.error('🚫 BLOCKED location.href redirect to login:', url);
-                    console.trace('Stack trace for blocked redirect:');
-                    return; // Block the redirect
+        try {
+            Object.defineProperty(window.location, 'href', {
+                set: function(url) {
+                    if (typeof url === 'string' && url.includes('/login')) {
+                        console.error('🚫 BLOCKED location.href redirect to login:', url);
+                        console.trace('Stack trace for blocked redirect:');
+                        return; // Block the redirect
+                    }
+                    return ORIGINAL_LOCATION_HREF.set.call(this, url);
+                },
+                get: function() {
+                    return ORIGINAL_LOCATION_HREF.get.call(this);
                 }
-                return ORIGINAL_LOCATION_HREF.set.call(this, url);
-            },
-            get: function() {
-                return ORIGINAL_LOCATION_HREF.get.call(this);
-            }
-        });
+            });
+        } catch (e) {
+            console.log('⚠️ href property already defined, using alternative protection');
+        }
         
         window.location.assign = function(url) {
             if (typeof url === 'string' && url.includes('/login')) {
@@ -2349,6 +2353,11 @@
             }
         }
 
+        // Load listings function (wrapper for displayListings)
+        async function loadListings() {
+            return await displayListings();
+        }
+
         // Display listings
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
@@ -2403,8 +2412,9 @@
                 });
 
                 const isImage = (file) => {
+                    if (!file || !file.type) return false;
                     const byType = file.type.startsWith('image/');
-                    const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                    const byExtension = file.name ? file.name.match(/\.(jpg|jpeg|png)$/i) : false;
                     return byType || byExtension;
                 };
 
@@ -3950,7 +3960,13 @@
             window.updateUnreadCount = async function() {
                 const messageNotificationBadge = document.getElementById('messageNotificationBadge');
                 const profileNotificationBadge = document.getElementById('profileNotificationBadge');
-                
+
+                // Check if elements exist before proceeding
+                if (!messageNotificationBadge || !profileNotificationBadge) {
+                    console.log('⚠️ Notification badge elements not found, skipping update');
+                    return;
+                }
+
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (!currentUser) return;
 
