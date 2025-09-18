@@ -1,0 +1,50 @@
+/**
+ * Main CSS File
+ * Imports all component stylesheets in the correct order
+ */
+
+/* Import external dependencies */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+
+/* Import CSS modules in order of specificity */
+@import './variables.css';
+@import './base.css';
+@import './animations.css';
+@import './forms.css';
+@import './navigation.css';
+@import './components.css';
+
+/* Additional user-defined inputs for special cases */
+#city, #country, #street, #postalCode {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+}
+
+/* Ensure input fields are accessible on all devices */
+input[type="text"],
+input[type="email"],
+input[type="number"],
+input[type="tel"],
+textarea,
+select {
+    font-size: 16px; /* Prevents zoom on iOS */
+    background-color: white;
+}
+
+/* Print-specific overrides */
+@media print {
+    .no-print,
+    .mobile-menu,
+    #messageToggleBtn,
+    #messagePanel,
+    .favorite-btn {
+        display: none !important;
+    }
+
+    .glass-card {
+        background: white !important;
+        backdrop-filter: none !important;
+        border: 1px solid #000 !important;
+    }
+}
