@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomFinderAI - Listings</title>
+
+    <!-- External Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/typo-js@1.2.3/typo.js"></script>
+
+    <!-- Leaflet Map Dependencies -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+    <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Modular CSS -->
+    <link rel="stylesheet" href="./modules/css/main.css">
+</head>
+
+<body>
+    <!-- Header Navigation -->
+    <header id="header" class="premium-header sticky top-0 z-50">
+        <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center">
+                    <a href="index.html" class="text-2xl font-bold brand-logo font-display gradient-text">
+                        RoomFinderAI
+                    </a>
+                </div>
+
+                <!-- Desktop Navigation -->
+                <div class="hidden md:flex items-center space-x-8 desktop-nav">
+                    <a href="index.html" class="nav-item">Home</a>
+
+                    <!-- Browse Dropdown -->
+                    <div class="dropdown">
+                        <button class="nav-item dropdown-trigger" data-dropdown-id="browse">
+                            Browse <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="dropdown-menu" id="browse-dropdown">
+                            <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                            <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                            <a href="#add-listing" class="dropdown-item">Add Listing</a>
+                            <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                        </div>
+                    </div>
+
+                    <!-- Tools Dropdown -->
+                    <div class="dropdown">
+                        <button class="nav-item dropdown-trigger" data-dropdown-id="tools">
+                            Tools <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="dropdown-menu" id="tools-dropdown">
+                            <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                            <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                            <a href="legal.html" class="dropdown-item">Legal Help</a>
+                            <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                        </div>
+                    </div>
+
+                    <!-- About Dropdown -->
+                    <div class="dropdown">
+                        <button class="nav-item dropdown-trigger" data-dropdown-id="about">
+                            About <span class="dropdown-arrow">▼</span>
+                        </button>
+                        <div class="dropdown-menu" id="about-dropdown">
+                            <a href="index.html#about" class="dropdown-item">About Us</a>
+                            <a href="index.html#contact" class="dropdown-item">Contact</a>
+                            <a href="support.html" class="dropdown-item">Support</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Auth -->
+                <div id="authSection" class="desktop-auth hidden md:block">
+                    <!-- Will be populated by auth manager -->
+                </div>
+
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" aria-label="Open menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold brand-logo font-display">RoomFinderAI</div>
+                    <button class="mobile-menu-close chat-close-button" aria-label="Close menu">×</button>
+                </div>
+
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item">🏠 Home</a>
+
+                    <!-- Browse Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" data-section-id="browse">
+                            🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="browse-section">
+                            <a href="listings.html" class="mobile-menu-item">Browse Listings</a>
+                            <a href="sublease.html" class="mobile-menu-item">Sublease Property</a>
+                            <a href="#add-listing" class="mobile-menu-item">Add Listing</a>
+                            <a href="student-housing.html" class="mobile-menu-item">Student Housing</a>
+                        </div>
+                    </div>
+
+                    <!-- Tools Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" data-section-id="tools">
+                            🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="tools-section">
+                            <a href="ai-negotiator.html" class="mobile-menu-item">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item">Legal Help</a>
+                            <a href="mortgage.html" class="mobile-menu-item">Mortgage Tools</a>
+                        </div>
+                    </div>
+
+                    <!-- About Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" data-section-id="about">
+                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="about-section">
+                            <a href="index.html#about" class="mobile-menu-item">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item">Contact</a>
+                            <a href="support.html" class="mobile-menu-item">Support</a>
+                        </div>
+                    </div>
+
+                    <!-- Mobile Auth -->
+                    <a href="login.html" class="mobile-menu-item auth-item">👤 Login/Register</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section text-white py-16 sm:py-24" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="w-[90%] max-w-6xl mx-auto px-4">
+            <!-- Hero Content -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 animate-fade-in">Find Your Perfect Home</h1>
+                <p class="text-lg sm:text-xl text-white/90 mb-2">Browse hundreds of verified rental properties</p>
+            </div>
+
+            <!-- Search Bar -->
+            <div class="max-w-3xl mx-auto mb-8">
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-2">
+                    <div class="flex flex-col sm:flex-row gap-2">
+                        <div class="flex-1 relative">
+                            <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            <input type="text" id="heroSearchInput" placeholder="Search by city, neighborhood, or ZIP code..."
+                                   class="w-full pl-12 pr-4 py-4 bg-white/20 border border-white/30 rounded-xl text-white placeholder-white/70 focus:outline-none focus:bg-white/30 focus:border-white/50 transition">
+                        </div>
+                        <button class="px-8 py-4 bg-white text-purple-600 rounded-xl font-semibold hover:bg-white/90 transition transform hover:scale-105 shadow-lg">
+                            Search Now
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+                <button class="group flex items-center gap-2 text-white/90 hover:text-white transition">
+                    <span class="underline">Browse all listings</span>
+                    <svg class="w-5 h-5 group-hover:translate-y-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"/>
+                    </svg>
+                </button>
+                <span class="text-white/50">or</span>
+                <button class="px-6 py-3 bg-white/20 backdrop-blur border border-white/30 text-white rounded-xl font-semibold hover:bg-white/30 transition transform hover:scale-105">
+                    + List Your Property
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-[90%] max-w-7xl mx-auto px-4 py-8">
+        <!-- Add Listing Form (Initially Hidden) -->
+        <section id="addListingSection" class="hidden mb-12 animate-slide-down">
+            <div class="glass-card p-6 sm:p-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">List Your Property</h2>
+                        <p class="text-gray-600 mt-1">Fill out the details below or use our AI assistant</p>
+                    </div>
+                    <button class="text-gray-500 hover:text-gray-700 transition">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                <!-- Quick Options -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                    <button class="p-4 border-2 border-purple-200 rounded-xl hover:border-purple-400 hover:bg-purple-50 transition group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center text-white">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <h3 class="font-semibold text-gray-800">Quick List with AI</h3>
+                                <p class="text-sm text-gray-600">Let AI create your listing in seconds</p>
+                            </div>
+                        </div>
+                    </button>
+                    <button class="p-4 border-2 border-gray-200 rounded-xl hover:border-gray-400 hover:bg-gray-50 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-gray-600">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div class="text-left">
+                                <h3 class="font-semibold text-gray-800">Fill Form Manually</h3>
+                                <p class="text-sm text-gray-600">Complete control over your listing</p>
+                            </div>
+                        </div>
+                    </button>
+                </div>
+
+                <!-- Manual Form Section -->
+                <div id="manualFormSection" class="hidden">
+                    <form id="listingForm" class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="relative">
+                                <label for="city" class="block text-sm font-medium text-gray-700">City</label>
+                                <input type="text" id="city" name="city" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., Indianapolis" autocomplete="off">
+                                <div id="city-autocomplete-dropdown" class="custom-autocomplete hidden"></div>
+                            </div>
+                            <div>
+                                <label for="country" class="block text-sm font-medium text-gray-700">Country (Optional)</label>
+                                <input type="text" id="country" name="country" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., USA">
+                            </div>
+                            <div>
+                                <label for="street" class="block text-sm font-medium text-gray-700">Street</label>
+                                <input type="text" id="street" name="street" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., 123 Main St">
+                            </div>
+                            <div>
+                                <label for="postalCode" class="block text-sm font-medium text-gray-700">Postal Code</label>
+                                <input type="text" id="postalCode" name="postalCode" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., M5V 2T6">
+                            </div>
+                        </div>
+                        <div>
+                            <label for="title" class="block text-sm font-medium text-gray-700">Title</label>
+                            <input type="text" id="title" name="title" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., Cozy 2-Bedroom Apartment">
+                        </div>
+                        <div>
+                            <label for="price" class="block text-sm font-medium text-gray-700">Price ($/month)</label>
+                            <input type="number" id="price" name="price" required min="0" step="1" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., 1200">
+                        </div>
+                        <div>
+                            <label for="houseType" class="block text-sm font-medium text-gray-700">House Type</label>
+                            <select id="houseType" name="houseType" required class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                                <option value="" disabled selected>Select a house type</option>
+                                <option value="House">House</option>
+                                <option value="Apartment">Apartment</option>
+                                <option value="Condo">Condo</option>
+                                <option value="Townhouse">Townhouse</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="bedrooms" class="block text-sm font-medium text-gray-700">Bedrooms</label>
+                            <input type="number" id="bedrooms" name="bedrooms" required min="0" step="1" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="e.g., 2">
+                        </div>
+                        <div>
+                            <label for="utilities" class="block text-sm font-medium text-gray-700">Utilities</label>
+                            <select id="utilities" name="utilities" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                                <option value="Included">Included</option>
+                                <option value="Not included" selected>Not included</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="description" class="block text-sm font-medium text-gray-700">Description</label>
+                            <textarea id="description" name="description" rows="4" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition" placeholder="Describe the property..."></textarea>
+                        </div>
+                        <div>
+                            <label for="media" class="block text-sm font-medium text-gray-700">Media (Images/Videos - Max 10MB total)</label>
+                            <input type="file" id="media" name="media" multiple accept="image/*,video/*" class="mt-1 w-full p-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+                            <div id="mediaPreview" class="media-preview mt-2"></div>
+                        </div>
+                        <button type="submit" class="w-full btn-primary">
+                            Add Listing
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search and Filter Section -->
+        <section id="search-section" class="mb-8">
+            <div class="glass-card p-6">
+                <div class="mb-4">
+                    <div class="relative">
+                        <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        <input type="text" id="searchLocation" placeholder="Search by city, neighborhood, or address..."
+                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-500 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <!-- Quick Filters -->
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Popular Filters:</p>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-200 transition">
+                            Under $1,000
+                        </button>
+                        <button class="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-200 transition">
+                            2+ Bedrooms
+                        </button>
+                        <button class="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-200 transition">
+                            Apartments Only
+                        </button>
+                        <button class="px-4 py-2 bg-purple-100 text-purple-700 rounded-full text-sm font-medium hover:bg-purple-200 transition">
+                            Utilities Included
+                        </button>
+                        <button class="px-4 py-2 bg-gray-100 text-gray-700 rounded-full text-sm font-medium hover:bg-gray-200 transition flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+                            </svg>
+                            More Filters
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced Filters (Hidden by default) -->
+                <div id="advancedFilters" class="hidden grid grid-cols-1 md:grid-cols-4 gap-4 mb-4 p-4 bg-gray-50 rounded-lg">
+                    <div>
+                        <label for="priceMin" class="block text-sm font-medium text-gray-700 mb-1">Min Price ($)</label>
+                        <input type="number" id="priceMin" placeholder="0" class="w-full p-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div>
+                        <label for="priceMax" class="block text-sm font-medium text-gray-700 mb-1">Max Price ($)</label>
+                        <input type="number" id="priceMax" placeholder="5000" class="w-full p-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    <div>
+                        <label for="bedroomsMin" class="block text-sm font-medium text-gray-700 mb-1">Min Bedrooms</label>
+                        <select id="bedroomsMin" class="w-full p-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500">
+                            <option value="">Any</option>
+                            <option value="1">1+</option>
+                            <option value="2">2+</option>
+                            <option value="3">3+</option>
+                            <option value="4">4+</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="houseTypeFilter" class="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+                        <select id="houseTypeFilter" class="w-full p-2 border border-gray-300 rounded focus:ring-purple-500 focus:border-purple-500">
+                            <option value="">Any Type</option>
+                            <option value="House">House</option>
+                            <option value="Apartment">Apartment</option>
+                            <option value="Condo">Condo</option>
+                            <option value="Townhouse">Townhouse</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex gap-2 mt-4">
+                    <button class="btn-primary px-6 py-2 rounded-lg font-semibold flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                        Search
+                    </button>
+                    <button class="btn-secondary px-6 py-2 rounded-lg font-semibold">
+                        Clear Filters
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Listings Display Section -->
+        <section id="listings-section">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Available Properties</h2>
+                <div class="text-sm text-gray-600">
+                    <span id="results-count">Loading listings...</span>
+                </div>
+            </div>
+
+            <!-- Listings Grid -->
+            <div id="listings-display" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Listings will be populated here -->
+            </div>
+
+            <!-- Map Section -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold text-gray-800 mb-4">Map View</h3>
+                <div id="map" class="h-96 rounded-xl overflow-hidden"></div>
+                <p id="map-error" class="text-red-600 text-center mt-4 hidden">Failed to load map. Please check your connection or try again later.</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Listing Overview -->
+    <div id="listingModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">×</span>
+            <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
+            <img id="modalImage" src="" alt="Listing" class="listing-image mb-4">
+            <p id="modalPrice" class="text-xl font-bold text-blue-600 mb-2"></p>
+            <p id="modalLocation" class="text-gray-600 mb-2"></p>
+            <div id="modalDetails" class="text-gray-600 mb-4"></div>
+            <p id="modalDescription" class="text-gray-600 mb-4"></p>
+            <div id="modalMedia" class="modal-media flex flex-wrap mb-4"></div>
+            <a id="modalViewDetails" href="#" class="inline-block btn-primary px-8 py-3 rounded-lg font-semibold text-center w-full">View Details</a>
+        </div>
+    </div>
+
+    <!-- Chat Modal -->
+    <div id="chatModal" class="chat-modal">
+        <div class="chat-modal-content">
+            <div class="chat-header">
+                <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
+                <button class="chat-close-button text-gray-500 hover:text-gray-700 text-2xl">&times;</button>
+            </div>
+            <div id="chatMessages" class="chat-messages"></div>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" placeholder="Type your message..." class="flex-1">
+                <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
+                <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm hidden">
+                    📎 Files
+                </button>
+                <button id="sendMessageBtn" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition font-semibold">
+                    Send
+                </button>
+            </div>
+            <div id="filePreview" class="mt-2"></div>
+        </div>
+    </div>
+
+    <!-- Message Panel -->
+    <div id="messagePanel" class="hidden">
+        <div class="message-panel-header">
+            <div class="flex justify-between items-center">
+                <h3 class="font-semibold">Messages</h3>
+                <button id="forceHideNotifications" class="text-xs bg-red-600 hover:bg-red-700 px-2 py-1 rounded" title="Force hide notifications">🔥</button>
+            </div>
+        </div>
+        <div class="message-panel-content" id="conversationsList">
+            <!-- Conversations will be populated here -->
+        </div>
+    </div>
+
+    <!-- Message Toggle Button -->
+    <button id="messageToggleBtn" class="bg-blue-600 text-white rounded-full p-4 shadow-lg hover:bg-blue-700 transition flex items-center justify-center w-16 h-16 relative">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.955 8.955 0 01-2.563-.37l-3.726 1.035a.75.75 0 01-.954-.954l1.035-3.726A8.955 8.955 0 014 12c0-4.418 3.582-8 8-8s8 3.582 8 8z"/>
+        </svg>
+        <span id="unreadBadge" class="notification-badge hidden">0</span>
+    </button>
+
+    <!-- Load Modular JavaScript -->
+    <script type="module">
+        // Import all modules
+        import('./modules/utils/config.js');
+        import('./modules/auth/auth-protection.js');
+        import('./modules/auth/auth-manager.js');
+        import('./modules/map/map-controller.js');
+        import('./modules/map/map-utils.js');
+        import('./modules/listings/listings-manager.js');
+        import('./modules/listings/listing-modal.js');
+        import('./modules/search/search-controller.js');
+        import('./modules/search/autocomplete.js');
+        import('./modules/chat/chat-controller.js');
+        import('./modules/chat/messaging-panel.js');
+        import('./modules/navigation/header.js');
+        import('./modules/forms/add-listing-form.js');
+        import('./modules/ui/modals.js');
+        import('./modules/ui/notifications.js');
+        import('./modules/ui/animations.js');
+        import('./modules/utils/helpers.js');
+        import('./modules/utils/ui-helpers.js');
+
+        // Initialize application
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 Starting modular RoomFinderAI application...');
+
+            try {
+                // Initialize core systems
+                await window.configManager?.init();
+                await window.authProtection?.init();
+                await window.authManager?.init();
+
+                // Initialize UI systems
+                await window.headerNavigation?.init();
+                await window.modalManager?.init();
+                await window.notificationsManager?.init();
+                await window.animationsManager?.init();
+                await window.utilityHelpers?.init();
+                await window.uiHelpers?.init();
+
+                // Initialize content systems
+                await window.autocompleteManager?.init();
+                await window.searchController?.init();
+                await window.listingsManager?.init();
+                await window.mapController?.init();
+                await window.addListingForm?.init();
+
+                // Initialize chat system last
+                await window.chatController?.init();
+                await window.messagingPanel?.init();
+
+                console.log('✅ Modular application initialized successfully');
+            } catch (error) {
+                console.error('❌ Application initialization failed:', error);
+                if (window.notificationsManager) {
+                    window.notificationsManager.showError('Application failed to initialize. Please refresh the page.');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
