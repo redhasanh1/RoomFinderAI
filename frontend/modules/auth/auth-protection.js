@@ -64,25 +64,41 @@ class AuthProtection {
             console.log('⚠️ href property already defined, using alternative protection');
         }
 
-        // Protect location.assign
-        window.location.assign = function(url) {
-            if (self.shouldBlockRedirect(url)) {
-                console.error('🚫 BLOCKED location.assign to login:', url);
-                console.trace('Stack trace for blocked redirect:');
-                return;
-            }
-            return self.originalFunctions.locationAssign.call(this, url);
-        };
+        // Protect location.assign (handle read-only property)
+        try {
+            Object.defineProperty(window.location, 'assign', {
+                value: function(url) {
+                    if (self.shouldBlockRedirect(url)) {
+                        console.error('🚫 BLOCKED location.assign to login:', url);
+                        console.trace('Stack trace for blocked redirect:');
+                        return;
+                    }
+                    return self.originalFunctions.locationAssign.call(this, url);
+                },
+                writable: false,
+                configurable: true
+            });
+        } catch (e) {
+            console.log('⚠️ Cannot override location.assign, using fallback protection');
+        }
 
-        // Protect location.replace
-        window.location.replace = function(url) {
-            if (self.shouldBlockRedirect(url)) {
-                console.error('🚫 BLOCKED location.replace to login:', url);
-                console.trace('Stack trace for blocked redirect:');
-                return;
-            }
-            return self.originalFunctions.locationReplace.call(this, url);
-        };
+        // Protect location.replace (handle read-only property)
+        try {
+            Object.defineProperty(window.location, 'replace', {
+                value: function(url) {
+                    if (self.shouldBlockRedirect(url)) {
+                        console.error('🚫 BLOCKED location.replace to login:', url);
+                        console.trace('Stack trace for blocked redirect:');
+                        return;
+                    }
+                    return self.originalFunctions.locationReplace.call(this, url);
+                },
+                writable: false,
+                configurable: true
+            });
+        } catch (e) {
+            console.log('⚠️ Cannot override location.replace, using fallback protection');
+        }
     }
 
     /**

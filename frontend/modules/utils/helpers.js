@@ -55,7 +55,7 @@ class UtilityHelpers {
         if (typeof input !== 'string') return '';
         return input.trim()
             .replace(/\s+/g, ' ')  // Multiple spaces to single
-            .replace(/[^\\w\\s\\-.,#]/g, ''); // Remove special chars except basic ones
+            .replace(/[^\w\s\-.,#]/g, ''); // Remove special chars except basic ones
     }
 
     /**
@@ -71,7 +71,7 @@ class UtilityHelpers {
      * Capitalize first letter of each word
      */
     titleCase(str) {
-        return str.replace(/\\w\\S*/g, (txt) =>
+        return str.replace(/\w\S*/g, (txt) =>
             txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase()
         );
     }
@@ -84,9 +84,9 @@ class UtilityHelpers {
             .toString()
             .toLowerCase()
             .trim()
-            .replace(/\\s+/g, '-')
-            .replace(/[^\\w\\-]+/g, '')
-            .replace(/\\-\\-+/g, '-')
+            .replace(/\s+/g, '-')
+            .replace(/[^\w\-]+/g, '')
+            .replace(/\-\-+/g, '-')
             .replace(/^-+/, '')
             .replace(/-+$/, '');
     }
@@ -174,8 +174,8 @@ class UtilityHelpers {
      * Format phone number
      */
     formatPhoneNumber(phone) {
-        const cleaned = phone.replace(/\\D/g, '');
-        const match = cleaned.match(/^(\\d{3})(\\d{3})(\\d{4})$/);
+        const cleaned = phone.replace(/\D/g, '');
+        const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
         if (match) {
             return `(${match[1]}) ${match[2]}-${match[3]}`;
         }
@@ -188,7 +188,7 @@ class UtilityHelpers {
      * Validate email address
      */
     validateEmail(email) {
-        const emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return emailRegex.test(email);
     }
 
@@ -196,8 +196,8 @@ class UtilityHelpers {
      * Validate phone number
      */
     validatePhone(phone) {
-        const phoneRegex = /^[\\+]?[1-9]?\\d{9,15}$/;
-        return phoneRegex.test(phone.replace(/\\s/g, ''));
+        const phoneRegex = /^[\+]?[1-9]?\d{9,15}$/;
+        return phoneRegex.test(phone.replace(/\s/g, ''));
     }
 
     /**
@@ -217,9 +217,9 @@ class UtilityHelpers {
      */
     validatePostalCode(code, country = 'US') {
         const patterns = {
-            US: /^\\d{5}(-\\d{4})?$/,
-            CA: /^[A-Za-z]\\d[A-Za-z][ -]?\\d[A-Za-z]\\d$/,
-            UK: /^[A-Z]{1,2}\\d[A-Z\\d]? ?\\d[A-Z]{2}$/i
+            US: /^\d{5}(-\d{4})?$/,
+            CA: /^[A-Za-z]\d[A-Za-z][ -]?\d[A-Za-z]\d$/,
+            UK: /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i
         };
 
         const pattern = patterns[country.toUpperCase()];
