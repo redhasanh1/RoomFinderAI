@@ -7184,9 +7184,52 @@
                         messagePanel.classList.remove('hidden');
                         console.log('✅ Messaging panel opened');
 
-                        // Load conversations if needed
+                        // Load conversations with debugging and fallbacks
+                        console.log('🔍 Attempting to load conversations...');
+                        console.log('🔍 window.refreshConversations exists:', typeof window.refreshConversations === 'function');
+
                         if (typeof window.refreshConversations === 'function') {
-                            window.refreshConversations();
+                            try {
+                                console.log('📞 Calling window.refreshConversations()');
+                                const result = window.refreshConversations();
+                                // Handle if it returns a promise
+                                if (result && typeof result.then === 'function') {
+                                    result.then(() => {
+                                        console.log('✅ window.refreshConversations() completed');
+                                    }).catch(error => {
+                                        console.error('❌ Error in window.refreshConversations:', error);
+                                    });
+                                } else {
+                                    console.log('✅ window.refreshConversations() completed (sync)');
+                                }
+                            } catch (error) {
+                                console.error('❌ Error calling window.refreshConversations:', error);
+                            }
+                        } else {
+                            console.log('⚠️ window.refreshConversations not available, checking for alternatives...');
+
+                            // Try to find loadUserConversations function in global scope
+                            if (typeof loadUserConversations === 'function') {
+                                try {
+                                    console.log('📞 Calling loadUserConversations() directly');
+                                    const result = loadUserConversations();
+                                    // Handle if it returns a promise
+                                    if (result && typeof result.then === 'function') {
+                                        result.then(() => {
+                                            console.log('✅ loadUserConversations() completed');
+                                        }).catch(error => {
+                                            console.error('❌ Error in loadUserConversations:', error);
+                                        });
+                                    } else {
+                                        console.log('✅ loadUserConversations() completed (sync)');
+                                    }
+                                } catch (error) {
+                                    console.error('❌ Error calling loadUserConversations:', error);
+                                }
+                            } else {
+                                console.log('⚠️ No conversation loading function available');
+                                console.log('🔍 Available functions:', Object.keys(window).filter(key => key.includes('conversation') || key.includes('Conversation')));
+                            }
                         }
                     } else {
                         messagePanel.classList.add('hidden');
