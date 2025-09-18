@@ -5139,20 +5139,20 @@
             let isMessagingPanelOpen = false;
             let lastToggleTime = 0;
 
-            // Toggle message panel
-            messageToggleBtn.addEventListener('click', async (e) => {
-                e.preventDefault();
-                e.stopPropagation();
+            // Toggle message panel - MOVED TO GLOBAL HANDLER to avoid conflicts
+            // messageToggleBtn.addEventListener('click', async (e) => {
+            //     e.preventDefault();
+            //     e.stopPropagation();
 
-                lastToggleTime = Date.now();
-                isMessagingPanelOpen = !isMessagingPanelOpen;
-                if (isMessagingPanelOpen) {
-                    messagePanel.classList.remove('hidden');
-                    await loadUserConversations();
-                } else {
-                    messagePanel.classList.add('hidden');
-                }
-            });
+            //     lastToggleTime = Date.now();
+            //     isMessagingPanelOpen = !isMessagingPanelOpen;
+            //     if (isMessagingPanelOpen) {
+            //         messagePanel.classList.remove('hidden');
+            //         await loadUserConversations();
+            //     } else {
+            //         messagePanel.classList.add('hidden');
+            //     }
+            // });
 
             // Force hide notifications button
             document.getElementById('forceHideNotifications').addEventListener('click', () => {
@@ -5174,13 +5174,12 @@
             // Close panel when clicking outside
             document.addEventListener('click', (event) => {
                 // Don't close if this click is what opened the panel (within 100ms)
-                if (Date.now() - lastToggleTime < 100) {
+                if (window.lastMessageToggleTime && Date.now() - window.lastMessageToggleTime < 100) {
                     return;
                 }
 
                 if (!event.target.closest('#messagingPanel')) {
                     messagePanel.classList.add('hidden');
-                    isMessagingPanelOpen = false;
                 }
             });
 
@@ -7163,10 +7162,37 @@
             if (chatButton) {
                 console.log('💬 Chat button clicked successfully! (Direct or child element)');
 
-                // Handle messageToggleBtn differently - let it bubble to its own event listener
+                // Handle messageToggleBtn directly in global handler
                 if (chatButton.id === 'messageToggleBtn') {
-                    console.log('🔄 messageToggleBtn detected, allowing event to bubble to dedicated handler');
-                    return; // Let the dedicated messageToggleBtn event listener handle this
+                    console.log('🔄 messageToggleBtn detected, handling in global handler');
+                    e.preventDefault();
+                    e.stopPropagation();
+
+                    // Get messaging panel elements
+                    const messagePanel = document.getElementById('messagePanel');
+                    if (!messagePanel) {
+                        console.error('❌ messagePanel element not found');
+                        return;
+                    }
+
+                    // Set global timing variable for click-outside handler
+                    window.lastMessageToggleTime = Date.now();
+
+                    // Toggle panel visibility
+                    const isCurrentlyHidden = messagePanel.classList.contains('hidden');
+                    if (isCurrentlyHidden) {
+                        messagePanel.classList.remove('hidden');
+                        console.log('✅ Messaging panel opened');
+
+                        // Load conversations if needed
+                        if (typeof window.refreshConversations === 'function') {
+                            window.refreshConversations();
+                        }
+                    } else {
+                        messagePanel.classList.add('hidden');
+                        console.log('✅ Messaging panel closed');
+                    }
+                    return;
                 }
 
                 console.log('🔍 Debug info:', {
