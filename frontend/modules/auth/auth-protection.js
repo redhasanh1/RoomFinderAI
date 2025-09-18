@@ -121,16 +121,21 @@ class AuthProtection {
      * Setup user data backup and restoration system
      */
     setupUserDataBackup() {
+        // Clear any existing interval to prevent duplicates
+        if (this.backupInterval) {
+            clearInterval(this.backupInterval);
+        }
+
         // Create initial backup
         this.createUserBackup();
 
-        // Start continuous monitoring
+        // Start continuous monitoring with longer interval
         this.backupInterval = setInterval(() => {
             if (this.restoreUserIfNeeded()) {
                 console.log('🔄 User data restored automatically');
             }
             this.createUserBackup(); // Refresh backup
-        }, 5000);
+        }, 15000); // Increased to 15 seconds to reduce frequency
     }
 
     /**
@@ -141,14 +146,32 @@ class AuthProtection {
     }
 
     /**
-     * Create backup of user data
+     * Create backup of user data (with throttling)
      */
     createUserBackup() {
         const currentUser = localStorage.getItem('currentUser');
-        if (currentUser) {
+        if (!currentUser) return;
+
+        const existingBackup = localStorage.getItem('currentUser_backup');
+        const lastBackupTime = localStorage.getItem('currentUser_backup_timestamp');
+
+        // Only create backup if data changed or it's been more than 30 seconds
+        const now = Date.now();
+        const thirtySecondsAgo = now - 30000;
+
+        if (existingBackup === currentUser && lastBackupTime && parseInt(lastBackupTime) > thirtySecondsAgo) {
+            return; // Skip if backup is recent and unchanged
+        }
+
+        try {
             localStorage.setItem('currentUser_backup', currentUser);
-            localStorage.setItem('currentUser_backup_timestamp', Date.now().toString());
-            console.log('💾 User backup created');
+            localStorage.setItem('currentUser_backup_timestamp', now.toString());
+            // Only log if backup actually changed to reduce console spam
+            if (existingBackup !== currentUser) {
+                console.log('💾 User backup updated');
+            }
+        } catch (error) {
+            console.error('Failed to create user backup:', error);
         }
     }
 
@@ -224,7 +247,11 @@ class AuthProtection {
     }
 }
 
-// Create global instance
-window.authProtection = new AuthProtection();
+// Create global instance (singleton)
+if (!window.authProtection) {
+    window.authProtection = new AuthProtection();
+} else {
+    console.log('🛡️ Auth Protection already exists, using existing instance');
+}
 
 export default window.authProtection;
