@@ -5137,9 +5137,14 @@
             const messageNotificationBadge = document.getElementById('messageNotificationBadge');
             
             let isMessagingPanelOpen = false;
+            let lastToggleTime = 0;
 
             // Toggle message panel
-            messageToggleBtn.addEventListener('click', async () => {
+            messageToggleBtn.addEventListener('click', async (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                lastToggleTime = Date.now();
                 isMessagingPanelOpen = !isMessagingPanelOpen;
                 if (isMessagingPanelOpen) {
                     messagePanel.classList.remove('hidden');
@@ -5168,6 +5173,11 @@
 
             // Close panel when clicking outside
             document.addEventListener('click', (event) => {
+                // Don't close if this click is what opened the panel (within 100ms)
+                if (Date.now() - lastToggleTime < 100) {
+                    return;
+                }
+
                 if (!event.target.closest('#messagingPanel')) {
                     messagePanel.classList.add('hidden');
                     isMessagingPanelOpen = false;
