@@ -985,6 +985,12 @@ class ChatController {
 window.chatController = new ChatController();
 
 // Global functions for backward compatibility
+window.setupChat = () => {
+    if (window.chatController) {
+        return window.chatController.init();
+    }
+};
+
 window.startConversation = (listing) => {
     if (window.chatController) {
         window.chatController.startConversation(listing);

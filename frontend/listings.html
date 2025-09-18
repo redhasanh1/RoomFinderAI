@@ -525,6 +525,28 @@
                 await window.chatController?.init();
                 await window.messagingPanel?.init();
 
+                // Critical function calls that start core functionality
+                if (typeof initMap === 'function') {
+                    initMap();
+                }
+                if (typeof setupChat === 'function') {
+                    setupChat();
+                }
+                if (typeof setupMessagingPanel === 'function') {
+                    setupMessagingPanel();
+                }
+                if (typeof loadListings === 'function') {
+                    await loadListings();
+                }
+                if (typeof displayListings === 'function') {
+                    await displayListings();
+                }
+
+                // Initialize connection monitoring
+                if (typeof initializeConnectionMonitoring === 'function') {
+                    initializeConnectionMonitoring();
+                }
+
                 console.log('✅ Modular application initialized successfully');
             } catch (error) {
                 console.error('❌ Application initialization failed:', error);

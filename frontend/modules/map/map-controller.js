@@ -325,4 +325,7 @@ class MapController {
 // Create global instance
 window.mapController = new MapController();
 
+// Export global functions for backward compatibility
+window.initMap = () => window.mapController.initMap();
+
 export default window.mapController;
