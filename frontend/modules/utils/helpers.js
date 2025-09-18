@@ -597,4 +597,18 @@ class UtilityHelpers {
 // Create global instance
 window.utilityHelpers = new UtilityHelpers();
 
+// Export global functions for backward compatibility
+window.initializeConnectionMonitoring = () => {
+    console.log('🌐 Basic connection monitoring initialized');
+
+    // Simple online/offline detection
+    window.addEventListener('online', () => {
+        console.log('🌐 Connection restored');
+    });
+
+    window.addEventListener('offline', () => {
+        console.log('🌐 Connection lost');
+    });
+};
+
 export default window.utilityHelpers;
