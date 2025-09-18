@@ -560,6 +560,12 @@ window.updateUnreadCount = () => {
     }
 };
 
+window.setupMessagingPanel = () => {
+    if (window.messagingPanel) {
+        return window.messagingPanel.init();
+    }
+};
+
 window.openConversationInModal = (conversationId, listingTitle, listingId, otherUserEmail) => {
     if (window.messagingPanel) {
         window.messagingPanel.openConversationInModal(conversationId, listingTitle, listingId, otherUserEmail);

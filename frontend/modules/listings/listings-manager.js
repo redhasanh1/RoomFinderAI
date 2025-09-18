@@ -452,4 +452,17 @@ class ListingsManager {
 // Create global instance
 window.listingsManager = new ListingsManager();
 
+// Export global functions for backward compatibility
+window.loadListings = () => {
+    if (window.listingsManager) {
+        return window.listingsManager.loadListings();
+    }
+};
+
+window.displayListings = () => {
+    if (window.listingsManager) {
+        return window.listingsManager.displayListings();
+    }
+};
+
 export default window.listingsManager;
