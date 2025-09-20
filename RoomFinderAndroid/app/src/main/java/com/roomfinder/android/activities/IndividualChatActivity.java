@@ -72,6 +72,9 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     // Attachment service
     private AttachmentUploadService attachmentService;
     
+    // Chat moderation service
+    private ChatModerationService moderationService;
+    
     // AI negotiation integration
     private String pendingMessageTemplate;
     private String conversationType;
@@ -239,6 +242,7 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
     
     private void initializeServices() {
         attachmentService = new AttachmentUploadService(this);
+        moderationService = ChatModerationService.getInstance(this);
         
         // Initialize AI negotiation engine if this is an AI negotiation
         if (isAiNegotiationActive && negotiationId != null) {
@@ -1045,6 +1049,173 @@ public class IndividualChatActivity extends AppCompatActivity implements RealTim
             Toast.makeText(this, "Chat error: " + error, Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Chat error: " + error);
         });
+    }
+    
+    /**
+     * Show report user dialog
+     */
+    private void showReportUserDialog() {
+        if (otherUserEmail == null) {
+            Toast.makeText(this, "Cannot report user", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        String[] reportCategories = {
+            "Spam or unwanted messages",
+            "Harassment or bullying", 
+            "Inappropriate content",
+            "Fake or impersonation profile",
+            "Scam or fraud",
+            "Hate speech",
+            "Violence or threats",
+            "Sexual content",
+            "Other violation"
+        };
+        
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Report User")
+            .setMessage("Why are you reporting this user?")
+            .setItems(reportCategories, (dialog, which) -> {
+                String selectedCategory = reportCategories[which];
+                showReportReasonDialog(selectedCategory);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Show dialog to enter report reason
+     */
+    private void showReportReasonDialog(String category) {
+        android.widget.EditText editText = new android.widget.EditText(this);
+        editText.setHint("Please provide additional details (optional)");
+        editText.setMaxLines(3);
+        
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Report Details")
+            .setMessage("Category: " + category)
+            .setView(editText)
+            .setPositiveButton("Submit Report", (dialog, which) -> {
+                String reason = editText.getText().toString().trim();
+                submitUserReport(category, reason);
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Submit user report
+     */
+    private void submitUserReport(String category, String reason) {
+        if (moderationService == null || otherUserEmail == null) {
+            Toast.makeText(this, "Unable to submit report", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Show loading
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(this);
+        progressDialog.setMessage("Submitting report...");
+        progressDialog.show();
+        
+        moderationService.reportContent(
+            currentUserEmail,
+            otherUserEmail,
+            null, // No specific message ID for user report
+            reason,
+            category.toUpperCase().replace(" ", "_"),
+            new ChatModerationService.ReportCallback() {
+                @Override
+                public void onReportSubmitted() {
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(IndividualChatActivity.this, 
+                            "Report submitted successfully", Toast.LENGTH_SHORT).show();
+                    });
+                }
+                
+                @Override
+                public void onReportError(String error) {
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(IndividualChatActivity.this, 
+                            "Failed to submit report: " + error, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        );
+    }
+    
+    /**
+     * Show block user confirmation dialog
+     */
+    private void showBlockUserDialog() {
+        if (otherUserEmail == null) {
+            Toast.makeText(this, "Cannot block user", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        new MaterialAlertDialogBuilder(this)
+            .setTitle("Block User")
+            .setMessage("Are you sure you want to block this user? You will no longer receive messages from them.")
+            .setPositiveButton("Block", (dialog, which) -> {
+                blockUser();
+            })
+            .setNegativeButton("Cancel", null)
+            .show();
+    }
+    
+    /**
+     * Block the current user
+     */
+    private void blockUser() {
+        if (moderationService == null || otherUserEmail == null) {
+            Toast.makeText(this, "Unable to block user", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
+        // Show loading
+        android.app.ProgressDialog progressDialog = new android.app.ProgressDialog(this);
+        progressDialog.setMessage("Blocking user...");
+        progressDialog.show();
+        
+        moderationService.blockUser(
+            currentUserEmail,
+            otherUserEmail,
+            new ChatModerationService.BlockCallback() {
+                @Override
+                public void onUserBlocked() {
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(IndividualChatActivity.this, 
+                            "User blocked successfully", Toast.LENGTH_SHORT).show();
+                        
+                        // Close the chat since user is now blocked
+                        finish();
+                    });
+                }
+                
+                @Override
+                public void onBlockError(String error) {
+                    runOnUiThread(() -> {
+                        progressDialog.dismiss();
+                        Toast.makeText(IndividualChatActivity.this, 
+                            "Failed to block user: " + error, Toast.LENGTH_SHORT).show();
+                    });
+                }
+            }
+        );
+    }
+    
+    /**
+     * Check if current user is blocked by the other user
+     */
+    private boolean isUserBlocked() {
+        if (moderationService == null || otherUserEmail == null) {
+            return false;
+        }
+        
+        return moderationService.isUserBlocked(currentUserEmail, otherUserEmail) ||
+               moderationService.isUserBlocked(otherUserEmail, currentUserEmail);
     }
     
     @Override
