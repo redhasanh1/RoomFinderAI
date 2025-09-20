@@ -39,6 +39,7 @@ public class RealTimeChatService {
     private SupabaseClient supabaseClient;
     private Handler mainHandler;
     private ScheduledExecutorService executorService;
+    private ChatModerationService moderationService;
     
     // Real-time connection management
     private OkHttpClient httpClient;
@@ -103,6 +104,9 @@ public class RealTimeChatService {
         if (authManager.isUserAuthenticated()) {
             this.currentUserEmail = authManager.getCurrentUser().getEmail();
         }
+        
+        // Initialize moderation service
+        this.moderationService = ChatModerationService.getInstance(context);
     }
     
     public static synchronized RealTimeChatService getInstance(Context context) {
@@ -920,16 +924,75 @@ public class RealTimeChatService {
             return;
         }
         
-        executorService.execute(() -> {
-            try {
-                JSONObject messageData = new JSONObject();
-                messageData.put("conversation_id", conversationId);
-                messageData.put("sender_email", currentUserEmail);
-                messageData.put("content", content);
-                messageData.put("message_type", "text");
-                messageData.put("created_at", java.time.Instant.now().toString());
-                
-                String url = ApiKeys.SUPABASE_URL + "rest/v1/messages";
+        // Create message for moderation check
+        ChatMessage messageForModeration = ChatMessage.createRealUserMessage(content, currentUserEmail, conversationId);
+        
+        // Moderate message before sending
+        moderationService.moderateMessage(messageForModeration, new ChatModerationService.ModerationCallback() {
+            @Override
+            public void onModerationComplete(ChatModerationService.ModerationResult result) {
+                switch (result.action) {
+                    case ALLOW:
+                        // Message is clean, proceed with sending
+                        executorService.execute(() -> sendMessageInternal(conversationId, content, listener));
+                        break;
+                        
+                    case BLOCK:
+                        // Message blocked, notify user
+                        mainHandler.post(() -> {
+                            if (listener != null) {
+                                listener.onError("Message blocked: " + result.reason);
+                            }
+                        });
+                        break;
+                        
+                    case WARN_USER:
+                        // Show warning but allow message
+                        mainHandler.post(() -> {
+                            if (listener != null) {
+                                // You could show a warning dialog here
+                                Log.w(TAG, "Message warning: " + result.reason);
+                            }
+                        });
+                        executorService.execute(() -> sendMessageInternal(conversationId, content, listener));
+                        break;
+                        
+                    case FLAG_FOR_REVIEW:
+                        // Allow message but flag for admin review
+                        Log.w(TAG, "Message flagged for review: " + result.reason);
+                        executorService.execute(() -> sendMessageInternal(conversationId, content, listener));
+                        break;
+                        
+                    case RATE_LIMIT:
+                        // User is rate limited
+                        mainHandler.post(() -> {
+                            if (listener != null) {
+                                listener.onError("You are sending messages too quickly. Please slow down.");
+                            }
+                        });
+                        break;
+                }
+            }
+            
+            @Override
+            public void onModerationError(String error) {
+                // If moderation fails, allow message but log error
+                Log.e(TAG, "Moderation error: " + error);
+                executorService.execute(() -> sendMessageInternal(conversationId, content, listener));
+            }
+        });
+    }
+    
+    private void sendMessageInternal(String conversationId, String content, MessageListener listener) {
+        try {
+            JSONObject messageData = new JSONObject();
+            messageData.put("conversation_id", conversationId);
+            messageData.put("sender_email", currentUserEmail);
+            messageData.put("content", content);
+            messageData.put("message_type", "text");
+            messageData.put("created_at", java.time.Instant.now().toString());
+            
+            String url = ApiKeys.SUPABASE_URL + "rest/v1/messages";
                 
                 RequestBody body = RequestBody.create(
                         messageData.toString(),
