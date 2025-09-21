@@ -4328,77 +4328,297 @@
         let originalListings = [];
         let filteredListings = [];
 
+        // 🔍 BULLETPROOF SEARCH SYSTEM
         async function applySearchFilters() {
-            console.log('🔍 Applying search filters...');
-            
-            const location = document.getElementById('searchLocation').value.toLowerCase().trim();
-            const maxPrice = parseInt(document.getElementById('searchMaxPrice').value);
-            const roomType = document.getElementById('searchRoomType').value;
-            const bedrooms = document.getElementById('searchBedrooms').value;
-            
-            console.log('Search criteria:', { location, maxPrice, roomType, bedrooms });
-            
-            // Build Supabase query with filters
-            let query = supabase
-                .from('listings')
-                .select('*')
-                .order('created_at', { ascending: false });
-            
-            // Apply location filter (city, street, or postal code)
-            if (location) {
-                query = query.or(`city.ilike.%${location}%,street.ilike.%${location}%,postal_code.ilike.%${location}%`);
-            }
-            
-            // Apply price filter
-            if (maxPrice && !isNaN(maxPrice)) {
-                query = query.lte('price', maxPrice);
-            }
-            
-            // Apply room type filter
-            if (roomType) {
-                query = query.eq('house_type', roomType);
-            }
-            
-            // Apply bedroom filter
-            if (bedrooms) {
-                query = query.eq('bedrooms', parseInt(bedrooms));
-            }
-            
+            console.log('🔍 BULLETPROOF: Starting search with filters...');
+
             try {
-                const { data: filteredListings, error } = await query;
-                
-                if (error) {
-                    console.error('Search error:', error);
-                    alert('Search failed: ' + error.message);
+                // Step 1: Verify DOM elements exist
+                const searchElements = {
+                    location: document.getElementById('searchLocation'),
+                    maxPrice: document.getElementById('searchMaxPrice'),
+                    roomType: document.getElementById('searchRoomType'),
+                    bedrooms: document.getElementById('searchBedrooms'),
+                    container: document.getElementById('listingsContainer')
+                };
+
+                // Check for missing elements
+                const missingElements = Object.entries(searchElements)
+                    .filter(([key, element]) => !element)
+                    .map(([key]) => key);
+
+                if (missingElements.length > 0) {
+                    console.error('🔍 Missing search elements:', missingElements);
+                    showError('Search interface not ready. Please refresh the page.');
                     return;
                 }
-                
-                console.log(`✅ Found ${filteredListings.length} listings matching criteria`);
-                
-                // Display filtered results
+
+                // Step 2: Get search criteria
+                const location = searchElements.location.value.toLowerCase().trim();
+                const maxPriceValue = searchElements.maxPrice.value;
+                const maxPrice = maxPriceValue ? parseInt(maxPriceValue) : null;
+                const roomType = searchElements.roomType.value;
+                const bedroomsValue = searchElements.bedrooms.value;
+                const bedrooms = bedroomsValue ? parseInt(bedroomsValue) : null;
+
+                console.log('🔍 Search criteria:', { location, maxPrice, roomType, bedrooms });
+
+                // Step 3: Ensure Supabase client is available
+                let searchSupabase = null;
+
+                // Try global supabase first
+                if (typeof supabase !== 'undefined' && supabase) {
+                    searchSupabase = supabase;
+                    console.log('🔍 Using global Supabase client');
+                } else if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                    // Create independent client
+                    searchSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('🔍 Created independent Supabase client');
+                } else {
+                    console.error('🔍 Supabase not available for search');
+                    showError('Search service not available. Please refresh the page.');
+                    return;
+                }
+
+                // Step 4: Show loading state
+                searchElements.container.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+                        <p class="text-gray-600">Searching properties...</p>
+                    </div>
+                `;
+
+                // Step 5: Build and execute search query
+                let searchResults = await executeSearchQuery(searchSupabase, {
+                    location, maxPrice, roomType, bedrooms
+                });
+
+                // Step 6: Handle search results
+                if (searchResults === null) {
+                    // Search failed, try fallback
+                    console.log('🔍 Primary search failed, trying fallback...');
+                    searchResults = await executeSimpleSearch(searchSupabase);
+                }
+
+                // Step 7: Display results
+                displaySearchResults(searchResults, searchElements.container);
+
+            } catch (error) {
+                console.error('🔍 Search system error:', error);
                 const container = document.getElementById('listingsContainer');
+                if (container) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-8">
+                            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-6 max-w-md mx-auto">
+                                <h3 class="text-lg font-medium text-yellow-800 mb-2">Search Temporarily Unavailable</h3>
+                                <p class="text-yellow-600 mb-4">We're having trouble with the search function.</p>
+                                <button onclick="displayAllListings()" class="bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-700 transition duration-300">
+                                    Show All Properties
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }
+
+        // Enhanced search query execution with error handling
+        async function executeSearchQuery(supabaseClient, criteria) {
+            try {
+                // Build Supabase query with filters
+                let query = supabaseClient
+                    .from('listings')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                // Apply location filter (search in multiple fields)
+                if (criteria.location) {
+                    // Try different location field combinations
+                    const locationPatterns = [
+                        `location.ilike.%${criteria.location}%`,
+                        `city.ilike.%${criteria.location}%`,
+                        `street.ilike.%${criteria.location}%`,
+                        `postal_code.ilike.%${criteria.location}%`,
+                        `title.ilike.%${criteria.location}%`,
+                        `description.ilike.%${criteria.location}%`
+                    ];
+                    query = query.or(locationPatterns.join(','));
+                }
+
+                // Apply price filter
+                if (criteria.maxPrice && !isNaN(criteria.maxPrice)) {
+                    query = query.lte('price', criteria.maxPrice);
+                }
+
+                // Apply room type filter
+                if (criteria.roomType) {
+                    query = query.eq('house_type', criteria.roomType);
+                }
+
+                // Apply bedroom filter
+                if (criteria.bedrooms && !isNaN(criteria.bedrooms)) {
+                    query = query.gte('bedrooms', criteria.bedrooms);
+                }
+
+                const { data: filteredListings, error } = await query;
+
+                if (error) {
+                    console.error('🔍 Search query error:', error);
+                    return null;
+                }
+
+                console.log(`✅ Found ${filteredListings.length} listings matching criteria`);
+                return filteredListings || [];
+
+            } catch (error) {
+                console.error('🔍 Search execution error:', error);
+                return null;
+            }
+        }
+
+        // Fallback simple search (no complex filters)
+        async function executeSimpleSearch(supabaseClient) {
+            try {
+                console.log('🔍 Executing simple fallback search...');
+                const { data, error } = await supabaseClient
+                    .from('listings')
+                    .select('*')
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    console.error('🔍 Simple search error:', error);
+                    return [];
+                }
+
+                console.log(`✅ Fallback search found ${data.length} listings`);
+                return data || [];
+            } catch (error) {
+                console.error('🔍 Fallback search failed:', error);
+                return [];
+            }
+        }
+
+        // Display search results with proper error handling
+        function displaySearchResults(listings, container) {
+            try {
+                if (!container) {
+                    console.error('🔍 No container for search results');
+                    return;
+                }
+
                 container.innerHTML = '';
 
-                if (filteredListings.length === 0) {
-                    container.innerHTML = '<p class="text-gray-600 text-center mb-4">No listings match your search criteria. Try adjusting your filters.</p>';
-                    // Clear map
-                    if (markerClusterGroup) {
-                        markerClusterGroup.clearLayers();
-                    }
+                if (!listings || listings.length === 0) {
+                    container.innerHTML = `
+                        <div class="col-span-full text-center py-8">
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-6 max-w-md mx-auto">
+                                <h3 class="text-lg font-medium text-gray-800 mb-2">No Properties Found</h3>
+                                <p class="text-gray-600 mb-4">No listings match your search criteria. Try:</p>
+                                <ul class="text-sm text-gray-600 text-left mb-4">
+                                    <li>• Adjusting your filters</li>
+                                    <li>• Expanding your location search</li>
+                                    <li>• Increasing your price range</li>
+                                </ul>
+                                <button onclick="clearSearchFilters()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300 mr-2">
+                                    Clear Filters
+                                </button>
+                                <button onclick="displayAllListings()" class="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition duration-300">
+                                    Show All
+                                </button>
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
 
-                // Display filtered listings
-                filteredListings.forEach(listing => {
-                    displayListingCard(listing, container);
+                // Display listings
+                listings.forEach(listing => {
+                    try {
+                        if (typeof displayListingCard === 'function') {
+                            displayListingCard(listing, container);
+                        } else {
+                            // Fallback to simple display
+                            displaySimpleListingCard(listing, container);
+                        }
+                    } catch (error) {
+                        console.error('🔍 Error displaying listing:', listing.id, error);
+                    }
                 });
-                
-                // Update map with filtered results
-                await updateMap(filteredListings);
-                
+
+                // Update results count
+                updateSearchResultsCount(listings.length);
+
+                // Update map if available
+                if (typeof updateMap === 'function') {
+                    updateMap(listings).catch(console.error);
+                }
+
+                console.log(`✅ Displayed ${listings.length} search results`);
+
             } catch (error) {
-                console.error('Search error:', error);
-                alert('Search failed: ' + error.message);
+                console.error('🔍 Error displaying search results:', error);
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-8">
+                        <p class="text-red-600">Error displaying search results. Please try again.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Simple listing card for fallback
+        function displaySimpleListingCard(listing, container) {
+            const listingDiv = document.createElement('div');
+            listingDiv.className = 'bg-white rounded-lg shadow-md p-6 border border-gray-200';
+
+            listingDiv.innerHTML = `
+                <h3 class="text-lg font-bold text-gray-900 mb-2">${listing.title || 'Untitled Listing'}</h3>
+                <p class="text-xl font-bold text-blue-600 mb-2">$${listing.price || 'N/A'}/month</p>
+                <p class="text-gray-600 mb-3">${listing.description || 'No description available'}</p>
+                <p class="text-sm text-gray-500 mb-3">${listing.location || listing.city || 'Location not specified'}</p>
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>${listing.bedrooms || 0} bed${(listing.bedrooms || 0) !== 1 ? 's' : ''}</span>
+                    <span>${listing.bathrooms || 0} bath${(listing.bathrooms || 0) !== 1 ? 's' : ''}</span>
+                </div>
+            `;
+
+            container.appendChild(listingDiv);
+        }
+
+        // Update search results count display
+        function updateSearchResultsCount(count) {
+            const countElements = document.querySelectorAll('.listings-count, .search-results-count');
+            countElements.forEach(element => {
+                element.textContent = `${count} propert${count === 1 ? 'y' : 'ies'} found`;
+            });
+        }
+
+        // Function to display all listings (fallback)
+        async function displayAllListings() {
+            console.log('🔍 Displaying all listings...');
+
+            try {
+                // Clear search filters first
+                clearSearchFilters();
+
+                // Use the bulletproof loader if available
+                if (typeof window.bulletproofListingsLoader === 'function') {
+                    const success = await window.bulletproofListingsLoader();
+                    if (success) {
+                        console.log('✅ All listings displayed via bulletproof loader');
+                        return;
+                    }
+                }
+
+                // Fallback to display listings function
+                if (typeof displayListings === 'function') {
+                    await displayListings();
+                    console.log('✅ All listings displayed via displayListings');
+                } else {
+                    console.error('🔍 No listing display functions available');
+                }
+            } catch (error) {
+                console.error('🔍 Error displaying all listings:', error);
             }
         }
 
@@ -5252,6 +5472,7 @@
                     authSystem: false,
                     mapInit: false,
                     listingsLoad: false,
+                    searchSystem: false,
                     additionalSystems: false
                 },
                 errors: []
@@ -5270,6 +5491,9 @@
                 // Step 4: PRIORITY - Load Listings (this is what the user needs most)
                 // Start listings immediately - don't wait for auth or map
                 await initializeListingsAsync(initState);
+
+                // Step 4.5: Initialize Search System (after listings load)
+                initializeSearchSystemAsync(initState);
 
                 // Step 5: Additional Systems (completely non-blocking)
                 initializeAdditionalSystemsAsync(initState);
@@ -5654,6 +5878,75 @@
                 </div>
             `;
             return div;
+        }
+
+        // Step 4.5: Search System Initialization (after listings load)
+        function initializeSearchSystemAsync(initState) {
+            setTimeout(async () => {
+                try {
+                    console.log('🔍 Initializing search system...');
+
+                    // Verify search elements exist
+                    const searchElements = [
+                        'searchLocation', 'searchMaxPrice', 'searchRoomType',
+                        'searchBedrooms', 'listingsContainer'
+                    ];
+
+                    const missingElements = searchElements.filter(id => !document.getElementById(id));
+                    if (missingElements.length > 0) {
+                        console.warn('🔍 Missing search elements:', missingElements);
+                        return;
+                    }
+
+                    // Add search event listeners for real-time search
+                    const searchLocation = document.getElementById('searchLocation');
+                    if (searchLocation) {
+                        searchLocation.addEventListener('input', debounceSearch);
+                    }
+
+                    // Initialize search with "show all" by default
+                    console.log('🔍 Initializing default "show all" search...');
+
+                    // Small delay to ensure listings have loaded first
+                    setTimeout(async () => {
+                        try {
+                            // Check if container has listings
+                            const container = document.getElementById('listingsContainer');
+                            if (container && container.children.length === 0) {
+                                console.log('🔍 No listings in container, triggering default search...');
+                                await displayAllListings();
+                            } else {
+                                console.log('🔍 Listings already in container, search system ready');
+                            }
+
+                            initState.steps.searchSystem = true;
+                            console.log('✅ Search system initialized');
+                        } catch (error) {
+                            console.error('❌ Default search initialization failed:', error);
+                        }
+                    }, 500);
+
+                } catch (error) {
+                    console.error('❌ Search system initialization failed:', error);
+                    initState.errors.push({ step: 'searchSystem', error: error.message });
+                }
+            }, 200); // Small delay to ensure listings load first
+        }
+
+        // Debounced search for real-time filtering
+        let searchTimeout;
+        function debounceSearch() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                const searchValue = document.getElementById('searchLocation').value.trim();
+                if (searchValue.length > 2) {
+                    console.log('🔍 Real-time search triggered:', searchValue);
+                    applySearchFilters();
+                } else if (searchValue.length === 0) {
+                    // Show all listings when search is cleared
+                    displayAllListings();
+                }
+            }, 300);
         }
 
         // Step 5: Additional Systems (completely non-blocking)
