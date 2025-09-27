@@ -17,7 +17,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import org.tensorflow.lite.Interpreter;
 import java.util.Arrays;
 
 import java.util.concurrent.CompletableFuture;

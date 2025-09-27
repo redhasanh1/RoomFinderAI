@@ -28,6 +28,7 @@ import com.roomfinder.android.services.AiNegotiationEngine;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.utils.ApiKeys;
 import com.roomfinder.android.services.AttachmentUploadService;
+import com.roomfinder.android.services.ChatModerationService;
 
 import java.io.File;
 import java.io.IOException;

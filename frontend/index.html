@@ -2138,26 +2138,39 @@
                 </div>
             </div>
 
-            <!-- Call to Action -->
+            <!-- Interactive Face Card Demo -->
             <div class="text-center reveal">
-                <div class="inline-block bg-white rounded-3xl p-2 shadow-2xl mb-8">
-                    <div class="flex items-center space-x-4 px-6 py-4">
-                        <div class="flex -space-x-2">
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-blue-400 to-purple-500 border-2 border-white flex items-center justify-center text-white font-bold">A</div>
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-green-400 to-blue-500 border-2 border-white flex items-center justify-center text-white font-bold">B</div>
-                            <div class="w-12 h-12 rounded-full bg-gradient-to-r from-purple-400 to-pink-500 border-2 border-white flex items-center justify-center text-white font-bold">C</div>
-                        </div>
-                        <div class="text-left">
-                            <div class="text-sm text-gray-500">98% Compatibility Score</div>
-                            <div class="text-lg font-bold text-gray-900">Perfect RoomPal Found!</div>
-                        </div>
+                <h3 class="text-2xl font-bold text-gray-900 mb-8">Try it out - Swipe to match!</h3>
+
+                <!-- Mini Card Stack Demo -->
+                <div class="relative mx-auto" style="width: 300px; height: 400px;">
+                    <div id="demo-card-stack" class="relative w-full h-full">
+                        <!-- Demo cards will be populated here -->
+                    </div>
+
+                    <!-- Demo Action Buttons -->
+                    <div class="flex justify-center space-x-6 mt-6">
+                        <button id="demo-pass-btn" class="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+
+                        <button id="demo-like-btn" class="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200">
+                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
-                <a href="roommate-matching.html" class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-12 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
-                    Find Your RoomPal Now
-                </a>
-                <p class="text-sm text-gray-500 mt-4">Free to use • No hidden fees • Instant matches</p>
+                <!-- CTA Buttons -->
+                <div class="mt-12 space-y-4">
+                    <a href="roommate-matching.html" class="inline-block bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 px-12 rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 font-bold text-lg shadow-xl hover:shadow-2xl transform hover:-translate-y-1">
+                        Start Matching Now
+                    </a>
+                    <p class="text-sm text-gray-500">Free to use • No hidden fees • Instant matches</p>
+                </div>
             </div>
         </div>
     </section>
@@ -2742,6 +2755,295 @@
             }
         }
 
+    </script>
+
+    <!-- RoomPal Face Cards Demo Script -->
+    <script>
+        // Face Cards Demo for RoomPal Section
+        class RoomPalDemo {
+            constructor() {
+                this.currentCardIndex = 0;
+                this.demoProfiles = [
+                    {
+                        id: 'demo-1',
+                        name: 'Sarah',
+                        age: 22,
+                        occupation: 'CS Student',
+                        photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=300&h=400&fit=crop&crop=face',
+                        compatibility: 95,
+                        hobbies: ['🎮', '💻', '🎭']
+                    },
+                    {
+                        id: 'demo-2',
+                        name: 'Alex',
+                        age: 26,
+                        occupation: 'Marketing Manager',
+                        photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop&crop=face',
+                        compatibility: 88,
+                        hobbies: ['🏃‍♂️', '🍳', '📸']
+                    },
+                    {
+                        id: 'demo-3',
+                        name: 'Maya',
+                        age: 24,
+                        occupation: 'UX Designer',
+                        photo: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=300&h=400&fit=crop&crop=face',
+                        compatibility: 92,
+                        hobbies: ['🎨', '🧘‍♀️', '📚']
+                    }
+                ];
+                this.init();
+            }
+
+            init() {
+                // Wait for DOM to be ready
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => this.createCards());
+                } else {
+                    this.createCards();
+                }
+            }
+
+            createCards() {
+                const cardStack = document.getElementById('demo-card-stack');
+                const passBtn = document.getElementById('demo-pass-btn');
+                const likeBtn = document.getElementById('demo-like-btn');
+
+                if (!cardStack) {
+                    console.log('Demo card stack not found, will retry...');
+                    setTimeout(() => this.createCards(), 1000);
+                    return;
+                }
+
+                // Create all cards (show top 3)
+                this.demoProfiles.slice(0, 3).forEach((profile, index) => {
+                    const card = this.createCard(profile, index);
+                    cardStack.appendChild(card);
+                });
+
+                // Add button listeners
+                if (passBtn) passBtn.addEventListener('click', () => this.swipeCard('left'));
+                if (likeBtn) likeBtn.addEventListener('click', () => this.swipeCard('right'));
+
+                // Add swipe gestures
+                this.addSwipeGestures(cardStack);
+
+                console.log('✅ RoomPal demo cards loaded successfully!');
+            }
+
+            createCard(profile, stackIndex) {
+                const card = document.createElement('div');
+                card.className = `absolute inset-0 rounded-2xl overflow-hidden cursor-grab transition-all duration-300 shadow-xl`;
+                card.style.zIndex = 10 - stackIndex;
+                card.style.transform = `scale(${1 - stackIndex * 0.03}) translateY(${stackIndex * 4}px)`;
+                card.setAttribute('data-profile-id', profile.id);
+
+                const compatibilityColor = profile.compatibility >= 90 ? 'bg-green-500' :
+                                         profile.compatibility >= 85 ? 'bg-yellow-500' : 'bg-orange-500';
+
+                card.innerHTML = `
+                    <!-- Background Image -->
+                    <div class="absolute inset-0 bg-gradient-to-br from-blue-500 to-purple-600">
+                        <img src="${profile.photo}" alt="${profile.name}" class="w-full h-full object-cover">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="relative h-full flex flex-col justify-between p-6">
+                        <!-- Top: Compatibility Score -->
+                        <div class="flex justify-end">
+                            <div class="w-12 h-12 ${compatibilityColor} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg border-2 border-white">
+                                ${profile.compatibility}
+                            </div>
+                        </div>
+
+                        <!-- Bottom: Profile Info -->
+                        <div class="text-white">
+                            <h3 class="text-2xl font-bold mb-1">${profile.name}, ${profile.age}</h3>
+                            <p class="text-white/90 text-sm mb-3">${profile.occupation}</p>
+
+                            <!-- Hobbies -->
+                            <div class="flex space-x-2 mb-4">
+                                ${profile.hobbies.map(hobby => `
+                                    <div class="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm text-sm">
+                                        ${hobby}
+                                    </div>
+                                `).join('')}
+                            </div>
+
+                            <!-- Hint -->
+                            <p class="text-white/70 text-xs">👆 Swipe or use buttons below</p>
+                        </div>
+                    </div>
+
+                    <!-- Swipe Indicators -->
+                    <div class="swipe-indicator absolute top-1/2 left-4 transform -translate-y-1/2 opacity-0 transition-opacity duration-200">
+                        <div class="w-16 h-16 border-4 border-red-500 rounded-full flex items-center justify-center bg-red-500/20 text-red-500 font-bold">
+                            PASS
+                        </div>
+                    </div>
+                    <div class="swipe-indicator absolute top-1/2 right-4 transform -translate-y-1/2 opacity-0 transition-opacity duration-200">
+                        <div class="w-16 h-16 border-4 border-green-500 rounded-full flex items-center justify-center bg-green-500/20 text-green-500 font-bold">
+                            LIKE
+                        </div>
+                    </div>
+                `;
+
+                return card;
+            }
+
+            addSwipeGestures(cardStack) {
+                let startX, currentX, isDragging = false;
+
+                const handleStart = (e) => {
+                    const topCard = cardStack.querySelector('[style*="z-index: 10"]');
+                    if (!topCard) return;
+
+                    isDragging = true;
+                    startX = e.touches ? e.touches[0].clientX : e.clientX;
+                    topCard.style.transition = 'none';
+                };
+
+                const handleMove = (e) => {
+                    if (!isDragging) return;
+
+                    const topCard = cardStack.querySelector('[style*="z-index: 10"]');
+                    if (!topCard) return;
+
+                    currentX = e.touches ? e.touches[0].clientX : e.clientX;
+                    const deltaX = currentX - startX;
+                    const rotation = deltaX * 0.1;
+
+                    topCard.style.transform = `translateX(${deltaX}px) rotate(${rotation}deg)`;
+
+                    // Show swipe indicators
+                    const leftIndicator = topCard.querySelector('.swipe-indicator:first-of-type');
+                    const rightIndicator = topCard.querySelector('.swipe-indicator:last-of-type');
+
+                    if (deltaX < -50) {
+                        leftIndicator.style.opacity = Math.min(Math.abs(deltaX) / 100, 1);
+                        rightIndicator.style.opacity = 0;
+                    } else if (deltaX > 50) {
+                        rightIndicator.style.opacity = Math.min(deltaX / 100, 1);
+                        leftIndicator.style.opacity = 0;
+                    } else {
+                        leftIndicator.style.opacity = 0;
+                        rightIndicator.style.opacity = 0;
+                    }
+                };
+
+                const handleEnd = () => {
+                    if (!isDragging) return;
+                    isDragging = false;
+
+                    const topCard = cardStack.querySelector('[style*="z-index: 10"]');
+                    if (!topCard) return;
+
+                    const deltaX = currentX - startX;
+
+                    if (Math.abs(deltaX) > 100) {
+                        // Swipe detected
+                        this.animateCardExit(topCard, deltaX > 0 ? 'right' : 'left');
+                    } else {
+                        // Reset card
+                        topCard.style.transition = 'transform 0.3s ease';
+                        topCard.style.transform = `scale(1) translateY(0px)`;
+
+                        // Hide indicators
+                        topCard.querySelectorAll('.swipe-indicator').forEach(indicator => {
+                            indicator.style.opacity = 0;
+                        });
+                    }
+                };
+
+                // Add event listeners
+                cardStack.addEventListener('mousedown', handleStart);
+                cardStack.addEventListener('touchstart', handleStart, { passive: true });
+
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('touchmove', handleMove, { passive: true });
+
+                document.addEventListener('mouseup', handleEnd);
+                document.addEventListener('touchend', handleEnd);
+            }
+
+            swipeCard(direction) {
+                const cardStack = document.getElementById('demo-card-stack');
+                const topCard = cardStack.querySelector('[style*="z-index: 10"]');
+
+                if (topCard) {
+                    this.animateCardExit(topCard, direction);
+                }
+            }
+
+            animateCardExit(card, direction) {
+                const exitX = direction === 'right' ? 400 : -400;
+                const exitRotation = direction === 'right' ? 20 : -20;
+
+                card.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+                card.style.transform = `translateX(${exitX}px) rotate(${exitRotation}deg)`;
+                card.style.opacity = '0';
+
+                // Show feedback
+                this.showFeedback(direction);
+
+                setTimeout(() => {
+                    card.remove();
+                    this.showNextCard();
+                }, 400);
+            }
+
+            showNextCard() {
+                this.currentCardIndex++;
+
+                if (this.currentCardIndex >= this.demoProfiles.length) {
+                    // Reset demo
+                    this.currentCardIndex = 0;
+                    setTimeout(() => {
+                        document.getElementById('demo-card-stack').innerHTML = '';
+                        this.createCards();
+                    }, 1000);
+                    return;
+                }
+
+                // Update remaining cards
+                const cardStack = document.getElementById('demo-card-stack');
+                const remainingCards = cardStack.querySelectorAll('[data-profile-id]');
+
+                remainingCards.forEach((card, index) => {
+                    card.style.zIndex = 10 - index;
+                    card.style.transform = `scale(${1 - index * 0.03}) translateY(${index * 4}px)`;
+                });
+
+                // Add new card if we have more profiles
+                const nextProfileIndex = this.currentCardIndex + 2; // Show 3 cards ahead
+                if (nextProfileIndex < this.demoProfiles.length) {
+                    const newCard = this.createCard(this.demoProfiles[nextProfileIndex], 2);
+                    cardStack.appendChild(newCard);
+                }
+            }
+
+            showFeedback(direction) {
+                const feedback = document.createElement('div');
+                feedback.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 pointer-events-none';
+                feedback.innerHTML = `
+                    <div class="w-16 h-16 rounded-full flex items-center justify-center shadow-2xl ${
+                        direction === 'right' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+                    } animate-pulse">
+                        ${direction === 'right' ? '❤️' : '✕'}
+                    </div>
+                `;
+
+                document.body.appendChild(feedback);
+
+                setTimeout(() => {
+                    feedback.remove();
+                }, 1000);
+            }
+        }
+
+        // Initialize the demo
+        new RoomPalDemo();
     </script>
 </body>
 </html>
