@@ -524,16 +524,11 @@ public class UserReportingService {
     }
     
     private void savePendingReports() {
-        try {
-            JSONObject reportsData = new JSONObject();
-            // Save pending reports to JSON
-            // Implementation depends on storage format
-            
-            reportingPrefs.edit().putString("pending_reports", reportsData.toString()).apply();
-            
-        } catch (JSONException e) {
-            Log.e(TAG, "Error saving pending reports", e);
-        }
+        JSONObject reportsData = new JSONObject();
+        // Save pending reports to JSON
+        // Implementation depends on storage format
+
+        reportingPrefs.edit().putString("pending_reports", reportsData.toString()).apply();
     }
     
     /**
