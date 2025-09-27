@@ -612,14 +612,39 @@ class RoomSyncApp {
         }
     }
 
-    displayFinalMatches() {
-        const matches = this.generateRoommateRecommendations();
-        this.currentMatches = matches;
-        this.currentCardIndex = 0;
+    async displayFinalMatches() {
+        console.log('🎯 Loading potential roommate matches...');
 
-        // Initialize Tinder-style card stack
-        this.initializeCardStack(matches);
-        this.setupSwipeGestures();
+        try {
+            const matches = await this.generateRoommateRecommendations();
+            this.currentMatches = matches;
+            this.currentCardIndex = 0;
+
+            // Initialize Tinder-style card stack
+            this.initializeCardStack(matches);
+            this.setupSwipeGestures();
+
+            console.log(`✅ Loaded ${matches.length} potential matches`);
+        } catch (error) {
+            console.error('❌ Error loading matches:', error);
+
+            // Show error message to user
+            const cardStack = document.getElementById('card-stack');
+            if (cardStack) {
+                cardStack.innerHTML = `
+                    <div class="flex items-center justify-center h-full text-white text-center p-8">
+                        <div>
+                            <div class="text-4xl mb-4">😔</div>
+                            <h3 class="text-xl font-bold mb-2">Oops! Something went wrong</h3>
+                            <p class="text-white text-opacity-75 mb-4">We're having trouble loading potential matches right now.</p>
+                            <button onclick="window.location.reload()" class="bg-white bg-opacity-20 text-white px-4 py-2 rounded-lg hover:bg-opacity-30 transition-all">
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
     }
 
     initializeCardStack(matches) {
@@ -646,8 +671,29 @@ class RoomSyncApp {
         this.currentCard = cardStack.querySelector('.tinder-card');
     }
 
-    generateRoommateRecommendations() {
-        // Enhanced roommate profiles with comprehensive data for Tinder-style cards
+    async generateRoommateRecommendations() {
+        // Try to load profiles from database first, fallback to mock data
+        try {
+            if (window.roommateAPI) {
+                console.log('🔄 Loading roommate profiles from database...');
+                const profiles = await window.roommateAPI.getRoommateProfiles({
+                    ageMin: 18,
+                    ageMax: 35
+                });
+
+                if (profiles && profiles.length > 0) {
+                    console.log(`✅ Loaded ${profiles.length} profiles from database`);
+                    return this.calculateCompatibilityScores(profiles);
+                }
+            }
+
+            console.log('📝 Using fallback mock data');
+        } catch (error) {
+            console.error('❌ Error loading profiles from database:', error);
+            console.log('📝 Using fallback mock data');
+        }
+
+        // Enhanced roommate profiles with comprehensive data for Tinder-style cards (fallback)
         const baseProfiles = [
             {
                 id: 1,
@@ -662,9 +708,26 @@ class RoomSyncApp {
                     gradient: 'from-pink-400 via-purple-500 to-indigo-600',
                     icon: this.getUserIcon(),
                     photos: [
-                        { gradient: 'from-pink-400 to-purple-500', type: 'main' },
-                        { gradient: 'from-purple-500 to-indigo-600', type: 'hobby' },
-                        { gradient: 'from-indigo-600 to-pink-400', type: 'lifestyle' }
+                        {
+                            url: 'https://images.unsplash.com/photo-1494790108755-2616b612b5bc?w=400&h=600&fit=crop&crop=face',
+                            type: 'main',
+                            caption: 'Sarah in her favorite coding setup'
+                        },
+                        {
+                            url: 'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=400&h=600&fit=crop',
+                            type: 'hobby',
+                            caption: 'Gaming and study space'
+                        },
+                        {
+                            url: 'https://images.unsplash.com/photo-1517816743773-6e0fd518b4a6?w=400&h=600&fit=crop',
+                            type: 'lifestyle',
+                            caption: 'Study session vibes'
+                        },
+                        {
+                            url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop',
+                            type: 'social',
+                            caption: 'Bubble tea adventures'
+                        }
                     ]
                 },
                 personalInfo: {
@@ -719,6 +782,11 @@ class RoomSyncApp {
                     { icon: '🐱', text: 'Cat Lover' },
                     { icon: '🥬', text: 'Vegetarian' }
                 ],
+                topCompatibilityFactors: [
+                    { name: 'Sleep Schedule', score: 95 },
+                    { name: 'Cleanliness', score: 92 },
+                    { name: 'Study Habits', score: 88 }
+                ],
                 verified: true,
                 lastActive: '2 hours ago',
                 bio: 'CS student who codes by night and games by day. Looking for a clean, quiet study buddy who appreciates good anime and boba runs. Let\'s build something amazing together! 🚀'
@@ -736,9 +804,21 @@ class RoomSyncApp {
                     gradient: 'from-blue-400 via-teal-500 to-green-600',
                     icon: this.getProfessionalIcon(),
                     photos: [
-                        { gradient: 'from-blue-400 to-teal-500', type: 'main' },
-                        { gradient: 'from-teal-500 to-green-600', type: 'hobby' },
-                        { gradient: 'from-green-600 to-blue-400', type: 'lifestyle' }
+                        {
+                            url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=600&fit=crop&crop=face',
+                            type: 'main',
+                            caption: 'Alex at a marketing conference'
+                        },
+                        {
+                            url: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=600&fit=crop',
+                            type: 'hobby',
+                            caption: 'Rock climbing adventure'
+                        },
+                        {
+                            url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=600&fit=crop',
+                            type: 'lifestyle',
+                            caption: 'Sunday brunch vibes'
+                        }
                     ]
                 },
                 personalInfo: {
@@ -792,6 +872,11 @@ class RoomSyncApp {
                     { icon: '👥', text: 'Social Butterfly' },
                     { icon: '🐕', text: 'Dog Lover' },
                     { icon: '🍳', text: 'Chef' }
+                ],
+                topCompatibilityFactors: [
+                    { name: 'Social Level', score: 90 },
+                    { name: 'Cooking', score: 85 },
+                    { name: 'Schedule', score: 82 }
                 ],
                 verified: true,
                 lastActive: '1 hour ago',
@@ -1243,7 +1328,7 @@ class RoomSyncApp {
 
     createTinderCard(match, stackIndex = 0) {
         const element = document.createElement('div');
-        element.className = `tinder-card absolute inset-0 rounded-3xl overflow-hidden cursor-grab transition-all duration-300`;
+        element.className = `tinder-card absolute inset-0 rounded-3xl overflow-hidden cursor-grab transition-all duration-300 shadow-2xl`;
         element.setAttribute('data-roommate-id', match.id);
         element.style.zIndex = 10 - stackIndex;
         element.style.transform = `scale(${1 - stackIndex * 0.05}) translateY(${stackIndex * 8}px)`;
@@ -1251,63 +1336,111 @@ class RoomSyncApp {
 
         const compatibilityColor = match.overall >= 90 ? 'text-green-400' : match.overall >= 80 ? 'text-yellow-400' : 'text-orange-400';
         const compatibilityBg = match.overall >= 90 ? 'bg-green-500' : match.overall >= 80 ? 'bg-yellow-500' : 'bg-orange-500';
-        const primaryPhoto = match.avatar.photos[0] || match.avatar;
+
+        // Enhanced photo handling - prioritize real photos over gradients
+        const primaryPhoto = match.avatar.photos && match.avatar.photos.length > 0
+            ? match.avatar.photos[0]
+            : match.avatar;
+
+        const hasRealPhoto = primaryPhoto.url && !primaryPhoto.url.includes('gradient');
+        const backgroundImage = hasRealPhoto
+            ? `background-image: url('${primaryPhoto.url}'); background-size: cover; background-position: center;`
+            : `background: linear-gradient(135deg, ${primaryPhoto.gradient || 'from-blue-500 to-purple-600'});`;
 
         element.innerHTML = `
-            <!-- Card Background with Gradient -->
-            <div class="absolute inset-0 bg-gradient-to-br ${primaryPhoto.gradient} opacity-90"></div>
+            <!-- Card Background with Photo or Gradient -->
+            <div class="absolute inset-0 ${hasRealPhoto ? '' : 'bg-gradient-to-br ' + (primaryPhoto.gradient || 'from-blue-500 to-purple-600')}"
+                 style="${hasRealPhoto ? backgroundImage : ''}">
+                ${hasRealPhoto ? '<div class="absolute inset-0 bg-black bg-opacity-20"></div>' : ''}
+            </div>
+
+            <!-- Photo Gallery Indicator -->
+            ${match.avatar.photos && match.avatar.photos.length > 1 ? `
+                <div class="absolute top-4 left-4 z-20">
+                    <div class="flex space-x-1">
+                        ${match.avatar.photos.slice(0, 4).map((photo, index) => `
+                            <div class="w-2 h-2 rounded-full ${index === 0 ? 'bg-white' : 'bg-white bg-opacity-40'}"></div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : ''}
 
             <!-- Card Content -->
             <div class="relative h-full flex flex-col">
-                <!-- Main Profile Section (Top 60%) -->
+                <!-- Main Profile Section (Top 65%) -->
                 <div class="flex-1 relative p-6 flex flex-col justify-between">
                     <!-- Top Bar with Verification and Online Status -->
                     <div class="flex justify-between items-start mb-4">
                         <div class="flex items-center space-x-2">
                             ${match.verified ? `
-                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm">
+                                <div class="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm border border-white border-opacity-30">
                                     <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                                     </svg>
                                 </div>
                             ` : ''}
-                            <span class="text-white text-xs bg-black bg-opacity-20 px-2 py-1 rounded-full backdrop-blur-sm">
+                            <span class="text-white text-xs bg-black bg-opacity-30 px-2 py-1 rounded-full backdrop-blur-sm border border-white border-opacity-20">
                                 ${match.lastActive}
                             </span>
                         </div>
-                        <div class="w-12 h-12 ${compatibilityBg} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                        <div class="w-12 h-12 ${compatibilityBg} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-xl border-2 border-white border-opacity-30">
                             ${match.overall}
                         </div>
                     </div>
 
-                    <!-- Center Profile Image Area -->
-                    <div class="flex-1 flex items-center justify-center">
-                        <div class="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-2xl">
-                            <div class="text-6xl">${match.avatar.icon}</div>
+                    <!-- Center Profile Image Area (Only if no real photo) -->
+                    ${!hasRealPhoto ? `
+                        <div class="flex-1 flex items-center justify-center">
+                            <div class="w-32 h-32 bg-white bg-opacity-20 rounded-full flex items-center justify-center backdrop-blur-sm shadow-2xl border border-white border-opacity-30">
+                                <div class="text-6xl">${match.avatar.icon}</div>
+                            </div>
                         </div>
-                    </div>
+                    ` : `
+                        <!-- Spacer for real photo cards -->
+                        <div class="flex-1"></div>
+                    `}
                 </div>
 
-                <!-- Info Section (Bottom 40%) -->
-                <div class="bg-black bg-opacity-40 backdrop-blur-md p-6 space-y-4">
+                <!-- Info Section (Bottom 35%) -->
+                <div class="bg-gradient-to-t from-black via-black/80 to-transparent backdrop-blur-md p-6 space-y-4">
                     <!-- Name and Basic Info -->
                     <div class="text-center">
-                        <h3 class="text-2xl font-bold text-white mb-1">
-                            ${match.name}, ${match.age}
-                        </h3>
-                        <p class="text-white text-opacity-90 text-sm">
-                            ${match.occupation} at ${match.company}
+                        <div class="flex items-center justify-center space-x-2 mb-2">
+                            <h3 class="text-2xl font-bold text-white">
+                                ${match.name}, ${match.age}
+                            </h3>
+                            ${match.verified ? `
+                                <div class="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                            ` : ''}
+                        </div>
+                        <p class="text-white text-opacity-90 text-sm font-medium">
+                            ${match.occupation}
                         </p>
-                        <p class="text-white text-opacity-75 text-xs mt-1">
-                            ${match.distance}
+                        <p class="text-white text-opacity-75 text-xs">
+                            ${match.company} • ${match.distance}
                         </p>
                     </div>
 
-                    <!-- Quick Facts Icons -->
-                    <div class="flex justify-center space-x-4 py-2">
-                        ${match.quickFacts.slice(0, 5).map(fact => `
-                            <div class="text-center" title="${fact.text}">
-                                <div class="text-xl mb-1">${fact.icon}</div>
+                    <!-- Compatibility Highlights -->
+                    <div class="flex justify-center space-x-3 py-2">
+                        ${match.topCompatibilityFactors.slice(0, 3).map(factor => `
+                            <div class="bg-white bg-opacity-20 rounded-full px-3 py-1 backdrop-blur-sm border border-white border-opacity-30">
+                                <span class="text-white text-xs font-medium">${factor.name}: ${factor.score}%</span>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <!-- Top Hobbies/Interests -->
+                    <div class="flex justify-center space-x-3 py-1">
+                        ${match.hobbies.slice(0, 6).map(hobby => `
+                            <div class="text-center group">
+                                <div class="text-lg bg-white bg-opacity-10 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm border border-white border-opacity-20 group-hover:bg-opacity-20 transition-all">
+                                    ${hobby.icon}
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -1315,18 +1448,27 @@ class RoomSyncApp {
                     <!-- Bio Preview -->
                     <div class="text-center">
                         <p class="text-white text-opacity-90 text-sm leading-relaxed line-clamp-2">
-                            ${match.bio.length > 100 ? match.bio.substring(0, 100) + '...' : match.bio}
+                            ${match.bio.length > 80 ? match.bio.substring(0, 80) + '...' : match.bio}
                         </p>
                     </div>
 
-                    <!-- Tap to Expand Hint -->
-                    <div class="flex justify-center pt-2">
-                        <div class="flex items-center space-x-2 text-white text-opacity-60 text-xs">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <!-- Interaction Hints -->
+                    <div class="flex justify-center items-center space-x-4 pt-1">
+                        <div class="flex items-center space-x-1 text-white text-opacity-60 text-xs">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11l5-5m0 0l5 5m-5-5v12"></path>
                             </svg>
-                            <span>Tap for more details</span>
+                            <span>Tap for details</span>
                         </div>
+                        ${match.avatar.photos && match.avatar.photos.length > 1 ? `
+                            <div class="flex items-center space-x-1 text-white text-opacity-60 text-xs">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <span>Tap to browse photos</span>
+                            </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
@@ -1348,6 +1490,43 @@ class RoomSyncApp {
                 </div>
             </div>
         `;
+
+        // Add photo cycling functionality for cards with multiple photos
+        if (match.avatar.photos && match.avatar.photos.length > 1) {
+            let currentPhotoIndex = 0;
+            const backgroundDiv = element.querySelector('.absolute.inset-0');
+            const photoIndicators = element.querySelectorAll('.absolute.top-4 .w-2.h-2');
+
+            element.addEventListener('click', (e) => {
+                // Only cycle photos if clicking on the upper part of the card (photo area)
+                const rect = element.getBoundingClientRect();
+                const clickY = e.clientY - rect.top;
+                const cardHeight = rect.height;
+
+                if (clickY < cardHeight * 0.65) { // Only if clicking in photo area
+                    e.stopPropagation();
+                    currentPhotoIndex = (currentPhotoIndex + 1) % match.avatar.photos.length;
+                    const newPhoto = match.avatar.photos[currentPhotoIndex];
+
+                    // Update background
+                    if (newPhoto.url && !newPhoto.url.includes('gradient')) {
+                        backgroundDiv.style.backgroundImage = `url('${newPhoto.url}')`;
+                        backgroundDiv.style.backgroundSize = 'cover';
+                        backgroundDiv.style.backgroundPosition = 'center';
+                        backgroundDiv.className = 'absolute inset-0';
+                    }
+
+                    // Update photo indicators
+                    photoIndicators.forEach((indicator, index) => {
+                        if (index === currentPhotoIndex) {
+                            indicator.className = 'w-2 h-2 rounded-full bg-white';
+                        } else {
+                            indicator.className = 'w-2 h-2 rounded-full bg-white bg-opacity-40';
+                        }
+                    });
+                }
+            });
+        }
 
         return element;
     }
@@ -1536,22 +1715,80 @@ class RoomSyncApp {
         }
     }
 
-    recordSwipeAction(roommateId, direction) {
-        console.log(`${direction === 'right' ? 'Liked' : 'Passed'} on roommate:`, roommateId);
+    async recordSwipeAction(roommateId, direction) {
+        const action = direction === 'right' ? 'like' : 'pass';
+        console.log(`${action.toUpperCase()} on roommate:`, roommateId);
 
-        // Store user preferences
+        // Store user preferences locally
         if (!this.userData.swipeActions) {
             this.userData.swipeActions = [];
         }
 
         this.userData.swipeActions.push({
-            roommateId: parseInt(roommateId),
-            action: direction,
+            roommateId: roommateId,
+            action: action,
             timestamp: new Date().toISOString()
         });
 
-        // Show feedback
+        // Record in database via API
+        try {
+            if (window.roommateAPI) {
+                const result = await window.roommateAPI.recordMatch(roommateId, action);
+
+                if (result.success) {
+                    console.log(`✅ Match ${action} recorded in database`);
+
+                    // Show mutual match notification if it's a mutual like
+                    if (result.isMutual && action === 'like') {
+                        this.showMutualMatchNotification(roommateId);
+                        return; // Don't show regular feedback for mutual matches
+                    }
+                } else {
+                    console.error('❌ Failed to record match in database:', result.error);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error recording match:', error);
+        }
+
+        // Show regular feedback
         this.showSwipeFeedback(direction);
+    }
+
+    showMutualMatchNotification(roommateId) {
+        // Find the roommate data
+        const roommate = this.currentMatches.find(match => match.id == roommateId);
+        if (!roommate) return;
+
+        // Create mutual match overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center';
+        overlay.innerHTML = `
+            <div class="bg-white rounded-3xl p-8 mx-4 max-w-sm text-center animate-bounce-in">
+                <div class="text-6xl mb-4">🎉</div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-2">It's a Match!</h2>
+                <p class="text-gray-600 mb-6">You and ${roommate.name} liked each other!</p>
+                <div class="flex space-x-4">
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()"
+                            class="flex-1 bg-gray-200 text-gray-800 py-3 px-6 rounded-xl font-medium hover:bg-gray-300 transition-colors">
+                        Keep Browsing
+                    </button>
+                    <button onclick="this.parentElement.parentElement.parentElement.remove()"
+                            class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 px-6 rounded-xl font-medium hover:from-blue-600 hover:to-purple-700 transition-all">
+                        Send Message
+                    </button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (overlay.parentNode) {
+                overlay.remove();
+            }
+        }, 10000);
     }
 
     showSwipeFeedback(direction) {
