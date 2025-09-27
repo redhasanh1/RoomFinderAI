@@ -15,7 +15,9 @@
       "Bash(grep:*)",
       "Bash(mv:*)",
       "Bash(find:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(apt:*)",
+      "Bash(apt install:*)"
     ],
     "deny": [],
     "ask": [],

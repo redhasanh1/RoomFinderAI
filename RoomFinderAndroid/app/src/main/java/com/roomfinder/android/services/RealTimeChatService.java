@@ -1034,7 +1034,6 @@ public class RealTimeChatService {
                     if (listener != null) listener.onError("Error sending message: " + e.getMessage());
                 });
             }
-        });
     }
     
     /**
