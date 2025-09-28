@@ -614,7 +614,7 @@
             </div>
 
             <!-- Browse Profiles Section -->
-            <div class="glass-card rounded-3xl p-8 mx-4 mb-8">
+            <div id="faceCardsSection" class="glass-card rounded-3xl p-8 mx-4 mb-8">
                 <div class="text-center mb-8">
                     <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
                         <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
@@ -634,7 +634,7 @@
             </div>
 
             <!-- Assessment CTA Section -->
-            <div class="text-center mb-12">
+            <div id="assessmentCTA" class="text-center mb-12">
                 <div class="glass-card rounded-2xl p-6 mx-4">
                     <h3 class="text-white text-xl font-semibold mb-4">Want Better Matches?</h3>
                     <p class="text-blue-200 mb-6">Take our comprehensive compatibility assessment to find roommates who truly match your lifestyle</p>
@@ -1490,16 +1490,41 @@
 
         // Assessment Flow JavaScript
         function startAssessment() {
-            // Hide the face cards section and CTA
-            document.querySelector('.glass-card:has(#roommateCardsContainer)').parentElement.style.display = 'none';
-            document.querySelector('.glass-card:has([onclick="startAssessment()"])').parentElement.style.display = 'none';
+            console.log('Starting compatibility assessment...');
+
+            // Hide the face cards section and CTA using reliable selectors
+            const faceCardsSection = document.getElementById('faceCardsSection');
+            const assessmentCTA = document.getElementById('assessmentCTA');
+
+            if (faceCardsSection) {
+                faceCardsSection.style.display = 'none';
+                console.log('Face cards section hidden');
+            } else {
+                console.error('Face cards section not found');
+            }
+
+            if (assessmentCTA) {
+                assessmentCTA.style.display = 'none';
+                console.log('Assessment CTA hidden');
+            } else {
+                console.error('Assessment CTA not found');
+            }
 
             // Show progress indicator and step 1
-            document.getElementById('progressSection').classList.remove('hidden');
+            const progressSection = document.getElementById('progressSection');
+            if (progressSection) {
+                progressSection.classList.remove('hidden');
+                console.log('Progress section shown');
+            } else {
+                console.error('Progress section not found');
+            }
+
             showStep(1);
         }
 
         function showStep(stepNumber) {
+            console.log(`Showing step ${stepNumber}`);
+
             // Hide all steps
             document.querySelectorAll('.step-content').forEach(step => {
                 step.classList.remove('active');
@@ -1511,6 +1536,9 @@
             if (currentStep) {
                 currentStep.style.display = 'block';
                 currentStep.classList.add('active');
+                console.log(`Step ${stepNumber} displayed successfully`);
+            } else {
+                console.error(`Step ${stepNumber} element not found`);
             }
 
             // Update progress indicator
