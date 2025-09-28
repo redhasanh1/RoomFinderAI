@@ -648,18 +648,31 @@
             </div>
 
             <!-- Progress Indicator -->
-            <div id="progressSection" class="flex justify-center mb-12 hidden">
-                <div class="flex items-center space-x-4">
-                    <div class="step-indicator active w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                        <span class="text-xs text-blue-900 font-bold">1</span>
-                    </div>
-                    <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
-                    <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
-                        <span class="text-xs text-white font-bold">2</span>
-                    </div>
-                    <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
-                    <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
-                        <span class="text-xs text-white font-bold">3</span>
+            <div id="progressSection" class="mb-12 hidden">
+                <!-- Back Button -->
+                <div class="flex justify-start mb-6 mx-4">
+                    <button onclick="goBackToFaceCards()" class="btn-secondary px-4 py-2 rounded-xl text-white font-medium flex items-center space-x-2 hover:scale-105 transition-transform duration-200">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                        </svg>
+                        <span>Back to Browse</span>
+                    </button>
+                </div>
+
+                <!-- Progress Steps -->
+                <div class="flex justify-center">
+                    <div class="flex items-center space-x-4">
+                        <div class="step-indicator active w-4 h-4 rounded-full bg-white flex items-center justify-center">
+                            <span class="text-xs text-blue-900 font-bold">1</span>
+                        </div>
+                        <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
+                        <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
+                            <span class="text-xs text-white font-bold">2</span>
+                        </div>
+                        <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
+                        <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
+                            <span class="text-xs text-white font-bold">3</span>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1245,7 +1258,7 @@
 
     <!-- Face Cards Population Script -->
     <script>
-        // Sample roommate profiles data
+        // Sample roommate profiles data - Expanded to 20 profiles
         const roommateProfiles = [
             {
                 id: 1,
@@ -1324,6 +1337,188 @@
                 budget: "$800-1200",
                 verified: false,
                 badge: "Creative"
+            },
+            {
+                id: 7,
+                name: "Jessica Martinez",
+                age: 24,
+                occupation: "Registered Nurse",
+                location: "Queen Anne, Seattle",
+                photo: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face",
+                compatibility: 93,
+                highlights: ["Caring", "Active Lifestyle", "Team Player"],
+                budget: "$900-1400",
+                verified: true,
+                badge: "Healthcare"
+            },
+            {
+                id: 8,
+                name: "David Chang",
+                age: 28,
+                occupation: "Chef",
+                location: "Pike Place, Seattle",
+                photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop&crop=face",
+                compatibility: 89,
+                highlights: ["Foodie", "Social", "Creative Cook"],
+                budget: "$800-1300",
+                verified: true,
+                badge: "Foodie"
+            },
+            {
+                id: 9,
+                name: "Mia Foster",
+                age: 25,
+                occupation: "Elementary Teacher",
+                location: "Greenwood, Seattle",
+                photo: "https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?w=400&h=400&fit=crop&crop=face",
+                compatibility: 91,
+                highlights: ["Patient", "Organized", "Book Lover"],
+                budget: "$700-1100",
+                verified: true,
+                badge: "Educator"
+            },
+            {
+                id: 10,
+                name: "Jordan Blake",
+                age: 26,
+                occupation: "Personal Trainer",
+                location: "West Seattle",
+                photo: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=400&h=400&fit=crop&crop=face",
+                compatibility: 86,
+                highlights: ["Fitness Focused", "Motivational", "Outdoor Activities"],
+                budget: "$800-1200",
+                verified: true,
+                badge: "Fitness"
+            },
+            {
+                id: 11,
+                name: "Sophia Williams",
+                age: 23,
+                occupation: "Photographer",
+                location: "Capitol Hill, Seattle",
+                photo: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=400&fit=crop&crop=face",
+                compatibility: 88,
+                highlights: ["Artistic", "Travel Lover", "Flexible Schedule"],
+                budget: "$650-1050",
+                verified: true,
+                badge: "Artist"
+            },
+            {
+                id: 12,
+                name: "Jake Morrison",
+                age: 27,
+                occupation: "DevOps Engineer",
+                location: "South Lake Union",
+                photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face",
+                compatibility: 94,
+                highlights: ["Tech Savvy", "Problem Solver", "Coffee Enthusiast"],
+                budget: "$1000-1600",
+                verified: true,
+                badge: "Tech"
+            },
+            {
+                id: 13,
+                name: "Isabella Santos",
+                age: 24,
+                occupation: "Physical Therapist",
+                location: "Magnolia, Seattle",
+                photo: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&crop=face",
+                compatibility: 90,
+                highlights: ["Health Conscious", "Empathetic", "Active"],
+                budget: "$900-1350",
+                verified: true,
+                badge: "Health"
+            },
+            {
+                id: 14,
+                name: "Ethan Cooper",
+                age: 25,
+                occupation: "Music Producer",
+                location: "Georgetown, Seattle",
+                photo: "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?w=400&h=400&fit=crop&crop=face",
+                compatibility: 82,
+                highlights: ["Creative", "Night Owl", "Music Lover"],
+                budget: "$700-1200",
+                verified: true,
+                badge: "Music"
+            },
+            {
+                id: 15,
+                name: "Aria Patel",
+                age: 22,
+                occupation: "Medical Student",
+                location: "First Hill, Seattle",
+                photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face",
+                compatibility: 96,
+                highlights: ["Studious", "Ambitious", "Team Oriented"],
+                budget: "$600-1000",
+                verified: true,
+                badge: "Medical"
+            },
+            {
+                id: 16,
+                name: "Caleb Rodriguez",
+                age: 29,
+                occupation: "Financial Analyst",
+                location: "Bellevue, WA",
+                photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=400&fit=crop&crop=face",
+                compatibility: 87,
+                highlights: ["Analytical", "Detail Oriented", "Gym Regular"],
+                budget: "$1200-1800",
+                verified: true,
+                badge: "Finance"
+            },
+            {
+                id: 17,
+                name: "Luna Zhang",
+                age: 26,
+                occupation: "Content Creator",
+                location: "Redmond, WA",
+                photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop&crop=face",
+                compatibility: 84,
+                highlights: ["Social Media Savvy", "Creative", "Flexible"],
+                budget: "$800-1300",
+                verified: true,
+                badge: "Creator"
+            },
+            {
+                id: 18,
+                name: "Owen Mitchell",
+                age: 28,
+                occupation: "Lawyer",
+                location: "Downtown Seattle",
+                photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face",
+                compatibility: 91,
+                highlights: ["Professional", "Well Organized", "Debate Lover"],
+                budget: "$1300-2000",
+                verified: true,
+                badge: "Legal"
+            },
+            {
+                id: 19,
+                name: "Chloe Adams",
+                age: 23,
+                occupation: "Veterinary Student",
+                location: "Bothell, WA",
+                photo: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop&crop=face",
+                compatibility: 89,
+                highlights: ["Animal Lover", "Compassionate", "Outdoorsy"],
+                budget: "$650-1100",
+                verified: true,
+                badge: "Animal Care"
+            },
+            {
+                id: 20,
+                name: "Mason Lee",
+                age: 27,
+                occupation: "Product Manager",
+                location: "Kirkland, WA",
+                photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop&crop=face",
+                compatibility: 93,
+                highlights: ["Strategic Thinker", "Team Leader", "Tech Enthusiast"],
+                budget: "$1100-1700",
+                verified: true,
+                badge: "Product"
             }
         ];
 
@@ -1335,7 +1530,21 @@
                 'Featured': 'bg-purple-500',
                 'Online': 'bg-blue-500',
                 'Student': 'bg-yellow-500',
-                'Creative': 'bg-pink-500'
+                'Creative': 'bg-pink-500',
+                'Healthcare': 'bg-emerald-500',
+                'Foodie': 'bg-orange-500',
+                'Educator': 'bg-indigo-500',
+                'Fitness': 'bg-lime-500',
+                'Artist': 'bg-violet-500',
+                'Tech': 'bg-cyan-500',
+                'Health': 'bg-teal-500',
+                'Music': 'bg-fuchsia-500',
+                'Medical': 'bg-rose-500',
+                'Finance': 'bg-amber-500',
+                'Creator': 'bg-sky-500',
+                'Legal': 'bg-slate-500',
+                'Animal Care': 'bg-green-600',
+                'Product': 'bg-blue-600'
             };
 
             return `
@@ -1520,6 +1729,39 @@
             }
 
             showStep(1);
+        }
+
+        function goBackToFaceCards() {
+            console.log('Going back to face cards...');
+
+            // Show face cards and CTA
+            const faceCardsSection = document.getElementById('faceCardsSection');
+            const assessmentCTA = document.getElementById('assessmentCTA');
+
+            if (faceCardsSection) {
+                faceCardsSection.style.display = 'block';
+                console.log('Face cards section shown');
+            }
+
+            if (assessmentCTA) {
+                assessmentCTA.style.display = 'block';
+                console.log('Assessment CTA shown');
+            }
+
+            // Hide assessment flow
+            const progressSection = document.getElementById('progressSection');
+            if (progressSection) {
+                progressSection.classList.add('hidden');
+                console.log('Progress section hidden');
+            }
+
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.classList.remove('active');
+                step.style.display = 'none';
+            });
+
+            console.log('Back to face cards complete');
         }
 
         function showStep(stepNumber) {
