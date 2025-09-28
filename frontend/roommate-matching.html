@@ -603,7 +603,7 @@
 
                 <!-- Create Profile CTA -->
                 <div class="text-center mb-12">
-                    <button class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-3 mx-auto mb-4">
+                    <button onclick="openCreateProfileModal()" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-3 mx-auto mb-4">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -1151,6 +1151,172 @@
 
         </div>
     </div>
+
+    <!-- Create Profile Modal -->
+    <div id="createProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
+        <div class="glass-card rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-3xl font-bold text-white font-display">Join the Community</h2>
+                <button onclick="closeCreateProfileModal()" class="text-white hover:text-gray-300 transition-colors">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Profile Creation Form -->
+            <form id="createProfileForm" class="space-y-6">
+                <!-- Basic Info -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Full Name *</label>
+                        <input type="text" id="profileName" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-blue-200" placeholder="Enter your name">
+                    </div>
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Age *</label>
+                        <input type="number" id="profileAge" min="18" max="50" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-blue-200" placeholder="25">
+                    </div>
+                </div>
+
+                <!-- Occupation and Location -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Occupation *</label>
+                        <input type="text" id="profileOccupation" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-blue-200" placeholder="Software Engineer">
+                    </div>
+                    <div>
+                        <label class="block text-white text-sm font-medium mb-2">Location *</label>
+                        <select id="profileLocation" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                            <option value="">Select Location</option>
+                            <option value="Downtown Seattle">Downtown Seattle</option>
+                            <option value="Capitol Hill, Seattle">Capitol Hill, Seattle</option>
+                            <option value="Fremont, Seattle">Fremont, Seattle</option>
+                            <option value="Ballard, Seattle">Ballard, Seattle</option>
+                            <option value="University District">University District</option>
+                            <option value="Belltown, Seattle">Belltown, Seattle</option>
+                            <option value="Queen Anne, Seattle">Queen Anne, Seattle</option>
+                            <option value="West Seattle">West Seattle</option>
+                            <option value="South Lake Union">South Lake Union</option>
+                            <option value="Magnolia, Seattle">Magnolia, Seattle</option>
+                            <option value="Georgetown, Seattle">Georgetown, Seattle</option>
+                            <option value="First Hill, Seattle">First Hill, Seattle</option>
+                            <option value="Bellevue, WA">Bellevue, WA</option>
+                            <option value="Redmond, WA">Redmond, WA</option>
+                            <option value="Kirkland, WA">Kirkland, WA</option>
+                            <option value="Bothell, WA">Bothell, WA</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Budget Range -->
+                <div>
+                    <label class="block text-white text-sm font-medium mb-2">Budget Range *</label>
+                    <select id="profileBudget" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                        <option value="">Select Budget Range</option>
+                        <option value="$500-700">$500 - $700</option>
+                        <option value="$700-900">$700 - $900</option>
+                        <option value="$900-1200">$900 - $1,200</option>
+                        <option value="$1200-1500">$1,200 - $1,500</option>
+                        <option value="$1500-1800">$1,500 - $1,800</option>
+                        <option value="$1800+">$1,800+</option>
+                    </select>
+                </div>
+
+                <!-- Photo Selection -->
+                <div>
+                    <label class="block text-white text-sm font-medium mb-4">Choose Your Profile Photo</label>
+                    <div class="grid grid-cols-4 md:grid-cols-6 gap-3">
+                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face">
+                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
+                        </div>
+                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face">
+                            <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
+                        </div>
+                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face">
+                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
+                        </div>
+                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face">
+                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
+                        </div>
+                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face">
+                            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
+                        </div>
+                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop&crop=face">
+                            <img src="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
+                        </div>
+                    </div>
+                    <input type="hidden" id="selectedPhoto" value="">
+                </div>
+
+                <!-- Key Highlights -->
+                <div>
+                    <label class="block text-white text-sm font-medium mb-4">Select Your Key Highlights (Choose 3)</label>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Clean & Organized" class="mr-2 rounded">
+                            <span>Clean & Organized</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Night Owl" class="mr-2 rounded">
+                            <span>Night Owl</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Early Bird" class="mr-2 rounded">
+                            <span>Early Bird</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Fitness Enthusiast" class="mr-2 rounded">
+                            <span>Fitness Enthusiast</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Social" class="mr-2 rounded">
+                            <span>Social</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Quiet" class="mr-2 rounded">
+                            <span>Quiet</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Creative" class="mr-2 rounded">
+                            <span>Creative</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Pet Lover" class="mr-2 rounded">
+                            <span>Pet Lover</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Tech Enthusiast" class="mr-2 rounded">
+                            <span>Tech Enthusiast</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Studious" class="mr-2 rounded">
+                            <span>Studious</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Coffee Lover" class="mr-2 rounded">
+                            <span>Coffee Lover</span>
+                        </label>
+                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
+                            <input type="checkbox" name="highlights" value="Outdoorsy" class="mr-2 rounded">
+                            <span>Outdoorsy</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="flex gap-4 pt-6">
+                    <button type="button" onclick="closeCreateProfileModal()" class="flex-1 btn-secondary px-6 py-3 rounded-xl text-white font-medium">
+                        Cancel
+                    </button>
+                    <button type="submit" class="flex-1 btn-primary px-6 py-3 rounded-xl text-white font-medium">
+                        Create My Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Professional Footer -->
     <footer class="mt-20 py-12 border-t border-white border-opacity-10">
         <div class="max-w-4xl mx-auto px-4 text-center">
@@ -1246,6 +1412,211 @@
 
             if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
                 closeMobileMenu();
+            }
+        });
+    </script>
+
+    <!-- Profile Creation Modal JavaScript -->
+    <script>
+        // Modal Management Functions
+        function openCreateProfileModal() {
+            const modal = document.getElementById('createProfileModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden'; // Prevent background scrolling
+        }
+
+        function closeCreateProfileModal() {
+            const modal = document.getElementById('createProfileModal');
+            modal.classList.add('hidden');
+            document.body.style.overflow = 'auto'; // Restore scrolling
+
+            // Reset form
+            document.getElementById('createProfileForm').reset();
+
+            // Reset photo selection
+            document.querySelectorAll('.photo-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+        }
+
+        // Photo Selection Handler
+        function selectPhoto(photoUrl, element) {
+            // Remove selected class from all photo options
+            document.querySelectorAll('.photo-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+
+            // Add selected class to clicked option
+            element.classList.add('selected');
+
+            // Set hidden input value
+            document.getElementById('selectedPhoto').value = photoUrl;
+        }
+
+        // Form Validation and Submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('createProfileForm');
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                // Get form data
+                const formData = new FormData(form);
+                const profileData = {
+                    name: formData.get('name'),
+                    age: parseInt(formData.get('age')),
+                    occupation: formData.get('occupation'),
+                    location: formData.get('location'),
+                    budget: formData.get('budget'),
+                    photo: formData.get('selectedPhoto'),
+                    highlights: formData.getAll('highlights')
+                };
+
+                // Validation
+                if (!validateProfile(profileData)) {
+                    return;
+                }
+
+                // Add to profiles array and update display
+                addNewProfile(profileData);
+
+                // Show success message
+                showSuccessMessage();
+
+                // Close modal
+                closeCreateProfileModal();
+            });
+        });
+
+        function validateProfile(profile) {
+            // Check required fields
+            if (!profile.name || profile.name.trim().length < 2) {
+                showErrorMessage('Please enter a valid name (at least 2 characters)');
+                return false;
+            }
+
+            if (!profile.age || profile.age < 18 || profile.age > 100) {
+                showErrorMessage('Please enter a valid age (18-100)');
+                return false;
+            }
+
+            if (!profile.occupation || profile.occupation.trim().length < 2) {
+                showErrorMessage('Please enter a valid occupation');
+                return false;
+            }
+
+            if (!profile.location || profile.location.trim().length < 2) {
+                showErrorMessage('Please enter a valid location');
+                return false;
+            }
+
+            if (!profile.budget) {
+                showErrorMessage('Please select a budget range');
+                return false;
+            }
+
+            if (!profile.photo) {
+                showErrorMessage('Please select a profile photo');
+                return false;
+            }
+
+            if (profile.highlights.length === 0) {
+                showErrorMessage('Please select at least one highlight');
+                return false;
+            }
+
+            return true;
+        }
+
+        function addNewProfile(profileData) {
+            // Generate new ID
+            const newId = roommateProfiles.length + 1;
+
+            // Create new profile object
+            const newProfile = {
+                id: newId,
+                name: profileData.name,
+                age: profileData.age,
+                occupation: profileData.occupation,
+                location: profileData.location,
+                photo: profileData.photo,
+                compatibility: Math.floor(Math.random() * 20) + 80, // Random 80-99%
+                highlights: profileData.highlights,
+                budget: profileData.budget,
+                verified: false, // New profiles start unverified
+                badge: "New"
+            };
+
+            // Add to profiles array
+            roommateProfiles.unshift(newProfile); // Add at beginning
+
+            // Refresh the face cards display
+            populateFaceCards();
+        }
+
+        function showSuccessMessage() {
+            // Create and show success notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in';
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span>Profile created successfully! Welcome to RoomPal!</span>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Remove notification after 4 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 4000);
+        }
+
+        function showErrorMessage(message) {
+            // Create and show error notification
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in';
+            notification.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(notification);
+
+            // Remove notification after 4 seconds
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 4000);
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            const modal = document.getElementById('createProfileModal');
+            if (e.target === modal) {
+                closeCreateProfileModal();
+            }
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const modal = document.getElementById('createProfileModal');
+                if (!modal.classList.contains('hidden')) {
+                    closeCreateProfileModal();
+                }
             }
         });
     </script>
