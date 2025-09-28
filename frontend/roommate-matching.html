@@ -633,7 +633,508 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="roommateCardsContainer"></div>
             </div>
 
+            <!-- Assessment CTA Section -->
+            <div class="text-center mb-12">
+                <div class="glass-card rounded-2xl p-6 mx-4">
+                    <h3 class="text-white text-xl font-semibold mb-4">Want Better Matches?</h3>
+                    <p class="text-blue-200 mb-6">Take our comprehensive compatibility assessment to find roommates who truly match your lifestyle</p>
+                    <button onclick="startAssessment()" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-3 mx-auto">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <span>Start Compatibility Assessment</span>
+                    </button>
+                </div>
+            </div>
 
+            <!-- Progress Indicator -->
+            <div id="progressSection" class="flex justify-center mb-12 hidden">
+                <div class="flex items-center space-x-4">
+                    <div class="step-indicator active w-4 h-4 rounded-full bg-white flex items-center justify-center">
+                        <span class="text-xs text-blue-900 font-bold">1</span>
+                    </div>
+                    <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
+                    <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
+                        <span class="text-xs text-white font-bold">2</span>
+                    </div>
+                    <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
+                    <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
+                        <span class="text-xs text-white font-bold">3</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Smart Property Discovery -->
+            <div id="step1" class="step-content">
+                <div class="glass-card rounded-3xl p-8 mx-4 animate-slide-up">
+                    <div class="text-center mb-8">
+                        <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
+                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                                </svg>
+                            </div>
+                            <span>Discover Your Ideal Space</span>
+                        </h2>
+                        <p class="text-blue-100 text-lg font-medium">
+                            Smart property recommendations tailored to your budget, location, and lifestyle preferences
+                        </p>
+                    </div>
+
+                    <!-- Quick Preferences -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                        <div class="text-center">
+                            <label class="block text-white font-semibold mb-2">Budget Range</label>
+                            <select name="budget" id="budget" class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300">
+                                <option value="">Select Budget</option>
+                                <option value="500-800">$500 - $800</option>
+                                <option value="800-1200">$800 - $1,200</option>
+                                <option value="1200-1800">$1,200 - $1,800</option>
+                                <option value="1800+">$1,800+</option>
+                            </select>
+                            <div class="validation-check hidden mt-1 flex items-center space-x-1">
+                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-xs text-green-400">Budget selected</span>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-white font-semibold mb-2">Location</label>
+                            <select name="location" id="location" class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300">
+                                <option value="">Select Area</option>
+                                <option value="downtown">Downtown</option>
+                                <option value="university">Near University</option>
+                                <option value="suburbs">Suburbs</option>
+                                <option value="beachside">Beachside</option>
+                            </select>
+                            <div class="validation-check hidden mt-1 flex items-center space-x-1">
+                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-xs text-green-400">Location selected</span>
+                            </div>
+                        </div>
+                        <div class="text-center">
+                            <label class="block text-white font-semibold mb-2">Room Type</label>
+                            <select name="roomType" id="roomType" class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300">
+                                <option value="">Select Type</option>
+                                <option value="private">Private Room</option>
+                                <option value="shared">Shared Room</option>
+                                <option value="studio">Studio Share</option>
+                            </select>
+                            <div class="validation-check hidden mt-1 flex items-center space-x-1">
+                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-xs text-green-400">Room type selected</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Validation Progress -->
+                    <div class="text-center mb-6">
+                        <div class="inline-flex items-center space-x-4 bg-white bg-opacity-10 rounded-xl px-4 py-2">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full validation-dot" data-field="budget"></div>
+                                <span class="text-xs text-blue-200">Budget</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full validation-dot" data-field="location"></div>
+                                <span class="text-xs text-blue-200">Location</span>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-gray-400 rounded-full validation-dot" data-field="roomType"></div>
+                                <span class="text-xs text-blue-200">Room Type</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button id="step1-continue" onclick="nextStep(2)" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg opacity-50 cursor-not-allowed" disabled>
+                            <span class="flex items-center justify-center space-x-2">
+                                <span>Continue to Profile Setup</span>
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                                </svg>
+                            </span>
+                        </button>
+                        <p class="text-blue-300 text-sm mt-2 validation-message">Please complete all fields above to continue</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 2: Instant Profile Creation -->
+            <div id="step2" class="step-content">
+                <div class="glass-card rounded-3xl p-8 mx-4 animate-slide-up">
+                    <div class="text-center mb-8">
+                        <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
+                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                                </svg>
+                            </div>
+                            <span>Quick Profile Setup</span>
+                        </h2>
+                        <p class="text-blue-100 text-lg font-medium">
+                            Streamlined profile creation with intelligent preference suggestions
+                        </p>
+                    </div>
+
+                    <!-- Advanced Compatibility Assessment -->
+                    <div class="mb-8">
+                        <h3 class="text-white font-semibold text-xl mb-6 text-center flex items-center justify-center space-x-2">
+                            <svg class="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Advanced Compatibility Assessment</span>
+                        </h3>
+
+                        <!-- Living Habits & Schedule -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path>
+                                    </svg>
+                                    <span>Daily Schedule</span>
+                                </h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Sleep Schedule</label>
+                                        <select name="sleepSchedule" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select your typical bedtime</option>
+                                            <option value="early-bird">Early Bird (9-10 PM)</option>
+                                            <option value="moderate">Moderate (10-11 PM)</option>
+                                            <option value="night-owl">Night Owl (11 PM - 1 AM)</option>
+                                            <option value="late-night">Very Late (After 1 AM)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Work/Study Schedule</label>
+                                        <select name="workSchedule" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select your schedule</option>
+                                            <option value="traditional">Traditional (9-5)</option>
+                                            <option value="flexible">Flexible/Remote</option>
+                                            <option value="student">Student Schedule</option>
+                                            <option value="shift-work">Shift Work</option>
+                                            <option value="irregular">Irregular Hours</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5v4M16 5v4"></path>
+                                    </svg>
+                                    <span>Cleanliness & Organization</span>
+                                </h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Cleanliness Level (1-10)</label>
+                                        <input type="range" name="cleanlinessLevel" min="1" max="10" value="7" class="w-full h-2 bg-white bg-opacity-20 rounded-lg appearance-none slider">
+                                        <div class="flex justify-between text-xs text-blue-200 mt-1">
+                                            <span>Messy</span>
+                                            <span class="cleanliness-value">7</span>
+                                            <span>Spotless</span>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Organization Style</label>
+                                        <select name="organizationStyle" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select style</option>
+                                            <option value="minimalist">Minimalist</option>
+                                            <option value="organized">Well Organized</option>
+                                            <option value="lived-in">Lived-in Comfort</option>
+                                            <option value="casual">Casual/Relaxed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Social & Personal Preferences -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                    </svg>
+                                    <span>Social Preferences</span>
+                                </h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Social Level</label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <label class="flex items-center text-white text-sm">
+                                                <input type="radio" name="socialLevel" value="introvert" class="mr-2">
+                                                <span>More Introverted</span>
+                                            </label>
+                                            <label class="flex items-center text-white text-sm">
+                                                <input type="radio" name="socialLevel" value="extrovert" class="mr-2">
+                                                <span>More Extroverted</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Guest Policy</label>
+                                        <select name="guestPolicy" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select preference</option>
+                                            <option value="frequent">Frequent Guests Welcome</option>
+                                            <option value="occasional">Occasional Guests OK</option>
+                                            <option value="rare">Rare Guests Only</option>
+                                            <option value="no-guests">Prefer No Guests</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Communication Style</label>
+                                        <select name="communicationStyle" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select style</option>
+                                            <option value="chatty">Love to Chat</option>
+                                            <option value="friendly">Friendly but Respectful</option>
+                                            <option value="quiet">Keep to Myself</option>
+                                            <option value="minimal">Minimal Interaction</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="glass-card rounded-2xl p-6">
+                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"></path>
+                                    </svg>
+                                    <span>Living Space Usage</span>
+                                </h4>
+                                <div class="space-y-4">
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Kitchen Usage</label>
+                                        <select name="kitchenUsage" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select usage</option>
+                                            <option value="frequent-cook">Cook Most Meals</option>
+                                            <option value="moderate-cook">Cook Sometimes</option>
+                                            <option value="basic-cook">Basic Cooking Only</option>
+                                            <option value="rarely-cook">Rarely Cook</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Shared Meals</label>
+                                        <select name="sharedMeals" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select preference</option>
+                                            <option value="love-sharing">Love Sharing Meals</option>
+                                            <option value="sometimes">Sometimes Share</option>
+                                            <option value="rarely">Rarely Share</option>
+                                            <option value="separate">Keep Meals Separate</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-white text-sm mb-2">Common Area Usage</label>
+                                        <select name="commonAreaUsage" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                            <option value="">Select usage</option>
+                                            <option value="frequent">Use Common Areas Often</option>
+                                            <option value="moderate">Moderate Usage</option>
+                                            <option value="minimal">Minimal Usage</option>
+                                            <option value="private">Prefer Private Space</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lifestyle & Personal Habits -->
+                        <div class="glass-card rounded-2xl p-6 mb-6">
+                            <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                                <span>Lifestyle & Habits</span>
+                            </h4>
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                <div>
+                                    <label class="block text-white text-sm mb-2">Smoking</label>
+                                    <select name="smokingPolicy" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                        <option value="">Select policy</option>
+                                        <option value="no-smoking">No Smoking</option>
+                                        <option value="outside-only">Outside Only</option>
+                                        <option value="designated-area">Designated Area</option>
+                                        <option value="anywhere">Anywhere OK</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-white text-sm mb-2">Pets</label>
+                                    <select name="petPolicy" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                        <option value="">Select policy</option>
+                                        <option value="love-pets">Love Pets</option>
+                                        <option value="ok-with-pets">OK with Pets</option>
+                                        <option value="allergic">Allergic to Pets</option>
+                                        <option value="no-pets">No Pets Preferred</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-white text-sm mb-2">Noise Level</label>
+                                    <select name="noiseLevel" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
+                                        <option value="">Select preference</option>
+                                        <option value="quiet">Very Quiet</option>
+                                        <option value="moderate">Moderate Noise OK</option>
+                                        <option value="flexible">Pretty Flexible</option>
+                                        <option value="lively">Lively Environment</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Deal Breakers -->
+                        <div class="glass-card rounded-2xl p-6">
+                            <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
+                                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                                <span>Deal Breakers (Check items that are absolutely unacceptable)</span>
+                            </h4>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="smoking" class="mr-2 text-red-500">
+                                    <span>Indoor Smoking</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="loud-music" class="mr-2 text-red-500">
+                                    <span>Loud Music</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="overnight-guests" class="mr-2 text-red-500">
+                                    <span>Overnight Guests</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="messy" class="mr-2 text-red-500">
+                                    <span>Very Messy</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="pets" class="mr-2 text-red-500">
+                                    <span>Any Pets</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="parties" class="mr-2 text-red-500">
+                                    <span>House Parties</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="opposite-schedule" class="mr-2 text-red-500">
+                                    <span>Opposite Schedule</span>
+                                </label>
+                                <label class="flex items-center text-white text-sm">
+                                    <input type="checkbox" name="dealBreakers" value="different-lifestyle" class="mr-2 text-red-500">
+                                    <span>Very Different Lifestyle</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <button id="step2-continue" onclick="nextStep(3)" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg flex items-center justify-center space-x-2 mx-auto">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            </svg>
+                            <span>Find My Perfect Roommates</span>
+                        </button>
+                        <p class="text-blue-300 text-sm mt-3">Our AI will now analyze your preferences and find the most compatible roommates</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 3: AI Roommate Matching -->
+            <div id="step3" class="step-content">
+                <div class="glass-card rounded-3xl p-8 mx-4 animate-slide-up">
+                    <div class="text-center mb-8">
+                        <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
+                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
+                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
+                            <span>Your Perfect Matches</span>
+                        </h2>
+                        <p class="text-blue-100 text-lg font-medium">
+                            Discover verified roommates with high compatibility scores across multiple dimensions
+                        </p>
+                    </div>
+
+                    <!-- Matching Status -->
+                    <div class="text-center mb-8">
+                        <div class="inline-flex items-center space-x-2 bg-green-500 bg-opacity-20 text-green-300 px-4 py-2 rounded-full">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span class="font-semibold">3 Perfect Matches Found</span>
+                        </div>
+                    </div>
+
+                    <!-- Tinder-Style Card Stack -->
+                    <div class="relative">
+                        <!-- Card Stack Container -->
+                        <div id="card-stack" class="relative h-96 w-full max-w-sm mx-auto mb-8">
+                            <!-- Cards will be dynamically populated here -->
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex justify-center space-x-6 mb-8">
+                            <button id="pass-btn" class="w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform duration-200 group">
+                                <svg class="w-8 h-8 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+
+                            <button id="info-btn" class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200 group">
+                                <svg class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </button>
+
+                            <button id="like-btn" class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform duration-200 group">
+                                <svg class="w-8 h-8 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
+                                </svg>
+                            </button>
+                        </div>
+
+                        <!-- Card Counter -->
+                        <div class="text-center mb-6">
+                            <div class="inline-flex items-center space-x-2 bg-white bg-opacity-10 rounded-full px-4 py-2">
+                                <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                                <span id="card-counter" class="text-white font-medium">1 of 3</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Matching Status -->
+                    <div class="text-center mb-6">
+                        <div class="matching-status text-blue-100 text-sm">
+                            Select your preferred matches to continue
+                        </div>
+                    </div>
+
+                    <!-- Success Actions -->
+                    <div class="text-center space-y-4">
+                        <button class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg w-full md:w-auto flex items-center justify-center space-x-2">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
+                            </svg>
+                            <span>Start Chatting with Matches</span>
+                        </button>
+                        <div class="flex flex-col md:flex-row gap-4 justify-center">
+                            <button class="btn-secondary px-6 py-3 rounded-xl text-white font-medium">
+                                View More Matches
+                            </button>
+                            <button class="btn-secondary px-6 py-3 rounded-xl text-white font-medium">
+                                Invite Friends
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
         </div>
     </div>
@@ -983,8 +1484,228 @@
         // Initialize face cards when page loads
         document.addEventListener('DOMContentLoaded', function() {
             populateFaceCards();
+            setupStepNavigation();
             console.log('Face cards populated successfully');
         });
+
+        // Assessment Flow JavaScript
+        function startAssessment() {
+            // Hide the face cards section and CTA
+            document.querySelector('.glass-card:has(#roommateCardsContainer)').parentElement.style.display = 'none';
+            document.querySelector('.glass-card:has([onclick="startAssessment()"])').parentElement.style.display = 'none';
+
+            // Show progress indicator and step 1
+            document.getElementById('progressSection').classList.remove('hidden');
+            showStep(1);
+        }
+
+        function showStep(stepNumber) {
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(step => {
+                step.classList.remove('active');
+                step.style.display = 'none';
+            });
+
+            // Show current step
+            const currentStep = document.getElementById(`step${stepNumber}`);
+            if (currentStep) {
+                currentStep.style.display = 'block';
+                currentStep.classList.add('active');
+            }
+
+            // Update progress indicator
+            updateProgressIndicator(stepNumber);
+        }
+
+        function nextStep(stepNumber) {
+            if (stepNumber === 2) {
+                // Validate step 1 before proceeding
+                if (!validateStep1()) {
+                    return;
+                }
+            }
+            showStep(stepNumber);
+
+            // Initialize step 3 with Tinder cards if reached
+            if (stepNumber === 3) {
+                initializeTinderCards();
+            }
+        }
+
+        function updateProgressIndicator(activeStep) {
+            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
+                const stepNum = index + 1;
+                indicator.classList.remove('active', 'completed');
+
+                if (stepNum === activeStep) {
+                    indicator.classList.add('active');
+                } else if (stepNum < activeStep) {
+                    indicator.classList.add('completed');
+                }
+            });
+        }
+
+        function validateStep1() {
+            const budget = document.getElementById('budget').value;
+            const location = document.getElementById('location').value;
+            const roomType = document.getElementById('roomType').value;
+
+            const isValid = budget && location && roomType;
+
+            const continueBtn = document.getElementById('step1-continue');
+            const validationMessage = document.querySelector('.validation-message');
+
+            if (isValid) {
+                continueBtn.disabled = false;
+                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                validationMessage.textContent = 'Great! All fields completed.';
+
+                // Update validation dots
+                updateValidationDot('budget', budget);
+                updateValidationDot('location', location);
+                updateValidationDot('roomType', roomType);
+
+                return true;
+            } else {
+                continueBtn.disabled = true;
+                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                validationMessage.textContent = 'Please complete all fields above to continue';
+                return false;
+            }
+        }
+
+        function updateValidationDot(field, value) {
+            const dot = document.querySelector(`[data-field="${field}"]`);
+            if (dot) {
+                if (value) {
+                    dot.classList.remove('bg-gray-400');
+                    dot.classList.add('bg-green-400');
+                } else {
+                    dot.classList.remove('bg-green-400');
+                    dot.classList.add('bg-gray-400');
+                }
+            }
+        }
+
+        function setupStepNavigation() {
+            // Add event listeners for step 1 validation
+            ['budget', 'location', 'roomType'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('change', validateStep1);
+                }
+            });
+
+            // Setup cleanliness slider
+            const cleanlinessSlider = document.querySelector('[name="cleanlinessLevel"]');
+            if (cleanlinessSlider) {
+                cleanlinessSlider.addEventListener('input', function() {
+                    document.querySelector('.cleanliness-value').textContent = this.value;
+                });
+            }
+        }
+
+        function initializeTinderCards() {
+            const cardStack = document.getElementById('card-stack');
+            if (!cardStack) return;
+
+            // Use the same roommate profiles from face cards but format for Tinder cards
+            const tinderMatches = roommateProfiles.slice(0, 3); // Take first 3 for Tinder matching
+
+            cardStack.innerHTML = '';
+
+            tinderMatches.forEach((profile, index) => {
+                const card = createTinderCard(profile, index);
+                cardStack.appendChild(card);
+            });
+
+            setupTinderButtons();
+        }
+
+        function createTinderCard(profile, index) {
+            const card = document.createElement('div');
+            card.className = `tinder-card absolute inset-0 bg-white rounded-2xl shadow-2xl overflow-hidden cursor-pointer`;
+            card.style.zIndex = 10 - index;
+            card.style.transform = `scale(${1 - index * 0.02}) translateY(${index * 4}px)`;
+
+            card.innerHTML = `
+                <div class="relative h-full">
+                    <img src="${profile.photo}" alt="${profile.name}" class="w-full h-64 object-cover">
+                    <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        ${profile.compatibility}% Match
+                    </div>
+                    <div class="p-6 text-gray-800">
+                        <h3 class="text-2xl font-bold mb-2">${profile.name}, ${profile.age}</h3>
+                        <p class="text-lg text-gray-600 mb-3">${profile.occupation}</p>
+                        <p class="text-gray-500 mb-4">${profile.location}</p>
+                        <div class="flex flex-wrap gap-2 mb-4">
+                            ${profile.highlights.map(highlight => `
+                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">${highlight}</span>
+                            `).join('')}
+                        </div>
+                        <div class="text-gray-600">
+                            <p class="text-sm">💰 ${profile.budget}/month</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            return card;
+        }
+
+        function setupTinderButtons() {
+            const passBtn = document.getElementById('pass-btn');
+            const likeBtn = document.getElementById('like-btn');
+            const infoBtn = document.getElementById('info-btn');
+
+            if (passBtn) passBtn.onclick = () => swipeCard('pass');
+            if (likeBtn) likeBtn.onclick = () => swipeCard('like');
+            if (infoBtn) infoBtn.onclick = () => showMoreInfo();
+        }
+
+        function swipeCard(action) {
+            const cards = document.querySelectorAll('.tinder-card');
+            if (cards.length === 0) return;
+
+            const topCard = cards[0];
+            const direction = action === 'like' ? 'right' : 'left';
+
+            // Animate card out
+            topCard.style.transform = `translateX(${direction === 'right' ? '100%' : '-100%'}) rotate(${direction === 'right' ? '20deg' : '-20deg'})`;
+            topCard.style.opacity = '0';
+
+            // Remove card after animation
+            setTimeout(() => {
+                topCard.remove();
+                updateCardCounter();
+
+                // Check if all cards are done
+                if (document.querySelectorAll('.tinder-card').length === 0) {
+                    showMatchingComplete();
+                }
+            }, 300);
+
+            console.log(`${action === 'like' ? 'Liked' : 'Passed'} on profile`);
+        }
+
+        function showMoreInfo() {
+            alert('More detailed profile information would be shown here!');
+        }
+
+        function updateCardCounter() {
+            const remaining = document.querySelectorAll('.tinder-card').length;
+            const counter = document.getElementById('card-counter');
+            if (counter) {
+                counter.textContent = `${4 - remaining} of 3`;
+            }
+        }
+
+        function showMatchingComplete() {
+            const matchingStatus = document.querySelector('.matching-status');
+            if (matchingStatus) {
+                matchingStatus.innerHTML = '<span class="text-green-300 font-semibold">🎉 Matching Complete! Your selections have been saved.</span>';
+            }
+        }
     </script>
 </body>
 </html>
