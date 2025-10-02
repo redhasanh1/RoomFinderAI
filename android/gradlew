@@ -118,6 +118,36 @@ esac
 CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar
 
 
+# Prefer a Gradle-compatible JDK (Java 23 or lower) when Android Studio ships
+# with a newer default like Java 25. We reuse any explicitly configured
+# JAVA_HOME <= 23, otherwise fall back to common Android Studio locations.
+if [ -n "$JAVA_HOME" ] && [ -x "$JAVA_HOME/bin/java" ]; then
+    GRADLE_JAVA_VERSION=$("$JAVA_HOME/bin/java" -version 2>&1 | awk -F '"' '/version/ {print $2}')
+    GRADLE_JAVA_MAJOR=$(printf '%s\n' "$GRADLE_JAVA_VERSION" | awk -F '.' '{if ($1 == "1") {print $2} else {print $1}}')
+    case $GRADLE_JAVA_MAJOR in
+      ''|*[!0-9]*) GRADLE_JAVA_MAJOR= ;;
+    esac
+else
+    GRADLE_JAVA_MAJOR=
+fi
+
+if [ -z "$JAVA_HOME" ] || { [ -n "$GRADLE_JAVA_MAJOR" ] && [ "$GRADLE_JAVA_MAJOR" -gt 23 ] 2>/dev/null; }; then
+    for candidate in \
+        "$ANDROID_STUDIO_JDK" \
+        "/Applications/Android Studio.app/Contents/jbr/Contents/Home" \
+        "/Applications/Android Studio.app/Contents/jbr" \
+        "$HOME/Library/Java/JavaVirtualMachines/jbr/Contents/Home" \
+        "$HOME/Library/Java/JavaVirtualMachines/corretto-23.jdk/Contents/Home" \
+        "$HOME/Library/Java/JavaVirtualMachines/temurin-23.jdk/Contents/Home"
+    do
+        if [ -n "$candidate" ] && [ -x "$candidate/bin/java" ]; then
+            JAVA_HOME=$candidate
+            export JAVA_HOME
+            break
+        fi
+    done
+fi
+
 # Determine the Java command to use to start the JVM.
 if [ -n "$JAVA_HOME" ] ; then
     if [ -x "$JAVA_HOME/jre/sh/java" ] ; then
