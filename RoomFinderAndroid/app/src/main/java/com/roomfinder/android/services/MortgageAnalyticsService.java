@@ -2,7 +2,7 @@ package com.roomfinder.android.services;
 
 import com.roomfinder.android.models.MortgageCalculation;
 import com.roomfinder.android.models.MortgageScenario;
-import com.roomfinder.android.models.MortgageRate;
+
 import java.util.ArrayList;
 import java.util.List;
 
