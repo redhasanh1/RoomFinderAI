@@ -1,6 +1,5 @@
 package com.roomfinder.android;
 
-import android.app.Application;
 import android.util.Log;
 import androidx.multidex.MultiDexApplication;
 

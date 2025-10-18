@@ -2,7 +2,6 @@ package com.roomfinder.android.network;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.util.Log;
 
 import com.google.gson.Gson;
@@ -12,9 +11,7 @@ import com.roomfinder.android.models.Listing;
 import com.roomfinder.android.services.AiNegotiatorService.PropertyCriteria;
 
 import java.lang.reflect.Type;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 

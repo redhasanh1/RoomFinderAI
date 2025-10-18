@@ -25,7 +25,6 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.*;
 import okhttp3.sse.*;
-import java.util.concurrent.ExecutorService;
 
 /**
  * Real-time chat service for handling user-to-user messaging
