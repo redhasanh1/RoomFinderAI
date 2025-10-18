@@ -5,7 +5,7 @@ import android.net.Uri;
 import android.util.Log;
 import android.webkit.MimeTypeMap;
 import com.roomfinder.android.utils.ApiKeys;
-import java.io.IOException;
+
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.List;

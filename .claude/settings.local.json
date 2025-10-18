@@ -14,10 +14,10 @@
       "Bash(od:*)",
       "Bash(grep:*)",
       "Bash(mv:*)",
-      "Bash(find:*)",
-      "Bash(git log:*)",
       "Bash(apt:*)",
-      "Bash(apt install:*)"
+      "Bash(apt install:*)",
+      "Bash(dpkg-query:*)",
+      "Bash(dpkg:*)"
     ],
     "deny": [],
     "ask": [],
