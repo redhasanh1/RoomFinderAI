@@ -529,30 +529,38 @@ def calculate_ages(athlete_event_results, athlete_bios, olympic_games):
 
 def create_medal_tally_data(athlete_event_results):
     """Create medal tally summary"""
-    # Dictionary to store tally: (edition, edition_id, country, noc) -> counts
+    # Dictionary to store tally: (edition, edition_id, noc) -> counts
     tally = {}
+
+    # Track unique medals per event to avoid counting team members multiple times
+    # Key: (edition, noc, event, medal_type)
+    counted_medals = set()
 
     for row in athlete_event_results[1:]:
         edition = row[0]
         edition_id = row[1]
         noc = row[2]
+        event = row[4]
         medal = row[9]
+        athlete_id = row[7]
 
         key = (edition, edition_id, noc)
         if key not in tally:
             tally[key] = {'athletes': set(), 'gold': 0, 'silver': 0, 'bronze': 0}
 
         # Count athlete
-        athlete_id = row[7]
         tally[key]['athletes'].add(athlete_id)
 
-        # Count medals
-        if medal == 'Gold':
-            tally[key]['gold'] += 1
-        elif medal == 'Silver':
-            tally[key]['silver'] += 1
-        elif medal == 'Bronze':
-            tally[key]['bronze'] += 1
+        # Count medals - only once per event/medal combination
+        medal_key = (edition, noc, event, medal)
+        if medal and medal_key not in counted_medals:
+            counted_medals.add(medal_key)
+            if medal == 'Gold':
+                tally[key]['gold'] += 1
+            elif medal == 'Silver':
+                tally[key]['silver'] += 1
+            elif medal == 'Bronze':
+                tally[key]['bronze'] += 1
 
     # Convert to list
     result = [["edition", "edition_id", "Country", "NOC", "number_of_athletes",
