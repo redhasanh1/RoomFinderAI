@@ -398,15 +398,10 @@ def integrate_paris_data(athlete_bios, athlete_event_results, olympic_countries)
     next_athlete_id = max(int(row[0]) for row in athlete_bios[1:]) + 1
     next_result_id = max(int(row[5]) for row in athlete_event_results[1:]) + 1
     
-    # TASK 1 - HASAN: STEP 1 - ADD PARIS ATHLETES (only medallists, no duplicates)
+    # TASK 1 - HASAN: STEP 1 - ADD PARIS ATHLETES (no duplicates)
     new_athletes_added = 0
     for row in paris_athletes[1:]:  # Skip header
         paris_code = row[0]
-
-        # TASK 1 - HASAN: Only add athletes who are medallists
-        if paris_code not in medallist_codes:
-            continue
-
         original_name = row[2]  # Original format (e.g., "EVENEPOEL Remco")
 
         # TASK 1 - HASAN: Convert name using new function
