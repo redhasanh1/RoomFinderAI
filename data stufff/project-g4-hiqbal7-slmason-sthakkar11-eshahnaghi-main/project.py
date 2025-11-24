@@ -241,6 +241,85 @@ def write_csv_file(file_name, data_set):
             csv_writer.writerow(row)
 
 # ========== TASK 1 - HASAN: PARIS DATA INTEGRATION ==========
+
+def is_lastname_part(part):
+    """Check if a name part is likely a lastname (mostly uppercase like McINTOSH, O'BRIEN)"""
+    if not part:
+        return False
+    # Lowercase prefixes are part of lastname
+    if part.lower() in ['van', 'de', 'del', 'da', 'dos', 'la', 'le', 'du']:
+        return True
+    # Check if mostly uppercase (more uppercase than lowercase letters)
+    upper_count = sum(1 for c in part if c.isupper())
+    alpha_count = sum(1 for c in part if c.isalpha())
+    if alpha_count == 0:
+        return False
+    return upper_count > alpha_count / 2
+
+def smart_title_case(word):
+    """Convert to title case, handling Mc/Mac/O' prefixes"""
+    if not word:
+        return word
+
+    lower = word.lower()
+
+    # Handle Mc prefix (McIntosh, McKenzie)
+    if lower.startswith('mc') and len(word) > 2:
+        return 'Mc' + word[2:].title()
+
+    # Handle Mac prefix (MacArthur)
+    if lower.startswith('mac') and len(word) > 3:
+        return 'Mac' + word[3:].title()
+
+    # Handle O' prefix (O'Brien, O'Neill)
+    if lower.startswith("o'") and len(word) > 2:
+        return "O'" + word[2:].title()
+
+    return word.title()
+
+def convert_paris_name(original_name):
+    """Convert 'LASTNAME Firstname' or 'prefix LASTNAME Firstname' to 'Firstname Lastname'"""
+    name_parts = original_name.split()
+
+    if len(name_parts) == 0:
+        return original_name
+
+    # Single name - just title case it
+    if len(name_parts) == 1:
+        return smart_title_case(name_parts[0])
+
+    # Find the split point between lastname and firstname
+    # Lastname parts are uppercase/mostly uppercase, firstname parts are title case
+    last_lastname_idx = -1
+    for i, part in enumerate(name_parts):
+        if is_lastname_part(part):
+            last_lastname_idx = i
+
+    if last_lastname_idx < 0:
+        # No clear lastname found, return as-is with title case
+        return ' '.join(smart_title_case(p) for p in name_parts)
+
+    if last_lastname_idx == len(name_parts) - 1:
+        # All parts are lastname (no firstname), title case all
+        return ' '.join(smart_title_case(p) for p in name_parts)
+
+    # Split into lastname and firstname
+    lastname_parts = name_parts[:last_lastname_idx + 1]
+    firstname_parts = name_parts[last_lastname_idx + 1:]
+
+    # Convert lastname parts to title case, preserving lowercase prefixes
+    converted_lastname = []
+    for part in lastname_parts:
+        if part.lower() in ['van', 'de', 'del', 'da', 'dos', 'la', 'le', 'du']:
+            converted_lastname.append(part.lower())  # Keep prefix lowercase
+        else:
+            converted_lastname.append(smart_title_case(part))
+
+    lastname = ' '.join(converted_lastname)
+    firstname = ' '.join(firstname_parts)
+
+    return f"{firstname} {lastname}"
+
 # This function adds Paris 2024 Olympic data to the main dataset
 # It handles: 1) Adding new athletes (no duplicates)
 #             2) Adding event results for Paris medallists
@@ -283,30 +362,8 @@ def integrate_paris_data(athlete_bios, athlete_event_results, olympic_countries)
         paris_code = row[0]
         original_name = row[2]  # Original format (e.g., "EVENEPOEL Remco")
 
-        # TASK 1 - HASAN: Convert name for duplicate checking only
-        # Handle names like "van AERT Wout" where lowercase prefix is part of lastname
-        name_parts = original_name.split()
-        converted_name = original_name
-        if len(name_parts) >= 2:
-            lastname_parts = []
-            firstname_parts = []
-
-            # Find last uppercase part - everything up to and including it is lastname
-            last_upper_idx = -1
-            for i, part in enumerate(name_parts):
-                if part.isupper():
-                    last_upper_idx = i
-
-            if last_upper_idx >= 0:
-                # Everything up to last uppercase is lastname, rest is firstname
-                lastname_parts = name_parts[:last_upper_idx + 1]
-                firstname_parts = name_parts[last_upper_idx + 1:]
-
-                if lastname_parts and firstname_parts:
-                    # Convert lastname to title case
-                    lastname = ' '.join(p.title() if p.isupper() else p.title() for p in lastname_parts)
-                    firstname = ' '.join(firstname_parts)
-                    converted_name = f"{firstname} {lastname}"
+        # TASK 1 - HASAN: Convert name using new function
+        converted_name = convert_paris_name(original_name)
 
         # TASK 1 - HASAN: Check for duplicates using converted name
         name_key = converted_name.strip().upper()
@@ -387,24 +444,8 @@ def integrate_paris_data(athlete_bios, athlete_event_results, olympic_countries)
         sport = row[13]
         event = row[14]
 
-        # TASK 1 - HASAN: Convert name format from "LASTNAME Firstname" to "Firstname Lastname"
-        # Handle names like "van AERT Wout" where lowercase prefix is part of lastname
-        name_parts = name.split()
-        if len(name_parts) >= 2:
-            # Find last uppercase part - everything up to and including it is lastname
-            last_upper_idx = -1
-            for i, part in enumerate(name_parts):
-                if part.isupper():
-                    last_upper_idx = i
-
-            if last_upper_idx >= 0:
-                lastname_parts = name_parts[:last_upper_idx + 1]
-                firstname_parts = name_parts[last_upper_idx + 1:]
-
-                if lastname_parts and firstname_parts:
-                    lastname = ' '.join(p.title() if p.isupper() else p.title() for p in lastname_parts)
-                    firstname = ' '.join(firstname_parts)
-                    name = f"{firstname} {lastname}"
+        # TASK 1 - HASAN: Convert name format using new function
+        name = convert_paris_name(name)
 
         # TASK 1 - HASAN: Convert medal type to format expected by main dataset
         medal = ''
