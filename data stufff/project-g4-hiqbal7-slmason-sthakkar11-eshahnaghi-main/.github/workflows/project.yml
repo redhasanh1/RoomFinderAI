@@ -1,0 +1,71 @@
+# This is a basic workflow to help you get started with Actions
+
+name: project
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the main branch
+  push:
+    branches: [ main ]
+    paths:
+      - '*.py'
+      
+  pull_request:
+    branches: [ main ]
+    paths:
+      - '*.py'
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          path: ./assignment
+
+      - name: Checkout Tester
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          repository: seneca-dsa301-f25/testers
+          token: ${{ secrets.TESTER_ACCESS }}
+          path: ./tester
+
+      - name: Copy your source files
+        run:  cp ./assignment/*.py ./
+
+      - name: Copy data files
+        run: cp  ./tester/*.csv ./
+
+      - name: Copy paris data files
+        run: cp -r ./tester/paris/ ./
+
+      - name: Copy checkers
+        run: cp ./tester/project/* ./
+
+      - name: Run Project
+        run: |
+          echo "Running project"
+          timeout 50 python ./runproject.py > timing_output.txt
+
+      - name: Check MS1 - Expand to see MS1 Rubric Results
+        run: |
+          echo
+          echo "MS1 Checker:"
+          python ./ms1check.py
+          echo
+      - name: Check MS2 - Expand to see MS2 Rubric Results
+        run: |
+          echo
+          echo "MS2 Checker:"
+          python ./ms2check.py timing_output.txt
