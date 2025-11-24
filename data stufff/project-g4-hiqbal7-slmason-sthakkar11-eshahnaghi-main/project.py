@@ -322,24 +322,48 @@ def convert_paris_name(original_name):
 
 def convert_event_name(event_name):
     """Convert Paris event format to original format"""
+
+    # Judo weight class mapping
+    judo_weights = {
+        '-60 kg': 'Extra-Lightweight', '-66 kg': 'Half-Lightweight', '-73 kg': 'Lightweight',
+        '-81 kg': 'Half-Middleweight', '-90 kg': 'Middleweight', '-100 kg': 'Half-Heavyweight',
+        '+100 kg': 'Heavyweight', '-48 kg': 'Extra-Lightweight', '-52 kg': 'Half-Lightweight',
+        '-57 kg': 'Lightweight', '-63 kg': 'Half-Middleweight', '-70 kg': 'Middleweight',
+        '-78 kg': 'Half-Heavyweight', '+78 kg': 'Heavyweight'
+    }
+
+    # Check for Judo weight classes
+    for weight, name in judo_weights.items():
+        if weight in event_name:
+            if 'Men' in event_name:
+                return f"{name}, Men"
+            elif 'Women' in event_name:
+                return f"{name}, Women"
+
+    # Handle Mixed events first
+    if 'Mixed Team' in event_name:
+        event_name = event_name.replace('Mixed Team', 'Team, Mixed')
+    if 'Mixed Doubles' in event_name:
+        event_name = event_name.replace('Mixed Doubles', 'Doubles, Mixed')
+
     # Convert "Men's X" or "Women's X" to "X, Men" or "X, Women"
     gender_suffix = ''
     if event_name.startswith("Men's "):
-        event_name = event_name[6:]  # Remove "Men's "
+        event_name = event_name[6:]
         gender_suffix = ', Men'
     elif event_name.startswith("Women's "):
-        event_name = event_name[8:]  # Remove "Women's "
+        event_name = event_name[8:]
         gender_suffix = ', Women'
     elif event_name.endswith(' Men'):
-        event_name = event_name[:-4]  # Remove " Men"
+        event_name = event_name[:-4]
         gender_suffix = ', Men'
     elif event_name.endswith(' Women'):
-        event_name = event_name[:-6]  # Remove " Women"
+        event_name = event_name[:-6]
         gender_suffix = ', Women'
-    elif ' Men' in event_name:
+    elif ' Men' in event_name and 'Mixed' not in event_name:
         event_name = event_name.replace(' Men', '')
         gender_suffix = ', Men'
-    elif ' Women' in event_name:
+    elif ' Women' in event_name and 'Mixed' not in event_name:
         event_name = event_name.replace(' Women', '')
         gender_suffix = ', Women'
 
@@ -353,9 +377,14 @@ def convert_event_name(event_name):
     event_name = event_name.replace('25m ', '25 metres ')
     event_name = event_name.replace('50m ', '50 metres ')
 
-    # Handle specific event name patterns
-    # "Individual Time Trial" should stay as is
-    # "Road Race" should stay as is
+    # Fix shooting word order: "10 metres Air Pistol" -> "Air Pistol, 10 metres"
+    import re
+    shooting_match = re.match(r'^(\d+ metres) (Air (?:Pistol|Rifle))(.*)$', event_name)
+    if shooting_match:
+        distance = shooting_match.group(1)
+        weapon = shooting_match.group(2)
+        rest = shooting_match.group(3)
+        event_name = f"{weapon}, {distance}{rest}"
 
     # Add gender suffix
     result = event_name + gender_suffix
