@@ -320,6 +320,48 @@ def convert_paris_name(original_name):
 
     return f"{firstname} {lastname}"
 
+def convert_event_name(event_name):
+    """Convert Paris event format to original format"""
+    # Convert "Men's X" or "Women's X" to "X, Men" or "X, Women"
+    gender_suffix = ''
+    if event_name.startswith("Men's "):
+        event_name = event_name[6:]  # Remove "Men's "
+        gender_suffix = ', Men'
+    elif event_name.startswith("Women's "):
+        event_name = event_name[8:]  # Remove "Women's "
+        gender_suffix = ', Women'
+    elif event_name.endswith(' Men'):
+        event_name = event_name[:-4]  # Remove " Men"
+        gender_suffix = ', Men'
+    elif event_name.endswith(' Women'):
+        event_name = event_name[:-6]  # Remove " Women"
+        gender_suffix = ', Women'
+    elif ' Men' in event_name:
+        event_name = event_name.replace(' Men', '')
+        gender_suffix = ', Men'
+    elif ' Women' in event_name:
+        event_name = event_name.replace(' Women', '')
+        gender_suffix = ', Women'
+
+    # Convert distance abbreviations
+    event_name = event_name.replace('400m ', '400 metres ')
+    event_name = event_name.replace('200m ', '200 metres ')
+    event_name = event_name.replace('100m ', '100 metres ')
+    event_name = event_name.replace('800m ', '800 metres ')
+    event_name = event_name.replace('1500m ', '1500 metres ')
+    event_name = event_name.replace('10m ', '10 metres ')
+    event_name = event_name.replace('25m ', '25 metres ')
+    event_name = event_name.replace('50m ', '50 metres ')
+
+    # Handle specific event name patterns
+    # "Individual Time Trial" should stay as is
+    # "Road Race" should stay as is
+
+    # Add gender suffix
+    result = event_name + gender_suffix
+
+    return result
+
 # This function adds Paris 2024 Olympic data to the main dataset
 # It handles: 1) Adding new athletes (no duplicates)
 #             2) Adding event results for Paris medallists
@@ -356,10 +398,15 @@ def integrate_paris_data(athlete_bios, athlete_event_results, olympic_countries)
     next_athlete_id = max(int(row[0]) for row in athlete_bios[1:]) + 1
     next_result_id = max(int(row[5]) for row in athlete_event_results[1:]) + 1
     
-    # TASK 1 - HASAN: STEP 1 - ADD PARIS ATHLETES (no duplicates)
+    # TASK 1 - HASAN: STEP 1 - ADD PARIS ATHLETES (only medallists, no duplicates)
     new_athletes_added = 0
     for row in paris_athletes[1:]:  # Skip header
         paris_code = row[0]
+
+        # TASK 1 - HASAN: Only add athletes who are medallists
+        if paris_code not in medallist_codes:
+            continue
+
         original_name = row[2]  # Original format (e.g., "EVENEPOEL Remco")
 
         # TASK 1 - HASAN: Convert name using new function
@@ -443,6 +490,9 @@ def integrate_paris_data(athlete_bios, athlete_event_results, olympic_countries)
         country_noc = row[5]  # FIXED: row[5] is country_code (NOC), row[6] is country name
         sport = row[13]
         event = row[14]
+
+        # TASK 1 - HASAN: Convert event name to original format
+        event = convert_event_name(event)
 
         # TASK 1 - HASAN: Convert name format using new function
         name = convert_paris_name(name)
