@@ -4,7 +4,7 @@ import android.os.Bundle;
 import android.util.Log;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
-import com.google.android.material.bottomnavigation.BottomNavigationView;
+
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.ActivityMainBinding;
 import com.roomfinder.android.fragments.*;
