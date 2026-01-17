@@ -2,7 +2,6 @@ package com.roomfinder.android.activities;
 
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import com.roomfinder.android.auth.AuthService;

@@ -5,18 +5,11 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
-import android.text.method.LinkMovementMethod;
 import android.view.View;
-import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.Toast;
-import androidx.annotation.NonNull;
+
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.PagerSnapHelper;
-import androidx.recyclerview.widget.RecyclerView;
 import androidx.viewpager2.widget.ViewPager2;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.google.android.material.tabs.TabLayoutMediator;
@@ -25,7 +18,7 @@ import com.roomfinder.android.adapters.ImageCarouselAdapter;
 import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.ActivityListingDetailBinding;
 import com.roomfinder.android.models.Listing;
-import com.roomfinder.android.network.SupabaseService;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
