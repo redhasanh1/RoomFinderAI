@@ -2923,6 +2923,11 @@
         };
 
         function setupChat() {
+            if (!supabase || typeof supabase.channel !== 'function') {
+                console.warn('🔧 Supabase client not ready, deferring chat setup.');
+                setTimeout(setupChat, 1000);
+                return;
+            }
             console.log('🔧 Setting up chat system...');
             chatSystemStatus.setupAttempts++;
             
@@ -3933,6 +3938,11 @@
 
         // Setup Messaging Panel
         function setupMessagingPanel() {
+            if (!supabase || typeof supabase.channel !== 'function') {
+                console.warn('🔧 Supabase client not ready, deferring messaging panel setup.');
+                setTimeout(setupMessagingPanel, 1000);
+                return;
+            }
             const messageToggleBtn = document.getElementById('messageToggleBtn');
             const messagePanel = document.getElementById('messagePanel');
             const profileNotificationBadge = document.getElementById('profileNotificationBadge');
@@ -5205,38 +5215,42 @@
     
     <!-- Initialize Notifications -->
     <script>
-        // Removed redundant initialization - moved to main initialization manager
-        
-        // Add notification triggers for new listings
-        if (supabase) {
-            supabase
-                .channel('notification_listings')
-                .on('postgres_changes', { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'listings' 
-                }, (payload) => {
-                    console.log('🔔 New listing notification trigger:', payload.new);
-                    
-                    // Check if user has saved searches that match this listing
-                    if (window.notificationManager && window.notificationManager.isEnabled()) {
-                        checkAndSendNewListingNotification(payload.new);
-                    }
-                })
-                .on('postgres_changes', { 
-                    event: 'UPDATE', 
-                    schema: 'public', 
-                    table: 'listings' 
-                }, (payload) => {
-                    console.log('🔔 Listing update notification trigger:', payload.new);
-                    
-                    // Check for price changes
-                    if (window.notificationManager && window.notificationManager.isEnabled()) {
-                        checkAndSendPriceChangeNotification(payload.old, payload.new);
-                    }
-                })
-                .subscribe();
+        function initNotifications() {
+            if (typeof supabase !== 'undefined' && supabase && typeof supabase.channel === 'function') {
+                // Add notification triggers for new listings
+                supabase
+                    .channel('notification_listings')
+                    .on('postgres_changes', { 
+                        event: 'INSERT', 
+                        schema: 'public', 
+                        table: 'listings' 
+                    }, (payload) => {
+                        console.log('🔔 New listing notification trigger:', payload.new);
+                        
+                        // Check if user has saved searches that match this listing
+                        if (window.notificationManager && window.notificationManager.isEnabled()) {
+                            checkAndSendNewListingNotification(payload.new);
+                        }
+                    })
+                    .on('postgres_changes', { 
+                        event: 'UPDATE', 
+                        schema: 'public', 
+                        table: 'listings' 
+                    }, (payload) => {
+                        console.log('🔔 Listing update notification trigger:', payload.new);
+                        
+                        // Check for price changes
+                        if (window.notificationManager && window.notificationManager.isEnabled()) {
+                            checkAndSendPriceChangeNotification(payload.old, payload.new);
+                        }
+                    })
+                    .subscribe();
+            } else {
+                console.warn('Supabase not ready for notification subscription, will retry...');
+                setTimeout(initNotifications, 1000);
+            }
         }
+        initNotifications();
         
         // Check if new listing matches user's saved searches
         function checkAndSendNewListingNotification(listing) {
