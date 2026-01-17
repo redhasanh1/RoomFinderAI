@@ -18,7 +18,6 @@
         let SUPABASE_URL;
         let SUPABASE_ANON_KEY;
         let GOOGLE_API_KEY;
-        let supabase;
 
         // Global initialization state tracking
         let isConfigLoaded = false;
@@ -63,8 +62,12 @@
                         throw new Error('Missing Supabase credentials');
                     }
 
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('📡 Supabase client initialized successfully');
+                    if (typeof supabase === 'undefined' || !supabase) {
+                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        console.log('📡 Supabase client initialized successfully');
+                    } else {
+                        console.log('📡 Supabase client already initialized.');
+                    }
 
                     // Test Supabase connection
                     supabase.from('listings').select('count', { count: 'exact', head: true })
@@ -1507,8 +1510,7 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                         <input type="text" id="searchLocation" placeholder="Search by city, neighborhood, or address..." 
-                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-500 focus:outline-none transition"
-                               onkeyup="liveSearch(event)">
+                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-500 focus:outline-none transition">
                     </div>
                 </div>
 
@@ -1600,13 +1602,13 @@
             <!-- Listings Grid with Map Toggle -->
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <button onclick="setViewMode('grid')" id="gridViewBtn" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium flex items-center gap-2">
+                    <button id="gridViewBtn" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
                         Grid View
                     </button>
-                    <button onclick="setViewMode('map')" id="mapViewBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2">
+                    <button id="mapViewBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
                         </svg>
@@ -1729,6 +1731,7 @@
         let map;
         let markers = [];
         let markerClusterGroup;
+        let searchTimeout;
 
         // Initialize Map with Retry Logic
         function initMap() {
@@ -5392,17 +5395,6 @@
             event.target.classList.add('filter-chip-active');
         }
 
-        // Live Search Function
-        let searchTimeout;
-        function liveSearch(event) {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(() => {
-                if (event.key === 'Enter') {
-                    applySearchFilters();
-                }
-            }, 300);
-        }
-
         // View Mode Toggle
         function setViewMode(mode) {
             const gridBtn = document.getElementById('gridViewBtn');
@@ -5934,7 +5926,6 @@
         }
 
         // Debounced search for real-time filtering
-        let searchTimeout;
         function debounceSearch() {
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
@@ -6047,195 +6038,14 @@
         window.originalInitializeListingsPage = initializeListingsPage;
         window.initializeListingsPage = initializeListingsPageNew;
 
-        // 🚨 EMERGENCY LISTINGS LOADER - IMMEDIATE EXECUTION
-        // This ensures listings load regardless of complex initialization
-        console.log('🚨 EMERGENCY: Starting immediate listings loader...');
-
-        // Method 1: Direct immediate execution
-        (async function emergencyListingsLoader() {
-            try {
-                console.log('🚨 Emergency Method 1: Direct execution');
-
-                // Wait for basic requirements
-                if (typeof supabase === 'undefined' || !supabase) {
-                    console.log('🚨 Waiting for Supabase...');
-                    // Give Supabase a moment to initialize
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                }
-
-                if (typeof displayListings === 'function') {
-                    await displayListings();
-                    console.log('✅ Emergency listings load successful!');
-                } else {
-                    console.warn('⚠️ displayListings function not available');
-                }
-            } catch (error) {
-                console.error('❌ Emergency listings load failed:', error);
-            }
-        })();
-
-        // Method 2: DOMContentLoaded trigger for consolidated system
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', function() {
-                console.log('🚀 DOMContentLoaded: Triggering consolidated initialization system');
-                setTimeout(() => {
-                    initializeListingsPageNew().catch(error => {
-                        console.error('❌ Consolidated system failed:', error);
-                    });
-                }, 100);
-            });
-        } else {
-            console.log('🚀 DOM already ready: Triggering consolidated initialization system');
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOMContentLoaded: Triggering consolidated initialization system');
             setTimeout(() => {
                 initializeListingsPageNew().catch(error => {
                     console.error('❌ Consolidated system failed:', error);
                 });
             }, 100);
-        }
-
-        // Method 3: Timeout-based fallback
-        setTimeout(function() {
-            console.log('🔄 Timeout fallback: Checking if listings loaded...');
-            const container = document.getElementById('listingsContainer');
-            if (!container || container.children.length === 0) {
-                console.log('🚨 Timeout fallback: Force loading listings');
-                if (typeof displayListings === 'function') {
-                    displayListings().catch(console.error);
-                }
-            }
-        }, 3000);
-
-        // Method 4: Window load fallback
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                console.log('🔄 Window load fallback: Checking if listings loaded...');
-                const container = document.getElementById('listingsContainer');
-                if (!container || container.children.length === 0) {
-                    console.log('🚨 Window load fallback: Force loading listings');
-                    if (typeof displayListings === 'function') {
-                        displayListings().catch(console.error);
-                    }
-                }
-            }, 1000);
         });
-
-        // 🛡️ BULLETPROOF INDEPENDENT LISTINGS LOADER
-        // This function bypasses ALL complex systems and directly loads listings
-        window.bulletproofListingsLoader = async function() {
-            console.log('🛡️ BULLETPROOF: Starting independent listings loader...');
-
-            try {
-                // Step 1: Ensure we have basic requirements
-                if (typeof window.supabase === 'undefined') {
-                    console.error('🛡️ Supabase library not loaded');
-                    return false;
-                }
-
-                if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-                    console.error('🛡️ Supabase credentials not available');
-                    return false;
-                }
-
-                // Step 2: Create independent Supabase client
-                const independentSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('🛡️ Independent Supabase client created');
-
-                // Step 3: Direct database query
-                const { data, error } = await independentSupabase
-                    .from('listings')
-                    .select('*')
-                    .order('created_at', { ascending: false })
-                    .limit(20);
-
-                if (error) {
-                    console.error('🛡️ Database query failed:', error);
-                    return false;
-                }
-
-                console.log('🛡️ Retrieved', data?.length || 0, 'listings from database');
-
-                // Step 4: Direct DOM manipulation
-                const container = document.getElementById('listingsContainer');
-                if (!container) {
-                    console.error('🛡️ Listings container not found');
-                    return false;
-                }
-
-                // Clear container
-                container.innerHTML = '';
-
-                // Step 5: Render listings directly
-                if (data && data.length > 0) {
-                    data.forEach(listing => {
-                        const listingDiv = document.createElement('div');
-                        listingDiv.className = 'bg-white rounded-lg shadow-md p-6 border border-gray-200 hover:shadow-lg transition-shadow duration-300';
-
-                        listingDiv.innerHTML = `
-                            <div class="flex justify-between items-start mb-4">
-                                <h3 class="text-lg font-bold text-gray-900">${listing.title || 'Untitled Listing'}</h3>
-                                <span class="text-xl font-bold text-blue-600">$${listing.price || 'N/A'}/month</span>
-                            </div>
-                            <p class="text-gray-600 mb-3">${listing.description || 'No description available'}</p>
-                            <div class="flex items-center text-sm text-gray-500 mb-3">
-                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                </svg>
-                                <span>${listing.location || 'Location not specified'}</span>
-                            </div>
-                            <div class="flex items-center space-x-4 text-sm text-gray-500">
-                                <span class="flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                                    </svg>
-                                    ${listing.bedrooms || 0} bed${(listing.bedrooms || 0) !== 1 ? 's' : ''}
-                                </span>
-                                <span class="flex items-center">
-                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 14v3m4-3v3m4-3v3M3 21h18M3 10h18M3 7l9-4 9 4M4 10h16v11H4V10z"></path>
-                                    </svg>
-                                    ${listing.bathrooms || 0} bath${(listing.bathrooms || 0) !== 1 ? 's' : ''}
-                                </span>
-                            </div>
-                        `;
-
-                        container.appendChild(listingDiv);
-                    });
-
-                    // Update count display
-                    const countElement = document.querySelector('.listings-count');
-                    if (countElement) {
-                        countElement.textContent = `${data.length} propert${data.length === 1 ? 'y' : 'ies'} available`;
-                    }
-
-                    console.log('🛡️ SUCCESS: Bulletproof listings loaded successfully!');
-                    return true;
-                } else {
-                    container.innerHTML = `
-                        <div class="text-center py-8">
-                            <p class="text-gray-600">No listings available at the moment.</p>
-                        </div>
-                    `;
-                    console.log('🛡️ No listings found in database');
-                    return true;
-                }
-
-            } catch (error) {
-                console.error('🛡️ Bulletproof loader failed:', error);
-                return false;
-            }
-        };
-
-        // Method 5: Bulletproof loader execution
-        setTimeout(async function() {
-            console.log('🛡️ Executing bulletproof loader...');
-            const success = await window.bulletproofListingsLoader();
-            if (success) {
-                console.log('🎉 Bulletproof loader succeeded!');
-            } else {
-                console.error('💥 Even bulletproof loader failed');
-            }
-        }, 4000);
 
         // Initialize enhanced features when page loads
         // Multiple independent pathways ensure listings load reliably
