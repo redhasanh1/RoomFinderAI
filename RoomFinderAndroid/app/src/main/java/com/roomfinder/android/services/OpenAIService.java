@@ -5,7 +5,7 @@ import com.roomfinder.android.utils.ApiKeys;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import okhttp3.*;
-import java.io.IOException;
+
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
