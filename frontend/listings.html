@@ -25,6 +25,11 @@
         let initializationAttempts = 0;
         const MAX_INIT_ATTEMPTS = 3;
 
+        function showError(message) {
+            console.error(message);
+            alert(message);
+        }
+
         // Load configuration from Railway API
         console.log('🔄 Starting config fetch from /api/config...');
         fetch('/api/config')
@@ -5720,16 +5725,10 @@
                     if (isProduction) {
                         // Verify Supabase client is still available
                         if (!supabase) {
-                            console.warn('⚠️ Supabase client lost, attempting re-initialization...');
-                            try {
-                                if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-                                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                                    console.log('🔧 Supabase client re-initialized');
-                                }
-                            } catch (reinitError) {
-                                console.error('❌ Supabase re-initialization failed:', reinitError);
-                            }
-                        }
+                                                            console.warn('⚠️ Supabase client lost, attempting re-initialization...');
+                                                            if (!supabase) {
+                                                                console.log('Supabase client is not available');
+                                                            }                        }
                     }
 
                     try {
