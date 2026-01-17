@@ -93,14 +93,37 @@
                 attemptInitialization();
             })
             .catch(error => {
-                console.error('❌ Failed to load configuration:', error);
-                console.error('❌ Error details:', {
-                    message: error.message,
-                    stack: error.stack,
-                    url: window.location.href,
-                    userAgent: navigator.userAgent
-                });
-                showError('Failed to load configuration. Please refresh the page.');
+                console.error('❌ Failed to load configuration from API, using fallback credentials:', error);
+                
+                // Fallback to example credentials
+                SUPABASE_URL = "https://your-project.supabase.co";
+                SUPABASE_ANON_KEY = "your-supabase-anon-key";
+                
+                console.warn('🔧 Using fallback Supabase credentials. The application may not function correctly.');
+
+                // Initialize Supabase client with error handling
+                try {
+                    if (!window.supabase) {
+                        throw new Error('Supabase library not loaded');
+                    }
+                    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+                        throw new Error('Missing Supabase credentials');
+                    }
+
+                    if (typeof supabase === 'undefined' || !supabase) {
+                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                        console.log('📡 Supabase client initialized with fallback credentials');
+                    } else {
+                        console.log('📡 Supabase client already initialized.');
+                    }
+                } catch (supabaseError) {
+                    console.error('❌ Supabase initialization with fallback failed:', supabaseError);
+                    showError('Failed to initialize Supabase with fallback credentials.');
+                    return; // Stop further execution if Supabase fails completely
+                }
+
+                isConfigLoaded = true;
+                attemptInitialization();
             });
 
         // Wait for DOM to be ready
