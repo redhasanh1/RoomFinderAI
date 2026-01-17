@@ -3215,6 +3215,7 @@
             initializeFileUpload();
 
             // SIMPLIFIED Real-time subscription with better debugging
+            console.log('DEBUG: Before messageChannel. Supabase:', supabase, 'typeof supabase.channel:', typeof supabase.channel);
             const messageChannel = supabase
                 .channel('messages_realtime_' + Math.random())
                 .on('postgres_changes', { 
@@ -4176,6 +4177,7 @@
             };
 
             // SIMPLIFIED Messaging panel real-time updates
+            console.log('DEBUG: Before panelChannel. Supabase:', supabase, 'typeof supabase.channel:', typeof supabase.channel);
             const panelChannel = supabase
                 .channel('panel_realtime_' + Math.random())
                 .on('postgres_changes', { 
@@ -5218,6 +5220,7 @@
         function initNotifications() {
             if (typeof supabase !== 'undefined' && supabase && typeof supabase.channel === 'function') {
                 // Add notification triggers for new listings
+                console.log('DEBUG: Before notification channel. Supabase:', supabase, 'typeof supabase.channel:', typeof supabase.channel);
                 supabase
                     .channel('notification_listings')
                     .on('postgres_changes', { 
