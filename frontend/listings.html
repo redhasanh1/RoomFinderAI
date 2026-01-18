@@ -2450,9 +2450,9 @@
                 const startTime = Date.now();
                 const { data, error } = await supabase
                     .from('listings')
-                    .select('*')
+                    .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, description, user_email, media, created_at')
                     .order('created_at', { ascending: false })
-                    .range(0, 19);
+                    .limit(10);
 
                 const queryTime = Date.now() - startTime;
                 console.log('📊 Query completed in', queryTime, 'ms');
