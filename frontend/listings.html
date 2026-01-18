@@ -73,12 +73,8 @@
                         throw new Error('Missing Supabase credentials');
                     }
 
-                    if (typeof supabase === 'undefined' || !supabase) {
-                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        console.log('📡 Supabase client initialized successfully');
-                    } else {
-                        console.log('📡 Supabase client already initialized.');
-                    }
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('📡 Supabase client initialized successfully');
 
                     // Test Supabase connection
                     supabase.from('listings').select('count', { count: 'exact', head: true })
@@ -116,12 +112,8 @@
                         throw new Error('Missing Supabase credentials');
                     }
 
-                    if (typeof supabase === 'undefined' || !supabase) {
-                        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        console.log('📡 Supabase client initialized with fallback credentials');
-                    } else {
-                        console.log('📡 Supabase client already initialized.');
-                    }
+                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    console.log('📡 Supabase client initialized with fallback credentials');
                 } catch (supabaseError) {
                     console.error('❌ Supabase initialization with fallback failed:', supabaseError);
                     showError('Failed to initialize Supabase with fallback credentials.');
