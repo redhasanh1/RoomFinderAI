@@ -5058,18 +5058,22 @@
         // Removed redundant DOMContentLoaded listener - moved to main initialization
         
         // Real-time subscription to listings
-        if (typeof supabase !== 'undefined' && supabase) {
-            supabase
-                .channel('public:listings')
-                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
-                    console.log('New listing added:', payload.new);
-                    displayListings();
-                })
-                .subscribe((status) => {
-                    console.log('Listings channel status:', status);
-                });
+        if (typeof supabase !== 'undefined' && supabase && typeof supabase.channel === 'function') {
+            try {
+                supabase
+                    .channel('public:listings')
+                    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'listings' }, (payload) => {
+                        console.log('New listing added:', payload.new);
+                        displayListings();
+                    })
+                    .subscribe((status) => {
+                        console.log('Listings channel status:', status);
+                    });
+            } catch (e) {
+                console.warn('Realtime subscription failed:', e);
+            }
         } else {
-            console.warn('Supabase not initialized for real-time listings subscription');
+            console.warn('Supabase client not ready for realtime subscription');
         }
         
         // Initialize Universal Authentication Manager
