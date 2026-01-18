@@ -1,5 +1,5 @@
 // Service Worker for Push Notifications
-const CACHE_NAME = 'roomfinder-v1';
+const CACHE_NAME = 'roomfinder-v2';
 const urlsToCache = [
     '/',
     '/listings',
@@ -61,6 +61,12 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache when offline
 self.addEventListener('fetch', (event) => {
+    // Skip API calls and external URLs - let them go directly to network
+    if (event.request.url.includes('/api/') ||
+        !event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
     event.respondWith(
         caches.match(event.request)
             .then((response) => {
