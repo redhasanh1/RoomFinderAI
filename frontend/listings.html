@@ -4,9 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RoomFinderAI - Listings</title>
-    <script>
-        let supabase;
-    </script>
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
     <script src="universal-auth-protection.js"></script>
     
@@ -70,13 +67,11 @@
                         throw new Error('Missing Supabase credentials');
                     }
 
-                    if (!supabase) {
+                    if (typeof supabase === 'undefined' || !supabase) {
                         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        window.supabaseClient = supabase;
                         console.log('📡 Supabase client initialized successfully');
                     } else {
                         console.log('📡 Supabase client already initialized.');
-                        window.supabaseClient = supabase;
                     }
 
                     // Test Supabase connection
@@ -115,13 +110,11 @@
                         throw new Error('Missing Supabase credentials');
                     }
 
-                    if (!supabase) {
+                    if (typeof supabase === 'undefined' || !supabase) {
                         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                        window.supabaseClient = supabase;
                         console.log('📡 Supabase client initialized with fallback credentials');
                     } else {
                         console.log('📡 Supabase client already initialized.');
-                        window.supabaseClient = supabase;
                     }
                 } catch (supabaseError) {
                     console.error('❌ Supabase initialization with fallback failed:', supabaseError);
@@ -2930,6 +2923,11 @@
         };
 
         function setupChat() {
+            if (!supabase || typeof supabase.channel !== 'function') {
+                console.warn('🔧 Supabase client not ready, deferring chat setup.');
+                setTimeout(setupChat, 1000);
+                return;
+            }
             console.log('🔧 Setting up chat system...');
             chatSystemStatus.setupAttempts++;
             
@@ -3941,6 +3939,11 @@
 
         // Setup Messaging Panel
         function setupMessagingPanel() {
+            if (!supabase || typeof supabase.channel !== 'function') {
+                console.warn('🔧 Supabase client not ready, deferring messaging panel setup.');
+                setTimeout(setupMessagingPanel, 1000);
+                return;
+            }
             const messageToggleBtn = document.getElementById('messageToggleBtn');
             const messagePanel = document.getElementById('messagePanel');
             const profileNotificationBadge = document.getElementById('profileNotificationBadge');
