@@ -20,21 +20,61 @@
         let SUPABASE_URL;
         let SUPABASE_ANON_KEY;
         var supabase;
+        let configLoaded = false;
+        let domReady = false;
+
+        function tryInitialize() {
+            if (configLoaded && domReady) {
+                console.log('Both config and DOM ready, loading listing...');
+                loadListingDetails();
+            }
+        }
 
         // Load configuration
+        console.log('Fetching config...');
         fetch('/api/config')
-            .then(response => response.json())
+            .then(response => {
+                console.log('Config response:', response.status);
+                if (!response.ok) throw new Error('Config fetch failed: ' + response.status);
+                return response.json();
+            })
             .then(config => {
+                console.log('Config loaded:', !!config.SUPABASE_URL, !!config.SUPABASE_ANON_KEY);
                 SUPABASE_URL = config.SUPABASE_URL;
                 SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
+
+                if (!window.supabase) {
+                    throw new Error('Supabase library not loaded');
+                }
+
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('Supabase initialized');
-                loadListingDetails();
+                console.log('Supabase client created');
+                configLoaded = true;
+                tryInitialize();
             })
             .catch(error => {
                 console.error('Config load error:', error);
-                document.getElementById('listing-content').innerHTML = '<p class="text-red-500">Error loading configuration. Please refresh the page.</p>';
+                if (document.getElementById('listing-content')) {
+                    document.getElementById('listing-content').innerHTML = `
+                        <div class="glass-card p-8 text-center">
+                            <p class="text-red-500 mb-4">Error loading configuration: ${error.message}</p>
+                            <button onclick="location.reload()" class="btn-primary">Retry</button>
+                        </div>`;
+                }
             });
+
+        // Wait for DOM
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', () => {
+                console.log('DOM ready');
+                domReady = true;
+                tryInitialize();
+            });
+        } else {
+            console.log('DOM already ready');
+            domReady = true;
+            tryInitialize();
+        }
     </script>
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -481,31 +521,46 @@
 
         // Load listing details
         async function loadListingDetails() {
+            console.log('loadListingDetails called');
             const listingId = getListingId();
+            console.log('Listing ID:', listingId);
 
             if (!listingId) {
-                showError('No listing ID provided');
+                showError('No listing ID provided in URL');
+                return;
+            }
+
+            if (!supabase) {
+                console.error('Supabase client not initialized');
+                showError('Database connection not ready. Please refresh.');
                 return;
             }
 
             try {
+                console.log('Fetching listing from Supabase...');
                 const { data: listing, error } = await supabase
                     .from('listings')
                     .select('*')
                     .eq('id', listingId)
                     .single();
 
-                if (error) throw error;
+                console.log('Query result:', { listing: !!listing, error });
+
+                if (error) {
+                    console.error('Supabase error:', error);
+                    throw error;
+                }
 
                 if (!listing) {
                     showError('Listing not found');
                     return;
                 }
 
+                console.log('Rendering listing:', listing.title);
                 renderListing(listing);
             } catch (error) {
                 console.error('Error loading listing:', error);
-                showError('Failed to load listing details. Please try again.');
+                showError(`Failed to load listing: ${error.message || 'Unknown error'}`);
             }
         }
 
