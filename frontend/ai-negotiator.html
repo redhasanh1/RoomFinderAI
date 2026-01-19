@@ -1013,10 +1013,16 @@
                 console.log('Creating AIChatHandler instance...');
                 aiNegotiator = new AIChatHandler(supabase, configData);
                 await aiNegotiator.init(currentUser);
-                
+
+                // CRITICAL: Initialize negotiation engine and connect it
+                console.log('Creating AINegotiator engine...');
+                const negotiationEngine = new AINegotiator(supabase, configData);
+                aiNegotiator.setNegotiationEngine(negotiationEngine);
+                window.aiNegotiator = negotiationEngine; // Make globally accessible
+
                 // Make aiChat globally accessible for sidebar button clicks
                 window.aiChat = aiNegotiator;
-                
+
                 // Setup message input handling
                 setupMessageHandling();
                 
