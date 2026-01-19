@@ -1886,13 +1886,13 @@
                 reader.onload = function(e) {
                     const imageData = e.target.result;
                     document.getElementById('profileImage').src = imageData;
-                    
+
                     // Save profile image to localStorage for the current user
                     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                     currentUser.profileImage = imageData;
                     currentUser.hasCustomProfileImage = true; // Flag to indicate custom upload
                     safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
-                    
+
                     // Also update in the users array if it exists
                     const users = JSON.parse(localStorage.getItem('users')) || [];
                     const userIndex = users.findIndex(u => u.email === currentUser.email);
@@ -1901,11 +1901,18 @@
                         users[userIndex].hasCustomProfileImage = true;
                         safeLocalStorageSetItem('users', JSON.stringify(users));
                     }
-                    
+
+                    // Update the header profile logo immediately
+                    const profileLogo = document.getElementById('profileLogo');
+                    if (profileLogo) {
+                        profileLogo.src = imageData;
+                        console.log('✅ Updated header profile logo');
+                    }
+
                     console.log('✅ Profile image saved locally for user:', currentUser.email);
                     console.log('💾 localStorage currentUser:', JSON.stringify(currentUser, null, 2));
                     console.log('💾 localStorage users array:', localStorage.getItem('users'));
-                    
+
                     // Also save to backend database
                     saveProfileImageToBackend(currentUser.email, imageData);
                 };
