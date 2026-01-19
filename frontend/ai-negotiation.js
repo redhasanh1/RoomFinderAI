@@ -223,8 +223,8 @@ class AINegotiator {
             };
 
         } catch (error) {
-            console.error('Error getting AI market data:', error);
-            
+            console.warn('⚠️ OpenAI market analysis unavailable, using estimates');
+
             // Fallback to basic estimates
             return {
                 average: 1200,
@@ -313,13 +313,13 @@ class AINegotiator {
             return message;
 
         } catch (error) {
-            console.error('Error generating negotiation message:', error);
-            
-            // Fallback message
-            const suggestion = listing.price > marketData.average ? 
+            console.warn('⚠️ OpenAI unavailable (CORS/network issue), using template message');
+
+            // Fallback message - always works
+            const suggestion = listing.price > marketData.average ?
                 `Would you consider $${Math.round(marketData.average * 0.95)} based on current market rates?` :
                 'Are you open to any flexibility on the rent?';
-            
+
             return `Hi! I'm very interested in your ${listing.house_type} "${listing.title}". I'm a qualified tenant ready to move quickly. ${suggestion}`;
         }
     }
