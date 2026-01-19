@@ -230,7 +230,7 @@ async function updateAuthSection() {
         
         // Fallback to stored/local profile image if backend fetch failed
         if (!profileImage) {
-            profileImage = getStoredProfileImage(currentUser.email);
+            profileImage = await getStoredProfileImage(currentUser.email);
         }
         
         // If still no image, check current user object
