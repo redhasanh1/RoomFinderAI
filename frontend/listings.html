@@ -2522,35 +2522,6 @@
                         }
 
                         console.log('✅ Successfully fetched', data.length, 'listings');
-
-                        // Fetch media separately in batches to avoid query timeout
-                        try {
-                            const listingIds = data.map(l => l.id);
-                            const batchSize = 10;
-                            const mediaMap = {};
-
-                            for (let i = 0; i < listingIds.length; i += batchSize) {
-                                const batchIds = listingIds.slice(i, i + batchSize);
-                                const { data: mediaData, error: mediaError } = await supabase
-                                    .from('listings')
-                                    .select('id, media')
-                                    .in('id', batchIds);
-
-                                if (mediaError) {
-                                    console.warn('⚠️ Media batch failed:', mediaError.message);
-                                } else if (mediaData) {
-                                    mediaData.forEach(m => mediaMap[m.id] = m.media);
-                                }
-                            }
-
-                            data.forEach(listing => {
-                                listing.media = mediaMap[listing.id] || [];
-                            });
-                            console.log('✅ Media loaded for listings');
-                        } catch (mediaErr) {
-                            console.warn('⚠️ Media fetch failed, continuing without images:', mediaErr.message);
-                        }
-
                         return data;
                     } catch (innerError) {
                         // Check if it's a 502 error or network error that we should retry
