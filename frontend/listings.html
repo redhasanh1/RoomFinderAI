@@ -4980,10 +4980,20 @@
         
         // Filter listings based on search criteria
         function filterListings() {
-            const location = document.getElementById('searchLocation').value.toLowerCase().trim();
-            const maxPrice = parseInt(document.getElementById('searchMaxPrice').value) || Infinity;
-            const roomType = document.getElementById('searchRoomType').value;
-            const bedrooms = document.getElementById('searchBedrooms').value;
+            const locationEl = document.getElementById('searchLocation');
+            const maxPriceEl = document.getElementById('searchMaxPrice');
+            const roomTypeEl = document.getElementById('searchRoomType');
+            const bedroomsEl = document.getElementById('searchBedrooms');
+
+            if (!locationEl || !maxPriceEl || !roomTypeEl || !bedroomsEl) {
+                console.warn('Search elements not ready');
+                return;
+            }
+
+            const location = locationEl.value.toLowerCase().trim();
+            const maxPrice = parseInt(maxPriceEl.value) || Infinity;
+            const roomType = roomTypeEl.value;
+            const bedrooms = bedroomsEl.value;
             
             const allListings = document.querySelectorAll('.listing-card');
             let visibleCount = 0;
