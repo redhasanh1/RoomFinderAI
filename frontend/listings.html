@@ -5218,7 +5218,7 @@
 
         // Favorites functionality
         async function toggleFavorite(listingId, buttonElement) {
-            const currentUser = window.UniversalAuth.getCurrentUser();
+            const currentUser = await window.UniversalAuth.getCurrentUser();
 
             if (!currentUser || !currentUser.email) {
                 console.log('⚠️ User not authenticated, prompting login');
@@ -5302,7 +5302,7 @@
         }
 
         async function loadFavoriteStates() {
-            const currentUser = window.UniversalAuth.getCurrentUser();
+            const currentUser = await window.UniversalAuth.getCurrentUser();
             
             if (!currentUser || !currentUser.id) {
                 console.log('No authenticated user, skipping favorite states');
