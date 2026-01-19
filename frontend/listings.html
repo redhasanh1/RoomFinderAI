@@ -30,6 +30,7 @@
         let isDOMReady = false;
         let initializationAttempts = 0;
         const MAX_INIT_ATTEMPTS = 3;
+        let listingsAlreadyFetched = false; // Prevent duplicate fetches
 
         function showError(message) {
             console.error(message);
@@ -2511,14 +2512,25 @@
         // Display listings
         async function displayListings() {
             console.log('🔄 Starting displayListings function');
-            
+
+            // Skip if listings already loaded and in DOM
+            const container = document.getElementById('listingsContainer');
+            if (listingsAlreadyFetched && container && container.children.length > 0) {
+                console.log('⏭️ Skipping duplicate fetch - listings already loaded');
+                return;
+            }
+
             // Show loading state
             updateListingCount(0, false, true);
-            
+
             let listings = await fetchListings();
+
+            // Mark as fetched if we got data
+            if (listings && listings.length > 0) {
+                listingsAlreadyFetched = true;
+            }
             console.log('📋 Fetched listings:', listings);
-            
-            const container = document.getElementById('listingsContainer');
+
             container.innerHTML = '';
 
             // Update listing count with actual data
