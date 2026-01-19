@@ -697,31 +697,49 @@ class ChatSystem {
      * Setup real-time subscription for messages
      */
     setupRealtimeSubscription() {
-        const messageChannel = this.supabase
-            .channel('messages_realtime_' + Math.random())
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'messages' 
-            }, (payload) => {
-                console.log('🔔 REALTIME EVENT RECEIVED:', payload);
-                
-                if (this.currentConversationId && this.currentConversationId === payload.new.conversation_id) {
-                    console.log('✅ Message is for current conversation!');
-                    this.loadMessages(this.currentConversationId);
-                }
-            })
-            .subscribe((status) => {
-                console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
-                if (status === 'SUBSCRIBED') {
-                    console.log('✅ Successfully subscribed to messages!');
-                } else if (status === 'CHANNEL_ERROR') {
-                    console.error('❌ Channel error - real-time not working');
-                    this.chatSystemStatus.databaseErrors.connectionFailures++;
-                } else if (status === 'TIMED_OUT') {
-                    console.error('⏰ Subscription timed out');
-                }
-            });
+        // Validate supabase client
+        if (!this.supabase) {
+            console.warn('⚠️ Supabase client not available for real-time subscription');
+            return;
+        }
+
+        if (typeof this.supabase.channel !== 'function') {
+            console.warn('⚠️ Supabase client does not have channel method, skipping real-time setup');
+            return;
+        }
+
+        try {
+            const messageChannel = this.supabase
+                .channel('messages_realtime_' + Math.random())
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, (payload) => {
+                    console.log('🔔 REALTIME EVENT RECEIVED:', payload);
+
+                    if (this.currentConversationId && this.currentConversationId === payload.new.conversation_id) {
+                        console.log('✅ Message is for current conversation!');
+                        this.loadMessages(this.currentConversationId);
+                    }
+                })
+                .subscribe((status) => {
+                    console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Successfully subscribed to messages!');
+                    } else if (status === 'CHANNEL_ERROR') {
+                        console.error('❌ Channel error - real-time not working');
+                        this.chatSystemStatus.databaseErrors.connectionFailures++;
+                    } else if (status === 'TIMED_OUT') {
+                        console.error('⏰ Subscription timed out');
+                    }
+                });
+
+            console.log('✅ Real-time subscription setup complete');
+        } catch (error) {
+            console.error('❌ Error setting up real-time subscription:', error);
+            // Non-fatal error - continue without real-time
+        }
 
         this.messageChannel = messageChannel;
     }
