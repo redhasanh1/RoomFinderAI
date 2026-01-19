@@ -2475,7 +2475,7 @@
                         const startTime = Date.now();
                         const { data, error } = await supabase
                             .from('listings')
-                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, media, user_email, created_at')
+                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
                             .order('created_at', { ascending: false })
                             .limit(50);
 
@@ -2522,6 +2522,25 @@
                         }
 
                         console.log('✅ Successfully fetched', data.length, 'listings');
+
+                        // Fetch media separately to avoid query timeout
+                        const listingIds = data.map(l => l.id);
+                        const { data: mediaData, error: mediaError } = await supabase
+                            .from('listings')
+                            .select('id, media')
+                            .in('id', listingIds);
+
+                        if (mediaError) {
+                            console.warn('⚠️ Could not fetch media:', mediaError.message);
+                        } else if (mediaData) {
+                            const mediaMap = {};
+                            mediaData.forEach(m => mediaMap[m.id] = m.media);
+                            data.forEach(listing => {
+                                listing.media = mediaMap[listing.id] || [];
+                            });
+                            console.log('✅ Media loaded for', mediaData.length, 'listings');
+                        }
+
                         return data;
                     } catch (innerError) {
                         // Check if it's a 502 error or network error that we should retry
