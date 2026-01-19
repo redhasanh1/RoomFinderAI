@@ -435,7 +435,10 @@
             <!-- Loading State -->
             <div id="loading-state" class="flex flex-col items-center justify-center py-16">
                 <div class="loading-spinner mb-4"></div>
-                <p class="text-gray-600">Loading listing details...</p>
+                <p id="loading-text" class="text-gray-600">Loading listing details...</p>
+                <button id="retry-btn" onclick="location.reload()" class="btn-primary mt-4 hidden">
+                    Retry Loading
+                </button>
             </div>
         </div>
     </main>
@@ -652,17 +655,39 @@
 
         // Initialize immediately - DOM is ready since script is at bottom
         (async function init() {
+            // Set up loading timeout - show retry button after 6 seconds
+            const loadingTimeout = setTimeout(() => {
+                const loadingText = document.getElementById('loading-text');
+                const retryBtn = document.getElementById('retry-btn');
+                if (loadingText && retryBtn) {
+                    loadingText.textContent = 'Taking longer than expected...';
+                    retryBtn.classList.remove('hidden');
+                }
+            }, 6000);
+
             try {
-                const response = await fetch('/api/config');
-                if (!response.ok) throw new Error('Config failed');
-                const config = await response.json();
+                // Try to use cached config from sessionStorage
+                let config = null;
+                const cachedConfig = sessionStorage.getItem('supabase_config');
+
+                if (cachedConfig) {
+                    config = JSON.parse(cachedConfig);
+                } else {
+                    const response = await fetch('/api/config');
+                    if (!response.ok) throw new Error('Config failed');
+                    config = await response.json();
+                    // Cache for this session
+                    sessionStorage.setItem('supabase_config', JSON.stringify(config));
+                }
 
                 SUPABASE_URL = config.SUPABASE_URL;
                 SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
                 await loadListingDetails();
+                clearTimeout(loadingTimeout);
             } catch (e) {
+                clearTimeout(loadingTimeout);
                 console.error('Init error:', e);
                 showError('Failed to connect. Please refresh.');
             }
