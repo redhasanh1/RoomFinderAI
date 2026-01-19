@@ -5132,15 +5132,8 @@
                 
                 if (isFavorited) {
                     // Remove from favorites
-                    const response = await fetch('/api/favorites', {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            userEmail: currentUser.email,
-                            listingId: listingId
-                        })
+                    const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                        method: 'DELETE'
                     });
 
                     if (response.ok) {
