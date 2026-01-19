@@ -5576,6 +5576,17 @@
             const listingsContainer = document.getElementById('listingsContainer');
             const mapContainer = document.getElementById('mapContainer');
 
+            // Defensive null checks to prevent TypeError
+            if (!gridBtn || !mapBtn || !listingsContainer || !mapContainer) {
+                console.warn('setViewMode: Required DOM elements not found', {
+                    gridBtn: !!gridBtn,
+                    mapBtn: !!mapBtn,
+                    listingsContainer: !!listingsContainer,
+                    mapContainer: !!mapContainer
+                });
+                return;
+            }
+
             if (mode === 'grid') {
                 gridBtn.className = 'px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium flex items-center gap-2';
                 mapBtn.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2';
