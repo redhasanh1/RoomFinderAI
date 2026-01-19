@@ -5826,27 +5826,96 @@
                 const chatModal = document.getElementById('chatModal');
                 if (chatModal) {
                     chatModal.addEventListener('click', (e) => {
+                        console.log('Chat modal click:', e.target.tagName, e.target.id, e.target.className);
+
                         // Close button handler
                         const closeBtn = e.target.closest('.chat-close-button');
                         if (closeBtn) {
                             e.preventDefault();
                             chatModal.classList.remove('active');
                             console.log('Chat modal closed (delegated)');
+                            return;
                         }
 
                         // Send button handler
                         const sendBtn = e.target.closest('#chatSendBtn');
+                        console.log('Send button check:', sendBtn ? 'FOUND' : 'NOT FOUND');
                         if (sendBtn) {
                             e.preventDefault();
-                            // Call sendMessage if it exists
+                            console.log('Send button clicked, calling sendChatMessage...');
                             if (typeof window.sendChatMessage === 'function') {
                                 window.sendChatMessage();
                             } else {
                                 console.error('sendChatMessage function not available');
+                                alert('Chat system not ready. Please refresh and try again.');
                             }
                         }
                     });
                     console.log('✅ Event delegation for chat modal buttons initialized');
+                }
+
+                // Define fallback sendChatMessage if not already defined by setupChat
+                if (typeof window.sendChatMessage !== 'function') {
+                    window.sendChatMessage = async function() {
+                        console.log('Using fallback sendChatMessage');
+                        const chatInput = document.getElementById('chatInput');
+                        const messageContent = chatInput ? chatInput.value.trim() : '';
+
+                        if (!messageContent) {
+                            console.warn('No message content');
+                            return;
+                        }
+
+                        // currentConversationId is defined in the same script scope
+                        if (!currentConversationId) {
+                            console.error('No conversation ID');
+                            alert('Please start a conversation first');
+                            return;
+                        }
+
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        if (!currentUser) {
+                            alert('Please log in to send messages');
+                            return;
+                        }
+
+                        try {
+                            const msgTimestamp = new Date().toISOString();
+
+                            // Add message to UI immediately (use textContent to prevent XSS)
+                            const chatMessages = document.getElementById('chatMessages');
+                            if (chatMessages) {
+                                const msgEl = document.createElement('div');
+                                msgEl.className = 'message sent';
+                                const msgP = document.createElement('p');
+                                msgP.textContent = messageContent;
+                                const timeDiv = document.createElement('div');
+                                timeDiv.className = 'message-timestamp';
+                                timeDiv.textContent = new Date().toLocaleTimeString();
+                                msgEl.appendChild(msgP);
+                                msgEl.appendChild(timeDiv);
+                                chatMessages.appendChild(msgEl);
+                                chatMessages.scrollTop = chatMessages.scrollHeight;
+                            }
+
+                            // Send to database
+                            const { error } = await supabase.from('messages').insert({
+                                conversation_id: currentConversationId,
+                                sender_email: currentUser.email,
+                                content: messageContent,
+                                message_type: 'text',
+                                created_at: msgTimestamp
+                            });
+
+                            if (error) throw error;
+                            chatInput.value = '';
+                            console.log('Message sent successfully');
+                        } catch (err) {
+                            console.error('Failed to send message:', err);
+                            alert('Failed to send message: ' + err.message);
+                        }
+                    };
+                    console.log('✅ Fallback sendChatMessage defined');
                 }
 
                 initState.steps.uiSetup = true;
