@@ -1847,7 +1847,21 @@
         // Simple and reliable geocoding with fallback coordinates
         async function geocodeLocation(location, retries = 2, delay = 1000) {
             console.log('Geocoding location:', location);
-            
+
+            // Validate address format before API call
+            if (!location || typeof location !== 'string') {
+                console.warn('geocodeLocation: Invalid location input');
+                return null;
+            }
+
+            const trimmed = location.trim();
+
+            // Reject obviously invalid addresses (too short, single chars, numbers only)
+            if (trimmed.length < 5 || /^[\d\s,]+$/.test(trimmed) || (/^[a-z,\s]+$/i.test(trimmed) && trimmed.length < 10)) {
+                console.warn('geocodeLocation: Address appears invalid, skipping geocode:', trimmed);
+                return null;
+            }
+
             // Default coordinates for common cities if geocoding fails
             const cityDefaults = {
                 'toronto': { lat: 43.6532, lon: -79.3832 },
