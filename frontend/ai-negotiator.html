@@ -43,6 +43,27 @@
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+
+        /* Pulse animation for status indicator */
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* KBD tag styling */
+        kbd {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-size: 0.75rem;
         }
         
         /* Gradient backgrounds */
@@ -632,47 +653,92 @@
     </header>
 
     <!-- Main Content -->
-    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
         <!-- Page Header -->
-        <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">Negotiation Assistant</h1>
-            <p class="text-gray-600">Get expert advice and coaching to negotiate better rental deals with landlords</p>
+        <div class="mb-8 text-center">
+            <h1 class="text-4xl font-bold mb-3">
+                <span class="gradient-text">AI Negotiation Assistant</span>
+            </h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                Powered by AI to help you find the perfect rental and negotiate better deals with landlords
+            </p>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            <!-- Left Sidebar - Instructions & Found Listings -->
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <!-- Left Sidebar - Found Listings -->
             <div class="lg:col-span-1 space-y-6">
-                
                 <!-- Found Listings Panel -->
-                <div class="bg-white rounded-xl shadow-lg p-6">
-                    <h3 class="text-lg font-bold text-gray-800 mb-4">Found Listings</h3>
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        <h3 class="text-lg font-bold text-gray-800">Found Listings</h3>
+                    </div>
                     <div id="activeNegotiations" class="space-y-3">
-                        <p class="text-gray-500 text-sm">Use the AI chat to search for properties!</p>
+                        <div class="text-center py-8">
+                            <div class="text-4xl mb-3">🏠</div>
+                            <p class="text-gray-500 text-sm">Start chatting to find properties!</p>
+                            <p class="text-gray-400 text-xs mt-2">Example: "I want a 2 bedroom in Toronto for $1500"</p>
+                        </div>
                     </div>
                 </div>
+
+                <!-- Quick Tips Panel -->
+                <div class="glass-card p-6">
+                    <div class="flex items-center gap-2 mb-4">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <h3 class="text-sm font-bold text-gray-800">Quick Tips</h3>
+                    </div>
+                    <ul class="space-y-2 text-xs text-gray-600">
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>Tell the AI your budget, location, and preferences</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>The AI will find matching listings</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>Click "Negotiate" to contact landlords</span>
+                        </li>
+                        <li class="flex items-start gap-2">
+                            <span class="text-green-500 mt-0.5">✓</span>
+                            <span>AI crafts professional messages for you</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
-            
+
             <!-- Chat Interface -->
-            <div class="lg:col-span-2">
-                <div class="glass-card h-[700px] flex flex-col">
+            <div class="lg:col-span-3">
+                <div class="glass-card h-[700px] flex flex-col shadow-2xl">
                     <!-- Chat Header -->
-                    <div class="p-6 border-b border-gray-200">
+                    <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-3">
+                                <div class="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex items-center justify-center shadow-lg">
+                                    <svg class="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path>
+                                    </svg>
+                                </div>
                                 <div>
-                                    <h3 class="font-semibold text-gray-900">AI Negotiation Assistant</h3>
-                                    <p class="text-sm text-green-600 flex items-center">
-                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                                        Ready to Help
+                                    <h3 class="font-bold text-gray-900 text-lg">AI Assistant</h3>
+                                    <p class="text-sm text-green-600 flex items-center font-medium">
+                                        <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
+                                        Online & Ready
                                     </p>
                                 </div>
                             </div>
                             <div class="flex space-x-2">
-                                <button id="clearChat" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition font-medium">
-                                    Clear Chat
+                                <button id="clearChat" class="px-3 py-2 text-gray-600 hover:text-gray-800 hover:bg-white rounded-lg transition font-medium text-sm">
+                                    🗑️ Clear
                                 </button>
-                                <button id="saveChat" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition font-medium">
-                                    Save Chat
+                                <button id="saveChat" class="px-3 py-2 bg-white hover:bg-gray-50 rounded-lg transition font-medium text-sm shadow-sm border border-gray-200">
+                                    💾 Save
                                 </button>
                             </div>
                         </div>
@@ -695,24 +761,30 @@
                     </div>
                     
                     <!-- Chat Input -->
-                    <div class="p-6 border-t border-gray-200">
-                        <div class="flex space-x-4">
-                            <input 
-                                type="text" 
-                                id="messageInput" 
-                                placeholder="Type your message here..."
-                                class="flex-1 modern-input"
+                    <div class="p-6 border-t border-gray-200 bg-gray-50">
+                        <div class="flex space-x-3">
+                            <input
+                                type="text"
+                                id="messageInput"
+                                placeholder="💬 Type your message... (e.g., 'I want a 2 bedroom in Toronto for $1500')"
+                                class="flex-1 modern-input shadow-sm"
                                 maxlength="500"
                             >
-                            <button id="sendButton" class="send-button">
+                            <button id="sendButton" class="send-button px-6 flex items-center gap-2 shadow-lg">
+                                <span class="font-semibold">Send</span>
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                 </svg>
                             </button>
                         </div>
-                        <div class="flex justify-between items-center mt-2">
-                            <p class="text-xs text-gray-500">Press Enter to send • Max 500 characters</p>
-                            <p id="charCount" class="text-xs text-gray-400">0/500</p>
+                        <div class="flex justify-between items-center mt-3">
+                            <div class="flex items-center gap-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <p class="text-xs text-gray-500">Press <kbd class="px-2 py-0.5 bg-gray-200 rounded text-xs">Enter</kbd> to send</p>
+                            </div>
+                            <p id="charCount" class="text-xs text-gray-400 font-medium">0/500</p>
                         </div>
                     </div>
                 </div>
@@ -1091,7 +1163,14 @@
                         document.getElementById('chatMessages').innerHTML = `
                             <div class="chat-bubble ai">
                                 <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
-                                <p>Hello! I'm your AI assistant. Tell me what you're looking for (e.g., "I want a house in Hong Kong for $1500") and I'll search our database for matching listings and help you negotiate with landlords!</p>
+                                <p>👋 Hello! I'm your AI-powered rental negotiation assistant.</p>
+                                <p class="mt-2">Tell me what you're looking for and I'll help you:</p>
+                                <ul class="mt-2 ml-4 space-y-1 text-sm">
+                                    <li>🔍 Find matching properties</li>
+                                    <li>💬 Contact landlords professionally</li>
+                                    <li>💰 Negotiate better rental deals</li>
+                                </ul>
+                                <p class="mt-3 text-sm text-gray-600 italic">Example: "I want a 2 bedroom apartment in Toronto for $1500/month"</p>
                             </div>
                         `;
                     }
