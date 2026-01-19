@@ -684,7 +684,7 @@
                         </div>
                         
                         <!-- Typing indicator (hidden by default) -->
-                        <div id="typingIndicator" class="typing-indicator hidden">
+                        <div id="typing-indicator" class="typing-indicator hidden">
                             <span class="text-sm text-gray-500 mr-3">Assistant is typing</span>
                             <div class="typing-dots">
                                 <div class="typing-dot"></div>
@@ -737,75 +737,9 @@
         window.AI_NEGOTIATOR_AUTH_ACTIVE = true;
         window.AI_NEGOTIATOR_INITIAL_USER = INITIAL_USER;
         
-        // Emergency protection: Block ALL redirects immediately
-        const ORIGINAL_LOCATION_REPLACE = window.location.replace;
-        const ORIGINAL_LOCATION_ASSIGN = window.location.assign;
-        const ORIGINAL_LOCATION_HREF_SETTER = Object.getOwnPropertyDescriptor(window.location, 'href')?.set;
+        // Note: Location hijacking code removed - allow normal navigation
         
-        // Override all location setters to prevent redirects
-        window.location.replace = function(url) {
-            console.error('BLOCKED location.replace:', url);
-            console.trace('Blocked replace - stack trace:');
-            if (!url.includes('/login')) {
-                return ORIGINAL_LOCATION_REPLACE.call(this, url);
-            }
-        };
-        
-        window.location.assign = function(url) {
-            console.error('BLOCKED location.assign:', url);
-            console.trace('Blocked assign - stack trace:');
-            if (!url.includes('/login')) {
-                return ORIGINAL_LOCATION_ASSIGN.call(this, url);
-            }
-        };
-        
-        if (ORIGINAL_LOCATION_HREF_SETTER) {
-            Object.defineProperty(window.location, 'href', {
-                set: function(url) {
-                    if (url.includes('/login')) {
-                        console.error('BLOCKED location.href set:', url);
-                        console.trace('Blocked href set - stack trace:');
-                        return;
-                    }
-                    return ORIGINAL_LOCATION_HREF_SETTER.call(this, url);
-                },
-                get: function() {
-                    return window.location.href;
-                }
-            });
-        }
-        
-        // Track ALL localStorage operations
-        const ORIGINAL_SET_ITEM = localStorage.setItem;
-        const ORIGINAL_REMOVE_ITEM = localStorage.removeItem;
-        const ORIGINAL_CLEAR = localStorage.clear;
-        
-        localStorage.setItem = function(key, value) {
-            if (key === 'currentUser') {
-                console.log('EMERGENCY TRACKED: localStorage.setItem currentUser:', value);
-                console.trace('setItem stack trace:');
-            }
-            return ORIGINAL_SET_ITEM.apply(this, arguments);
-        };
-        
-        localStorage.removeItem = function(key) {
-            if (key === 'currentUser') {
-                console.error('EMERGENCY TRACKED: localStorage.removeItem currentUser');
-                console.trace('removeItem stack trace:');
-                // For debugging, let's temporarily block this
-                console.error('BLOCKING currentUser removal for debugging');
-                return; // Block the removal
-            }
-            return ORIGINAL_REMOVE_ITEM.apply(this, arguments);
-        };
-        
-        localStorage.clear = function() {
-            console.error('EMERGENCY TRACKED: localStorage.clear()');
-            console.trace('clear stack trace:');
-            // Block clear for debugging
-            console.error('WARNING: BLOCKING localStorage.clear for debugging');
-            return;
-        };
+        // Note: localStorage hijacking code removed - allow normal operations
         
         // Protect against page navigation events
         window.addEventListener('beforeunload', function(e) {
@@ -927,22 +861,6 @@
 
         // Override any global initializeAuth to prevent conflicts
         window.initializeAuth = initializeAuthSafe;
-
-        // Protection against unwanted redirects
-        const originalLocationSetter = Object.getOwnPropertyDescriptor(window.location, 'href').set;
-        Object.defineProperty(window.location, 'href', {
-            set: function(url) {
-                if (url.includes('/login')) {
-                    console.error('BLOCKED REDIRECT TO LOGIN:', url);
-                    console.trace('Redirect blocked - stack trace:');
-                    return; // Block the redirect
-                }
-                originalLocationSetter.call(this, url);
-            },
-            get: function() {
-                return window.location.href;
-            }
-        });
     </script>
 
     <!-- JavaScript -->
@@ -1054,25 +972,29 @@
                 debugAuthState('BEFORE_AUTH');
                 console.log('Current user loaded:', currentUser?.email || 'none');
                 
-                // Initialize safe authentication (never redirects)
-                if (currentUser) {
-                    try {
-                        await initializeAuthSafe(supabase, currentUser);
-                        console.log('Authentication initialized for logged-in user');
-                    } catch (error) {
-                        console.error('Authentication failed (non-fatal):', error);
-                        // Continue with existing user data
-                    }
-                } else {
-                    console.log('WARNING: No logged-in user, allowing anonymous access');
-                    // Create anonymous session for AI negotiator
-                    currentUser = { 
-                        email: 'anonymous@user.com', 
-                        name: 'Anonymous User',
-                        firstName: 'Anonymous',
-                        lastName: 'User'
-                    };
-                    console.log('Created anonymous user session');
+                // Require authentication - no anonymous access
+                if (!currentUser) {
+                    console.log('ERROR: No logged-in user detected');
+                    // Show login requirement message
+                    document.getElementById('chatMessages').innerHTML = `
+                        <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white; margin: 1rem 0;">
+                            <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">🔐 Login Required</h3>
+                            <p style="margin-bottom: 1.5rem;">Please login to use the AI Negotiation Assistant and contact landlords.</p>
+                            <a href="/login.html" style="background: white; color: #667eea; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 600; display: inline-block;">
+                                Go to Login
+                            </a>
+                        </div>
+                    `;
+                    return; // Stop initialization
+                }
+
+                // Initialize authentication for logged-in user
+                try {
+                    await initializeAuthSafe(supabase, currentUser);
+                    console.log('Authentication initialized for logged-in user');
+                } catch (error) {
+                    console.error('Authentication failed (non-fatal):', error);
+                    // Continue with existing user data
                 }
                 
                 debugAuthState('AFTER_AUTH');

@@ -454,19 +454,6 @@ class AIChatHandler {
         return listings || [];
     }
 
-    // Helper function to check if listing matches location (updated for your schema)
-    matchesLocation(listing, searchLocation) {
-        const location = searchLocation.toLowerCase();
-        const listingCity = (listing.city || '').toLowerCase();
-        const street = (listing.street || '').toLowerCase();
-        const title = (listing.title || '').toLowerCase();
-        
-        // Check city, street, and title columns from your schema
-        return listingCity.includes(location) || 
-               street.includes(location) || 
-               title.includes(location);
-    }
-
     // Update left sidebar with matching listings
     updateSidebarWithListings(listings) {
         const activeNegotiations = document.getElementById('activeNegotiations');
