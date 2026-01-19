@@ -139,11 +139,22 @@
             };
 
             console.log('🚀 Attempting initialization...', debugInfo);
+            console.log('📊 Initialization status:', {
+                configLoaded: isConfigLoaded,
+                domReady: isDOMReady,
+                initInProgress: initializationInProgress,
+                timestamp: new Date().toISOString()
+            });
 
             if (!isConfigLoaded || !isDOMReady) {
-                console.log('⏳ Waiting for prerequisites...');
+                console.log('⏳ Waiting for prerequisites:', {
+                    needConfig: !isConfigLoaded,
+                    needDOM: !isDOMReady
+                });
                 return;
             }
+
+            console.log('✅ Both config and DOM ready, calling initializeListingsPageNew()');
 
             initializationAttempts++;
 
@@ -5594,10 +5605,13 @@
 
                 console.log('✅ Consolidated initialization completed successfully');
                 logInitializationSummary(initState);
+                console.log('✅ initializeListingsPageNew completed successfully');
 
             } catch (error) {
                 console.error('❌ Critical initialization error:', error);
+                console.error('❌ initializeListingsPageNew failed:', error);
                 initState.errors.push({ step: 'main', error: error.message });
+                initializationInProgress = false; // Reset flag on error
 
                 // Even if initialization fails, try to load listings as fallback
                 try {
@@ -5608,6 +5622,14 @@
                     console.error('💥 Emergency listings load also failed:', emergencyError);
                     showError('Unable to load listings. Please refresh the page.');
                 }
+            } finally {
+                // Ensure flag is always reset after completion
+                setTimeout(() => {
+                    if (initializationInProgress) {
+                        console.log('🔄 Resetting initializationInProgress flag after completion');
+                        initializationInProgress = false;
+                    }
+                }, 5000); // Reset after 5 seconds as safety measure
             }
         }
 
@@ -6133,15 +6155,6 @@
         // Replace the old initialization function call
         window.originalInitializeListingsPage = initializeListingsPage;
         window.initializeListingsPage = initializeListingsPageNew;
-
-        document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 DOMContentLoaded: Triggering consolidated initialization system');
-            setTimeout(() => {
-                initializeListingsPageNew().catch(error => {
-                    console.error('❌ Consolidated system failed:', error);
-                });
-            }, 100);
-        });
 
         // Initialize enhanced features when page loads
         // Multiple independent pathways ensure listings load reliably
