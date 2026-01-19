@@ -2626,9 +2626,13 @@
                     media = [];
                 }
 
+                // Debug: log raw media data
+                console.log('Raw media for listing', listing.id, ':', JSON.stringify(media));
+
                 media = media.map(item => {
+                    if (!item) return item;
                     if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
-                        const extension = item.name.split('.').pop().toLowerCase();
+                        const extension = item.name ? item.name.split('.').pop().toLowerCase() : '';
                         let correctedType;
                         switch (extension) {
                             case 'jpg':
@@ -2648,7 +2652,7 @@
                         return { ...item, type: correctedType };
                     }
                     return item;
-                });
+                }).filter(item => item); // Remove null/undefined items
 
                 const isImage = (file) => {
                     if (!file || !file.type) return false;
@@ -2661,12 +2665,8 @@
                     ? media[0].url
                     : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
 
-                fetch(primaryImage, { method: 'HEAD' })
-                    .then(response => {
-                        const serverContentType = response.headers.get('Content-Type');
-                        console.log('Server content type for', primaryImage, ':', serverContentType);
-                    })
-                    .catch(err => console.error('Failed to fetch MIME type for', primaryImage, err));
+                // Debug: log what image URL we're using
+                console.log('Primary image for listing', listing.id, ':', primaryImage.substring(0, 100) + '...');
 
                 const listingCard = document.createElement('div');
                 listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
