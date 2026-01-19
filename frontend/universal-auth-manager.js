@@ -314,7 +314,7 @@ async function initSupabaseAuth() {
             };
             const { data, error: insertError } = await supabaseClient
                 .from('profiles')
-                .insert([newProfile])
+                .upsert([newProfile], { onConflict: 'email' })
                 .select()
                 .single();
 
