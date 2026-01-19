@@ -2571,6 +2571,40 @@
             return await displayListings();
         }
 
+        // Lazy load images for listing cards (fetches media one at a time to avoid timeout)
+        async function lazyLoadListingImages(listings) {
+            console.log('🖼️ Starting lazy image load for', listings.length, 'listings');
+
+            for (const listing of listings) {
+                try {
+                    const { data, error } = await supabase
+                        .from('listings')
+                        .select('media')
+                        .eq('id', listing.id)
+                        .single();
+
+                    if (error || !data || !data.media || data.media.length === 0) continue;
+
+                    const media = data.media;
+                    const firstImage = media.find(m => m && m.type && m.type.startsWith('image/'));
+                    if (!firstImage || !firstImage.url) continue;
+
+                    // Find the card and update its image
+                    const card = document.querySelector(`.listing-card[data-listing-id="${listing.id}"]`);
+                    if (card) {
+                        const img = card.querySelector('.listing-image');
+                        if (img) {
+                            img.src = firstImage.url;
+                            console.log('✅ Loaded image for listing', listing.id);
+                        }
+                    }
+                } catch (err) {
+                    console.warn('⚠️ Failed to load image for listing', listing.id);
+                }
+            }
+            console.log('🖼️ Lazy image loading complete');
+        }
+
         // Display listings
         async function displayListings(forceRefresh = false) {
             console.log('🔄 Starting displayListings function', { forceRefresh });
@@ -2670,6 +2704,7 @@
 
                 const listingCard = document.createElement('div');
                 listingCard.className = 'listing-card bg-white rounded-lg shadow-md overflow-hidden relative';
+                listingCard.dataset.listingId = listing.id;
 
                 const hasOwner = !!listing.user_email;
                 listingCard.innerHTML = `
@@ -2708,6 +2743,9 @@
 
             // Note: Event listeners for .chat-btn and .view-details-btn are handled via event delegation
             // in initializeBasicUI() - no need for individual listeners here
+
+            // Lazy load images for each listing card
+            lazyLoadListingImages(listings);
 
             // Update map with all listings
             console.log('📍 Updating map with', listings.length, 'listings...');
