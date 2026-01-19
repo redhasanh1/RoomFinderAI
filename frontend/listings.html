@@ -3192,6 +3192,9 @@
                 }
             }
 
+            // Expose sendMessage globally for event delegation
+            window.sendChatMessage = sendMessage;
+
             async function sendTextMessage(messageContent, currentUser, timestamp) {
                 // Instant UI update
                 const messageElement = document.createElement('div');
@@ -5817,6 +5820,33 @@
                     console.log('✅ Event delegation for chat/view buttons initialized');
                 } else {
                     console.warn('⚠️ listingsContainer not found for event delegation');
+                }
+
+                // Event delegation for chat modal buttons (close and send)
+                const chatModal = document.getElementById('chatModal');
+                if (chatModal) {
+                    chatModal.addEventListener('click', (e) => {
+                        // Close button handler
+                        const closeBtn = e.target.closest('.chat-close-button');
+                        if (closeBtn) {
+                            e.preventDefault();
+                            chatModal.classList.remove('active');
+                            console.log('Chat modal closed (delegated)');
+                        }
+
+                        // Send button handler
+                        const sendBtn = e.target.closest('#chatSendBtn');
+                        if (sendBtn) {
+                            e.preventDefault();
+                            // Call sendMessage if it exists
+                            if (typeof window.sendChatMessage === 'function') {
+                                window.sendChatMessage();
+                            } else {
+                                console.error('sendChatMessage function not available');
+                            }
+                        }
+                    });
+                    console.log('✅ Event delegation for chat modal buttons initialized');
                 }
 
                 initState.steps.uiSetup = true;
