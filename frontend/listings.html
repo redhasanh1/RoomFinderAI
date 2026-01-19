@@ -1958,7 +1958,7 @@
                                 <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
                                     ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
                                 </div>
-                                <a href="/listing_details?id=${listing.id}" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
+                                <a href="listing_details.html?id=${listing.id}" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
                             </div>
                         `;
 
@@ -2739,7 +2739,7 @@
                 ).join('')
                 : '';
 
-            document.getElementById('modalViewDetails').href = `/listing_details?id=${listing.id}`;
+            document.getElementById('modalViewDetails').href = `listing_details.html?id=${listing.id}`;
             
             // modal.style.display = 'block';
             modal.classList.add('active'); // Use class for animation
@@ -5388,7 +5388,7 @@
                             data: { 
                                 type: 'new_listing',
                                 propertyId: listing.id,
-                                url: `/listing_details?id=${listing.id}`
+                                url: `listing_details.html?id=${listing.id}`
                             },
                             tag: 'new_listing_' + listing.id
                         }
@@ -5420,7 +5420,7 @@
                             data: { 
                                 type: 'price_change',
                                 propertyId: newListing.id,
-                                url: `/listing_details?id=${newListing.id}`
+                                url: `listing_details.html?id=${newListing.id}`
                             },
                             tag: 'price_change_' + newListing.id
                         }

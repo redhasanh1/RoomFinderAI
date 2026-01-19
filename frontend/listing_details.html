@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RoomFinderAI - Listing Details</title>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5195773691165769"
+         crossorigin="anonymous"></script>
+
+    <!-- Universal Authentication -->
+    <script src="universal-auth-protection.js"></script>
+    <script src="universal-auth-manager.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <script>
+        let SUPABASE_URL;
+        let SUPABASE_ANON_KEY;
+        var supabase;
+
+        // Load configuration
+        fetch('/api/config')
+            .then(response => response.json())
+            .then(config => {
+                SUPABASE_URL = config.SUPABASE_URL;
+                SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('Supabase initialized');
+                loadListingDetails();
+            })
+            .catch(error => {
+                console.error('Config load error:', error);
+                document.getElementById('listing-content').innerHTML = '<p class="text-red-500">Error loading configuration. Please refresh the page.</p>';
+            });
+    </script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.15);
+            --border-radius-lg: 28px;
+            --border-radius-md: 20px;
+            --border-radius-sm: 12px;
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+
+        .font-display {
+            font-family: 'Space Grotesk', sans-serif;
+        }
+
+        .premium-header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.06);
+        }
+
+        .nav-item {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+
+        .gradient-bg {
+            background: var(--primary-gradient);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            transition: var(--transition);
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            padding: 0.75rem 1.5rem;
+            border-radius: var(--border-radius-sm);
+            font-weight: 600;
+            border: 2px solid #667eea;
+            transition: var(--transition);
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .hero-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: var(--border-radius-md);
+        }
+
+        @media (min-width: 768px) {
+            .hero-image {
+                height: 500px;
+            }
+        }
+
+        .thumbnail {
+            width: 100px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: var(--transition);
+        }
+
+        .thumbnail:hover, .thumbnail.active {
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .detail-badge {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f4f6;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Mobile menu styles */
+        .mobile-menu-btn {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding: 8px;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .hamburger-line {
+            width: 24px;
+            height: 3px;
+            background-color: #374151;
+            border-radius: 2px;
+            transition: all 0.3s ease;
+        }
+
+        .mobile-menu {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+        }
+
+        .mobile-menu.active {
+            display: block;
+        }
+
+        .mobile-menu-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .mobile-menu-content {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 280px;
+            height: 100%;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.15);
+            padding: 1rem;
+            overflow-y: auto;
+        }
+
+        .mobile-menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #e5e7eb;
+            margin-bottom: 1rem;
+        }
+
+        .mobile-menu-close {
+            font-size: 28px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+        }
+
+        .mobile-menu-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #374151;
+            text-decoration: none;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .mobile-menu-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .brand-logo {
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Dropdown styles */
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-trigger {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            transition: transform 0.2s;
+        }
+
+        .dropdown:hover .dropdown-arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 180px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.2s ease;
+            z-index: 50;
+            padding: 8px;
+        }
+
+        .dropdown:hover .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 10px 16px;
+            color: #374151;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .auth-link {
+            color: #374151;
+            font-weight: 500;
+            padding: 0.5rem 1.5rem;
+            border: 2px solid #e5e7eb;
+            border-radius: var(--border-radius-sm);
+            transition: var(--transition);
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+
+        .auth-link:hover {
+            color: #667eea;
+            border-color: #667eea;
+        }
+
+        .auth-link.primary {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+    <!-- Header -->
+    <header id="header" class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <a href="index.html" class="text-xl md:text-2xl font-bold brand-logo font-display">RoomFinderAI</a>
+
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex items-center space-x-8">
+                <a href="index.html" class="nav-item">Home</a>
+
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger">
+                        Browse <span class="dropdown-arrow">&#9660;</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger">
+                        Tools <span class="dropdown-arrow">&#9660;</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Help</a>
+                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger">
+                        About <span class="dropdown-arrow">&#9660;</span>
+                    </button>
+                    <div class="dropdown-menu">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop Auth -->
+            <div id="authSection" class="hidden md:block">
+                <!-- Populated by universal-auth-manager.js -->
+            </div>
+        </nav>
+
+        <!-- Mobile Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <div class="text-lg font-bold brand-logo font-display">RoomFinderAI</div>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()">x</button>
+                </div>
+
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">Home</a>
+                    <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                    <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease</a>
+                    <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                    <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                    <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing</a>
+                    <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">Login/Register</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Page Header -->
+    <section class="text-white pt-24 pb-8 sm:pt-28 sm:pb-12" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div class="w-[90%] max-w-6xl mx-auto px-4">
+            <a href="listings.html" class="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                </svg>
+                Back to Listings
+            </a>
+            <h1 id="page-title" class="text-3xl sm:text-4xl font-bold">Listing Details</h1>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="flex-grow w-[90%] max-w-6xl mx-auto px-4 py-8">
+        <div id="listing-content">
+            <!-- Loading State -->
+            <div id="loading-state" class="flex flex-col items-center justify-center py-16">
+                <div class="loading-spinner mb-4"></div>
+                <p class="text-gray-600">Loading listing details...</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="gradient-bg text-white py-8 mt-auto">
+        <div class="w-[90%] max-w-6xl mx-auto px-4 text-center">
+            <div class="text-2xl font-bold brand-logo font-display mb-4" style="-webkit-text-fill-color: white;">RoomFinderAI</div>
+            <p class="text-white/80 text-sm">&copy; 2025 RoomFinderAI. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Mobile menu functions
+        function toggleMobileMenu() {
+            document.getElementById('mobile-menu').classList.toggle('active');
+        }
+
+        function closeMobileMenu() {
+            document.getElementById('mobile-menu').classList.remove('active');
+        }
+
+        // Get listing ID from URL
+        function getListingId() {
+            const params = new URLSearchParams(window.location.search);
+            return params.get('id');
+        }
+
+        // Load listing details
+        async function loadListingDetails() {
+            const listingId = getListingId();
+
+            if (!listingId) {
+                showError('No listing ID provided');
+                return;
+            }
+
+            try {
+                const { data: listing, error } = await supabase
+                    .from('listings')
+                    .select('*')
+                    .eq('id', listingId)
+                    .single();
+
+                if (error) throw error;
+
+                if (!listing) {
+                    showError('Listing not found');
+                    return;
+                }
+
+                renderListing(listing);
+            } catch (error) {
+                console.error('Error loading listing:', error);
+                showError('Failed to load listing details. Please try again.');
+            }
+        }
+
+        function showError(message) {
+            document.getElementById('listing-content').innerHTML = `
+                <div class="glass-card p-8 text-center">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <h2 class="text-xl font-bold text-gray-800 mb-2">Oops!</h2>
+                    <p class="text-gray-600 mb-6">${message}</p>
+                    <a href="listings.html" class="btn-primary inline-block">Browse All Listings</a>
+                </div>
+            `;
+        }
+
+        function renderListing(listing) {
+            // Update page title
+            document.getElementById('page-title').textContent = listing.title;
+            document.title = `${listing.title} - RoomFinderAI`;
+
+            // Get images
+            const images = listing.media && listing.media.length > 0
+                ? listing.media.filter(m => m.type && m.type.startsWith('image/'))
+                : [];
+
+            const mainImage = images.length > 0
+                ? images[0].url
+                : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0YTNiOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlIEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
+
+            // Format date
+            const createdDate = new Date(listing.created_at).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+
+            // Build HTML
+            document.getElementById('listing-content').innerHTML = `
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Left Column - Images -->
+                    <div class="lg:col-span-2">
+                        <div class="glass-card p-4 mb-6">
+                            <img id="main-image" src="${mainImage}" alt="${listing.title}" class="hero-image w-full">
+
+                            ${images.length > 1 ? `
+                                <div class="flex gap-3 mt-4 overflow-x-auto pb-2">
+                                    ${images.map((img, idx) => `
+                                        <img src="${img.url}" alt="Image ${idx + 1}"
+                                            class="thumbnail ${idx === 0 ? 'active' : ''}"
+                                            onclick="changeImage('${img.url}', this)">
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Description -->
+                        <div class="glass-card p-6">
+                            <h2 class="text-xl font-bold text-gray-800 mb-4">Description</h2>
+                            <p class="text-gray-600 leading-relaxed whitespace-pre-line">${listing.description || 'No description provided for this listing.'}</p>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Details -->
+                    <div class="lg:col-span-1">
+                        <!-- Price Card -->
+                        <div class="glass-card p-6 mb-6">
+                            <div class="text-3xl font-bold text-green-600 mb-2">$${listing.price.toLocaleString()}<span class="text-lg text-gray-500 font-normal">/mo</span></div>
+                            <h1 class="text-xl font-bold text-gray-800 mb-3">${listing.title}</h1>
+
+                            <!-- Location -->
+                            <div class="flex items-start gap-2 text-gray-600 mb-4">
+                                <svg class="w-5 h-5 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                </svg>
+                                <span>${listing.street}, ${listing.city}${listing.postalCode ? ', ' + listing.postalCode : ''}</span>
+                            </div>
+
+                            <!-- Badges -->
+                            <div class="flex flex-wrap gap-2 mb-6">
+                                <span class="detail-badge">${listing.bedrooms} Bedroom${listing.bedrooms !== 1 ? 's' : ''}</span>
+                                <span class="detail-badge">${listing.house_type || 'N/A'}</span>
+                                <span class="detail-badge">${listing.utilities || 'Utilities N/A'}</span>
+                            </div>
+
+                            <!-- Contact Button -->
+                            <button onclick="contactOwner('${listing.user_email}')" class="btn-primary w-full mb-3">
+                                <span class="flex items-center justify-center gap-2">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                    </svg>
+                                    Contact Owner
+                                </span>
+                            </button>
+
+                            <a href="listings.html" class="btn-secondary w-full block text-center">
+                                Browse More Listings
+                            </a>
+                        </div>
+
+                        <!-- Details Card -->
+                        <div class="glass-card p-6">
+                            <h3 class="text-lg font-bold text-gray-800 mb-4">Property Details</h3>
+
+                            <div class="space-y-3">
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-500">Property Type</span>
+                                    <span class="font-medium text-gray-800">${listing.house_type || 'N/A'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-500">Bedrooms</span>
+                                    <span class="font-medium text-gray-800">${listing.bedrooms}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-500">Utilities</span>
+                                    <span class="font-medium text-gray-800">${listing.utilities || 'Not specified'}</span>
+                                </div>
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-500">City</span>
+                                    <span class="font-medium text-gray-800">${listing.city}</span>
+                                </div>
+                                ${listing.country ? `
+                                <div class="flex justify-between py-2 border-b border-gray-100">
+                                    <span class="text-gray-500">Country</span>
+                                    <span class="font-medium text-gray-800">${listing.country}</span>
+                                </div>
+                                ` : ''}
+                                <div class="flex justify-between py-2">
+                                    <span class="text-gray-500">Posted</span>
+                                    <span class="font-medium text-gray-800">${createdDate}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Change main image when thumbnail clicked
+        function changeImage(url, thumbnail) {
+            document.getElementById('main-image').src = url;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            thumbnail.classList.add('active');
+        }
+
+        // Contact owner function
+        function contactOwner(email) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+
+            if (!currentUser) {
+                if (confirm('Please log in to contact the owner. Go to login page?')) {
+                    window.location.href = 'login.html';
+                }
+                return;
+            }
+
+            // For now, redirect to listings page where chat functionality exists
+            // In the future, this could open a chat modal or send an email
+            alert(`Contact feature: The owner's email is ${email}. Chat functionality coming soon!`);
+        }
+    </script>
+</body>
+</html>
