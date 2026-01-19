@@ -4750,14 +4750,18 @@
         }
         
         function displayListingCard(listing, container) {
+            console.log('displayListingCard called for:', listing.id, listing.title);
             let media = listing.media || [];
             if (!Array.isArray(media)) {
                 media = [];
             }
 
+            console.log('Raw media for listing', listing.id, ':', JSON.stringify(media));
+
             media = media.map(item => {
+                if (!item) return item;
                 if (item.type === 'application/json' || !item.type || item.type === 'application/octet-stream') {
-                    const extension = item.name.split('.').pop().toLowerCase();
+                    const extension = item.name ? item.name.split('.').pop().toLowerCase() : '';
                     let correctedType;
                     switch (extension) {
                         case 'jpg':
@@ -4776,17 +4780,20 @@
                     return { ...item, type: correctedType };
                 }
                 return item;
-            });
+            }).filter(item => item);
 
             const isImage = (file) => {
+                if (!file || !file.type) return false;
                 const byType = file.type.startsWith('image/');
-                const byExtension = file.name.match(/\.(jpg|jpeg|png)$/i);
+                const byExtension = file.name ? file.name.match(/\.(jpg|jpeg|png)$/i) : false;
                 return byType || byExtension;
             };
 
             const primaryImage = media.length > 0 && isImage(media[0])
                 ? media[0].url
                 : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+
+            console.log('Primary image for listing', listing.id, ':', primaryImage.substring(0, 100) + '...');
 
             const perspectiveContainer = document.createElement('div'); // New perspective container
             perspectiveContainer.className = 'listing-card-perspective-container';
