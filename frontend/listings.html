@@ -1641,7 +1641,7 @@
                         Map View
                     </button>
                 </div>
-                <button onclick="displayListings()" class="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
+                <button onclick="displayListings(true)" class="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                     </svg>
@@ -2457,9 +2457,9 @@
                         const startTime = Date.now();
                         const { data, error } = await supabase
                             .from('listings')
-                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, description, user_email, media, created_at')
+                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
                             .order('created_at', { ascending: false })
-                            .limit(10);
+                            .limit(50);
 
                         const queryTime = Date.now() - startTime;
                         console.log('📊 Query completed in', queryTime, 'ms');
@@ -2554,36 +2554,51 @@
         }
 
         // Display listings
-        async function displayListings() {
-            console.log('🔄 Starting displayListings function');
+        async function displayListings(forceRefresh = false) {
+            console.log('🔄 Starting displayListings function', { forceRefresh });
 
-            // Skip if listings already loaded and in DOM
             const container = document.getElementById('listingsContainer');
-            if (listingsAlreadyFetched && container && container.children.length > 0) {
-                console.log('⏭️ Skipping duplicate fetch - listings already loaded');
+            if (!container) {
+                console.error('❌ Listings container not found');
                 return;
             }
+
+            // IMPROVED: Better guard logic
+            const hasListingsInDOM = container.children.length > 0;
+            const shouldSkip = !forceRefresh && listingsAlreadyFetched && hasListingsInDOM;
+
+            if (shouldSkip) {
+                console.log('⏭️ Skipping duplicate fetch - listings already loaded');
+                console.log('💡 Use displayListings(true) to force refresh');
+                return;
+            }
+
+            // IMPROVED: Only clear if we're about to render
+            console.log('🧹 Preparing to fetch and render listings');
 
             // Show loading state
             updateListingCount(0, false, true);
 
             let listings = await fetchListings();
 
-            // Mark as fetched if we got data
-            if (listings && listings.length > 0) {
-                listingsAlreadyFetched = true;
+            // IMPROVED: Reset flag if fetch failed
+            if (!listings || listings.length === 0) {
+                console.log('📝 No listings fetched, resetting flag');
+                listingsAlreadyFetched = false;
+                updateListingCount(0, false);
+                return;
             }
+
             console.log('📋 Fetched listings:', listings);
 
+            // NOW clear container (after successful fetch)
             container.innerHTML = '';
+
+            // Mark as fetched AFTER successful render
+            listingsAlreadyFetched = true;
 
             // Update listing count with actual data
             updateListingCount(listings.length, false);
-
-            if (listings.length === 0) {
-                console.log('📝 No listings found in database');
-                return; // updateListingCount already handles empty state
-            }
 
             listings.forEach(listing => {
                 console.log('Processing listing:', listing.id, listing.title);
@@ -4477,7 +4492,11 @@
                     return;
                 }
 
-                // Step 4: Show loading state
+                // Step 4: Reset flag to allow re-render
+                listingsAlreadyFetched = false;
+                console.log('🔄 Reset listingsAlreadyFetched flag for search');
+
+                // Show loading state
                 searchElements.container.innerHTML = `
                     <div class="col-span-full text-center py-8">
                         <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
@@ -4695,42 +4714,40 @@
             console.log('🔍 Displaying all listings...');
 
             try {
-                // Clear search filters first
+                // Clear search filters first (this already calls displayListings(true))
                 clearSearchFilters();
-
-                // Use the bulletproof loader if available
-                if (typeof window.bulletproofListingsLoader === 'function') {
-                    const success = await window.bulletproofListingsLoader();
-                    if (success) {
-                        console.log('✅ All listings displayed via bulletproof loader');
-                        return;
-                    }
-                }
-
-                // Fallback to display listings function
-                if (typeof displayListings === 'function') {
-                    await displayListings();
-                    console.log('✅ All listings displayed via displayListings');
-                } else {
-                    console.error('🔍 No listing display functions available');
-                }
+                console.log('✅ All listings displayed via clearSearchFilters');
             } catch (error) {
                 console.error('🔍 Error displaying all listings:', error);
+
+                // Fallback: try direct display with force refresh
+                try {
+                    if (typeof displayListings === 'function') {
+                        await displayListings(true);
+                        console.log('✅ Fallback: listings displayed');
+                    }
+                } catch (fallbackError) {
+                    console.error('🔍 Fallback also failed:', fallbackError);
+                }
             }
         }
 
         function clearSearchFilters() {
             console.log('🧹 Clearing search filters...');
-            
+
             // Clear input fields
             document.getElementById('searchLocation').value = '';
             document.getElementById('searchMaxPrice').value = '';
             document.getElementById('searchRoomType').value = '';
             document.getElementById('searchBedrooms').value = '';
-            
+
+            // Reset flag to allow re-render
+            listingsAlreadyFetched = false;
+            console.log('🔄 Reset listingsAlreadyFetched flag for clear filters');
+
             // Reset to show all listings
             filteredListings = [];
-            displayListings();
+            displayListings(true);
         }
         
         function displayListingCard(listing, container) {
@@ -5157,14 +5174,21 @@
         // Favorites functionality
         async function toggleFavorite(listingId, buttonElement) {
             const currentUser = window.UniversalAuth.getCurrentUser();
-            
-            if (!currentUser) {
+
+            if (!currentUser || !currentUser.email) {
+                console.log('⚠️ User not authenticated, prompting login');
                 // Show login prompt for anonymous users
-                if (confirm('Please log in to save listings to your favorites. Would you like to go to the login page?')) {
-                    window.location.href = '/login';
+                alert('Please log in to save favorites.\n\nClick the "Sign In" button at the top of the page.');
+
+                // Optionally scroll to auth section
+                const authSection = document.getElementById('authSection');
+                if (authSection) {
+                    authSection.scrollIntoView({ behavior: 'smooth' });
                 }
                 return;
             }
+
+            console.log('🔐 User authenticated:', currentUser.email);
 
             try {
                 const isFavorited = buttonElement.getAttribute('data-favorited') === 'true';
@@ -5184,7 +5208,16 @@
                         buttonElement.setAttribute('title', 'Save to favorites');
                         console.log('✅ Removed from favorites:', listingId);
                     } else {
-                        throw new Error('Failed to remove from favorites');
+                        // IMPROVED: Log actual error response
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error('❌ Favorites DELETE API error:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorData,
+                            listingId: listingId,
+                            userEmail: currentUser.email
+                        });
+                        throw new Error(`Failed to remove from favorites: ${errorData.error || response.statusText}`);
                     }
                 } else {
                     // Add to favorites
@@ -5204,7 +5237,16 @@
                         buttonElement.setAttribute('title', 'Remove from favorites');
                         console.log('✅ Added to favorites:', listingId);
                     } else {
-                        throw new Error('Failed to add to favorites');
+                        // IMPROVED: Log actual error response
+                        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+                        console.error('❌ Favorites POST API error:', {
+                            status: response.status,
+                            statusText: response.statusText,
+                            error: errorData,
+                            listingId: listingId,
+                            userEmail: currentUser.email
+                        });
+                        throw new Error(`Failed to add to favorites: ${errorData.error || response.statusText}`);
                     }
                 }
             } catch (error) {
@@ -5641,6 +5683,26 @@
                 // Initialize view mode
                 if (typeof setViewMode === 'function') {
                     setViewMode('grid');
+                }
+
+                // Initialize view mode buttons
+                const gridBtn = document.getElementById('gridViewBtn');
+                const mapBtn = document.getElementById('mapViewBtn');
+
+                if (gridBtn && mapBtn) {
+                    gridBtn.addEventListener('click', () => {
+                        console.log('📊 Switching to grid view');
+                        setViewMode('grid');
+                    });
+
+                    mapBtn.addEventListener('click', () => {
+                        console.log('🗺️ Switching to map view');
+                        setViewMode('map');
+                    });
+
+                    console.log('✅ View mode buttons initialized');
+                } else {
+                    console.warn('⚠️ View mode buttons not found in DOM');
                 }
 
                 // Mobile menu setup
