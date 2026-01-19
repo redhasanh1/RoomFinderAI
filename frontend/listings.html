@@ -2475,7 +2475,7 @@
                         const startTime = Date.now();
                         const { data, error } = await supabase
                             .from('listings')
-                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
+                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, media, user_email, created_at')
                             .order('created_at', { ascending: false })
                             .limit(50);
 
