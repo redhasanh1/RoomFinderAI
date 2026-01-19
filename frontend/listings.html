@@ -2738,30 +2738,8 @@
                 container.appendChild(listingCard);
             });
 
-            document.querySelectorAll('.view-details-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const listing = JSON.parse(button.dataset.listing);
-                    showListingModal(listing);
-                });
-            });
-
-            document.querySelectorAll('.chat-btn').forEach(button => {
-                if (!button.disabled) {
-                    button.addEventListener('click', () => {
-                        try {
-                            console.log('🎯 Chat button clicked (legacy handler):', button.dataset.listing);
-                            const listing = JSON.parse(button.dataset.listing);
-                            console.log('📋 Parsed listing data:', listing);
-                            startConversation(listing);
-                        } catch (error) {
-                            console.error('❌ Error parsing listing data or starting conversation:', error);
-                            alert('Error opening chat. Please refresh the page and try again.');
-                        }
-                    });
-                } else {
-                    console.log('⚠️ Chat button is disabled (legacy handler) - no owner email specified');
-                }
-            });
+            // Note: Event listeners for .chat-btn and .view-details-btn are handled via event delegation
+            // in initializeBasicUI() - no need for individual listeners here
 
             // Update map with all listings
             console.log('📍 Updating map with', listings.length, 'listings...');
@@ -4874,30 +4852,8 @@
             perspectiveContainer.appendChild(listingCard); // Append card to perspective container
             container.appendChild(perspectiveContainer); // Append perspective container to main listings container
 
-            // Add event listeners for this card
-            const viewDetailsBtn = listingCard.querySelector('.view-details-btn');
-            const chatBtn = listingCard.querySelector('.chat-btn');
-            
-            viewDetailsBtn.addEventListener('click', () => {
-                const listing = JSON.parse(viewDetailsBtn.dataset.listing);
-                showListingModal(listing);
-            });
-
-            if (!chatBtn.disabled) {
-                chatBtn.addEventListener('click', () => {
-                    try {
-                        console.log('🎯 Chat button clicked for listing:', chatBtn.dataset.listing);
-                        const listing = JSON.parse(chatBtn.dataset.listing);
-                        console.log('📋 Parsed listing data:', listing);
-                        startConversation(listing);
-                    } catch (error) {
-                        console.error('❌ Error parsing listing data or starting conversation:', error);
-                        alert('Error opening chat. Please refresh the page and try again.');
-                    }
-                });
-            } else {
-                console.log('⚠️ Chat button is disabled for listing - no owner email specified');
-            }
+            // Note: Event listeners for .chat-btn and .view-details-btn are handled via event delegation
+            // in initializeBasicUI() - no need for individual listeners here
         }
 
         // Set up search filters and URL parameter handling
@@ -5829,6 +5785,39 @@
                         }
                     });
                 });
+
+                // Event delegation for dynamically created chat and view details buttons
+                const listingsContainer = document.getElementById('listingsContainer');
+                if (listingsContainer) {
+                    listingsContainer.addEventListener('click', (e) => {
+                        const chatBtn = e.target.closest('.chat-btn');
+                        if (chatBtn && !chatBtn.disabled) {
+                            e.preventDefault();
+                            try {
+                                console.log('🎯 Chat button clicked (delegated):', chatBtn.dataset.listing);
+                                const listing = JSON.parse(chatBtn.dataset.listing);
+                                startConversation(listing);
+                            } catch (error) {
+                                console.error('❌ Error in chat button handler:', error);
+                                alert('Error opening chat. Please refresh the page and try again.');
+                            }
+                        }
+
+                        const viewDetailsBtn = e.target.closest('.view-details-btn');
+                        if (viewDetailsBtn) {
+                            e.preventDefault();
+                            try {
+                                const listing = JSON.parse(viewDetailsBtn.dataset.listing);
+                                showListingModal(listing);
+                            } catch (error) {
+                                console.error('❌ Error in view details handler:', error);
+                            }
+                        }
+                    });
+                    console.log('✅ Event delegation for chat/view buttons initialized');
+                } else {
+                    console.warn('⚠️ listingsContainer not found for event delegation');
+                }
 
                 initState.steps.uiSetup = true;
                 console.log('✅ Basic UI initialized');
