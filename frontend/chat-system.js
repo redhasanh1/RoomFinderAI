@@ -709,7 +709,7 @@ class ChatSystem {
         }
 
         try {
-            const messageChannel = this.supabase
+            this.messageChannel = this.supabase
                 .channel('messages_realtime_' + Math.random())
                 .on('postgres_changes', {
                     event: 'INSERT',
@@ -740,8 +740,6 @@ class ChatSystem {
             console.error('❌ Error setting up real-time subscription:', error);
             // Non-fatal error - continue without real-time
         }
-
-        this.messageChannel = messageChannel;
     }
 
     /**
@@ -1043,10 +1041,19 @@ class ChatSystem {
      * Ping Supabase to check connection
      */
     async pingSupabase() {
-        if (!this.supabase) return;
+        if (!this.supabase) {
+            console.warn('⚠️ Supabase client not available for ping');
+            return;
+        }
+
+        if (typeof this.supabase.from !== 'function') {
+            console.warn('⚠️ Supabase client invalid - missing from method');
+            this.chatSystemStatus.supabaseConnected = false;
+            return;
+        }
 
         try {
-            const { data, error } = await this.supabase
+            const { data, error} = await this.supabase
                 .from('conversations')
                 .select('count')
                 .limit(1);
@@ -1055,11 +1062,10 @@ class ChatSystem {
 
             this.connectionMonitor.lastPingTime = new Date();
             this.chatSystemStatus.supabaseConnected = true;
-            
+
         } catch (error) {
-            console.error('📡 Supabase ping failed:', error);
+            console.warn('⚠️ Supabase ping failed (non-critical):', error.message);
             this.chatSystemStatus.supabaseConnected = false;
-            this.handleSupabaseConnectionError(error);
         }
     }
 
