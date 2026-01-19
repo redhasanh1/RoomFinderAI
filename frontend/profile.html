@@ -1102,34 +1102,38 @@
             let displayFirstName = user.firstName || '';
             let displayLastName = user.lastName || '';
             
-            // Always prioritize localStorage profile image first (uploaded images are stored locally)
-            if (user.profileImage) {
+            // Prioritize manually uploaded images over Google/OAuth images
+            // hasCustomProfileImage flag indicates a manually uploaded image
+            if (user.hasCustomProfileImage && user.profileImage) {
+                document.getElementById('profileImage').src = user.profileImage;
+                console.log('✅ Using manually uploaded profile image for:', user.email);
+            } else if (user.profileImage) {
                 document.getElementById('profileImage').src = user.profileImage;
                 console.log('✅ Loaded local profile image for:', user.email);
             }
-            
+
             // Fetch the latest profile data from backend
             try {
                 const response = await fetch(`/api/user-profile/${encodeURIComponent(user.email)}`);
                 if (response.ok) {
                     const profileData = await response.json();
-                    
+
                     // Check if backend has valid names
-                    const hasValidBackendNames = profileData.firstName && profileData.lastName && 
+                    const hasValidBackendNames = profileData.firstName && profileData.lastName &&
                         profileData.firstName !== '' && profileData.lastName !== '';
-                    
+
                     // If backend has valid names, use them
                     if (hasValidBackendNames) {
                         displayFirstName = profileData.firstName;
                         displayLastName = profileData.lastName;
                         console.log('✅ Using backend names for:', user.email, 'Names:', displayFirstName, displayLastName);
-                        
+
                         // Update localStorage with backend names
                         const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                         currentUser.firstName = displayFirstName;
                         currentUser.lastName = displayLastName;
                         safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
-                    } else if (displayFirstName && displayLastName && 
+                    } else if (displayFirstName && displayLastName &&
                                displayFirstName !== 'User' && displayLastName !== 'Name') {
                         // If localStorage has valid names but backend doesn't, update backend
                         console.log('📤 Updating backend with localStorage names');
@@ -1137,15 +1141,30 @@
                     } else {
                         console.log('ℹ️ No valid names found, using defaults');
                     }
-                    
-                    // Only update profile image from backend if we don't have a local one
-                    if (profileData.profileImage && !user.profileImage) {
+
+                    // Profile image priority:
+                    // 1. Manually uploaded image (hasCustomProfileImage flag)
+                    // 2. Backend image (if no manual upload exists)
+                    // 3. Google/OAuth image (lowest priority)
+
+                    if (!user.hasCustomProfileImage && profileData.profileImage) {
+                        // Only use backend image if user hasn't manually uploaded one
                         const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                        currentUser.profileImage = profileData.profileImage;
-                        currentUser.hasCustomProfileImage = profileData.hasCustomProfileImage;
-                        document.getElementById('profileImage').src = profileData.profileImage;
-                        console.log('✅ Loaded profile image from backend for:', user.email);
-                        safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
+
+                        // Check if backend has a manually uploaded image
+                        if (profileData.hasCustomProfileImage) {
+                            currentUser.profileImage = profileData.profileImage;
+                            currentUser.hasCustomProfileImage = true;
+                            document.getElementById('profileImage').src = profileData.profileImage;
+                            safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
+                            console.log('✅ Loaded manually uploaded image from backend');
+                        } else if (!currentUser.profileImage) {
+                            // Only set if we have no image at all
+                            currentUser.profileImage = profileData.profileImage;
+                            document.getElementById('profileImage').src = profileData.profileImage;
+                            safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
+                            console.log('✅ Loaded profile image from backend for:', user.email);
+                        }
                     }
                 } else {
                     console.log('ℹ️ Could not fetch profile data, using localStorage names');
@@ -1291,34 +1310,77 @@
 
         async function loadUserChatHistory(user) {
             try {
-                const chatHistoryKey = `chatHistory_${user.email}`;
-                const chatHistory = JSON.parse(localStorage.getItem(chatHistoryKey)) || [];
-                
                 const container = document.getElementById('chatHistory');
-                if (chatHistory.length === 0) {
+
+                // Fetch conversations from Supabase where user is sender or receiver
+                const { data: conversations, error } = await supabaseClient
+                    .from('conversations')
+                    .select(`
+                        id,
+                        listing_id,
+                        sender_email,
+                        receiver_email,
+                        created_at,
+                        listings (
+                            id,
+                            title,
+                            price,
+                            street,
+                            city
+                        )
+                    `)
+                    .or(`sender_email.eq.${user.email},receiver_email.eq.${user.email}`)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) {
+                    console.error('Error fetching conversations:', error);
+                    throw error;
+                }
+
+                console.log('💬 Loaded conversations from Supabase:', conversations);
+
+                if (!conversations || conversations.length === 0) {
                     container.innerHTML = `
                         <div class="text-center py-12">
                             <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                             </svg>
                             <h3 class="text-lg font-medium text-gray-900 mb-2">No chat history</h3>
-                            <p class="text-gray-500">Start chatting with our AI to see your history here</p>
+                            <p class="text-gray-500">Start chatting with landlords through AI negotiation to see your history here</p>
                         </div>
                     `;
                 } else {
-                    container.innerHTML = chatHistory.slice(-5).map(chat => `
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                    container.innerHTML = conversations.map(conv => {
+                        const listing = conv.listings;
+                        const isUserSender = conv.sender_email === user.email;
+                        const otherParty = isUserSender ? conv.receiver_email : conv.sender_email;
+
+                        const title = listing ? listing.title : 'Listing';
+                        const price = listing ? `$${listing.price.toLocaleString()}/month` : '';
+                        const location = listing ? [listing.street, listing.city].filter(x => x).join(', ') : '';
+                        const dateStr = new Date(conv.created_at).toLocaleDateString();
+
+                        return `
+                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3 hover:bg-gray-100 transition-colors">
                             <div class="flex-1">
-                                <h4 class="font-semibold text-gray-900">${chat.title || 'Chat Session'}</h4>
-                                <p class="text-sm text-gray-600">${chat.preview || 'No preview available'}</p>
-                                <p class="text-xs text-gray-500">${new Date(chat.timestamp || Date.now()).toLocaleDateString()}</p>
+                                <h4 class="font-semibold text-gray-900">${title}</h4>
+                                <p class="text-sm text-gray-600">${price}${location ? ' • ' + location : ''}</p>
+                                <p class="text-xs text-gray-500">With: ${otherParty} • ${dateStr}</p>
                             </div>
-                            <button onclick="viewChat('${chat.id}')" class="text-blue-600 hover:text-blue-700 font-medium text-sm">View</button>
+                            <button onclick="viewConversation('${conv.id}')" class="text-blue-600 hover:text-blue-700 font-medium text-sm">View</button>
                         </div>
-                    `).join('');
+                    `;
+                    }).join('');
                 }
             } catch (error) {
                 console.error('Error loading chat history:', error);
+                const container = document.getElementById('chatHistory');
+                container.innerHTML = `
+                    <div class="text-center py-12">
+                        <p class="text-red-500">Error loading chat history. Please refresh the page.</p>
+                    </div>
+                `;
             }
         }
 
@@ -1379,6 +1441,15 @@
             } catch (error) {
                 console.error('Error loading saved listings:', error);
             }
+        }
+
+        // View conversation in messaging system
+        function viewConversation(conversationId) {
+            console.log('📬 Opening conversation:', conversationId);
+            // Store conversation ID in localStorage for listings page to open
+            localStorage.setItem('openConversationId', conversationId);
+            // Redirect to listings page with openChat parameter
+            window.location.href = 'listings.html?openChat=true';
         }
 
         // Verification modal functions
