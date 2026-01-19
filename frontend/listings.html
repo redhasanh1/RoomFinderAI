@@ -4942,6 +4942,42 @@
                     if (messagingBtn) {
                         messagingBtn.click();
                     }
+
+                    // Check if specific conversation should be opened
+                    const openConversationId = localStorage.getItem('openConversationId');
+                    if (openConversationId && window.chatSystem) {
+                        console.log('📬 Opening specific conversation:', openConversationId);
+
+                        // Wait for conversations to load, then find and open the specific one
+                        setTimeout(async () => {
+                            await chatSystem.loadUserConversations();
+
+                            // Find the conversation in the loaded conversations
+                            const conversation = chatSystem.globalUserConversations.find(c => c.id === openConversationId);
+
+                            if (conversation) {
+                                const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                                const otherUserEmail = conversation.sender_email === currentUser.email
+                                    ? conversation.receiver_email
+                                    : conversation.sender_email;
+                                const listingTitle = conversation.listings ? conversation.listings.title : 'Unknown Listing';
+
+                                chatSystem.openConversationInModal(
+                                    openConversationId,
+                                    listingTitle,
+                                    conversation.listing_id,
+                                    otherUserEmail
+                                );
+
+                                console.log('✅ Opened conversation successfully');
+                            } else {
+                                console.warn('⚠️ Conversation not found:', openConversationId);
+                            }
+
+                            // Clear the stored conversation ID
+                            localStorage.removeItem('openConversationId');
+                        }, 1500);
+                    }
                 }, 1000);
             }
             
