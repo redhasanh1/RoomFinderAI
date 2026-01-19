@@ -4497,8 +4497,7 @@
                     .map(([key]) => key);
 
                 if (missingElements.length > 0) {
-                    console.error('🔍 Missing search elements:', missingElements);
-                    showError('Search interface not ready. Please refresh the page.');
+                    console.warn('🔍 Search elements not ready, will retry:', missingElements);
                     return;
                 }
 
