@@ -655,6 +655,8 @@
 
         // Initialize immediately - DOM is ready since script is at bottom
         (async function init() {
+            console.time('Total load time');
+
             // Set up loading timeout - show retry button after 6 seconds
             const loadingTimeout = setTimeout(() => {
                 const loadingText = document.getElementById('loading-text');
@@ -667,25 +669,33 @@
 
             try {
                 // Try to use cached config from sessionStorage
+                console.time('Config fetch');
                 let config = null;
                 const cachedConfig = sessionStorage.getItem('supabase_config');
 
                 if (cachedConfig) {
+                    console.log('Using cached config');
                     config = JSON.parse(cachedConfig);
                 } else {
+                    console.log('Fetching config from /api/config...');
                     const response = await fetch('/api/config');
                     if (!response.ok) throw new Error('Config failed');
                     config = await response.json();
                     // Cache for this session
                     sessionStorage.setItem('supabase_config', JSON.stringify(config));
                 }
+                console.timeEnd('Config fetch');
 
                 SUPABASE_URL = config.SUPABASE_URL;
                 SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+                console.time('Supabase query');
                 await loadListingDetails();
+                console.timeEnd('Supabase query');
+
                 clearTimeout(loadingTimeout);
+                console.timeEnd('Total load time');
             } catch (e) {
                 clearTimeout(loadingTimeout);
                 console.error('Init error:', e);
