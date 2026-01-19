@@ -1,7 +1,7 @@
-// AI Negotiation Engine
+ // AI Negotiation Engine
 // Handles real-time negotiation with landlords using market data and OpenAI
 
-class AINegotatior {
+class AINegotiator {
     constructor(supabase, config) {
         this.supabase = supabase;
         this.config = config;
@@ -647,21 +647,7 @@ class AINegotatior {
 
             const data = await response.json();
             let analysis = JSON.parse(data.choices[0].message.content.trim());
-            
-            // Double-check for acceptance patterns in AI response too
-            if (/\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal)\b/i.test(simpleReply)) {
-                console.log('🎯 AI also detected acceptance in:', simpleReply);
-                analysis.acceptsOffer = true;
-                analysis.isFinalized = true;
-                analysis.sentiment = 'positive';
-                analysis.shouldRespond = true;
-                analysis.responseStrategy = 'thank';
-                const lastOffer = this.extractLastOfferedPrice(negotiation);
-                if (lastOffer) {
-                    analysis.agreedPrice = lastOffer;
-                }
-            }
-            
+
             console.log('📊 AI Analysis result:', analysis);
             return analysis;
 
@@ -1111,24 +1097,6 @@ class AINegotatior {
         }
     }
 
-    // Generate final attempt when facing rejection (kept for backward compatibility)
-    async generateFinalAttempt(negotiation, listing) {
-        try {
-            const maxBudget = negotiation.userBudget;
-            const marketData = negotiation.marketData || await this.getMarketData(
-                listing.city, listing.house_type, listing.bedrooms
-            );
-            
-            const finalOffer = Math.min(maxBudget, Math.round(marketData.average * 0.98));
-            
-            return `I completely understand your position. As a final offer, I can do $${finalOffer}/month with immediate occupancy and excellent references. I'm a reliable, long-term tenant who takes great care of properties. If this works for you, I'm ready to proceed today. If not, I truly appreciate your time and consideration.`;
-            
-        } catch (error) {
-            console.error('Error generating final attempt:', error);
-            return null;
-        }
-    }
-
     // Notify when negotiation is complete
     async notifyNegotiationComplete(negotiation, landlordMessage = null) {
         try {
@@ -1193,120 +1161,7 @@ class AINegotatior {
         }
     }
 
-    // Debug function - test negotiation flow
-    testNegotiationFlow() {
-        console.log('🧪 Testing negotiation flow...');
-        console.log('Active negotiations:', this.activeNegotiations);
-        console.log('AI user initialized:', this.aiUserInitialized);
-        console.log('Supabase connected:', !!this.supabase);
-        console.log('OpenAI API key present:', !!this.config?.OPENAI_API_KEY);
-        
-        // Test simple analysis
-        const testNegotiation = {
-            userBudget: 1000,
-            messages: [{sender: 'ai', content: 'I can offer $950/month'}]
-        };
-        
-        const testResult = this.extractLastOfferedPrice(testNegotiation);
-        console.log('Price extraction test:', testResult);
-    }
-
-    // Test message handling manually
-    async testMessageHandling(testMessage = 'sure') {
-        console.log('🧪 Testing message handling with:', testMessage);
-        
-        // Create test data that matches your scenario
-        const testListing = {
-            id: 'test-listing-id',
-            title: '2 bedroom house in Tehran',
-            price: 1000,
-            city: 'Tehran',
-            house_type: 'House',
-            bedrooms: 2,
-            user_email: 'landlord@test.com'
-        };
-        
-        const testMessageObj = {
-            content: testMessage,
-            sender_email: 'user@test.com',
-            conversation_id: 'test-conversation-id'
-        };
-        
-        // Create a test negotiation with some history to make it more realistic
-        const testConversationId = 'test-conversation-id';
-        this.activeNegotiations.set(testConversationId, {
-            listingId: testListing.id,
-            listingTitle: testListing.title,
-            originalPrice: testListing.price,
-            userBudget: 950, // User wants it for less
-            userEmail: 'user@test.com',
-            landlordEmail: testListing.user_email,
-            status: 'active',
-            startTime: new Date(),
-            messages: [{
-                sender: 'ai',
-                content: 'Would you consider $950/month? I can move in immediately.',
-                timestamp: new Date()
-            }]
-        });
-        
-        console.log('🧪 Test setup complete, calling handleNegotiationReply...');
-        
-        try {
-            await this.handleNegotiationReply(testMessageObj, testConversationId, testListing);
-            console.log('✅ Manual message test completed');
-            
-            // Check final state
-            const finalNegotiation = this.activeNegotiations.get(testConversationId);
-            console.log('📊 Final negotiation state:', finalNegotiation);
-            
-        } catch (error) {
-            console.error('❌ Manual message test failed:', error);
-        }
-    }
-
-    // Check recent messages to see if we're missing anything
-    async checkRecentMessages() {
-        try {
-            console.log('🔍 Checking recent messages in database...');
-            
-            const { data: recentMessages, error } = await this.supabase
-                .from('messages')
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(10);
-            
-            if (error) {
-                console.error('Error fetching recent messages:', error);
-                return;
-            }
-            
-            console.log(`Found ${recentMessages.length} recent messages:`);
-            recentMessages.forEach((msg, i) => {
-                console.log(`${i + 1}. From: ${msg.sender_email} | Content: "${msg.content}" | Time: ${msg.created_at}`);
-            });
-            
-            // Check for recent "sure" messages
-            const sureMessages = recentMessages.filter(msg => 
-                msg.content.toLowerCase().includes('sure') || 
-                msg.content.toLowerCase().includes('yes') ||
-                msg.content.toLowerCase().includes('ok')
-            );
-            
-            if (sureMessages.length > 0) {
-                console.log('🎯 Found potential acceptance messages:');
-                sureMessages.forEach(msg => {
-                    console.log(`  - "${msg.content}" from ${msg.sender_email} at ${msg.created_at}`);
-                });
-            } else {
-                console.log('❌ No recent acceptance messages found');
-            }
-            
-        } catch (error) {
-            console.error('Error checking recent messages:', error);
-        }
-    }
 }
 
 // Export for use
-window.AINegotatior = AINegotatior;
+window.AINegotiator = AINegotiator;

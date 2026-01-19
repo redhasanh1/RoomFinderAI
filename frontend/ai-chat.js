@@ -454,19 +454,6 @@ class AIChatHandler {
         return listings || [];
     }
 
-    // Helper function to check if listing matches location (updated for your schema)
-    matchesLocation(listing, searchLocation) {
-        const location = searchLocation.toLowerCase();
-        const listingCity = (listing.city || '').toLowerCase();
-        const street = (listing.street || '').toLowerCase();
-        const title = (listing.title || '').toLowerCase();
-        
-        // Check city, street, and title columns from your schema
-        return listingCity.includes(location) || 
-               street.includes(location) || 
-               title.includes(location);
-    }
-
     // Update left sidebar with matching listings
     updateSidebarWithListings(listings) {
         const activeNegotiations = document.getElementById('activeNegotiations');
@@ -764,56 +751,100 @@ class AIChatHandler {
         }
     }
 
-    // Load conversation history from localStorage
+    // Load conversation history from Supabase
     async loadConversationHistory() {
+        if (!this.currentUser?.email || !this.supabase) {
+            console.log('Cannot load history: no user or supabase');
+            return;
+        }
+
         try {
-            const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
-            const savedHistory = null;
-            
-            if (savedHistory) {
-                this.conversationHistory = JSON.parse(savedHistory);
+            // Load from Supabase ai_chat_history table
+            const { data, error } = await this.supabase
+                .from('ai_chat_history')
+                .select('conversation_data, updated_at')
+                .eq('user_email', this.currentUser.email)
+                .order('updated_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+
+            if (error) {
+                console.log('Error loading chat history:', error.message);
+                return;
+            }
+
+            if (data && data.conversation_data) {
+                this.conversationHistory = JSON.parse(data.conversation_data);
                 console.log(`📂 Loaded ${this.conversationHistory.length} messages from history`);
-                
-                // Restore messages to the chat interface
-                const messages = document.getElementById('chatMessages');
-                if (messages) {
-                    messages.innerHTML = '';
-                    
-                    for (const message of this.conversationHistory) {
-                        const displayRole = message.role.charAt(0).toUpperCase() + message.role.slice(1);
-                        this.displayMessage(displayRole, message.content, message.role === 'user' ? 'right' : 'left', false);
+
+                // Display loaded messages
+                this.conversationHistory.forEach(msg => {
+                    if (msg.role === 'user') {
+                        this.appendMessage('You', msg.content, 'right');
+                    } else {
+                        this.appendMessage('AI', msg.content, 'left');
                     }
-                }
+                });
             }
         } catch (error) {
             console.error('Error loading conversation history:', error);
-            this.conversationHistory = [];
         }
     }
 
-    // Save conversation history to localStorage
-    saveConversationHistory() {
+    // Save conversation history to Supabase
+    async saveConversationHistory() {
+        if (!this.currentUser?.email || !this.supabase) {
+            console.log('Cannot save history: no user or supabase');
+            return;
+        }
+
         try {
-            const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
-            // localStorage removed - using Supabase);
+            const conversationData = JSON.stringify(this.conversationHistory);
+
+            // Upsert to Supabase
+            const { error } = await this.supabase
+                .from('ai_chat_history')
+                .upsert({
+                    user_email: this.currentUser.email,
+                    conversation_data: conversationData,
+                    updated_at: new Date().toISOString()
+                }, {
+                    onConflict: 'user_email'
+                });
+
+            if (error) {
+                console.error('Error saving chat history:', error.message);
+            } else {
+                console.log('✅ Chat history saved successfully');
+            }
         } catch (error) {
             console.error('Error saving conversation history:', error);
         }
     }
 
     // Clear conversation history
-    clearConversationHistory() {
-        try {
-            const storageKey = `ai_negotiator_chat_${this.currentUser?.email || 'anonymous'}`;
-            // localStorage removed
-            this.conversationHistory = [];
-            
-            const messages = document.getElementById('chatMessages');
-            if (messages) {
-                messages.innerHTML = '';
+    async clearConversationHistory() {
+        this.conversationHistory = [];
+
+        if (this.currentUser?.email && this.supabase) {
+            try {
+                const { error } = await this.supabase
+                    .from('ai_chat_history')
+                    .delete()
+                    .eq('user_email', this.currentUser.email);
+
+                if (error) {
+                    console.error('Error clearing chat history:', error.message);
+                }
+            } catch (error) {
+                console.error('Error clearing conversation history:', error);
             }
-        } catch (error) {
-            console.error('Error clearing conversation history:', error);
+        }
+
+        // Clear UI
+        const messages = document.getElementById('chatMessages');
+        if (messages) {
+            messages.innerHTML = '';
         }
     }
 
