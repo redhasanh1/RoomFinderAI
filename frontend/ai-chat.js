@@ -192,59 +192,10 @@ class AIChatHandler {
 
     // Extract rental information using OpenAI
     async extractRentalInfo(message) {
-        if (!this.config?.OPENAI_API_KEY) {
-            console.log('⚠️ OpenAI not configured, using manual extraction');
-            return this.extractManually(message);
-        }
-
-        try {
-            console.log('🤖 Using OpenAI to extract rental criteria...');
-            
-            const prompt = `Extract rental criteria from this message. Return ONLY a JSON object with these exact fields:
-            {
-                "intent": "search" if looking for rentals, otherwise null,
-                "price": number (max budget) or null,
-                "city": city name in lowercase or null,
-                "house_type": "House", "Apartment", "Condo", "Studio", or "Basement" or null,
-                "bedrooms": number or null,
-                "utilities": "included", "separate", or null
-            }
-
-            Message: "${message}"
-            
-            JSON:`;
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'user', content: prompt }],
-                    max_tokens: 150,
-                    temperature: 0.1
-                })
-            });
-
-            if (!response.ok) throw new Error('OpenAI API error');
-
-            const data = await response.json();
-            const extractedText = data.choices[0].message.content.trim();
-            
-            try {
-                const extracted = JSON.parse(extractedText);
-                console.log('✅ OpenAI extraction successful:', extracted);
-                return extracted;
-            } catch (parseError) {
-                console.log('⚠️ JSON parse failed, using manual extraction');
-                return this.extractManually(message);
-            }
-        } catch (error) {
-            console.log('⚠️ OpenAI extraction failed, using manual extraction:', error.message);
-            return this.extractManually(message);
-        }
+        // Always use manual extraction due to CORS limitations in browser
+        // OpenAI API calls should be done server-side
+        console.log('🔍 Using manual extraction for rental criteria...');
+        return this.extractManually(message);
     }
 
     // Manual extraction fallback
@@ -849,12 +800,16 @@ class AIChatHandler {
                 });
 
             if (error) {
-                console.error('Error saving chat history:', error.message);
+                // Silently fail if table doesn't exist (404) - non-critical feature
+                if (error.code !== 'PGRST116') {
+                    console.warn('Could not save chat history (table may not exist):', error.message);
+                }
             } else {
                 console.log('✅ Chat history saved successfully');
             }
         } catch (error) {
-            console.error('Error saving conversation history:', error);
+            // Silently fail - chat history is not critical
+            console.debug('Chat history save skipped:', error.message);
         }
     }
 
