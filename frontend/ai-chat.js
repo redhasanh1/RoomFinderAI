@@ -740,77 +740,16 @@ class AIChatHandler {
 
     // Load conversation history from Supabase
     async loadConversationHistory() {
-        if (!this.currentUser?.email || !this.supabase) {
-            console.log('Cannot load history: no user or supabase');
-            return;
-        }
-
-        try {
-            // Load from Supabase ai_chat_history table
-            const { data, error } = await this.supabase
-                .from('ai_chat_history')
-                .select('conversation_data, updated_at')
-                .eq('user_email', this.currentUser.email)
-                .order('updated_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-
-            if (error) {
-                console.log('Error loading chat history:', error.message);
-                return;
-            }
-
-            if (data && data.conversation_data) {
-                this.conversationHistory = JSON.parse(data.conversation_data);
-                console.log(`📂 Loaded ${this.conversationHistory.length} messages from history`);
-
-                // Display loaded messages
-                this.conversationHistory.forEach(msg => {
-                    if (msg.role === 'user') {
-                        this.appendMessage('You', msg.content, 'right');
-                    } else {
-                        this.appendMessage('AI', msg.content, 'left');
-                    }
-                });
-            }
-        } catch (error) {
-            console.error('Error loading conversation history:', error);
-        }
+        // Disabled - table doesn't exist in database
+        // Each session starts fresh
+        return;
     }
 
     // Save conversation history to Supabase
     async saveConversationHistory() {
-        if (!this.currentUser?.email || !this.supabase) {
-            console.log('Cannot save history: no user or supabase');
-            return;
-        }
-
-        try {
-            const conversationData = JSON.stringify(this.conversationHistory);
-
-            // Upsert to Supabase
-            const { error } = await this.supabase
-                .from('ai_chat_history')
-                .upsert({
-                    user_email: this.currentUser.email,
-                    conversation_data: conversationData,
-                    updated_at: new Date().toISOString()
-                }, {
-                    onConflict: 'user_email'
-                });
-
-            if (error) {
-                // Silently fail if table doesn't exist (404) - non-critical feature
-                if (error.code !== 'PGRST116') {
-                    console.warn('Could not save chat history (table may not exist):', error.message);
-                }
-            } else {
-                console.log('✅ Chat history saved successfully');
-            }
-        } catch (error) {
-            // Silently fail - chat history is not critical
-            console.debug('Chat history save skipped:', error.message);
-        }
+        // Disabled - table doesn't exist in database
+        // Chat history is stored in memory only during session
+        return;
     }
 
     // Clear conversation history
