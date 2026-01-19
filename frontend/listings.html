@@ -97,33 +97,20 @@
                 attemptInitialization();
             })
             .catch(error => {
-                console.error('❌ Failed to load configuration from API, using fallback credentials:', error);
-                
-                // Fallback to example credentials
-                SUPABASE_URL = "https://your-project.supabase.co";
-                SUPABASE_ANON_KEY = "your-supabase-anon-key";
-                
-                console.warn('🔧 Using fallback Supabase credentials. The application may not function correctly.');
+                console.error('❌ Failed to load configuration from API:', error);
 
-                // Initialize Supabase client with error handling
-                try {
-                    if (!window.supabase) {
-                        throw new Error('Supabase library not loaded');
-                    }
-                    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-                        throw new Error('Missing Supabase credentials');
-                    }
+                // Don't use fallback dummy credentials - they will cause 502 errors
+                console.error('🚨 Cannot load Supabase credentials from /api/config');
+                console.error('🚨 Application will not function without valid credentials');
 
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                    console.log('📡 Supabase client initialized with fallback credentials');
-                } catch (supabaseError) {
-                    console.error('❌ Supabase initialization with fallback failed:', supabaseError);
-                    showError('Failed to initialize Supabase with fallback credentials.');
-                    return; // Stop further execution if Supabase fails completely
-                }
+                // Show user-friendly error
+                alert('Configuration Error: Unable to connect to server. Please refresh the page or contact support if the issue persists.');
 
-                isConfigLoaded = true;
-                attemptInitialization();
+                // Mark config as failed (not loaded)
+                isConfigLoaded = false;
+
+                // Don't attempt initialization without valid config
+                return;
             });
 
         // Wait for DOM to be ready
@@ -2448,43 +2435,88 @@
                     throw new Error('Supabase client not initialized');
                 }
 
-                console.log('🔍 Executing Supabase query...');
-                const startTime = Date.now();
-                const { data, error } = await supabase
-                    .from('listings')
-                    .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, description, user_email, media, created_at')
-                    .order('created_at', { ascending: false })
-                    .limit(10);
+                // Add retry logic for temporary server issues
+                let retryCount = 0;
+                const maxRetries = 3;
+                let lastError = null;
 
-                const queryTime = Date.now() - startTime;
-                console.log('📊 Query completed in', queryTime, 'ms');
-                console.log('📊 Fetch result:', {
-                    dataCount: data?.length || 0,
-                    hasError: !!error,
-                    error: error?.message || null,
-                    networkInfo: {
-                        connectionType: navigator.connection?.type || 'unknown',
-                        downlink: navigator.connection?.downlink || 'unknown'
+                while (retryCount < maxRetries) {
+                    try {
+                        console.log(`🔍 Executing Supabase query (attempt ${retryCount + 1}/${maxRetries})...`);
+                        const startTime = Date.now();
+                        const { data, error } = await supabase
+                            .from('listings')
+                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, description, user_email, media, created_at')
+                            .order('created_at', { ascending: false })
+                            .limit(10);
+
+                        const queryTime = Date.now() - startTime;
+                        console.log('📊 Query completed in', queryTime, 'ms');
+                        console.log('📊 Fetch result:', {
+                            dataCount: data?.length || 0,
+                            hasError: !!error,
+                            error: error?.message || null,
+                            networkInfo: {
+                                connectionType: navigator.connection?.type || 'unknown',
+                                downlink: navigator.connection?.downlink || 'unknown'
+                            }
+                        });
+
+                        if (error) {
+                            console.error('❌ Supabase query error details:', {
+                                message: error.message,
+                                details: error.details,
+                                hint: error.hint,
+                                code: error.code
+                            });
+
+                            // Check if it's a 502 error or network error that we should retry
+                            const shouldRetry = error.message.includes('502') ||
+                                              error.message.includes('Bad Gateway') ||
+                                              error.message.includes('fetch failed');
+
+                            if (shouldRetry && retryCount < maxRetries - 1) {
+                                lastError = error;
+                                retryCount++;
+                                const delayMs = 1000 * retryCount; // Exponential backoff: 1s, 2s, 3s
+                                console.log(`🔄 Retrying due to ${error.message} (waiting ${delayMs}ms)...`);
+                                await new Promise(resolve => setTimeout(resolve, delayMs));
+                                continue; // Try again
+                            }
+
+                            throw error;
+                        }
+
+                        if (!data) {
+                            console.warn('⚠️ No data returned from Supabase query');
+                            return [];
+                        }
+
+                        console.log('✅ Successfully fetched', data.length, 'listings');
+                        return data;
+                    } catch (innerError) {
+                        // Check if it's a 502 error or network error that we should retry
+                        const shouldRetry = innerError.message.includes('502') ||
+                                          innerError.message.includes('Bad Gateway') ||
+                                          innerError.message.includes('fetch failed');
+
+                        if (shouldRetry && retryCount < maxRetries - 1) {
+                            lastError = innerError;
+                            retryCount++;
+                            const delayMs = 1000 * retryCount; // Exponential backoff: 1s, 2s, 3s
+                            console.log(`🔄 Retrying due to ${innerError.message} (waiting ${delayMs}ms)...`);
+                            await new Promise(resolve => setTimeout(resolve, delayMs));
+                            continue; // Try again
+                        }
+
+                        throw innerError;
                     }
-                });
-
-                if (error) {
-                    console.error('❌ Supabase query error details:', {
-                        message: error.message,
-                        details: error.details,
-                        hint: error.hint,
-                        code: error.code
-                    });
-                    throw error;
                 }
 
-                if (!data) {
-                    console.warn('⚠️ No data returned from Supabase query');
-                    return [];
+                // If we exhausted all retries, throw the last error
+                if (lastError) {
+                    throw lastError;
                 }
-
-                console.log('✅ Successfully fetched', data.length, 'listings');
-                return data;
             } catch (error) {
                 console.error('❌ Error fetching listings:', error);
                 console.error('❌ Detailed error info:', {
@@ -5478,7 +5510,17 @@
             const countElement = document.getElementById('listingCount');
             const emptyState = document.getElementById('emptyState');
             const listingsContainer = document.getElementById('listingsContainer');
-            
+
+            // Add defensive null checks
+            if (!countElement || !emptyState || !listingsContainer) {
+                console.error('❌ updateListingCount: Required DOM elements not found', {
+                    countElement: !!countElement,
+                    emptyState: !!emptyState,
+                    listingsContainer: !!listingsContainer
+                });
+                return; // Exit early if elements don't exist
+            }
+
             if (isLoading) {
                 countElement.textContent = 'Loading properties...';
                 emptyState.classList.add('hidden');
