@@ -253,16 +253,41 @@ class RoomSyncApp {
         }
     }
 
-    handleSocialLogin(provider) {
+    async handleSocialLogin(provider) {
         this.showLoading(true);
 
-        // Simulate social login
-        setTimeout(() => {
+        // Get real user data from localStorage or Supabase session
+        setTimeout(async () => {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+            // Get Supabase session data
+            let session = null;
+            if (window.supabase) {
+                try {
+                    const { data } = await window.supabase.auth.getSession();
+                    session = data.session;
+                } catch (error) {
+                    console.log('Could not fetch Supabase session:', error);
+                }
+            }
+
+            // Extract real name from available sources
+            const realName = currentUser.firstName && currentUser.lastName
+                ? `${currentUser.firstName} ${currentUser.lastName}`
+                : session?.user?.user_metadata?.full_name ||
+                  session?.user?.user_metadata?.name ||
+                  'User';
+
+            // Extract real email from available sources
+            const realEmail = currentUser.email ||
+                            session?.user?.email ||
+                            'user@example.com';
+
             this.userData.profile = {
                 socialLogin: provider,
-                name: provider === 'google' ? 'John Doe' : 'Jane Smith',
-                email: provider === 'google' ? 'john@gmail.com' : 'jane@icloud.com',
-                avatar: this.generateAvatar(provider)
+                name: realName,
+                email: realEmail,
+                avatar: currentUser.profileImage || this.generateAvatar(provider)
             };
 
             this.showLoading(false);

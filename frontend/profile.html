@@ -724,7 +724,9 @@
                 <!-- Profile Info -->
                 <div class="flex-1">
                     <div class="flex items-center gap-4 mb-4">
-                        <h2 id="userName" class="text-3xl font-bold text-gray-900">John Doe</h2>
+                        <h2 id="userName" class="text-3xl font-bold text-gray-900">
+                            <span class="loading-skeleton">Loading...</span>
+                        </h2>
                         <span id="verificationBadge" class="unverified-badge">
                             <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                                 <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
@@ -732,7 +734,9 @@
                             Unverified
                         </span>
                     </div>
-                    <p id="userEmail" class="text-gray-600 mb-4">john.doe@example.com</p>
+                    <p id="userEmail" class="text-gray-600 mb-4">
+                        <span class="loading-skeleton">Loading...</span>
+                    </p>
                     <div class="flex gap-3">
                         <button onclick="openVerificationModal()" class="btn-secondary">Verify Account</button>
                         <button onclick="logout()" class="logout-btn">
@@ -1087,6 +1091,13 @@
         }
 
         async function updateProfileUI(user) {
+            // Show loading state immediately
+            const userNameEl = document.getElementById('userName');
+            const userEmailEl = document.getElementById('userEmail');
+
+            userNameEl.innerHTML = '<span class="loading-skeleton">Loading...</span>';
+            userEmailEl.innerHTML = '<span class="loading-skeleton">Loading...</span>';
+
             // Start with localStorage names (these are the registration names)
             let displayFirstName = user.firstName || '';
             let displayLastName = user.lastName || '';
@@ -1142,12 +1153,21 @@
             } catch (error) {
                 console.error('Error fetching profile data:', error);
                 console.log('ℹ️ Using localStorage names and profile image due to error');
+
+                // Show user-friendly error message if we don't have valid names
+                if (!displayFirstName || !displayLastName) {
+                    document.getElementById('userName').innerHTML =
+                        '<span style="color: #ef4444;">Unable to load profile. Please refresh.</span>';
+                }
             }
-            
+
             // Update profile information with final names (either from database or localStorage)
-            document.getElementById('userName').textContent = 
+            document.getElementById('userName').textContent =
                 `${displayFirstName} ${displayLastName}`.trim() || 'User Name';
-            document.getElementById('userEmail').textContent = user.email || 'No email';
+
+            // Always use the most reliable email source
+            const finalEmail = user.email || 'Email not available';
+            document.getElementById('userEmail').textContent = finalEmail;
 
             // Update verification badge
             if (user.verified) {
