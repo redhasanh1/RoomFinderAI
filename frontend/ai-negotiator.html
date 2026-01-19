@@ -42,7 +42,7 @@
 
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
             min-height: 100vh;
         }
 
@@ -84,11 +84,12 @@
         
         /* Modern glass cards */
         .glass-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            border-radius: 24px;
+            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
         }
         
         /* Premium Header */
@@ -653,18 +654,19 @@
     </header>
 
     <!-- Main Content -->
-    <main class="w-[90%] mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-8">
-        <!-- Page Header -->
-        <div class="mb-8 text-center">
-            <h1 class="text-4xl font-bold mb-3">
-                <span class="gradient-text">AI Negotiation Assistant</span>
-            </h1>
-            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
-                Powered by AI to help you find the perfect rental and negotiate better deals with landlords
-            </p>
-        </div>
+    <main class="pt-40 pb-16">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <!-- Page Header -->
+            <div class="mb-12 text-center">
+                <h1 class="text-4xl md:text-5xl font-bold mb-4 font-display">
+                    <span class="gradient-text">AI Negotiation Assistant</span>
+                </h1>
+                <p class="text-lg text-gray-700 max-w-3xl mx-auto">
+                    Powered by AI to help you find the perfect rental and negotiate better deals with landlords
+                </p>
+            </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
             <!-- Left Sidebar - Found Listings -->
             <div class="lg:col-span-1 space-y-6">
                 <!-- Found Listings Panel -->
@@ -673,12 +675,12 @@
                         <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
                         </svg>
-                        <h3 class="text-lg font-bold text-gray-800">Found Listings</h3>
+                        <h3 class="text-lg font-bold text-gray-800 font-display">Found Listings</h3>
                     </div>
                     <div id="activeNegotiations" class="space-y-3">
                         <div class="text-center py-8">
                             <div class="text-4xl mb-3">🏠</div>
-                            <p class="text-gray-500 text-sm">Start chatting to find properties!</p>
+                            <p class="text-gray-600 text-sm">Start chatting to find properties!</p>
                             <p class="text-gray-400 text-xs mt-2">Example: "I want a 2 bedroom in Toronto for $1500"</p>
                         </div>
                     </div>
@@ -690,7 +692,7 @@
                         <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
-                        <h3 class="text-sm font-bold text-gray-800">Quick Tips</h3>
+                        <h3 class="text-sm font-bold text-gray-800 font-display">Quick Tips</h3>
                     </div>
                     <ul class="space-y-2 text-xs text-gray-600">
                         <li class="flex items-start gap-2">
@@ -715,7 +717,7 @@
 
             <!-- Chat Interface -->
             <div class="lg:col-span-3">
-                <div class="glass-card h-[700px] flex flex-col shadow-2xl">
+                <div class="glass-card h-[700px] flex flex-col">
                     <!-- Chat Header -->
                     <div class="p-6 border-b border-gray-200 bg-gradient-to-r from-purple-50 to-blue-50">
                         <div class="flex items-center justify-between">
@@ -726,7 +728,7 @@
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3 class="font-bold text-gray-900 text-lg">AI Assistant</h3>
+                                    <h3 class="font-bold text-gray-900 text-lg font-display">AI Assistant</h3>
                                     <p class="text-sm text-green-600 flex items-center font-medium">
                                         <span class="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
                                         Online & Ready
@@ -789,6 +791,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         </div>
     </main>
 
