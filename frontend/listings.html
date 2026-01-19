@@ -2209,8 +2209,11 @@
             })
             .catch(error => {
                 console.error('Error loading cities:', error);
-                alert('Failed to load city data. Please enter city manually.');
-                document.getElementById('city').placeholder = 'Enter city manually (e.g., Toronto)';
+                // Non-blocking: just update placeholder silently
+                const cityInput = document.getElementById('city');
+                if (cityInput) {
+                    cityInput.placeholder = 'Enter city (e.g., Toronto)';
+                }
             });
 
         // Autocomplete logic for city
