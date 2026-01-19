@@ -31,6 +31,7 @@
         let initializationAttempts = 0;
         const MAX_INIT_ATTEMPTS = 3;
         let listingsAlreadyFetched = false; // Prevent duplicate fetches
+        let initializationInProgress = false; // Prevent duplicate initializations
 
         function showError(message) {
             console.error(message);
@@ -5514,6 +5515,13 @@
         // Replace the old initializeListingsPage with this new comprehensive system
 
         async function initializeListingsPageNew() {
+            // Prevent multiple simultaneous initializations
+            if (initializationInProgress) {
+                console.log('⏭️ Initialization already in progress, skipping duplicate call');
+                return;
+            }
+            initializationInProgress = true;
+
             console.log('🚀 Starting consolidated initialization system...');
 
             const initState = {
