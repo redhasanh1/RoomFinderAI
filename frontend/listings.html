@@ -1653,8 +1653,8 @@
             <div id="listingsContainer" class="listing-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
             
             <!-- Map Container (Initially Hidden) -->
-            <div id="mapContainer" class="hidden">
-                <div id="map" class="h-96 rounded-xl overflow-hidden"></div>
+            <div id="mapContainer" class="hidden w-full">
+                <div id="map" class="w-full rounded-xl overflow-hidden" style="min-height: 500px; height: 70vh; max-height: 800px;"></div>
                 <p id="map-error" class="text-red-600 text-center mt-4 hidden">Failed to load map. Please check your connection or try again later.</p>
             </div>
             
@@ -1761,24 +1761,48 @@
 
         // Initialize Map with Retry Logic
         function initMap() {
-            console.log('Attempting to initialize map');
-            const mapElement = document.getElementById('map');
+            console.log('🗺️ initMap called');
+            const mapDiv = document.getElementById('map');
+            const mapContainer = document.getElementById('mapContainer');
             const mapError = document.getElementById('map-error');
 
-            if (!mapElement) {
-                console.error('Map container not found');
+            if (!mapDiv) {
+                console.error('❌ Map div not found');
                 if (mapError) mapError.style.display = 'block';
                 return false;
             }
 
+            // Check if container is visible
+            if (mapContainer && mapContainer.classList.contains('hidden')) {
+                console.warn('⚠️ Map container is still hidden, aborting initialization');
+                return false;
+            }
+
+            // If map already exists, just invalidate size and re-center
+            if (map) {
+                console.log('🔄 Map already exists, refreshing...');
+                map.invalidateSize();
+                map.setView([43.6532, -79.3832], 10);
+                if (mapError) mapError.style.display = 'none';
+                return true;
+            }
+
             try {
-                // Set default view to Toronto area for better initial positioning
-                map = L.map('map').setView([43.6532, -79.3832], 10);
-                
+                console.log('🆕 Creating new Leaflet map...');
+
+                // Create the map with default Toronto view
+                map = L.map('map', {
+                    center: [43.6532, -79.3832],
+                    zoom: 10,
+                    zoomControl: true,
+                    attributionControl: true
+                });
+
+                // Add OpenStreetMap tile layer
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-                    maxZoom: 18,
-                    minZoom: 2
+                    maxZoom: 19,
+                    minZoom: 3
                 }).addTo(map);
 
                 // Initialize marker cluster group with simpler settings
@@ -1798,17 +1822,23 @@
                 });
                 map.addLayer(markerClusterGroup);
 
-                // Force map to render properly
+                // CRITICAL: Invalidate size IMMEDIATELY after creation
+                map.invalidateSize();
+                console.log('✅ Map invalidateSize() called immediately');
+
+                // Then invalidate again after short delay as safety measure
                 setTimeout(() => {
-                    map.invalidateSize();
-                    console.log('Map size invalidated and rendered');
-                }, 500);
+                    if (map) {
+                        map.invalidateSize();
+                        console.log('✅ Map invalidateSize() called again (safety)');
+                    }
+                }, 100); // Much shorter delay - just 100ms
 
                 if (mapError) mapError.style.display = 'none';
-                console.log('Map initialized successfully with clustering at Toronto view');
+                console.log('✅ Map initialized successfully');
                 return true;
             } catch (error) {
-                console.error('Failed to initialize map:', error);
+                console.error('❌ Failed to initialize map:', error);
                 if (mapError) mapError.style.display = 'block';
                 return false;
             }
@@ -1890,7 +1920,7 @@
         // Update Map with Listings - Simplified and More Reliable
         async function updateMap(listings) {
             console.log('🗺️ Starting updateMap with', listings.length, 'listings');
-            
+
             // Ensure map is initialized
             if (!map || !markerClusterGroup) {
                 console.log('Map not ready, initializing...');
@@ -1900,6 +1930,12 @@
                 }
                 // Wait for map to be ready
                 await new Promise(resolve => setTimeout(resolve, 1000));
+            }
+
+            // ADDED: Ensure map size is correct before updating markers
+            if (map) {
+                map.invalidateSize();
+                console.log('🔄 Map size invalidated before marker update');
             }
 
             // Clear existing markers
@@ -5539,7 +5575,7 @@
             const mapBtn = document.getElementById('mapViewBtn');
             const listingsContainer = document.getElementById('listingsContainer');
             const mapContainer = document.getElementById('mapContainer');
-            
+
             if (mode === 'grid') {
                 gridBtn.className = 'px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium flex items-center gap-2';
                 mapBtn.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2';
@@ -5550,10 +5586,16 @@
                 gridBtn.className = 'px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2';
                 listingsContainer.classList.add('hidden');
                 mapContainer.classList.remove('hidden');
-                
-                // Initialize map if needed
+
+                // IMPROVED: Wait for browser reflow before initializing map
                 if (typeof initializeMap === 'function') {
-                    setTimeout(initializeMap, 100);
+                    // Use requestAnimationFrame to ensure DOM is fully rendered
+                    requestAnimationFrame(() => {
+                        setTimeout(() => {
+                            console.log('🗺️ Initializing map after container is fully visible...');
+                            initializeMap();
+                        }, 50); // Small additional delay after animation frame
+                    });
                 }
             }
         }
