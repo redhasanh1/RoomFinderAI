@@ -1,9 +1,11 @@
+console.log('🔥 Chat System Module Loading - Version 20260119');
+
 /**
  * RoomFinderAI Chat System Module
- * 
+ *
  * A comprehensive chat system module that provides real-time messaging functionality
  * with file upload, health monitoring, and seamless integration with Supabase.
- * 
+ *
  * Features:
  * - Real-time messaging with Supabase
  * - File upload and sharing (landlords only)
