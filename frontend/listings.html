@@ -1508,11 +1508,14 @@
                 <!-- Main Search Bar -->
                 <div class="mb-6">
                     <div class="relative">
-                        <svg class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                        </svg>
-                        <input type="text" id="searchLocation" placeholder="Search by city, neighborhood, or address..." 
-                               class="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-500 focus:outline-none transition">
+                        <input type="text" id="searchLocation" placeholder="Search by city, neighborhood, or address..."
+                               class="w-full pl-4 pr-14 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-purple-500 focus:outline-none transition">
+                        <button type="button" onclick="applySearchFilters()"
+                                class="absolute right-2 top-1/2 transform -translate-y-1/2 p-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition cursor-pointer">
+                            <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                        </button>
                     </div>
                 </div>
 
@@ -4934,17 +4937,15 @@
                 document.getElementById('searchBedrooms').value = allParams.get('bedrooms');
             }
             
-            // Set up search event listeners
-            const searchInputs = [
-                document.getElementById('searchLocation'),
+            // Set up filter event listeners for dropdowns only (NOT search location input)
+            const filterDropdowns = [
                 document.getElementById('searchMaxPrice'),
                 document.getElementById('searchRoomType'),
                 document.getElementById('searchBedrooms')
             ];
-            
-            searchInputs.forEach(input => {
+
+            filterDropdowns.forEach(input => {
                 if (input) {
-                    input.addEventListener('input', filterListings);
                     input.addEventListener('change', filterListings);
                 }
             });
@@ -5601,7 +5602,7 @@
                     document.getElementById('searchMaxPrice').value = value;
                     break;
                 case 'bedrooms':
-                    document.getElementById('searchBedrooms').value = value + '+';
+                    document.getElementById('searchBedrooms').value = value;
                     break;
                 case 'type':
                     document.getElementById('searchRoomType').value = value;
@@ -6305,10 +6306,9 @@
                         return;
                     }
 
-                    // Add search event listeners for real-time search
+                    // Add search event listener for Enter key only (no auto-search on typing)
                     const searchLocation = document.getElementById('searchLocation');
                     if (searchLocation) {
-                        searchLocation.addEventListener('input', debounceSearch);
                         searchLocation.addEventListener('keydown', (e) => {
                             if (e.key === 'Enter') {
                                 e.preventDefault();
