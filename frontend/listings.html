@@ -1255,7 +1255,13 @@
             <div class="desktop-nav hidden md:flex items-center space-x-8">
                 <!-- Home - Standalone -->
                 <a href="index.html" class="nav-item">Home</a>
-                
+
+                <!-- Dashboard - Standalone -->
+                <a href="dashboard.html" class="nav-item">Dashboard</a>
+
+                <!-- RoomPal - Standalone -->
+                <a href="roommate-matching.html" class="nav-item">RoomPal</a>
+
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
@@ -1296,8 +1302,13 @@
             </div>
             
             <!-- Desktop Auth -->
-            <div id="authSection" class="desktop-auth hidden md:block">
-                <!-- Will be populated by universal-auth-manager.js -->
+            <div class="desktop-auth hidden md:block">
+                <div id="authSection">
+                    <!-- Default content before JS loads -->
+                    <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
+                        Login/Register
+                    </a>
+                </div>
             </div>
         </nav>
         
