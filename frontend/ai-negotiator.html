@@ -12,6 +12,7 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="/frontend/notifications.js?v=20260120"></script>
     <script src="/frontend/ai-chat.js?v=20260119"></script>
     <script src="/frontend/ai-negotiation.js?v=20260119"></script>
     <script type="module" src="/frontend/chat-system.js?v=20260119"></script>
@@ -520,6 +521,80 @@
         .chat-container::-webkit-scrollbar-thumb:hover {
             background-color: #94a3b8;
         }
+
+        /* Notification Panel Styles */
+        .notification-panel {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            width: 400px;
+            max-height: 600px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .notification-panel.active {
+            display: flex;
+            animation: slideInRight 0.3s ease-out;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .notification-item {
+            padding: 16px;
+            border-bottom: 1px solid #e5e7eb;
+            transition: background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .notification-item:hover {
+            background-color: #f9fafb;
+        }
+
+        .notification-item.unread {
+            background-color: #eff6ff;
+        }
+
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 8px;
+            height: 8px;
+            background-color: #3b82f6;
+            border-radius: 50%;
+        }
+
+        .notification-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 999;
+            display: none;
+        }
+
+        .notification-overlay.active {
+            display: block;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -585,11 +660,22 @@
             </div>
             
             <!-- Desktop Auth -->
-            <div id="authSection" class="desktop-auth hidden md:block">
-                <!-- Default content before JS loads -->
-                <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                    Login/Register
-                </a>
+            <div class="desktop-auth hidden md:flex items-center gap-4">
+                <!-- Notification Bell -->
+                <div id="notificationBell" class="relative cursor-pointer hidden" onclick="toggleNotificationPanel()">
+                    <svg class="w-6 h-6 text-gray-700 hover:text-purple-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                    </svg>
+                    <span id="notificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+                </div>
+
+                <!-- Auth Section -->
+                <div id="authSection">
+                    <!-- Default content before JS loads -->
+                    <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                        Login/Register
+                    </a>
+                </div>
             </div>
         </nav>
         
@@ -1098,9 +1184,24 @@
                 // Make aiChat globally accessible for sidebar button clicks
                 window.aiChat = aiNegotiator;
 
+                // Initialize notification service
+                if (currentUser?.email && window.NotificationService) {
+                    console.log('📬 Initializing notification service...');
+                    window.notificationService = new NotificationService(supabaseClient, currentUser.email);
+
+                    // Setup notification UI updates
+                    window.notificationService.addListener(updateNotificationUI);
+
+                    // Show notification bell
+                    const notificationBell = document.getElementById('notificationBell');
+                    if (notificationBell) {
+                        notificationBell.classList.remove('hidden');
+                    }
+                }
+
                 // Setup message input handling
                 setupMessageHandling();
-                
+
                 console.log('AI Negotiator initialized successfully with database integration!');
                 
             } catch (error) {
@@ -1445,14 +1546,145 @@
         function sendQuickMessage(message) {
             const messageInput = document.getElementById('messageInput');
             const sendButton = document.getElementById('sendButton');
-            
+
             if (messageInput && sendButton) {
                 messageInput.value = message;
                 // Trigger the send button click to use existing send functionality
                 sendButton.click();
             }
         }
+
+        // Notification Panel Functions
+        function toggleNotificationPanel() {
+            const panel = document.getElementById('notificationPanel');
+            const overlay = document.getElementById('notificationOverlay');
+
+            if (panel && overlay) {
+                const isActive = panel.classList.contains('active');
+
+                if (isActive) {
+                    panel.classList.remove('active');
+                    overlay.classList.remove('active');
+                } else {
+                    panel.classList.add('active');
+                    overlay.classList.add('active');
+                }
+            }
+        }
+
+        function closeNotificationPanel() {
+            const panel = document.getElementById('notificationPanel');
+            const overlay = document.getElementById('notificationOverlay');
+
+            if (panel && overlay) {
+                panel.classList.remove('active');
+                overlay.classList.remove('active');
+            }
+        }
+
+        function updateNotificationUI({ notifications, unreadCount }) {
+            // Update badge
+            const badge = document.getElementById('notificationBadge');
+            if (badge) {
+                if (unreadCount > 0) {
+                    badge.textContent = unreadCount > 99 ? '99+' : unreadCount;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+
+            // Update notification list
+            const list = document.getElementById('notificationList');
+            if (!list) return;
+
+            if (notifications.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                        </svg>
+                        <p class="text-sm">No notifications yet</p>
+                        <p class="text-xs text-gray-400 mt-2">You'll be notified when landlords reply</p>
+                    </div>
+                `;
+                return;
+            }
+
+            list.innerHTML = notifications.map(notification => {
+                const typeIcon = notification.type === 'negotiation_success' ? '🎉' :
+                                notification.type === 'landlord_reply' ? '💬' : '📬';
+                const timeAgo = formatTimeAgo(new Date(notification.timestamp));
+
+                return `
+                    <div class="notification-item relative ${notification.read ? '' : 'unread'}"
+                         onclick="handleNotificationClick('${notification.id}')">
+                        <div class="flex items-start gap-3 ${notification.read ? '' : 'pl-4'}">
+                            <span class="text-2xl">${typeIcon}</span>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-semibold text-gray-800">${notification.title}</h4>
+                                <p class="text-xs text-gray-600 mt-1 line-clamp-2">${notification.message}</p>
+                                <span class="text-xs text-gray-400 mt-1 block">${timeAgo}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+
+            return date.toLocaleDateString();
+        }
+
+        function handleNotificationClick(notificationId) {
+            if (window.notificationService) {
+                window.notificationService.markAsRead(notificationId);
+            }
+
+            // Optionally navigate to related content
+            console.log('Notification clicked:', notificationId);
+        }
+
+        function markAllNotificationsRead() {
+            if (window.notificationService) {
+                window.notificationService.markAllAsRead();
+            }
+        }
     </script>
+
+    <!-- Notification Panel -->
+    <div class="notification-overlay" id="notificationOverlay" onclick="closeNotificationPanel()"></div>
+    <div class="notification-panel" id="notificationPanel">
+        <div class="p-4 border-b border-gray-200 flex items-center justify-between bg-gradient-to-r from-purple-50 to-blue-50">
+            <h3 class="font-bold text-gray-800">🔔 Notifications</h3>
+            <div class="flex items-center gap-2">
+                <button onclick="markAllNotificationsRead()" class="text-xs text-blue-600 hover:text-blue-800">
+                    Mark all read
+                </button>
+                <button onclick="closeNotificationPanel()" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div id="notificationList" class="flex-1 overflow-y-auto">
+            <div class="text-center py-12 text-gray-500">
+                <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
+                </svg>
+                <p class="text-sm">No notifications yet</p>
+                <p class="text-xs text-gray-400 mt-2">You'll be notified when landlords reply</p>
+            </div>
+        </div>
+    </div>
 
     <!-- Chat Modal -->
     <div id="chatModal" class="chat-modal">

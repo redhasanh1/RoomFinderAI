@@ -483,14 +483,14 @@ class AINegotiator {
                                     landlordReply: message.content,
                                     aiResponse: response
                                 };
-                                
-                                const existingBackups = JSON.parse(null || '[]');
+
+                                const existingBackups = JSON.parse(localStorage.getItem('negotiation_backups') || '[]');
                                 existingBackups.push(backupData);
                                 // Keep only last 10 items
                                 if (existingBackups.length > 10) {
                                     existingBackups.splice(0, existingBackups.length - 10);
                                 }
-                                // localStorage removed - using Supabase);
+                                localStorage.setItem('negotiation_backups', JSON.stringify(existingBackups));
                                 console.log('✅ Backup stored in localStorage');
                             } catch (storageError) {
                                 console.log('Storage backup failed:', storageError.message);
