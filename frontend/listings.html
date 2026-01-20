@@ -4743,16 +4743,17 @@
         // Simple listing card for fallback
         function displaySimpleListingCard(listing, container) {
             const listingDiv = document.createElement('div');
-            listingDiv.className = 'bg-white rounded-lg shadow-md p-6 border border-gray-200';
+            listingDiv.className = 'listing-card bg-white rounded-lg shadow-md p-6 border border-gray-200';
 
             listingDiv.innerHTML = `
                 <h3 class="text-lg font-bold text-gray-900 mb-2">${listing.title || 'Untitled Listing'}</h3>
-                <p class="text-xl font-bold text-blue-600 mb-2">$${listing.price || 'N/A'}/month</p>
+                <p class="listing-price text-xl font-bold text-blue-600 mb-2">$${listing.price || 'N/A'}/month</p>
                 <p class="text-gray-600 mb-3">${listing.description || 'No description available'}</p>
-                <p class="text-sm text-gray-500 mb-3">${listing.location || listing.city || 'Location not specified'}</p>
+                <p class="listing-location text-sm text-gray-500 mb-3">${listing.location || listing.city || 'Location not specified'}</p>
                 <div class="flex items-center space-x-4 text-sm text-gray-500">
-                    <span>${listing.bedrooms || 0} bed${(listing.bedrooms || 0) !== 1 ? 's' : ''}</span>
+                    <span class="listing-bedrooms">${listing.bedrooms || 0} bed${(listing.bedrooms || 0) !== 1 ? 's' : ''}</span>
                     <span>${listing.bathrooms || 0} bath${(listing.bathrooms || 0) !== 1 ? 's' : ''}</span>
+                    <span class="listing-type" style="display:none">${listing.house_type || ''}</span>
                 </div>
             `;
 
@@ -5024,30 +5025,34 @@
                 
                 // Check location
                 if (location) {
-                    const cardLocation = card.querySelector('.listing-location').textContent.toLowerCase();
+                    const cardLocationEl = card.querySelector('.listing-location');
+                    const cardLocation = cardLocationEl?.textContent?.toLowerCase() || '';
                     if (!cardLocation.includes(location)) {
                         matches = false;
                     }
                 }
-                
+
                 // Check price
-                const priceText = card.querySelector('.listing-price').textContent;
-                const price = parseInt(priceText.replace(/[^\d]/g, ''));
+                const priceEl = card.querySelector('.listing-price');
+                const priceText = priceEl?.textContent || '0';
+                const price = parseInt(priceText.replace(/[^\d]/g, '')) || 0;
                 if (price > maxPrice) {
                     matches = false;
                 }
-                
+
                 // Check room type
                 if (roomType) {
-                    const cardType = card.querySelector('.listing-type').textContent;
+                    const cardTypeEl = card.querySelector('.listing-type');
+                    const cardType = cardTypeEl?.textContent || '';
                     if (cardType !== roomType) {
                         matches = false;
                     }
                 }
-                
+
                 // Check bedrooms
                 if (bedrooms) {
-                    const cardBedrooms = card.querySelector('.listing-bedrooms').textContent;
+                    const cardBedroomsEl = card.querySelector('.listing-bedrooms');
+                    const cardBedrooms = cardBedroomsEl?.textContent || '';
                     if (!cardBedrooms.includes(bedrooms)) {
                         matches = false;
                     }
