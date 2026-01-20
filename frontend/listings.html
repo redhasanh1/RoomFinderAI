@@ -1620,12 +1620,25 @@
                         Map View
                     </button>
                 </div>
-                <button onclick="displayListings(true)" class="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                    </svg>
-                    Refresh
-                </button>
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label for="sortBy" class="text-sm text-gray-600 font-medium">Sort by:</label>
+                        <select id="sortBy" onchange="applySorting()"
+                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:border-purple-500 focus:outline-none bg-white cursor-pointer">
+                            <option value="newest">Newest First</option>
+                            <option value="price_low">Price: Low to High</option>
+                            <option value="price_high">Price: High to Low</option>
+                            <option value="bedrooms_high">Bedrooms: Most First</option>
+                            <option value="bedrooms_low">Bedrooms: Fewest First</option>
+                        </select>
+                    </div>
+                    <button onclick="displayListings(true)" class="text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
             </div>
             
             <!-- Listings Container -->
@@ -2487,10 +2500,24 @@
                     try {
                         console.log(`🔍 Executing Supabase query (attempt ${retryCount + 1}/${maxRetries})...`);
                         const startTime = Date.now();
+
+                        // Get sort preference from dropdown
+                        const sortBy = document.getElementById('sortBy')?.value || 'newest';
+                        let orderColumn = 'created_at';
+                        let ascending = false;
+
+                        switch(sortBy) {
+                            case 'price_low': orderColumn = 'price'; ascending = true; break;
+                            case 'price_high': orderColumn = 'price'; ascending = false; break;
+                            case 'bedrooms_high': orderColumn = 'bedrooms'; ascending = false; break;
+                            case 'bedrooms_low': orderColumn = 'bedrooms'; ascending = true; break;
+                            default: orderColumn = 'created_at'; ascending = false;
+                        }
+
                         const { data, error } = await supabase
                             .from('listings')
                             .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
-                            .order('created_at', { ascending: false })
+                            .order(orderColumn, { ascending: ascending })
                             .limit(50);
 
                         const queryTime = Date.now() - startTime;
@@ -2617,6 +2644,12 @@
                 }
             }
             console.log('🖼️ Lazy image loading complete');
+        }
+
+        // Apply sorting and refresh listings
+        function applySorting() {
+            console.log('🔄 Sort option changed, refreshing listings...');
+            displayListings(true);
         }
 
         // Display listings
