@@ -4540,20 +4540,42 @@
                     </div>
                 `;
 
-                // Step 5: Build and execute search query
-                let searchResults = await executeSearchQuery(searchSupabase, {
-                    location, maxPrice, roomType, bedrooms
-                });
+                // Step 5: Build and execute search query with timeout
+                const searchTimeout = new Promise((_, reject) =>
+                    setTimeout(() => reject(new Error('Search timeout')), 10000)
+                );
+
+                let searchResults;
+                try {
+                    searchResults = await Promise.race([
+                        executeSearchQuery(searchSupabase, { location, maxPrice, roomType, bedrooms }),
+                        searchTimeout
+                    ]);
+                } catch (timeoutError) {
+                    console.warn('🔍 Primary search timed out, trying fallback...');
+                    searchResults = null;
+                }
 
                 // Step 6: Handle search results
                 if (searchResults === null) {
-                    // Search failed, try fallback
+                    // Search failed or timed out, try fallback
                     console.log('🔍 Primary search failed, trying fallback...');
-                    searchResults = await executeSimpleSearch(searchSupabase);
+                    try {
+                        const fallbackTimeout = new Promise((_, reject) =>
+                            setTimeout(() => reject(new Error('Fallback timeout')), 5000)
+                        );
+                        searchResults = await Promise.race([
+                            executeSimpleSearch(searchSupabase),
+                            fallbackTimeout
+                        ]);
+                    } catch (fallbackError) {
+                        console.warn('🔍 Fallback search also timed out');
+                        searchResults = [];
+                    }
                 }
 
                 // Step 7: Display results
-                displaySearchResults(searchResults, searchElements.container);
+                displaySearchResults(searchResults || [], searchElements.container);
 
             } catch (error) {
                 console.error('🔍 Search system error:', error);
