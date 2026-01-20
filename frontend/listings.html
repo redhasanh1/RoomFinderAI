@@ -4587,10 +4587,9 @@
                 if (criteria.location) {
                     // Try different location field combinations
                     const locationPatterns = [
-                        `location.ilike.%${criteria.location}%`,
                         `city.ilike.%${criteria.location}%`,
                         `street.ilike.%${criteria.location}%`,
-                        `postal_code.ilike.%${criteria.location}%`,
+                        `postalCode.ilike.%${criteria.location}%`,
                         `title.ilike.%${criteria.location}%`,
                         `description.ilike.%${criteria.location}%`
                     ];
