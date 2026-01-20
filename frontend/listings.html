@@ -4844,12 +4844,12 @@
                 <img src="${primaryImage}" alt="${listing.title}" class="listing-image" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZmY2Njc3Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iI2ZmZmZmZiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkltYWdlIE5vdCBBdmFpbGFibGU8L3RleHQ+PC9zdmc+'">
                 <div class="p-4">
                     <h3 class="text-lg font-semibold text-gray-800 truncate">${listing.title}</h3>
-                    <p class="text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
-                    <p class="text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
+                    <p class="listing-price text-xl font-bold text-blue-600">$${listing.price.toLocaleString()}/mo</p>
+                    <p class="listing-location text-gray-600 text-sm">${listing.street}, ${listing.city}, ${listing.postalCode}</p>
                     <div class="flex items-center space-x-2 text-sm text-gray-600 mt-2">
-                        <span>${listing.bedrooms} Bed</span>
+                        <span class="listing-bedrooms">${listing.bedrooms} Bed</span>
                         <span>•</span>
-                        <span>${listing.house_type}</span>
+                        <span class="listing-type">${listing.house_type}</span>
                         <span>•</span>
                         <span>${listing.utilities}</span>
                     </div>
