@@ -6271,6 +6271,12 @@
                     const searchLocation = document.getElementById('searchLocation');
                     if (searchLocation) {
                         searchLocation.addEventListener('input', debounceSearch);
+                        searchLocation.addEventListener('keydown', (e) => {
+                            if (e.key === 'Enter') {
+                                e.preventDefault();
+                                applySearchFilters();
+                            }
+                        });
                     }
 
                     // Initialize search with "show all" by default
