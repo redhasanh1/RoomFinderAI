@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <defs>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+
+  <!-- House body (filled rectangle) -->
+  <rect x="6" y="14" width="14" height="12" rx="1" fill="url(#brandGradient)"/>
+
+  <!-- Roof (filled triangle) -->
+  <polygon points="13,5 3,15 23,15" fill="url(#brandGradient)"/>
+
+  <!-- Door -->
+  <rect x="10" y="18" width="5" height="8" rx="0.5" fill="white" opacity="0.9"/>
+
+  <!-- Window -->
+  <rect x="8" y="16" width="3" height="3" rx="0.3" fill="white" opacity="0.7"/>
+
+  <!-- Magnifying glass circle -->
+  <circle cx="24" cy="22" r="5" fill="none" stroke="url(#brandGradient)" stroke-width="2.5"/>
+
+  <!-- Magnifying glass inner fill (subtle) -->
+  <circle cx="24" cy="22" r="3.5" fill="white" opacity="0.3"/>
+
+  <!-- Magnifying glass handle -->
+  <line x1="27.5" y1="25.5" x2="31" y2="29" stroke="url(#brandGradient)" stroke-width="2.5" stroke-linecap="round"/>
+</svg>
