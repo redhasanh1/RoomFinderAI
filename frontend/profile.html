@@ -1829,11 +1829,8 @@
         }
 
         function viewListing(id) {
-            // Store the listing ID to auto-open on listings page
-            sessionStorage.setItem('autoOpenListingId', id);
-            
-            // Navigate to listings page immediately
-            window.location.href = `listings.html`;
+            // Navigate to listing details page with the listing ID
+            window.location.href = `listing_details.html?id=${id}`;
         }
 
         function unsaveListing(id) {
