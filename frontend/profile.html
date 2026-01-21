@@ -1928,7 +1928,7 @@
             try {
                 console.log('🔄 Attempting to save profile image to backend for:', email);
                 console.log('📸 Image data length:', imageData.length);
-                
+
                 const response = await fetch('/api/update-profile-image', {
                     method: 'POST',
                     headers: {
@@ -1939,43 +1939,95 @@
                         profileImage: imageData
                     })
                 });
-                
+
                 console.log('📡 Backend response status:', response.status);
                 const responseText = await response.text();
                 console.log('📡 Backend response:', responseText);
-                
+
                 if (response.ok) {
                     console.log('✅ Profile image saved to database for user:', email);
+                    showNotification('Profile image saved successfully!', 'success');
+
+                    // Parse response to get the storage URL
+                    try {
+                        const result = JSON.parse(responseText);
+                        if (result.profileImage && result.profileImage.startsWith('http')) {
+                            // Update localStorage with the Supabase Storage URL instead of base64
+                            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                            currentUser.profileImage = result.profileImage;
+                            currentUser.hasCustomProfileImage = true;
+                            safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
+                            console.log('✅ Updated localStorage with storage URL:', result.profileImage);
+
+                            // Also update the displayed image to use the URL
+                            document.getElementById('profileImage').src = result.profileImage;
+                        }
+                    } catch (parseError) {
+                        console.log('ℹ️ Could not parse response for URL update');
+                    }
                 } else {
                     console.error('❌ Failed to save profile image to database. Status:', response.status, 'Response:', responseText);
+                    showNotification('Failed to save profile image. Please try again.', 'error');
                 }
             } catch (error) {
                 console.error('❌ Error saving profile image to database:', error);
+                showNotification('Error saving profile image. Please try again.', 'error');
             }
+        }
+
+        function showNotification(message, type) {
+            // Remove existing notification
+            const existing = document.getElementById('profile-notification');
+            if (existing) existing.remove();
+
+            const notification = document.createElement('div');
+            notification.id = 'profile-notification';
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 24px;
+                border-radius: 12px;
+                color: white;
+                font-weight: 500;
+                z-index: 10000;
+                animation: slideIn 0.3s ease;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+                ${type === 'success' ? 'background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);' : 'background: linear-gradient(135deg, #ff416c 0%, #ff4b2b 100%);'}
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                notification.style.transform = 'translateX(100px)';
+                notification.style.transition = 'all 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
         }
 
         function uploadProfileImage(event) {
             const file = event.target.files[0];
             if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const imageData = e.target.result;
+                // Check file size - warn if over 5MB
+                if (file.size > 5 * 1024 * 1024) {
+                    showNotification('Image is large. Compressing...', 'success');
+                }
+
+                // Compress image before upload
+                compressImage(file, 800, 0.8).then(compressedData => {
+                    const imageData = compressedData;
                     document.getElementById('profileImage').src = imageData;
 
-                    // Save profile image to localStorage for the current user
+                    // Save profile image to localStorage for the current user (temporarily)
                     const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                    currentUser.profileImage = imageData;
-                    currentUser.hasCustomProfileImage = true; // Flag to indicate custom upload
-                    safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
-
-                    // Also update in the users array if it exists
-                    const users = JSON.parse(localStorage.getItem('users')) || [];
-                    const userIndex = users.findIndex(u => u.email === currentUser.email);
-                    if (userIndex !== -1) {
-                        users[userIndex].profileImage = imageData;
-                        users[userIndex].hasCustomProfileImage = true;
-                        safeLocalStorageSetItem('users', JSON.stringify(users));
+                    // Don't save huge base64 to localStorage - just mark that upload is in progress
+                    currentUser.hasCustomProfileImage = true;
+                    // Only store small base64 (under 100KB) in localStorage as fallback
+                    if (imageData.length < 100000) {
+                        currentUser.profileImage = imageData;
                     }
+                    safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
 
                     // Update the header profile logo immediately
                     const profileLogo = document.getElementById('profileLogo');
@@ -1984,15 +2036,53 @@
                         console.log('✅ Updated header profile logo');
                     }
 
-                    console.log('✅ Profile image saved locally for user:', currentUser.email);
-                    console.log('💾 localStorage currentUser:', JSON.stringify(currentUser, null, 2));
-                    console.log('💾 localStorage users array:', localStorage.getItem('users'));
+                    console.log('✅ Profile image prepared for upload, user:', currentUser.email);
+                    console.log('📸 Compressed image size:', Math.round(imageData.length / 1024), 'KB');
 
-                    // Also save to backend database
+                    // Save to backend database - this will return the URL to store
                     saveProfileImageToBackend(currentUser.email, imageData);
-                };
-                reader.readAsDataURL(file);
+                }).catch(error => {
+                    console.error('Image compression failed:', error);
+                    showNotification('Failed to process image. Please try again.', 'error');
+                });
             }
+        }
+
+        // Compress image to reduce size
+        function compressImage(file, maxWidth, quality) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = new Image();
+                    img.onload = function() {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+
+                        // Calculate new dimensions
+                        if (width > maxWidth) {
+                            height = Math.round((height * maxWidth) / width);
+                            width = maxWidth;
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        // Convert to compressed JPEG
+                        const compressedData = canvas.toDataURL('image/jpeg', quality);
+                        console.log('📸 Original size:', Math.round(e.target.result.length / 1024), 'KB');
+                        console.log('📸 Compressed size:', Math.round(compressedData.length / 1024), 'KB');
+                        resolve(compressedData);
+                    };
+                    img.onerror = reject;
+                    img.src = e.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
         }
 
         // Navigation functions
