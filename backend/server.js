@@ -7360,10 +7360,25 @@ async function initializeStorage() {
             }
         }
         
-        // Check for profile-images bucket (should already exist)
+        // Check for profile-images bucket - CREATE IT if it doesn't exist!
         const profileImagesBucketExists = buckets?.some(bucket => bucket.name === 'profile-images');
         console.log('🔍 profile-images bucket exists:', profileImagesBucketExists);
-        
+
+        if (!profileImagesBucketExists) {
+            console.log('📦 Creating profile-images bucket...');
+            const { data: newBucket, error: createError } = await supabase.storage.createBucket('profile-images', {
+                public: true, // Public so profile images can be displayed
+                fileSizeLimit: 5242880, // 5MB max
+                allowedMimeTypes: ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
+            });
+
+            if (createError) {
+                console.error('❌ Failed to create profile-images bucket:', createError);
+            } else {
+                console.log('✅ Created profile-images bucket successfully');
+            }
+        }
+
     } catch (error) {
         console.error('❌ Storage initialization failed:', error);
     }
