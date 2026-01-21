@@ -979,6 +979,12 @@
         body.mobile-menu-open {
             overflow: hidden;
         }
+
+        /* Hide hamburger button when menu is open (avoids duplicate X) */
+        body.mobile-menu-open .mobile-menu-btn {
+            opacity: 0;
+            pointer-events: none;
+        }
         
         /* Responsive Design - Updated */
         @media (max-width: 767px) {
