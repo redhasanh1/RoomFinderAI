@@ -5045,21 +5045,9 @@ function formatTimeAgo(date) {
     return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
 }
 
-// API: Upload and verify government ID
+// API: Upload government ID for manual review (FREE - no Azure required)
 app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) => {
     try {
-        // Try to reinitialize Azure clients if they're not available
-        reinitializeAzureClients();
-        
-        if (!documentClient) {
-            console.log('⚠️ ID verification attempted but Azure Document Intelligence not configured');
-            return res.status(503).json({ 
-                error: 'ID verification service not available',
-                message: 'The ID verification service is currently not configured. Please contact support.',
-                serviceAvailable: false
-            });
-        }
-
         if (!req.file) {
             return res.status(400).json({ error: 'ID document image is required' });
         }
@@ -5069,179 +5057,72 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             return res.status(400).json({ error: 'User email is required' });
         }
 
-        console.log('Processing ID verification for:', userEmail);
-        console.log('File info:', { 
-            originalname: req.file.originalname, 
-            mimetype: req.file.mimetype, 
-            size: req.file.size 
+        // Basic file validation
+        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];
+        if (!allowedTypes.includes(req.file.mimetype)) {
+            return res.status(400).json({ error: 'Invalid file type. Please upload a JPG, PNG, or PDF.' });
+        }
+
+        if (req.file.size > 10 * 1024 * 1024) { // 10MB limit
+            return res.status(400).json({ error: 'File too large. Maximum size is 10MB.' });
+        }
+
+        console.log('📋 Processing ID upload for manual review:', userEmail);
+        console.log('File info:', {
+            originalname: req.file.originalname,
+            mimetype: req.file.mimetype,
+            size: req.file.size
         });
 
-        // Analyze the government ID using Azure Document Intelligence
-        const poller = await documentClient.beginAnalyzeDocument(
-            'prebuilt-idDocument',
-            req.file.buffer,
-            {
-                contentType: req.file.mimetype
-            }
-        );
+        let idDocumentPath = null;
+        let idDocumentBase64 = null;
 
-        const result = await poller.pollUntilDone();
-        
-        if (!result.documents || result.documents.length === 0) {
-            return res.status(400).json({ error: 'No valid government ID found in the image' });
-        }
-
-        const document = result.documents[0];
-        const extractedData = {};
-
-        // Extract key information from the ID
-        if (document.fields) {
-            if (document.fields.FirstName?.content) {
-                extractedData.firstName = document.fields.FirstName.content;
-            }
-            if (document.fields.LastName?.content) {
-                extractedData.lastName = document.fields.LastName.content;
-            }
-            if (document.fields.DateOfBirth?.content) {
-                extractedData.dateOfBirth = document.fields.DateOfBirth.content;
-            }
-            if (document.fields.DocumentNumber?.content) {
-                extractedData.documentNumber = document.fields.DocumentNumber.content;
-            }
-            if (document.fields.CountryRegion?.content) {
-                extractedData.country = document.fields.CountryRegion.content;
-            }
-        }
-
-        // Validate that this is actually a government ID document
-        // Check if we have at least the essential fields that every government ID should have
-        const hasRequiredFields = extractedData.firstName && extractedData.lastName && 
-                                 (extractedData.dateOfBirth || extractedData.documentNumber);
-        
-        if (!hasRequiredFields) {
-            return res.status(400).json({ 
-                error: 'This image does not appear to be a valid government ID document. Please upload a clear photo of your driver\'s license, passport, or state ID.' 
-            });
-        }
-
-        // Additional validation: check document confidence
-        if (document.confidence && document.confidence < 0.5) {
-            return res.status(400).json({ 
-                error: 'Document quality is too low or document type not recognized. Please upload a clear, high-quality photo of your government ID.' 
-            });
-        }
-
-        // Store verification status in database and save ID document to Supabase Storage
+        // Store in Supabase Storage
         if (supabase) {
             try {
-                // Try to upload ID document to Supabase Storage, fallback to base64 if needed
-                const fileName = `${userEmail}-${Date.now()}-id-document.${req.file.mimetype.split('/')[1]}`;
-                let idDocumentPath = null;
-                let idDocumentBase64 = null;
-                
-                try {
-                    // First, ensure the govdocs bucket exists
-                    console.log('🔍 Checking for govdocs bucket...');
-                    console.log('📧 User email:', userEmail);
-                    console.log('📄 File details:', {
-                        originalname: req.file.originalname,
-                        mimetype: req.file.mimetype,
-                        size: req.file.size
+                const fileName = `${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}-${Date.now()}-id.${req.file.mimetype.split('/')[1] || 'jpg'}`;
+
+                // Ensure govdocs bucket exists
+                const { data: buckets } = await supabase.storage.listBuckets();
+                const govdocsBucketExists = buckets?.some(bucket => bucket.name === 'govdocs');
+
+                if (!govdocsBucketExists) {
+                    console.log('📦 Creating govdocs bucket...');
+                    await supabase.storage.createBucket('govdocs', {
+                        public: false,
+                        allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
+                        fileSizeLimit: 10485760
                     });
-                    
-                    const { data: buckets, error: listError } = await supabase.storage.listBuckets();
-                    
-                    if (listError) {
-                        console.error('❌ Error listing buckets:', listError);
-                        console.log('📝 List buckets error details:', {
-                            message: listError.message,
-                            details: listError.details,
-                            hint: listError.hint,
-                            code: listError.code
-                        });
-                    }
-                    
-                    console.log('📋 Available buckets:', buckets?.map(b => b.name) || 'None');
-                    const govdocsBucketExists = buckets?.some(bucket => bucket.name === 'govdocs');
-                    console.log('🔍 govdocs bucket exists:', govdocsBucketExists);
-                    
-                    if (!govdocsBucketExists) {
-                        console.log('📦 Creating govdocs bucket...');
-                        const { data: newBucket, error: createError } = await supabase.storage.createBucket('govdocs', {
-                            public: false,
-                            allowedMimeTypes: ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'],
-                            fileSizeLimit: 10485760 // 10MB
-                        });
-                        
-                        if (createError) {
-                            console.error('❌ Failed to create govdocs bucket:', createError);
-                            console.log('📝 Create bucket error details:', {
-                                message: createError.message,
-                                details: createError.details,
-                                hint: createError.hint,
-                                code: createError.code
-                            });
-                            throw new Error(`Failed to create secure storage bucket: ${createError.message}`);
-                        }
-                        
-                        console.log('✅ Created govdocs bucket successfully:', newBucket);
-                    }
-
-                    // Upload to govdocs bucket using direct API (same approach as listings)
-                    console.log('📁 Uploading to govdocs bucket, filename:', fileName);
-                    const storageApiUrl = `${process.env.SUPABASE_URL || config.SUPABASE_URL}/storage/v1/object/govdocs`;
-                    
-                    const formData = new FormData();
-                    const fileBlob = new Blob([req.file.buffer], { type: req.file.mimetype });
-                    formData.append('file', fileBlob, fileName);
-                    formData.append('cacheControl', '3600');
-                    formData.append('upsert', 'false');
-
-                    const uploadResponse = await fetch(`${storageApiUrl}/${fileName}`, {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': `Bearer ${process.env.SUPABASE_ANON_KEY || config.SUPABASE_ANON_KEY}`,
-                            'apikey': process.env.SUPABASE_ANON_KEY || config.SUPABASE_ANON_KEY
-                        },
-                        body: formData
-                    });
-
-                    if (!uploadResponse.ok) {
-                        const errorText = await uploadResponse.text();
-                        console.error('❌ Direct API upload error:', errorText);
-                        throw new Error(`Upload failed: ${uploadResponse.status} - ${errorText}`);
-                    }
-
-                    idDocumentPath = fileName;
-                    console.log('✅ ID document uploaded to govdocs storage:', fileName);
-                    
-                    // Verify upload by checking the file exists
-                    const publicUrl = `${process.env.SUPABASE_URL || config.SUPABASE_URL}/storage/v1/object/govdocs/${fileName}`;
-                    console.log('📊 Document stored at:', publicUrl);
-                    
-                    // Verify the file was actually uploaded by trying to list it
-                    const { data: listData, error: fileListError } = await supabase.storage
-                        .from('govdocs')
-                        .list('', { limit: 10 });
-                    
-                    if (fileListError) {
-                        console.error('❌ Error listing files in govdocs:', fileListError);
-                    } else {
-                        console.log('📋 Files in govdocs bucket:', listData?.map(f => f.name) || 'None');
-                    }
-                } catch (storageError) {
-                    console.log('⚠️ Storage upload failed, falling back to base64 storage');
-                    console.error('Storage error details:', storageError);
-                    
-                    // Fallback: store as base64 in database
-                    idDocumentBase64 = req.file.buffer.toString('base64');
-                    console.log('📦 Using base64 fallback storage');
                 }
-                
-                // Store verification data with either storage path or base64
+
+                // Upload file
+                const { data: uploadData, error: uploadError } = await supabase.storage
+                    .from('govdocs')
+                    .upload(fileName, req.file.buffer, {
+                        contentType: req.file.mimetype,
+                        upsert: true
+                    });
+
+                if (uploadError) {
+                    console.error('Storage upload error:', uploadError);
+                    // Fallback to base64
+                    idDocumentBase64 = req.file.buffer.toString('base64');
+                } else {
+                    idDocumentPath = fileName;
+                    console.log('✅ ID document uploaded to storage:', fileName);
+                }
+            } catch (storageError) {
+                console.error('Storage error:', storageError);
+                idDocumentBase64 = req.file.buffer.toString('base64');
+            }
+
+            // Save verification record with "pending_review" status
+            try {
                 const verificationData = {
-                    ...extractedData,
-                    id_document_mimetype: req.file.mimetype
+                    id_document_mimetype: req.file.mimetype,
+                    original_filename: req.file.originalname,
+                    file_size: req.file.size,
+                    uploaded_at: new Date().toISOString()
                 };
 
                 if (idDocumentPath) {
@@ -5256,9 +5137,9 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                     .from('user_verifications')
                     .upsert({
                         user_email: userEmail,
-                        id_verification_status: 'verified',
+                        id_verification_status: 'pending_review',
                         id_verification_data: verificationData,
-                        id_verified_at: new Date().toISOString()
+                        submitted_at: new Date().toISOString()
                     });
 
                 if (verificationError) {
@@ -5269,44 +5150,27 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             }
         }
 
-        // Log verification activity
-        await logUserActivity(userEmail, 'id_verified', 'Government ID successfully verified', {
-            document_type: document.docType,
-            extracted_data: extractedData
-        });
+        // Log activity
+        await logUserActivity(userEmail, 'id_submitted', 'Government ID submitted for review');
 
         res.json({
             success: true,
-            message: 'Government ID verified successfully',
-            extractedData: extractedData,
-            documentType: document.docType,
-            confidence: document.confidence
+            message: 'Your ID has been submitted for verification. You will be notified once reviewed.',
+            status: 'pending_review'
         });
 
     } catch (error) {
-        console.error('ID verification error:', error);
-        res.status(500).json({ 
-            error: 'ID verification failed', 
-            details: error.message 
+        console.error('ID upload error:', error);
+        res.status(500).json({
+            error: 'Failed to upload ID',
+            details: error.message
         });
     }
 });
 
-// API: Face verification against stored ID
+// API: Upload selfie photo for manual verification (FREE - no Azure)
 app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) => {
     try {
-        // Try to reinitialize Azure clients if they're not available
-        reinitializeAzureClients();
-        
-        if (!faceClient || !documentClient) {
-            console.log('⚠️ Face verification attempted but Azure services not configured');
-            return res.status(503).json({ 
-                error: 'Face verification service not available',
-                message: 'The face verification service is currently not configured. Please contact support.',
-                serviceAvailable: false
-            });
-        }
-
         if (!req.file) {
             return res.status(400).json({ error: 'Face photo is required' });
         }
@@ -5316,160 +5180,148 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
             return res.status(400).json({ error: 'User email is required' });
         }
 
-        console.log('Processing face verification for:', userEmail);
+        console.log('📸 Processing selfie upload for:', userEmail);
 
-        // First, check if user has completed ID verification and get the stored ID document
         if (!supabase) {
             return res.status(503).json({ error: 'Database service not available' });
         }
 
+        // Check if user has submitted ID first
         const { data: verification, error: verificationError } = await supabase
             .from('user_verifications')
-            .select('id_verification_status, id_verification_data')
+            .select('id_verification_status')
             .eq('user_email', userEmail)
             .single();
 
-        if (verificationError || !verification || verification.id_verification_status !== 'verified') {
-            return res.status(400).json({ 
-                error: 'ID verification must be completed first before face verification' 
+        if (verificationError || !verification) {
+            return res.status(400).json({
+                error: 'Please submit your ID document first before uploading a selfie.'
             });
         }
 
-        // Get the stored ID document (either from storage or base64)
-        const storageMethod = verification.id_verification_data?.storage_method;
-        const idDocumentPath = verification.id_verification_data?.id_document_path;
-        const idDocumentBase64 = verification.id_verification_data?.id_document_image;
-        
-        let idDocumentBufferNode;
+        // Upload selfie to storage
+        try {
+            const fileName = `${userEmail.replace(/[^a-zA-Z0-9]/g, '_')}-${Date.now()}-selfie.${req.file.mimetype.split('/')[1] || 'jpg'}`;
 
-        if (storageMethod === 'supabase_storage' && idDocumentPath) {
-            // Download from Supabase Storage
-            console.log('📥 Downloading ID document from Supabase Storage:', idDocumentPath);
-            const { data: idDocumentData, error: downloadError } = await supabase.storage
+            const { error: uploadError } = await supabase.storage
                 .from('govdocs')
-                .download(idDocumentPath);
-
-            if (downloadError || !idDocumentData) {
-                console.error('Error downloading ID document:', downloadError);
-                return res.status(500).json({ 
-                    error: 'Failed to retrieve ID document for comparison' 
+                .upload(fileName, req.file.buffer, {
+                    contentType: req.file.mimetype,
+                    upsert: true
                 });
+
+            if (uploadError) {
+                console.error('Selfie upload error:', uploadError);
             }
 
-            // Convert the downloaded blob to buffer
-            const idDocumentBuffer = await idDocumentData.arrayBuffer();
-            idDocumentBufferNode = Buffer.from(idDocumentBuffer);
-            console.log('✅ ID document retrieved from storage');
-            
-        } else if (storageMethod === 'base64' && idDocumentBase64) {
-            // Convert base64 to buffer
-            console.log('📦 Using base64 stored ID document');
-            idDocumentBufferNode = Buffer.from(idDocumentBase64, 'base64');
-            console.log('✅ ID document retrieved from base64');
-            
-        } else {
-            return res.status(400).json({ 
-                error: 'ID document not found. Please complete ID verification again.' 
-            });
+            // Update verification record with selfie info
+            await supabase
+                .from('user_verifications')
+                .update({
+                    face_verification_status: 'pending_review',
+                    face_photo_path: fileName,
+                    selfie_submitted_at: new Date().toISOString()
+                })
+                .eq('user_email', userEmail);
+
+        } catch (storageError) {
+            console.error('Storage error:', storageError);
         }
 
-        // Perform liveness detection on the selfie photo first
-        console.log('🔍 Performing liveness detection on selfie...');
-        const livenessResult = await faceClient.face.detectWithStream(req.file.buffer, {
-            returnFaceId: true,
-            returnFaceLandmarks: false,
-            returnFaceAttributes: ['headPose', 'smile', 'facialHair', 'glasses', 'emotion', 'age', 'gender', 'makeup', 'accessories', 'blur', 'exposure', 'noise']
-        });
-
-        if (!livenessResult || livenessResult.length === 0) {
-            return res.status(400).json({ error: 'No face detected in selfie photo. Please take a clearer photo.' });
-        }
-
-        if (livenessResult.length > 1) {
-            return res.status(400).json({ error: 'Multiple faces detected in selfie. Please take a photo with only your face visible.' });
-        }
-
-        // Check for liveness indicators (these suggest a real person vs a photo)
-        const faceAttributes = livenessResult[0].faceAttributes;
-        const isLikelyLive = (
-            faceAttributes.blur?.blurLevel !== 'high' &&
-            faceAttributes.exposure?.exposureLevel !== 'overExposure' &&
-            faceAttributes.exposure?.exposureLevel !== 'underExposure' &&
-            faceAttributes.noise?.noiseLevel !== 'high'
-        );
-
-        if (!isLikelyLive) {
-            return res.status(400).json({ 
-                error: 'Liveness detection failed. Please take a clear, well-lit selfie in good lighting conditions.' 
-            });
-        }
-
-        console.log('✅ Liveness detection passed');
-
-        // Detect faces in both ID document and selfie photo for comparison
-        const [idFaces, userFaces] = await Promise.all([
-            faceClient.face.detectWithStream(idDocumentBufferNode, {
-                returnFaceId: true,
-                returnFaceLandmarks: false,
-                returnFaceAttributes: []
-            }),
-            // Use the same result from liveness detection
-            Promise.resolve(livenessResult)
-        ]);
-
-        if (!idFaces || idFaces.length === 0) {
-            return res.status(400).json({ error: 'No face detected in your ID document. Please upload a clearer ID photo.' });
-        }
-
-        // Compare the faces using Azure Face API
-        const comparison = await faceClient.face.verifyFaceToFace(
-            idFaces[0].faceId,
-            userFaces[0].faceId
-        );
-
-        const isMatch = comparison.isIdentical;
-        const confidence = comparison.confidence;
-
-        // Store face verification status
-        if (supabase) {
-            try {
-                const { error: verificationError } = await supabase
-                    .from('user_verifications')
-                    .upsert({
-                        user_email: userEmail,
-                        face_verification_status: isMatch ? 'verified' : 'failed',
-                        face_verification_confidence: confidence,
-                        face_verified_at: new Date().toISOString()
-                    });
-
-                if (verificationError) {
-                    console.error('Error storing face verification:', verificationError);
-                }
-            } catch (dbError) {
-                console.error('Database error:', dbError);
-            }
-        }
-
-        // Log face verification activity
-        await logUserActivity(userEmail, 'face_verified', 
-            `Face verification ${isMatch ? 'successful' : 'failed'} with ${(confidence * 100).toFixed(1)}% confidence`, {
-            is_match: isMatch,
-            confidence: confidence
-        });
+        await logUserActivity(userEmail, 'selfie_submitted', 'Selfie photo submitted for review');
 
         res.json({
             success: true,
-            isMatch: isMatch,
-            confidence: confidence,
-            message: isMatch ? 'Face verification successful' : 'Face verification failed - faces do not match'
+            message: 'Selfie submitted for verification. You will be notified once reviewed.',
+            status: 'pending_review'
         });
 
     } catch (error) {
-        console.error('Face verification error:', error);
-        res.status(500).json({ 
-            error: 'Face verification failed', 
-            details: error.message 
+        console.error('Selfie upload error:', error);
+        res.status(500).json({
+            error: 'Failed to upload selfie',
+            details: error.message
         });
+    }
+});
+
+// API: Admin - Approve or reject user verification
+app.post('/api/admin/verify-user', async (req, res) => {
+    try {
+        const { adminKey, userEmail, action, reason } = req.body;
+
+        // Simple admin key check (you should use proper auth in production)
+        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+        if (adminKey !== validAdminKey) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        if (!userEmail || !action) {
+            return res.status(400).json({ error: 'User email and action required' });
+        }
+
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ error: 'Action must be approve or reject' });
+        }
+
+        const status = action === 'approve' ? 'verified' : 'rejected';
+
+        const { error } = await supabase
+            .from('user_verifications')
+            .update({
+                id_verification_status: status,
+                face_verification_status: status,
+                reviewed_at: new Date().toISOString(),
+                reviewed_by: 'admin',
+                rejection_reason: action === 'reject' ? reason : null
+            })
+            .eq('user_email', userEmail);
+
+        if (error) {
+            console.error('Error updating verification:', error);
+            return res.status(500).json({ error: 'Failed to update verification' });
+        }
+
+        console.log(`✅ User ${userEmail} verification ${action}ed`);
+
+        res.json({
+            success: true,
+            message: `User ${action}ed successfully`,
+            userEmail,
+            status
+        });
+
+    } catch (error) {
+        console.error('Admin verification error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// API: Admin - Get all pending verifications
+app.get('/api/admin/pending-verifications', async (req, res) => {
+    try {
+        const adminKey = req.headers['x-admin-key'] || req.query.adminKey;
+        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+
+        if (adminKey !== validAdminKey) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+
+        const { data, error } = await supabase
+            .from('user_verifications')
+            .select('*')
+            .in('id_verification_status', ['pending_review', 'pending'])
+            .order('submitted_at', { ascending: false });
+
+        if (error) {
+            return res.status(500).json({ error: 'Failed to fetch verifications' });
+        }
+
+        res.json({ verifications: data || [] });
+
+    } catch (error) {
+        console.error('Error fetching pending verifications:', error);
+        res.status(500).json({ error: 'Internal server error' });
     }
 });
 
@@ -5481,7 +5333,7 @@ app.get('/api/verify/status/:email', async (req, res) => {
         }
 
         const { email } = req.params;
-        
+
         const { data: verification, error } = await supabase
             .from('user_verifications')
             .select('*')
@@ -5492,20 +5344,16 @@ app.get('/api/verify/status/:email', async (req, res) => {
             console.error('Error fetching verification status:', error);
             return res.status(500).json({ error: 'Failed to fetch verification status' });
         }
-        
-        // Include service availability status
-        const servicesAvailable = {
-            documentIntelligence: !!documentClient,
-            faceAPI: !!faceClient
-        };
 
+        // Manual review system - no Azure needed
         res.json({
             verification: verification || {
                 user_email: email,
-                id_verification_status: 'pending',
-                face_verification_status: 'pending'
+                id_verification_status: 'not_submitted',
+                face_verification_status: 'not_submitted'
             },
-            servicesAvailable: servicesAvailable
+            // Manual review mode - no external services needed
+            verificationMode: 'manual_review'
         });
 
     } catch (error) {
@@ -5514,103 +5362,14 @@ app.get('/api/verify/status/:email', async (req, res) => {
     }
 });
 
-// API: Real-time head pose detection for face scanning
+// API: Head pose detection - DISABLED (was using Azure Face API)
 app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) => {
-    try {
-        reinitializeAzureClients();
-        
-        if (!faceClient) {
-            return res.status(503).json({ error: 'Face detection service not available' });
-        }
-
-        if (!req.file) {
-            return res.status(400).json({ error: 'Face photo is required' });
-        }
-
-        const { expectedDirection } = req.body;
-        
-        // Detect face and head pose
-        const faceResult = await faceClient.face.detectWithStream(req.file.buffer, {
-            returnFaceId: false,
-            returnFaceLandmarks: false,
-            returnFaceAttributes: ['headPose']
-        });
-
-        if (!faceResult || faceResult.length === 0) {
-            return res.status(400).json({ 
-                error: 'No face detected', 
-                isCorrectDirection: false 
-            });
-        }
-
-        if (faceResult.length > 1) {
-            return res.status(400).json({ 
-                error: 'Multiple faces detected', 
-                isCorrectDirection: false 
-            });
-        }
-
-        const headPose = faceResult[0].faceAttributes.headPose;
-        const { yaw, pitch, roll } = headPose;
-        
-        // More detailed logging
-        console.log(`[HeadPose API] Expected: ${expectedDirection} | Actual Yaw: ${yaw.toFixed(2)}°, Pitch: ${pitch.toFixed(2)}°, Roll: ${roll.toFixed(2)}°`);
-
-        // Define stricter direction thresholds (in degrees)
-        const thresholds = {
-            center: { yaw: [-12, 12], pitch: [-12, 12] },    // Narrowed center
-            up:     { yaw: [-20, 20], pitch: [-50, -15] }, // Stricter min pitch, wider max
-            down:   { yaw: [-20, 20], pitch: [15, 50] },   // Stricter min pitch, wider max
-            left:   { yaw: [-50, -20], pitch: [-20, 20] }, // Stricter min yaw, wider max
-            right:  { yaw: [20, 50], pitch: [-20, 20] }   // Stricter min yaw, wider max
-        };
-
-        const currentThreshold = thresholds[expectedDirection];
-        let isCorrectDirection = false;
-        let yawInRange = false;
-        let pitchInRange = false;
-
-        if (currentThreshold) {
-            yawInRange = yaw >= currentThreshold.yaw[0] && yaw <= currentThreshold.yaw[1];
-            pitchInRange = pitch >= currentThreshold.pitch[0] && pitch <= currentThreshold.pitch[1];
-            isCorrectDirection = yawInRange && pitchInRange;
-
-            console.log(`[HeadPose API] Thresholds for ${expectedDirection}: Yaw[${currentThreshold.yaw.join(', ')}], Pitch[${currentThreshold.pitch.join(', ')}]`);
-            console.log(`[HeadPose API] Yaw in range: ${yawInRange}, Pitch in range: ${pitchInRange}`);
-        } else {
-            console.log(`[HeadPose API] No threshold found for expected direction: ${expectedDirection}`);
-        }
-
-        console.log(`[HeadPose API] Direction match for ${expectedDirection}: ${isCorrectDirection}`);
-
-        let message = `Please look ${expectedDirection}.`;
-        if (isCorrectDirection) {
-            message = `Perfect! Looking ${expectedDirection}.`;
-        } else if (currentThreshold) {
-            if (expectedDirection === "up" || expectedDirection === "down") {
-                if (!pitchInRange) message = `Look further ${expectedDirection}.`;
-                else if (!yawInRange) message = `Keep looking ${expectedDirection}, but center your head.`;
-            } else if (expectedDirection === "left" || expectedDirection === "right") {
-                if (!yawInRange) message = `Look further ${expectedDirection}.`;
-                else if (!pitchInRange) message = `Keep looking ${expectedDirection}, but level your head.`;
-            }
-        }
-
-        res.json({
-            success: true,
-            isCorrectDirection,
-            headPose: { yaw, pitch, roll },
-            expectedDirection,
-            message: message
-        });
-
-    } catch (error) {
-        console.error('[HeadPose API] Error:', error);
-        res.status(500).json({ 
-            error: 'Head pose detection failed', 
-            isCorrectDirection: false 
-        });
-    }
+    // Head pose detection disabled - using manual review instead of Azure
+    return res.status(503).json({
+        error: 'Head pose detection not available',
+        message: 'Please use the standard selfie upload for verification.',
+        useManualVerification: true
+    });
 });
 
 // Function to reinitialize Azure clients if they failed initially
