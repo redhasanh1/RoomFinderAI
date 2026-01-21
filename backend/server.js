@@ -284,6 +284,7 @@ try {
             config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
             new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
         );
+        serviceStatus.azure.documentIntelligence = true;
         console.log('✅ Azure Document Analysis initialized successfully');
     } else {
         console.log('⚠️ Azure Document Intelligence not initialized - missing credentials');
@@ -308,6 +309,7 @@ try {
     if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
         const credentials = new CognitiveServicesCredentials(config.AZURE_FACE_KEY);
         faceClient = new FaceClient(credentials, config.AZURE_FACE_ENDPOINT);
+        serviceStatus.azure.face = true;
         console.log('✅ Azure Face API initialized successfully');
     } else {
         console.log('⚠️ Azure Face API not initialized - missing credentials');
