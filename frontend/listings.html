@@ -1363,7 +1363,9 @@
                     </div>
                     
                     <!-- Mobile Auth -->
-                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    <div id="mobileAuthSection">
+                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -6017,6 +6019,7 @@
 
                     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
                     const authSection = document.getElementById('authSection');
+                    const mobileAuthSection = document.getElementById('mobileAuthSection');
 
                     if (!authSection) {
                         console.warn('⚠️ Auth section element not found');
@@ -6035,6 +6038,12 @@
                                 </a>
                             </div>
                         `;
+                        // Update mobile auth section
+                        if (mobileAuthSection) {
+                            mobileAuthSection.innerHTML = `
+                                <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                            `;
+                        }
                     } else {
                         // Use provided profile image or default
                         const userProfileImage = currentUser.profileImage ||
@@ -6060,6 +6069,23 @@
                                 </div>
                             </div>
                         `;
+
+                        // Update mobile auth section for logged in user
+                        if (mobileAuthSection) {
+                            mobileAuthSection.innerHTML = `
+                                <div class="mobile-auth-logged-in" style="padding: 1rem; margin: 0.5rem 1rem; background: rgba(102, 126, 234, 0.1); border-radius: 0.5rem;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                        <img src="${userProfileImage}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%;">
+                                        <span style="font-weight: 600; color: #667eea;">${currentUser.name || 'User'}</span>
+                                    </div>
+                                    <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">👤 Profile</a>
+                                    <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">❤️ Favorites</a>
+                                    <a href="my-listings.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">🏠 My Listings</a>
+                                    <a href="messages.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">💬 Messages</a>
+                                    <button onclick="logout(); closeMobileMenu();" class="mobile-menu-item" style="width: 100%; text-align: left; padding: 0.5rem 0.75rem; color: #ef4444; border: none; background: none; cursor: pointer;">🚪 Logout</button>
+                                </div>
+                            `;
+                        }
 
                         // Initialize favorite system for authenticated users
                         try {
