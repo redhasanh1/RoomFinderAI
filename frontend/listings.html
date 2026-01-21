@@ -3,6 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <title>RoomFinderAI - Listings</title>
 
     <!-- Google AdSense -->
@@ -6045,16 +6049,21 @@
                             `;
                         }
                     } else {
+                        // Get user's display name (firstName + lastName or email fallback)
+                        const userDisplayName = currentUser.firstName
+                            ? `${currentUser.firstName}${currentUser.lastName ? ' ' + currentUser.lastName : ''}`
+                            : (currentUser.name || currentUser.email?.split('@')[0] || 'User');
+
                         // Use provided profile image or default
                         const userProfileImage = currentUser.profileImage ||
-                            profileImages[Math.abs((currentUser.name || '').charCodeAt(0) + (currentUser.email || '').charCodeAt(0)) % profileImages.length];
+                            profileImages[Math.abs((currentUser.firstName || currentUser.email || '').charCodeAt(0) + (currentUser.email || '').charCodeAt(0)) % profileImages.length];
 
                         // Show profile dropdown for authenticated users
                         authSection.innerHTML = `
                             <div class="relative profile-dropdown">
                                 <button onclick="toggleProfileDropdown()" class="flex items-center space-x-2 focus:outline-none">
                                     <img src="${userProfileImage}" alt="Profile" class="w-8 h-8 rounded-full">
-                                    <span class="text-white font-medium">${currentUser.name || 'User'}</span>
+                                    <span class="text-white font-medium">${userDisplayName}</span>
                                     <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                                     </svg>
@@ -6076,7 +6085,7 @@
                                 <div class="mobile-auth-logged-in" style="padding: 1rem; margin: 0.5rem 1rem; background: rgba(102, 126, 234, 0.1); border-radius: 0.5rem;">
                                     <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
                                         <img src="${userProfileImage}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%;">
-                                        <span style="font-weight: 600; color: #667eea;">${currentUser.name || 'User'}</span>
+                                        <span style="font-weight: 600; color: #667eea;">${userDisplayName}</span>
                                     </div>
                                     <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">👤 Profile</a>
                                     <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">❤️ Favorites</a>
