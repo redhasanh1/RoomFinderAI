@@ -776,7 +776,7 @@ app.post('/api/listings', async (req, res) => {
 });
 
 // Transform listing data to match Android model
-function transformListingForAndroid(listing) {
+function transformListingForAndroid(listing, verificationMap = {}) {
     // Extract imageUrl from media array, ensuring it's always a string
     let imageUrl = null;
     if (listing.media && listing.media.length > 0) {
@@ -789,7 +789,11 @@ function transformListingForAndroid(listing) {
             imageUrl = firstMedia.url || firstMedia.data || null;
         }
     }
-    
+
+    // Check if the lister is verified
+    const userEmail = listing.user_email || listing.userEmail;
+    const isVerified = userEmail ? (verificationMap[userEmail] === 'approved') : false;
+
     return {
         id: listing.id,
         title: listing.title,
@@ -803,7 +807,9 @@ function transformListingForAndroid(listing) {
         propertyType: listing.house_type || listing.houseType, // Handle both snake_case and camelCase
         available: true, // Default to available
         createdAt: listing.created_at || listing.createdAt,
-        updatedAt: listing.updated_at || listing.updatedAt || listing.created_at || listing.createdAt
+        updatedAt: listing.updated_at || listing.updatedAt || listing.created_at || listing.createdAt,
+        user_verified: isVerified,
+        user_email: userEmail
     };
 }
 
@@ -812,13 +818,13 @@ app.get('/api/listings', async (req, res) => {
     try {
         console.log('🔍 DEBUG /api/listings: Request received');
         console.log('🔍 DEBUG /api/listings: Supabase status:', supabase ? 'INITIALIZED' : 'NOT INITIALIZED');
-        
+
         // Check if Supabase is connected
         if (!supabase) {
             console.log('🔍 DEBUG /api/listings: Using mock data (no database)');
             // Return mock listings when database is not connected
-            const transformedListings = listings.map(transformListingForAndroid);
-            return res.json({ 
+            const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
+            return res.json({
                 success: true,
                 data: transformedListings,
                 message: 'Using demo listings (database not connected)'
@@ -834,26 +840,49 @@ app.get('/api/listings', async (req, res) => {
         if (error) {
             console.error('Error fetching listings from Supabase:', error);
             // Fallback to in-memory listings if database fetch fails
-            const transformedListings = listings.map(transformListingForAndroid);
-            return res.json({ 
+            const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
+            return res.json({
                 success: true,
                 data: transformedListings,
                 message: 'Listings retrieved from cache'
             });
         }
 
+        // Fetch verification status for all users who have listings
+        let verificationMap = {};
+        try {
+            const userEmails = [...new Set((dbListings || [])
+                .map(l => l.user_email || l.userEmail)
+                .filter(email => email))];
+
+            if (userEmails.length > 0) {
+                const { data: verifications, error: verifyError } = await supabase
+                    .from('user_verifications')
+                    .select('user_email, status')
+                    .in('user_email', userEmails);
+
+                if (!verifyError && verifications) {
+                    verifications.forEach(v => {
+                        verificationMap[v.user_email] = v.status;
+                    });
+                }
+            }
+        } catch (verifyErr) {
+            console.log('Could not fetch verification status:', verifyErr.message);
+        }
+
         // Transform listings to match Android model
-        const transformedListings = (dbListings || []).map(transformListingForAndroid);
-        
+        const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
+
         // Return in the format expected by Android app
-        res.json({ 
+        res.json({
             success: true,
             data: transformedListings,
             message: 'Listings retrieved successfully'
         });
     } catch (error) {
         console.error('Error in /api/listings:', error.message);
-        res.status(500).json({ 
+        res.status(500).json({
             success: false,
             data: null,
             message: 'Failed to retrieve listings'
@@ -865,23 +894,23 @@ app.get('/api/listings', async (req, res) => {
 app.get('/api/listings/search', async (req, res) => {
     try {
         const { q: query, min_price, max_price, bedrooms, location } = req.query;
-        
+
         // Check if Supabase is connected
         if (!supabase) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
                 data: null,
                 message: 'Database not connected'
             });
         }
-        
+
         if (!query || query.trim() === '') {
             // Return all listings if no query
             const { data: dbListings, error } = await supabase
                 .from('listings')
                 .select('*')
                 .order('created_at', { ascending: false });
-                
+
             if (error) {
                 console.error('Error fetching listings:', error);
                 return res.status(500).json({
@@ -890,15 +919,32 @@ app.get('/api/listings/search', async (req, res) => {
                     message: 'Failed to fetch listings'
                 });
             }
-            
-            const transformedListings = (dbListings || []).map(transformListingForAndroid);
+
+            // Fetch verification status
+            let verificationMap = {};
+            try {
+                const userEmails = [...new Set((dbListings || [])
+                    .map(l => l.user_email || l.userEmail)
+                    .filter(email => email))];
+                if (userEmails.length > 0) {
+                    const { data: verifications } = await supabase
+                        .from('user_verifications')
+                        .select('user_email, status')
+                        .in('user_email', userEmails);
+                    if (verifications) {
+                        verifications.forEach(v => { verificationMap[v.user_email] = v.status; });
+                    }
+                }
+            } catch (e) { /* ignore */ }
+
+            const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
             return res.json({
                 success: true,
                 data: transformedListings,
                 message: 'All listings returned'
             });
         }
-        
+
         const searchTerm = query.toLowerCase().trim();
         
         // Build dynamic query with optional filters
@@ -927,7 +973,7 @@ app.get('/api/listings/search', async (req, res) => {
         dbQuery = dbQuery.order('created_at', { ascending: false });
         
         const { data: dbListings, error } = await dbQuery;
-            
+
         if (error) {
             console.error('Error searching listings:', error);
             return res.status(500).json({
@@ -936,9 +982,26 @@ app.get('/api/listings/search', async (req, res) => {
                 message: 'Search failed'
             });
         }
-        
-        const transformedListings = (dbListings || []).map(transformListingForAndroid);
-        
+
+        // Fetch verification status for search results
+        let verificationMap = {};
+        try {
+            const userEmails = [...new Set((dbListings || [])
+                .map(l => l.user_email || l.userEmail)
+                .filter(email => email))];
+            if (userEmails.length > 0) {
+                const { data: verifications } = await supabase
+                    .from('user_verifications')
+                    .select('user_email, status')
+                    .in('user_email', userEmails);
+                if (verifications) {
+                    verifications.forEach(v => { verificationMap[v.user_email] = v.status; });
+                }
+            }
+        } catch (e) { /* ignore */ }
+
+        const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
+
         res.json({
             success: true,
             data: transformedListings,
@@ -1140,23 +1203,43 @@ app.put('/api/listings/:id', async (req, res) => {
 app.post('/api/listings/search', async (req, res) => {
     try {
         const { query } = req.body;
-        
+
         // Check if Supabase is connected
         if (!supabase) {
-            return res.status(500).json({ 
+            return res.status(500).json({
                 success: false,
                 data: null,
                 message: 'Database not connected'
             });
         }
-        
+
+        // Helper function to get verification map
+        async function getVerificationMap(dbListings) {
+            let verificationMap = {};
+            try {
+                const userEmails = [...new Set((dbListings || [])
+                    .map(l => l.user_email || l.userEmail)
+                    .filter(email => email))];
+                if (userEmails.length > 0) {
+                    const { data: verifications } = await supabase
+                        .from('user_verifications')
+                        .select('user_email, status')
+                        .in('user_email', userEmails);
+                    if (verifications) {
+                        verifications.forEach(v => { verificationMap[v.user_email] = v.status; });
+                    }
+                }
+            } catch (e) { /* ignore */ }
+            return verificationMap;
+        }
+
         if (!query || query.trim() === '') {
             // Return all listings if no query
             const { data: dbListings, error } = await supabase
                 .from('listings')
                 .select('*')
                 .order('created_at', { ascending: false });
-                
+
             if (error) {
                 console.error('Error fetching listings:', error);
                 return res.status(500).json({
@@ -1165,24 +1248,25 @@ app.post('/api/listings/search', async (req, res) => {
                     message: 'Failed to fetch listings'
                 });
             }
-            
-            const transformedListings = (dbListings || []).map(transformListingForAndroid);
+
+            const verificationMap = await getVerificationMap(dbListings);
+            const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
             return res.json({
                 success: true,
                 data: transformedListings,
                 message: 'All listings returned'
             });
         }
-        
+
         const searchTerm = query.toLowerCase().trim();
-        
+
         // Use Supabase full-text search or ILIKE for searching
         const { data: dbListings, error } = await supabase
             .from('listings')
             .select('*')
             .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,street.ilike.%${searchTerm}%,house_type.ilike.%${searchTerm}%`)
             .order('created_at', { ascending: false });
-            
+
         if (error) {
             console.error('Error searching listings:', error);
             return res.status(500).json({
@@ -1191,9 +1275,10 @@ app.post('/api/listings/search', async (req, res) => {
                 message: 'Search failed'
             });
         }
-        
-        const transformedListings = (dbListings || []).map(transformListingForAndroid);
-        
+
+        const verificationMap = await getVerificationMap(dbListings);
+        const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
+
         res.json({
             success: true,
             data: transformedListings,
