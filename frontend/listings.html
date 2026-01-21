@@ -571,14 +571,120 @@
         
         /* Loading States */
         .loading-skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
             background-size: 200% 100%;
-            animation: loading 1.5s infinite;
+            animation: shimmer 1.5s infinite ease-in-out;
+            border-radius: 8px;
         }
-        
-        @keyframes loading {
+
+        @keyframes shimmer {
             0% { background-position: 200% 0; }
             100% { background-position: -200% 0; }
+        }
+
+        /* Skeleton Card - mimics actual listing card */
+        .skeleton-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .skeleton-image {
+            height: 200px;
+            background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite ease-in-out;
+        }
+
+        .skeleton-content {
+            padding: 16px;
+        }
+
+        .skeleton-title {
+            height: 20px;
+            width: 70%;
+            margin-bottom: 12px;
+            background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite ease-in-out;
+            border-radius: 4px;
+        }
+
+        .skeleton-price {
+            height: 24px;
+            width: 40%;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #dbeafe 25%, #eff6ff 50%, #dbeafe 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite ease-in-out;
+            border-radius: 4px;
+        }
+
+        .skeleton-text {
+            height: 14px;
+            width: 90%;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite ease-in-out;
+            border-radius: 4px;
+        }
+
+        .skeleton-text-short {
+            width: 60%;
+        }
+
+        .skeleton-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+        }
+
+        .skeleton-btn {
+            height: 40px;
+            flex: 1;
+            background: linear-gradient(90deg, #e8e8e8 25%, #f5f5f5 50%, #e8e8e8 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite ease-in-out;
+            border-radius: 8px;
+        }
+
+        /* Fade in animation for loaded listings */
+        .listing-card {
+            opacity: 0;
+            animation: fadeInUp 0.4s ease forwards;
+        }
+
+        .listing-card:nth-child(1) { animation-delay: 0.05s; }
+        .listing-card:nth-child(2) { animation-delay: 0.1s; }
+        .listing-card:nth-child(3) { animation-delay: 0.15s; }
+        .listing-card:nth-child(4) { animation-delay: 0.2s; }
+        .listing-card:nth-child(5) { animation-delay: 0.25s; }
+        .listing-card:nth-child(6) { animation-delay: 0.3s; }
+        .listing-card:nth-child(7) { animation-delay: 0.35s; }
+        .listing-card:nth-child(8) { animation-delay: 0.4s; }
+        .listing-card:nth-child(9) { animation-delay: 0.45s; }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Animate fade in for messaging panel */
+        .animate-fade-in {
+            animation: fadeIn 0.2s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
         /* Dropdown Styles */
@@ -4107,44 +4213,65 @@
             const messagePanel = document.getElementById('messagePanel');
             const profileNotificationBadge = document.getElementById('profileNotificationBadge');
             const messageNotificationBadge = document.getElementById('messageNotificationBadge');
-            
+
+            // Add null checks
+            if (!messageToggleBtn || !messagePanel) {
+                console.error('❌ Message panel elements not found, retrying...');
+                setTimeout(setupMessagingPanel, 500);
+                return;
+            }
+
             let isMessagingPanelOpen = false;
 
-            // Toggle message panel
-            messageToggleBtn.addEventListener('click', async () => {
+            // Toggle message panel - use event.stopPropagation to prevent document click from immediately closing it
+            messageToggleBtn.addEventListener('click', async (event) => {
+                event.stopPropagation();
                 isMessagingPanelOpen = !isMessagingPanelOpen;
                 if (isMessagingPanelOpen) {
                     messagePanel.classList.remove('hidden');
+                    messagePanel.classList.add('animate-fade-in');
                     await loadUserConversations();
                 } else {
                     messagePanel.classList.add('hidden');
+                    messagePanel.classList.remove('animate-fade-in');
                 }
+            });
+
+            // Prevent clicks inside panel from closing it
+            messagePanel.addEventListener('click', (event) => {
+                event.stopPropagation();
             });
 
             // Force hide notifications button
-            document.getElementById('forceHideNotifications').addEventListener('click', () => {
-                console.log('🔥 FORCE HIDING ALL NOTIFICATIONS');
-                
-                // Mark ALL conversations as locally read
-                globalUserConversations.forEach(conv => {
-                    locallyReadConversations.add(conv.id);
-                    conv.unread_count = 0;
+            const forceHideBtn = document.getElementById('forceHideNotifications');
+            if (forceHideBtn) {
+                forceHideBtn.addEventListener('click', () => {
+                    console.log('🔥 FORCE HIDING ALL NOTIFICATIONS');
+
+                    // Mark ALL conversations as locally read
+                    globalUserConversations.forEach(conv => {
+                        locallyReadConversations.add(conv.id);
+                        conv.unread_count = 0;
+                    });
+
+                    // Force update
+                    window.updateUnreadCount();
+
+                    // Also update the display
+                    displayConversations();
                 });
-                
-                // Force update
-                window.updateUnreadCount();
-                
-                // Also update the display
-                displayConversations();
-            });
+            }
 
             // Close panel when clicking outside
             document.addEventListener('click', (event) => {
-                if (!event.target.closest('#messagingPanel')) {
+                if (isMessagingPanelOpen && !event.target.closest('#messagingPanel')) {
                     messagePanel.classList.add('hidden');
+                    messagePanel.classList.remove('animate-fade-in');
                     isMessagingPanelOpen = false;
                 }
             });
+
+            console.log('✅ Messaging panel setup complete');
 
             // Load user's conversations
             async function loadUserConversations() {
@@ -5720,12 +5847,23 @@
                 countElement.textContent = 'Loading properties...';
                 emptyState.classList.add('hidden');
                 listingsContainer.classList.remove('hidden');
-                // Show loading skeleton
-                listingsContainer.innerHTML = `
-                    <div class="loading-skeleton h-64 rounded-xl"></div>
-                    <div class="loading-skeleton h-64 rounded-xl"></div>
-                    <div class="loading-skeleton h-64 rounded-xl"></div>
+                // Show production-level skeleton cards that mimic real listing cards
+                const skeletonCard = `
+                    <div class="skeleton-card">
+                        <div class="skeleton-image"></div>
+                        <div class="skeleton-content">
+                            <div class="skeleton-title"></div>
+                            <div class="skeleton-price"></div>
+                            <div class="skeleton-text"></div>
+                            <div class="skeleton-text skeleton-text-short"></div>
+                            <div class="skeleton-buttons">
+                                <div class="skeleton-btn"></div>
+                                <div class="skeleton-btn"></div>
+                            </div>
+                        </div>
+                    </div>
                 `;
+                listingsContainer.innerHTML = skeletonCard.repeat(6);
                 return;
             }
             
