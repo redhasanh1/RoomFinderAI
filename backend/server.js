@@ -5457,6 +5457,79 @@ app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) =
     });
 });
 
+// API: Admin - Clear all test data (listings, chats, activities, negotiations)
+app.post('/api/admin/clear-data', async (req, res) => {
+    try {
+        const { adminKey, tables } = req.body;
+        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+
+        if (adminKey !== validAdminKey) {
+            return res.status(401).json({ error: 'Invalid admin key' });
+        }
+
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+
+        const results = {};
+        const tablesToClear = tables || ['listings', 'ai_negotiations', 'user_activities', 'user_verifications'];
+
+        // Clear listings
+        if (tablesToClear.includes('listings')) {
+            const { error } = await supabase.from('listings').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.listings = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        // Clear AI negotiations
+        if (tablesToClear.includes('ai_negotiations')) {
+            const { error } = await supabase.from('ai_negotiations').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.ai_negotiations = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        // Clear user activities
+        if (tablesToClear.includes('user_activities')) {
+            const { error } = await supabase.from('user_activities').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.user_activities = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        // Clear user verifications
+        if (tablesToClear.includes('user_verifications')) {
+            const { error } = await supabase.from('user_verifications').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.user_verifications = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        // Clear aiChats from all profiles
+        if (tablesToClear.includes('chats')) {
+            const { error } = await supabase.from('profiles').update({ aiChats: [] }).neq('email', '');
+            results.chats = error ? `Error: ${error.message}` : 'Cleared from profiles';
+        }
+
+        // Clear sublease data
+        if (tablesToClear.includes('sublease_requests')) {
+            const { error } = await supabase.from('sublease_requests').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.sublease_requests = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        if (tablesToClear.includes('sublease_matches')) {
+            const { error } = await supabase.from('sublease_matches').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.sublease_matches = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        // Clear favorites
+        if (tablesToClear.includes('favorites')) {
+            const { error } = await supabase.from('favorites').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            results.favorites = error ? `Error: ${error.message}` : 'Cleared';
+        }
+
+        console.log('🗑️ Admin data clear results:', results);
+        res.json({ success: true, results });
+
+    } catch (error) {
+        console.error('Error clearing data:', error);
+        res.status(500).json({ error: 'Failed to clear data' });
+    }
+});
+
 // Function to reinitialize Azure clients if they failed initially
 function reinitializeAzureClients() {
     console.log('🔄 Attempting Azure client reinitialization...');
