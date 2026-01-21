@@ -660,7 +660,18 @@
                 <div class="mobile-menu-items">
                     <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
                     <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
-                    <a href="profile.html#saved-listings" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
+
+                    <!-- Profile Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('profile')">
+                            👤 Profile <span class="mobile-arrow" id="profile-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="profile-section">
+                            <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">My Profile</a>
+                            <a href="profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()">My Listings</a>
+                            <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
+                        </div>
+                    </div>
 
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -673,7 +684,7 @@
                             <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
                     </div>
-                    
+
                     <!-- Tools Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
@@ -686,7 +697,7 @@
                             <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
                         </div>
                     </div>
-                    
+
                     <!-- About Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('about')">
@@ -698,7 +709,7 @@
                             <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
                         </div>
                     </div>
-                    
+
                     <!-- Mobile Auth -->
                     <button onclick="logout()" class="mobile-menu-item auth-item">🚪 Logout</button>
                 </div>
