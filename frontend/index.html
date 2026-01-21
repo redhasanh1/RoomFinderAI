@@ -1457,8 +1457,19 @@
                 <div class="mobile-menu-items">
                     <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
                     <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
-                    <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
                     <a href="roommate-matching.html" class="mobile-menu-item" onclick="closeMobileMenu()">👥 RoomPal</a>
+
+                    <!-- Profile Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('profile')">
+                            👤 Profile <span class="mobile-arrow" id="profile-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="profile-section">
+                            <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">My Profile</a>
+                            <a href="profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()">My Listings</a>
+                            <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
+                        </div>
+                    </div>
 
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -1471,7 +1482,7 @@
                             <a href="https://www.roomfinderai.com/student-housing.html" class="mobile-menu-item">Student Housing</a>
                         </div>
                     </div>
-                    
+
                     <!-- Tools Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
@@ -1483,7 +1494,7 @@
                             <a href="mortgage.html" class="mobile-menu-item">Mortgage Tools</a>
                         </div>
                     </div>
-                    
+
                     <!-- About Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('about')">
@@ -1496,7 +1507,7 @@
                             <a href="support.html" class="mobile-menu-item">Support</a>
                         </div>
                     </div>
-                    
+
                     <!-- Mobile Auth -->
                     <div id="mobileAuthSection">
                         <!-- Default content before JS loads -->
