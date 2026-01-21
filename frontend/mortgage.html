@@ -222,7 +222,12 @@
         .mobile-menu-btn.active .hamburger-line:nth-child(3) {
             transform: rotate(-45deg) translate(7px, -6px);
         }
-        
+
+        /* Hide hamburger when menu is open to avoid double X */
+        body.mobile-menu-open .mobile-menu-btn {
+            display: none !important;
+        }
+
         .mobile-menu {
             position: fixed;
             top: 0;
