@@ -660,7 +660,7 @@
                 <div class="mobile-menu-items">
                     <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
                     <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
-                    <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
+                    <a href="profile.html#saved-listings" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
 
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -775,7 +775,7 @@
         </section>
 
         <!-- Saved Listings -->
-        <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+        <section id="saved-listings" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
             <div class="flex items-center justify-between mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">Saved Listings</h2>
                 <span id="savedListingsCount" class="text-sm text-gray-600">0 saved</span>
@@ -1390,61 +1390,106 @@
         }
 
         async function loadSavedListings(user) {
+            const container = document.getElementById('savedListingsContainer');
+            const countEl = document.getElementById('savedListingsCount');
+            const savedCountEl = document.getElementById('savedCount');
+
+            // Show loading state
+            container.innerHTML = `
+                <div class="text-center py-8">
+                    <div class="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <p class="text-gray-500 mt-2">Loading favorites...</p>
+                </div>
+            `;
+
             try {
-                const savedListingsKey = `savedListings_${user.email}`;
-                const savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
-                
-                console.log('💾 Loading saved listings:', {
-                    key: savedListingsKey,
-                    count: savedListings.length,
-                    listings: savedListings
-                });
-                
-                document.getElementById('savedCount').textContent = savedListings.length;
-                document.getElementById('savedListingsCount').textContent = `${savedListings.length} saved`;
-                
-                const container = document.getElementById('savedListingsContainer');
-                
+                console.log('💾 Loading saved listings from database for:', user.email);
+
+                // Fetch from database API
+                const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(user.email)}`);
+                let savedListings = [];
+
+                if (response.ok) {
+                    const data = await response.json();
+                    savedListings = data || [];
+                    console.log('✅ Loaded favorites from API:', savedListings.length);
+                } else {
+                    console.warn('API failed, trying direct Supabase query...');
+                    // Fallback: direct Supabase query
+                    const { data, error } = await supabase
+                        .from('favorites')
+                        .select('*, listings(*)')
+                        .eq('user_email', user.email);
+
+                    if (!error && data) {
+                        savedListings = data.map(fav => ({
+                            ...fav.listings,
+                            favorite_id: fav.id,
+                            saved_at: fav.created_at
+                        })).filter(l => l.id);
+                        console.log('✅ Loaded favorites from Supabase:', savedListings.length);
+                    }
+                }
+
+                // Update counts
+                if (savedCountEl) savedCountEl.textContent = savedListings.length;
+                if (countEl) countEl.textContent = `${savedListings.length} saved`;
+
                 if (savedListings.length === 0) {
                     container.innerHTML = `
                         <div id="savedListingsEmpty" class="text-center py-12">
                             <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
                             </svg>
                             <p class="text-gray-500 text-lg">No saved listings yet</p>
-                            <p class="text-gray-400 text-sm mt-2">Save listings to view them here</p>
+                            <p class="text-gray-400 text-sm mt-2">Click the heart icon on any listing to save it here</p>
                             <a href="listings.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Browse Listings</a>
                         </div>
                     `;
                 } else {
                     container.innerHTML = savedListings.map(listing => {
-                        console.log('📝 Processing saved listing:', listing);
-                        
-                        const title = listing.title || listing.name || 'Untitled Listing';
-                        const price = listing.price || 0;
-                        const location = [listing.street, listing.city].filter(x => x).join(', ') || 'No location';
-                        const savedDate = listing.saved_at ? new Date(listing.saved_at).toLocaleDateString() : 'Recently';
-                        const bedrooms = listing.bedrooms || '?';
-                        const houseType = listing.house_type || listing.type || 'Property';
-                        
+                        // Handle both API response formats
+                        const listingData = listing.listing || listing.listings || listing;
+                        const title = listingData.title || listingData.name || 'Untitled Listing';
+                        const price = listingData.price || 0;
+                        const location = [listingData.street, listingData.city].filter(x => x).join(', ') || 'No location';
+                        const savedDate = listing.saved_at || listing.created_at ? new Date(listing.saved_at || listing.created_at).toLocaleDateString() : 'Recently';
+                        const bedrooms = listingData.bedrooms || '?';
+                        const houseType = listingData.house_type || listingData.type || 'Property';
+                        const listingId = listingData.id || listing.listing_id;
+
+                        // Get image
+                        let imageUrl = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM2NjcyODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+                        if (listingData.media && Array.isArray(listingData.media) && listingData.media.length > 0 && listingData.media[0].url) {
+                            imageUrl = listingData.media[0].url;
+                        }
+
                         return `
-                        <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-3 hover:bg-gray-100 cursor-pointer transition-colors" onclick="viewListing('${listing.id}')">
-                            <div class="flex-1">
-                                <h4 class="font-semibold text-gray-900">${title}</h4>
-                                <p class="text-sm text-gray-600">$${price.toLocaleString()}/month • ${location}</p>
-                                <p class="text-xs text-gray-500">${bedrooms} bed ${houseType} • Saved: ${savedDate}</p>
+                        <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl mb-3 hover:bg-gray-100 cursor-pointer transition-all hover:shadow-md" onclick="viewListing('${listingId}')">
+                            <img src="${imageUrl}" alt="${title}" class="w-20 h-20 rounded-lg object-cover flex-shrink-0" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM2NjcyODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-gray-900 truncate">${title}</h4>
+                                <p class="text-blue-600 font-bold">$${price.toLocaleString()}/month</p>
+                                <p class="text-sm text-gray-600 truncate">${location}</p>
+                                <p class="text-xs text-gray-400">${bedrooms} bed ${houseType} • Saved: ${savedDate}</p>
                             </div>
-                            <div class="flex space-x-2">
-                                <button onclick="event.stopPropagation(); unsaveListing('${listing.id}')" class="text-red-600 hover:text-red-700 font-medium text-base px-2 py-1">
-                                    Remove
-                                </button>
-                            </div>
+                            <button onclick="event.stopPropagation(); unsaveListing('${listingId}')" class="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" title="Remove from favorites">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
                         </div>
                     `;
                     }).join('');
                 }
             } catch (error) {
                 console.error('Error loading saved listings:', error);
+                container.innerHTML = `
+                    <div class="text-center py-8 text-red-500">
+                        <p>Failed to load favorites</p>
+                        <button onclick="loadSavedListings(JSON.parse(localStorage.getItem('currentUser')))" class="mt-2 text-blue-600 hover:underline">Try Again</button>
+                    </div>
+                `;
             }
         }
 
@@ -1834,24 +1879,28 @@
             window.location.href = `listing_details.html?id=${id}`;
         }
 
-        function unsaveListing(id) {
+        async function unsaveListing(id) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-            const savedListingsKey = `savedListings_${currentUser.email}`;
-            let savedListings = JSON.parse(localStorage.getItem(savedListingsKey)) || [];
-            
-            console.log('🗑️ Removing saved listing:', {
-                id: id,
-                beforeRemoval: savedListings.length
-            });
-            
-            // Remove the listing object from the array
-            savedListings = savedListings.filter(listing => listing.id !== id);
-            safeLocalStorageSetItem(savedListingsKey, JSON.stringify(savedListings));
-            
-            console.log('✅ Updated saved listings count:', savedListings.length);
-            
-            // Reload the saved listings
-            loadSavedListings(currentUser);
+
+            console.log('🗑️ Removing saved listing:', id);
+
+            try {
+                // Remove from database via API
+                const response = await fetch(`/api/favorites/${id}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                    method: 'DELETE'
+                });
+
+                if (response.ok) {
+                    console.log('✅ Removed from favorites');
+                    // Reload the saved listings
+                    loadSavedListings(currentUser);
+                } else {
+                    throw new Error('Failed to remove favorite');
+                }
+            } catch (error) {
+                console.error('Error removing favorite:', error);
+                alert('Failed to remove from favorites. Please try again.');
+            }
         }
 
         function performLogout() {
