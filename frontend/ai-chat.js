@@ -302,25 +302,41 @@ class AIChatHandler {
             result.city = cityMatch[1].toLowerCase().trim();
             console.log('🏙️ Extracted city:', result.city);
         }
-        
-        // Additional location patterns for "in [city]"
-        const inCityMatch = message.match(/\bin\s+(hong kong|karachi|paris|tehran|toronto|moscow|sydney|vancouver|montreal|calgary|islamabad|lahore|rawalpindi)\b/i);
-        if (inCityMatch && !result.city) {
-            result.city = inCityMatch[1].toLowerCase().trim();
-            console.log('🏙️ Extracted city from "in" pattern:', result.city);
+
+        // Extract country names as location fallback
+        const countryMatch = message.match(/\b(pakistan|canada|usa|united states|uk|united kingdom|australia|france|germany|india|china|japan|iran|russia)\b/i);
+        if (countryMatch && !result.city) {
+            result.city = countryMatch[1].toLowerCase().trim();
+            console.log('🌍 Extracted country as location:', result.city);
+        }
+
+        // Flexible "in [location]" pattern - captures any word after "in"
+        const inLocationMatch = message.match(/\bin\s+([a-zA-Z\s]+?)(?:\s+for|\s+under|\s+with|\s*$|\s*,|\s*\.)/i);
+        if (inLocationMatch && !result.city) {
+            const location = inLocationMatch[1].trim().toLowerCase();
+            // Only use if it looks like a place name (not common words)
+            const skipWords = ['a', 'an', 'the', 'my', 'your', 'this', 'that', 'good', 'nice', 'great'];
+            if (!skipWords.includes(location) && location.length > 1) {
+                result.city = location;
+                console.log('📍 Extracted location from "in" pattern:', result.city);
+            }
         }
         
-        // Extract house type
+        // Extract house type (check specific types before generic ones)
         if (message.toLowerCase().includes('apartment')) {
             result.house_type = 'Apartment';
         } else if (message.toLowerCase().includes('condo')) {
             result.house_type = 'Condo';
+        } else if (message.toLowerCase().includes('townhouse') || message.toLowerCase().includes('town house')) {
+            result.house_type = 'Townhouse';
         } else if (message.toLowerCase().includes('house')) {
             result.house_type = 'House';
         } else if (message.toLowerCase().includes('studio')) {
             result.house_type = 'Studio';
         } else if (message.toLowerCase().includes('basement')) {
             result.house_type = 'Basement';
+        } else if (message.toLowerCase().includes('room')) {
+            result.house_type = 'Room';
         }
         
         // Extract bedrooms
@@ -402,14 +418,14 @@ class AIChatHandler {
             console.log('✅ Step 1: Excluded own listings');
         }
         
-        // Step 2: Apply location filter using 'city' and 'street' columns
+        // Step 2: Apply location filter using city, street, country, and title columns
         if (this.userNeeds.preferredLocation) {
             const location = this.userNeeds.preferredLocation.trim().toLowerCase();
-            // Search in city, street, and title columns
-            query = query.or(`city.ilike.*${location}*,street.ilike.*${location}*,title.ilike.*${location}*`);
+            // Search in city, street, country, and title columns for flexible matching
+            query = query.or(`city.ilike.*${location}*,street.ilike.*${location}*,title.ilike.*${location}*,country.ilike.*${location}*`);
             appliedFilters.push(`location contains: ${location}`);
             hasSpecificCriteria = true;
-            console.log(`✅ Step 2: Location filter applied - searching for "${location}" in city/street/title columns`);
+            console.log(`✅ Step 2: Location filter applied - searching for "${location}" in city/street/title/country columns`);
         }
         
         // Step 3: Apply house type filter
