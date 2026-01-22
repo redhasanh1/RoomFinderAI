@@ -54,17 +54,6 @@ class AIChatHandler {
             <div class="chat-bubble ai">
                 <p>I can help you find a rental and negotiate a lower price with the landlord. What are you looking for?</p>
             </div>
-            <div class="flex flex-wrap gap-2 mt-3 mb-4">
-                <button onclick="window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
-                    📉 Under $2,000 / mo
-                </button>
-                <button onclick="window.aiChat.sendQuickMessage('Find me a 1 bedroom apartment in Toronto')" class="quick-chip">
-                    🏢 1-Bed in Toronto
-                </button>
-                <button onclick="window.aiChat.sendQuickMessage('Show me pet-friendly rentals')" class="quick-chip">
-                    🐶 Pet-Friendly Only
-                </button>
-            </div>
         `;
     }
 
