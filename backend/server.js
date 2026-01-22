@@ -4213,15 +4213,16 @@ IMPORTANT: After your response, you MUST include a JSON block with extracted ren
 Always end your response with this exact format on a new line:
 ###CRITERIA###{"price":null,"city":null,"house_type":null,"bedrooms":null,"intent":null}###END###
 
-Fill in any values you can extract from the conversation:
+Fill in any values you can extract from the conversation (handle typos naturally):
 - price: maximum monthly rent as a number (e.g., 1500)
-- city: city name in lowercase (e.g., "toronto")
-- house_type: one of "Apartment", "Condo", "House", "Studio", "Basement" or null
+- city: city or country name in lowercase (e.g., "toronto", "pakistan")
+- house_type: one of "Apartment", "Condo", "House", "Townhouse", "Studio", "Basement", "Room" or null
 - bedrooms: number of bedrooms or null
 - intent: "search" if user wants to find rentals, "negotiate" if discussing a specific listing, "chat" for general conversation
 
 Examples:
 - "I need a 2br apartment under $1500 in Toronto" → {"price":1500,"city":"toronto","house_type":"Apartment","bedrooms":2,"intent":"search"}
+- "i want a townhosue in pakitan" → {"price":null,"city":"pakistan","house_type":"Townhouse","bedrooms":null,"intent":"search"}
 - "How are you?" → {"price":null,"city":null,"house_type":null,"bedrooms":null,"intent":"chat"}
 - "Find me something cheap in Vancouver" → {"price":null,"city":"vancouver","house_type":null,"bedrooms":null,"intent":"search"}`;
 
