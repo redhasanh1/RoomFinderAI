@@ -5750,6 +5750,10 @@
         // Add Listing Form Toggle
         function toggleAddListingForm() {
             const section = document.getElementById('addListingSection');
+            if (!section) {
+                console.error('addListingSection element not found');
+                return;
+            }
             if (section.classList.contains('hidden')) {
                 showAddListingForm();
             } else {
@@ -5759,6 +5763,10 @@
 
         function showAddListingForm() {
             const section = document.getElementById('addListingSection');
+            if (!section) {
+                console.error('addListingSection element not found');
+                return;
+            }
             section.classList.remove('hidden');
             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
             
@@ -5776,6 +5784,10 @@
 
         function hideAddListingForm() {
             const section = document.getElementById('addListingSection');
+            if (!section) {
+                console.error('addListingSection element not found');
+                return;
+            }
             section.classList.add('hidden');
             
             // Reset button text
