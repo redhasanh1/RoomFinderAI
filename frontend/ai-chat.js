@@ -41,8 +41,40 @@ class AIChatHandler {
         
         // Only show welcome message if no previous conversation
         if (this.conversationHistory.length === 0) {
-            this.appendMessage('AI', 'Hi! Tell me what you\'re looking for and I\'ll find matching listings.\n\nFor example: "2 bedroom apartment in Toronto under $1800"', 'left');
+            this.showWelcomeWithChips();
         }
+    }
+
+    // Show welcome message with quick start chips
+    showWelcomeWithChips() {
+        const chatMessages = document.getElementById('chatMessages');
+        if (!chatMessages) return;
+
+        chatMessages.innerHTML = `
+            <div class="chat-bubble ai">
+                <p>Hi! I can help you find your next home. Describe what you're looking for, or pick a quick start below:</p>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3 mb-4">
+                <button onclick="window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
+                    📉 Under $2,000 / mo
+                </button>
+                <button onclick="window.aiChat.sendQuickMessage('Find me a 1 bedroom apartment in Toronto')" class="quick-chip">
+                    🏢 1-Bed in Toronto
+                </button>
+                <button onclick="window.aiChat.sendQuickMessage('Show me pet-friendly rentals')" class="quick-chip">
+                    🐶 Pet-Friendly Only
+                </button>
+            </div>
+        `;
+    }
+
+    // Send quick message from chip
+    sendQuickMessage(message) {
+        const messageInput = document.getElementById('messageInput');
+        if (messageInput) {
+            messageInput.value = message;
+        }
+        this.processMessage(message);
     }
 
     // Set negotiation engine

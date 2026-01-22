@@ -489,6 +489,35 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
+        /* Quick start chips */
+        .quick-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border: 1px solid #e2e8f0;
+            border-radius: 50px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .quick-chip:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .quick-chip:active {
+            transform: translateY(0);
+        }
+
         /* Send button - purple theme */
         .send-button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1204,8 +1233,18 @@
                         aiNegotiator.clearConversationHistory();
                         document.getElementById('chatMessages').innerHTML = `
                             <div class="chat-bubble ai">
-                                <p>Hi! Tell me what you're looking for and I'll find matching listings.</p>
-                                <p class="mt-2 text-sm text-gray-500">For example: "2 bedroom apartment in Toronto under $1800"</p>
+                                <p>Hi! I can help you find your next home. Describe what you're looking for, or pick a quick start below:</p>
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-3 mb-4">
+                                <button onclick="window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
+                                    📉 Under $2,000 / mo
+                                </button>
+                                <button onclick="window.aiChat.sendQuickMessage('Find me a 1 bedroom apartment in Toronto')" class="quick-chip">
+                                    🏢 1-Bed in Toronto
+                                </button>
+                                <button onclick="window.aiChat.sendQuickMessage('Show me pet-friendly rentals')" class="quick-chip">
+                                    🐶 Pet-Friendly Only
+                                </button>
                             </div>
                         `;
                     }
