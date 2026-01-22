@@ -763,6 +763,11 @@ class AIChatHandler {
             // Step 2: Create conversation if it doesn't exist
             if (!conversationId) {
                 console.log('📝 Creating new conversation...');
+                console.log('📝 Conversation details:', {
+                    listing_id: listing.id,
+                    sender_email: this.currentUser.email,
+                    receiver_email: listing.user_email
+                });
                 const { data: newConversation, error: createError } = await this.supabase
                     .from('conversations')
                     .insert({
@@ -780,7 +785,7 @@ class AIChatHandler {
                 }
 
                 conversationId = newConversation.id;
-                console.log('✅ Created new conversation with ID:', conversationId);
+                console.log('✅ Created new conversation with ID:', conversationId, 'between', this.currentUser.email, 'and', listing.user_email);
             } else {
                 console.log('✅ Found existing conversation with ID:', conversationId);
             }
