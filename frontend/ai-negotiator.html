@@ -628,49 +628,10 @@
             </div>
             
             <!-- Desktop Navigation -->
-            <div class="desktop-nav hidden md:flex items-center space-x-8">
-                <!-- Home - Standalone -->
+            <div class="desktop-nav hidden md:flex items-center space-x-6">
                 <a href="index.html" class="nav-item">Home</a>
-                
-                <!-- Dashboard - Standalone -->
                 <a href="dashboard.html" class="nav-item">Dashboard</a>
-                
-                <!-- Browse Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
-                        Browse <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="browse-dropdown">
-                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
-                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
-                    </div>
-                </div>
-                
-                <!-- Tools Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
-                        Tools <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="tools-dropdown">
-                        <a href="ai-negotiator.html" class="dropdown-item" style="color: #667eea; font-weight: 600;">AI Negotiator</a>
-                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
-                        <a href="legal.html" class="dropdown-item">Legal Help</a>
-                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
-                    </div>
-                </div>
-                
-                <!-- About Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
-                        About <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="about-dropdown">
-                        <a href="index.html#about" class="dropdown-item">About Us</a>
-                        <a href="index.html#contact" class="dropdown-item">Contact</a>
-                        <a href="support.html" class="dropdown-item">Support</a>
-                    </div>
-                </div>
+                <a href="listings.html" class="nav-item">Listings</a>
             </div>
             
             <!-- Desktop Auth -->
@@ -754,10 +715,10 @@
     </header>
 
     <!-- Main Content -->
-    <main class="pt-32 pb-16">
+    <main class="pt-24 pb-16">
         <div class="w-[95%] max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Page Header -->
-            <div class="mb-8 text-center">
+            <div class="mb-8 mt-6 text-center">
                 <h1 class="text-3xl md:text-4xl font-bold mb-3 font-display">
                     <span class="gradient-text">AI Negotiation Assistant</span>
                 </h1>
@@ -981,12 +942,11 @@
                 // Update auth section if it exists
                 const authSection = document.getElementById('authSection');
                 if (authSection) {
+                    const profileImg = currentUser.profileImage || defaultProfileImage;
                     authSection.innerHTML = `
-                        <div class="flex items-center space-x-4">
-                            <a href="/profile">
-                                <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                            </a>
-                        </div>
+                        <a href="profile.html" class="block">
+                            <img id="profileLogo" src="${profileImg}" alt="Profile" class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 hover:border-purple-400 transition">
+                        </a>
                     `;
                 }
                 
@@ -1244,7 +1204,8 @@
                         aiNegotiator.clearConversationHistory();
                         document.getElementById('chatMessages').innerHTML = `
                             <div class="chat-bubble ai">
-                                <p>👋 Hi! What kind of place are you looking for?</p>
+                                <p>Hi! Tell me what you're looking for and I'll find matching listings.</p>
+                                <p class="mt-2 text-sm text-gray-500">For example: "2 bedroom apartment in Toronto under $1800"</p>
                             </div>
                         `;
                     }
