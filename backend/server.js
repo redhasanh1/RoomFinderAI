@@ -4170,6 +4170,149 @@ app.post('/api/ai-negotiate', async (req, res) => {
     }
 });
 
+// API: General AI Chat endpoint for conversational rental assistant
+app.post('/api/chat', async (req, res) => {
+    console.log('💬 AI Chat endpoint called');
+
+    try {
+        const { message, conversationHistory, userEmail } = req.body;
+
+        if (!message) {
+            return res.status(400).json({ error: 'Message is required' });
+        }
+
+        console.log('📝 Chat message:', message.substring(0, 100));
+        console.log('📊 Conversation history length:', conversationHistory?.length || 0);
+
+        // Check if OpenAI is configured
+        if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
+            console.log('❌ OpenAI API key not configured');
+            return res.status(503).json({
+                error: 'AI service not available',
+                fallback: true
+            });
+        }
+
+        // Build the system prompt for conversational rental assistant
+        const systemPrompt = `You are a friendly and helpful rental assistant for RoomFinderAI. Your name is "Negotiator" and you help users find rental properties and negotiate better prices.
+
+YOUR CAPABILITIES:
+- Help users search for rental properties by understanding their needs
+- Have natural, friendly conversations
+- Extract rental search criteria from user messages
+- Provide helpful advice about renting
+- Assist with rental negotiations
+
+CONVERSATION STYLE:
+- Be warm, friendly, and conversational
+- Keep responses concise (2-3 sentences for casual chat, more for detailed questions)
+- Use a helpful but not overly formal tone
+- If users make small talk, respond naturally before guiding back to rentals
+
+IMPORTANT: After your response, you MUST include a JSON block with extracted rental criteria.
+Always end your response with this exact format on a new line:
+###CRITERIA###{"price":null,"city":null,"house_type":null,"bedrooms":null,"intent":null}###END###
+
+Fill in any values you can extract from the conversation:
+- price: maximum monthly rent as a number (e.g., 1500)
+- city: city name in lowercase (e.g., "toronto")
+- house_type: one of "Apartment", "Condo", "House", "Studio", "Basement" or null
+- bedrooms: number of bedrooms or null
+- intent: "search" if user wants to find rentals, "negotiate" if discussing a specific listing, "chat" for general conversation
+
+Examples:
+- "I need a 2br apartment under $1500 in Toronto" → {"price":1500,"city":"toronto","house_type":"Apartment","bedrooms":2,"intent":"search"}
+- "How are you?" → {"price":null,"city":null,"house_type":null,"bedrooms":null,"intent":"chat"}
+- "Find me something cheap in Vancouver" → {"price":null,"city":"vancouver","house_type":null,"bedrooms":null,"intent":"search"}`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...(conversationHistory || []).slice(-10) // Keep last 10 messages for context
+        ];
+
+        messages.push({ role: 'user', content: message });
+
+        console.log('🤖 Sending chat request to OpenAI...');
+
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+            },
+            body: JSON.stringify({
+                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                messages: messages,
+                max_tokens: 300,
+                temperature: 0.7
+            })
+        });
+
+        if (!openaiResponse.ok) {
+            const errorData = await openaiResponse.json().catch(() => ({}));
+            console.error('❌ OpenAI API error:', errorData);
+            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
+        }
+
+        const data = await openaiResponse.json();
+        let fullResponse = data.choices[0].message.content.trim();
+
+        console.log('✅ OpenAI response received');
+
+        // Parse the response to extract criteria
+        let aiResponse = fullResponse;
+        let extractedCriteria = {
+            price: null,
+            city: null,
+            house_type: null,
+            bedrooms: null,
+            intent: null
+        };
+
+        // Extract the criteria JSON from the response
+        const criteriaMatch = fullResponse.match(/###CRITERIA###(.+?)###END###/s);
+        if (criteriaMatch) {
+            try {
+                extractedCriteria = JSON.parse(criteriaMatch[1]);
+                // Remove the criteria block from the visible response
+                aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
+            } catch (e) {
+                console.log('⚠️ Could not parse criteria JSON:', e.message);
+            }
+        }
+
+        // Log activity
+        if (userEmail && supabase) {
+            try {
+                await logUserActivity(userEmail, 'ai_chat', 'Used AI chat assistant', {
+                    message_length: message.length,
+                    response_length: aiResponse.length,
+                    extracted_intent: extractedCriteria.intent
+                });
+            } catch (e) {
+                console.log('⚠️ Could not log activity:', e.message);
+            }
+        }
+
+        console.log('💬 Chat response generated, intent:', extractedCriteria.intent);
+
+        res.json({
+            response: aiResponse,
+            criteria: extractedCriteria,
+            tokensUsed: data.usage?.total_tokens || 0
+        });
+
+    } catch (error) {
+        console.error('❌ Error in /api/chat:', error.message);
+        res.status(500).json({
+            error: 'Failed to process chat request',
+            details: error.message,
+            fallback: true
+        });
+    }
+});
+
 // API: Test endpoint to verify deployment
 app.get('/api/test-negotiate', (req, res) => {
     console.log('🧪 Test negotiate endpoint called - server is running updated code');

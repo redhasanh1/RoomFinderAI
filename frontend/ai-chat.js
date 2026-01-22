@@ -163,60 +163,122 @@ class AIChatHandler {
     // Process user message
     async processMessage(message) {
         console.log('🔄 Processing user message:', message);
-        
+
         // Store user message
         this.appendMessage('You', message, 'right');
         this.conversationHistory.push({ role: 'user', content: message });
         this.saveConversationHistory();
-        
+
         // Reset negotiation state for new requests
         this.negotiationState = 'idle';
-        
+
         // Check if this is a negotiation response first
         if (this.checkForNegotiationResponse(message)) {
             return;
         }
-        
+
         try {
-            // Extract rental criteria from message
-            console.log('🔍 Extracting rental criteria...');
-            const extractedData = await this.extractRentalInfo(message);
-            console.log('📊 Extracted data:', extractedData);
-            
-            // Update user needs
-            this.updateUserNeeds(extractedData);
-            
-            // Check if we should search for listings
-            const shouldSearch = extractedData.intent === 'search' || 
-                                (extractedData.price && extractedData.city) ||
-                                (extractedData.house_type && (extractedData.price || extractedData.city));
-            
-            console.log('🎯 Should search for listings:', shouldSearch, {
-                hasIntent: extractedData.intent === 'search',
-                hasPrice: !!extractedData.price,
-                hasCity: !!extractedData.city,
-                hasType: !!extractedData.house_type,
-                shouldSearch
-            });
-            
-            if (shouldSearch) {
-                this.appendMessage('AI', 'I understand! Searching for matching listings in our database...', 'left');
-                setTimeout(() => this.searchAndMessage(), 1000);
-            } else {
-                this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+            // Call the AI chat endpoint for intelligent conversation
+            console.log('🤖 Calling AI chat endpoint...');
+            const chatResponse = await this.callAIChatEndpoint(message);
+
+            if (chatResponse.fallback) {
+                // API unavailable, fall back to manual extraction
+                console.log('⚠️ Falling back to manual extraction');
+                const extractedData = this.extractManually(message);
+                this.handleExtractedData(extractedData, null);
+                return;
             }
+
+            console.log('📊 AI Response:', chatResponse.response?.substring(0, 100));
+            console.log('📊 Extracted criteria:', chatResponse.criteria);
+
+            // Display the AI's conversational response
+            if (chatResponse.response) {
+                this.appendMessage('AI', chatResponse.response, 'left');
+                this.conversationHistory.push({ role: 'assistant', content: chatResponse.response });
+                this.saveConversationHistory();
+            }
+
+            // Handle extracted criteria
+            if (chatResponse.criteria) {
+                this.handleExtractedData(chatResponse.criteria, chatResponse.response);
+            }
+
         } catch (error) {
             console.error('Error processing message:', error);
-            this.appendMessage('AI', 'I\'m having trouble processing your request. Please try rephrasing your message.', 'left');
+            // Fall back to manual extraction on error
+            const extractedData = this.extractManually(message);
+            this.handleExtractedData(extractedData, null);
         }
     }
 
-    // Extract rental information using OpenAI
+    // Call the backend AI chat endpoint
+    async callAIChatEndpoint(message) {
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: message,
+                    conversationHistory: this.conversationHistory.slice(-10),
+                    userEmail: this.currentUser?.email
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('❌ Chat API error:', response.status, errorData);
+                return { fallback: true, error: errorData };
+            }
+
+            return await response.json();
+        } catch (error) {
+            console.error('❌ Error calling chat API:', error);
+            return { fallback: true, error: error.message };
+        }
+    }
+
+    // Handle extracted rental criteria
+    handleExtractedData(extractedData, aiResponse) {
+        // Update user needs from extracted data
+        this.updateUserNeeds(extractedData);
+
+        // Check if we should search for listings
+        const shouldSearch = extractedData.intent === 'search' ||
+                            (extractedData.price && extractedData.city) ||
+                            (extractedData.house_type && (extractedData.price || extractedData.city));
+
+        console.log('🎯 Should search for listings:', shouldSearch, {
+            hasIntent: extractedData.intent === 'search',
+            hasPrice: !!extractedData.price,
+            hasCity: !!extractedData.city,
+            hasType: !!extractedData.house_type
+        });
+
+        if (shouldSearch) {
+            // If AI already responded, just search. Otherwise show searching message.
+            if (!aiResponse) {
+                this.appendMessage('AI', 'Searching for matching listings in our database...', 'left');
+            }
+            setTimeout(() => this.searchAndMessage(), 1000);
+        } else if (!aiResponse) {
+            // Only show fallback message if AI didn't respond
+            this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+        }
+    }
+
+    // Extract rental information - now primarily uses API, with manual fallback
     async extractRentalInfo(message) {
-        // Always use manual extraction due to CORS limitations in browser
-        // OpenAI API calls should be done server-side
-        console.log('🔍 Using manual extraction for rental criteria...');
-        return this.extractManually(message);
+        // Try API first, fall back to manual extraction
+        const chatResponse = await this.callAIChatEndpoint(message);
+        if (chatResponse.fallback || !chatResponse.criteria) {
+            console.log('🔍 Using manual extraction for rental criteria...');
+            return this.extractManually(message);
+        }
+        return chatResponse.criteria;
     }
 
     // Manual extraction fallback
