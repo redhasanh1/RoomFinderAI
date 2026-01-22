@@ -32,9 +32,10 @@ class IOSListingsAPI {
                 console.log('📋 Fetching listings with filters:', filters);
             }
 
+            // Select only needed columns to reduce egress costs
             let query = this.supabase
                 .from('listings')
-                .select('*');
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category');
 
             // Apply filters
             if (filters.category) {
@@ -95,9 +96,10 @@ class IOSListingsAPI {
                 console.log('🔍 Getting listing by ID:', id);
             }
 
+            // Select only needed columns to reduce egress costs
             const listing = await this.supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, updated_at, status, location, category, featured')
                 .eq('id', id)
                 .single()
                 .exec();
@@ -245,9 +247,10 @@ class IOSListingsAPI {
                 console.log('📋 Getting user listings for:', currentUser.email);
             }
 
+            // Select only needed columns to reduce egress costs
             const listings = await this.supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category')
                 .eq('user_email', currentUser.email)
                 .order('created_at', { ascending: false })
                 .exec();
@@ -272,9 +275,10 @@ class IOSListingsAPI {
                 console.log('🔍 Searching listings for:', searchQuery);
             }
 
+            // Select only needed columns to reduce egress costs
             let query = this.supabase
                 .from('listings')
-                .select('*');
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category');
 
             // Apply search query
             if (searchQuery) {
@@ -324,9 +328,10 @@ class IOSListingsAPI {
                 console.log('⭐ Getting featured listings');
             }
 
+            // Select only needed columns to reduce egress costs
             const listings = await this.supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category, featured')
                 .eq('featured', true)
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
@@ -353,9 +358,10 @@ class IOSListingsAPI {
                 console.log('📅 Getting recent listings');
             }
 
+            // Select only needed columns to reduce egress costs
             const listings = await this.supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category')
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
                 .limit(limit)
@@ -464,9 +470,10 @@ class IOSListingsAPI {
                 console.log('🏷️ Getting listings by category:', category);
             }
 
+            // Select only needed columns to reduce egress costs
             const listings = await this.supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category')
                 .eq('category', category)
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
@@ -495,9 +502,10 @@ class IOSListingsAPI {
 
             // For now, use simple text search
             // In production, you'd use PostGIS for proper geographic queries
+            // Select only needed columns to reduce egress costs
             const listings = await this.supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, bathrooms, utilities, description, media, user_email, created_at, status, location, category')
                 .like('location', `%${location}%`)
                 .eq('status', 'active')
                 .order('created_at', { ascending: false })
@@ -529,10 +537,10 @@ class IOSListingsAPI {
                 console.log('❤️ Toggling favorite for listing:', listingId);
             }
 
-            // Check if already favorited
+            // Check if already favorited - select only id to reduce egress
             const existingFavorite = await this.supabase
                 .from('favorites')
-                .select('*')
+                .select('id')
                 .eq('user_email', currentUser.email)
                 .eq('listing_id', listingId)
                 .single()
