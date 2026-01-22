@@ -5789,7 +5789,7 @@
                 return;
             }
             section.classList.add('hidden');
-            
+
             // Reset button text
             const buttons = document.querySelectorAll('#addListingToggle, #addListingToggleMain');
             buttons.forEach(btn => {
@@ -5802,15 +5802,30 @@
             });
         }
 
+        // Explicitly attach functions to window for global access
+        window.toggleAddListingForm = toggleAddListingForm;
+        window.showAddListingForm = showAddListingForm;
+        window.hideAddListingForm = hideAddListingForm;
+
         function showManualForm() {
-            document.getElementById('manualFormSection').classList.remove('hidden');
+            const section = document.getElementById('manualFormSection');
+            if (!section) {
+                console.error('manualFormSection element not found');
+                return;
+            }
+            section.classList.remove('hidden');
         }
+        window.showManualForm = showManualForm;
 
         // Advanced Filters Toggle
         function toggleAdvancedFilters() {
             const advancedFilters = document.getElementById('advancedFilters');
+            if (!advancedFilters) {
+                console.error('advancedFilters element not found');
+                return;
+            }
             const isHidden = advancedFilters.classList.contains('hidden');
-            
+
             if (isHidden) {
                 advancedFilters.classList.remove('hidden');
                 advancedFilters.style.maxHeight = advancedFilters.scrollHeight + 'px';
@@ -5821,6 +5836,7 @@
                 }, 300);
             }
         }
+        window.toggleAdvancedFilters = toggleAdvancedFilters;
 
         // Quick Filter Functions
         function applyQuickFilter(type, value) {
@@ -6730,6 +6746,30 @@
         // Replace the old initialization function call
         window.originalInitializeListingsPage = initializeListingsPage;
         window.initializeListingsPage = initializeListingsPageNew;
+
+        // Explicitly attach all onclick handler functions to window for global access
+        // This ensures they work from inline onclick attributes
+        if (typeof closeMobileMenu === 'function') window.closeMobileMenu = closeMobileMenu;
+        if (typeof toggleMobileMenu === 'function') window.toggleMobileMenu = toggleMobileMenu;
+        if (typeof openMobileMenu === 'function') window.openMobileMenu = openMobileMenu;
+        if (typeof toggleMobileSection === 'function') window.toggleMobileSection = toggleMobileSection;
+        if (typeof toggleDropdown === 'function') window.toggleDropdown = toggleDropdown;
+        if (typeof toggleProfileDropdown === 'function') window.toggleProfileDropdown = toggleProfileDropdown;
+        if (typeof clearSearchFilters === 'function') window.clearSearchFilters = clearSearchFilters;
+        if (typeof applySearchFilters === 'function') window.applySearchFilters = applySearchFilters;
+        if (typeof applyQuickFilter === 'function') window.applyQuickFilter = applyQuickFilter;
+        if (typeof displayAllListings === 'function') window.displayAllListings = displayAllListings;
+        if (typeof displayListings === 'function') window.displayListings = displayListings;
+        if (typeof applySorting === 'function') window.applySorting = applySorting;
+        if (typeof setViewMode === 'function') window.setViewMode = setViewMode;
+        if (typeof logout === 'function') window.logout = logout;
+        if (typeof toggleFavorite === 'function') window.toggleFavorite = toggleFavorite;
+        if (typeof toggleDiagnosticsPanel === 'function') window.toggleDiagnosticsPanel = toggleDiagnosticsPanel;
+        if (typeof runChatDiagnostics === 'function') window.runChatDiagnostics = runChatDiagnostics;
+        if (typeof retryChatSetup === 'function') window.retryChatSetup = retryChatSetup;
+        if (typeof openConversationInModal === 'function') window.openConversationInModal = openConversationInModal;
+
+        console.log('✅ All onclick handler functions attached to window');
 
         // Initialize enhanced features when page loads
         // Multiple independent pathways ensure listings load reliably
