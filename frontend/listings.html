@@ -1441,7 +1441,21 @@
                 
                 <div class="mobile-menu-items">
                     <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
-                    
+                    <a href="dashboard.html" class="mobile-menu-item" onclick="closeMobileMenu()">📊 Dashboard</a>
+                    <a href="roommate-matching.html" class="mobile-menu-item" onclick="closeMobileMenu()">👥 RoomPal</a>
+
+                    <!-- Profile Section -->
+                    <div class="mobile-section">
+                        <button class="mobile-section-header" onclick="toggleMobileSection('profile')">
+                            👤 Profile <span class="mobile-arrow" id="profile-arrow">▼</span>
+                        </button>
+                        <div class="mobile-section-content" id="profile-section">
+                            <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">My Profile</a>
+                            <a href="profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()">My Listings</a>
+                            <a href="favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
+                        </div>
+                    </div>
+
                     <!-- Browse Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
@@ -1449,12 +1463,9 @@
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
-                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
-                            <a href="#add-listing" class="mobile-menu-item" onclick="closeMobileMenu(); document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
-                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
                     </div>
-                    
+
                     <!-- Tools Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
@@ -1462,24 +1473,23 @@
                         </button>
                         <div class="mobile-section-content" id="tools-section">
                             <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
-                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
                             <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
-                            <a href="mortgage.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
                         </div>
                     </div>
-                    
-                    <!-- About Section -->
+
+                    <!-- More Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('about')">
-                            ℹ️ About <span class="mobile-arrow" id="about-arrow">▼</span>
+                            ℹ️ More <span class="mobile-arrow" id="about-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="about-section">
-                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="coming-soon.html" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing</a>
                             <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
                             <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
                         </div>
                     </div>
-                    
+
                     <!-- Mobile Auth -->
                     <div id="mobileAuthSection">
                         <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
