@@ -41,7 +41,7 @@ class AIChatHandler {
         
         // Only show welcome message if no previous conversation
         if (this.conversationHistory.length === 0) {
-            this.appendMessage('AI', '👋 Hi! What kind of place are you looking for?', 'left');
+            this.appendMessage('AI', 'Hi! Tell me what you\'re looking for and I\'ll find matching listings.\n\nFor example: "2 bedroom apartment in Toronto under $1800"', 'left');
         }
     }
 
