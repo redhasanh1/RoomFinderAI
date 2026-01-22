@@ -4356,7 +4356,7 @@
                     .eq('email', currentUser.email)
                     .single();
 
-                console.log('📬 Profile check:', { found: !!currentProfile, error: profileError?.message });
+                console.log('📬 Profile check:', { found: !!currentProfile, profileEmail: currentProfile?.email, localEmail: currentUser.email, error: profileError?.message });
 
                 if (profileError || !currentProfile) {
                     console.error('Current user not found in profiles database:', profileError);
@@ -4365,14 +4365,16 @@
                     return;
                 }
 
-                console.log('📬 Querying conversations for:', currentUser.email);
+                // Use the email from profile to ensure case consistency
+                const userEmail = currentProfile.email || currentUser.email;
+                console.log('📬 Querying conversations for:', userEmail);
                 const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
                         *,
                         listings (title, id)
                     `)
-                    .or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`)
+                    .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`)
                     .order('created_at', { ascending: false });
 
                 console.log('📬 Conversations query result:', { count: conversations?.length, error: error?.message, conversations });
@@ -4410,9 +4412,14 @@
                 // Filter conversations to include those where current user is a participant
                 // (relaxed check - don't require both users to be in profiles)
                 const filteredConversations = [];
+                const userEmailLower = currentUser.email.toLowerCase();
+                console.log('📬 Filtering conversations. User email:', userEmailLower, 'Total conversations:', conversationsWithUnread.length);
                 for (const conv of conversationsWithUnread) {
-                    // Check if current user is a participant (either sender or receiver)
-                    const isParticipant = conv.sender_email === currentUser.email || conv.receiver_email === currentUser.email;
+                    // Check if current user is a participant (case-insensitive)
+                    const senderLower = conv.sender_email?.toLowerCase();
+                    const receiverLower = conv.receiver_email?.toLowerCase();
+                    const isParticipant = senderLower === userEmailLower || receiverLower === userEmailLower;
+                    console.log('📬 Checking conv:', conv.id, 'sender:', senderLower, 'receiver:', receiverLower, 'isParticipant:', isParticipant);
 
                     if (isParticipant) {
                         // Apply local read status - if conversation was marked as read locally, keep it as 0
@@ -4444,7 +4451,8 @@
                 }
 
                 conversationTabs.innerHTML = globalUserConversations.map(conv => {
-                    const otherUserEmail = conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email;
+                    const userEmailLower = currentUser.email?.toLowerCase();
+                    const otherUserEmail = conv.sender_email?.toLowerCase() === userEmailLower ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
                     
                     // Extract username from email (part before @)
