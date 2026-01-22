@@ -4346,28 +4346,25 @@
             // Load user's conversations
             async function loadUserConversations() {
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                console.log('📬 loadUserConversations - currentUser:', currentUser?.email);
-                if (!currentUser) return;
-
-                // First verify current user is registered in profiles
-                const { data: currentProfile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('email')
-                    .eq('email', currentUser.email)
-                    .single();
-
-                console.log('📬 Profile check:', { found: !!currentProfile, profileEmail: currentProfile?.email, localEmail: currentUser.email, error: profileError?.message });
-
-                if (profileError || !currentProfile) {
-                    console.error('Current user not found in profiles database:', profileError);
-                    const conversationTabs = document.getElementById('conversationTabs');
-                    conversationTabs.innerHTML = '<div class="p-4 text-red-500 text-center">Please register to access messaging</div>';
+                console.log('📬 loadUserConversations called');
+                console.log('📬 currentUser:', currentUser);
+                if (!currentUser || !currentUser.email) {
+                    console.log('📬 No currentUser, returning');
                     return;
                 }
 
-                // Use the email from profile to ensure case consistency
-                const userEmail = currentProfile.email || currentUser.email;
-                console.log('📬 Querying conversations for:', userEmail);
+                const userEmail = currentUser.email;
+                console.log('📬 Querying ALL conversations first...');
+
+                // First get ALL conversations to debug
+                const { data: allConvs, error: allError } = await supabase
+                    .from('conversations')
+                    .select('id, sender_email, receiver_email, listing_id')
+                    .limit(20);
+                console.log('📬 ALL conversations in DB:', allConvs, 'error:', allError?.message);
+
+                // Now query for this user
+                console.log('📬 Querying conversations for user:', userEmail);
                 const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
@@ -4377,7 +4374,7 @@
                     .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`)
                     .order('created_at', { ascending: false });
 
-                console.log('📬 Conversations query result:', { count: conversations?.length, error: error?.message, conversations });
+                console.log('📬 User conversations result:', { count: conversations?.length, error: error?.message, conversations });
 
                 if (error) {
                     console.error('Error loading conversations:', error);
