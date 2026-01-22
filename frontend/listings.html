@@ -1841,20 +1841,21 @@
     </footer>
 
     <!-- Messaging Panel -->
-    <div id="messagingPanel" class="fixed bottom-4 right-4" style="z-index: 99999; pointer-events: auto;">
+    <div id="messagingPanel" class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8" style="z-index: 99999; pointer-events: auto;">
         <!-- Message Toggle Button -->
-        <button id="messageToggleBtn" class="text-white rounded-full p-4 shadow-xl hover:shadow-2xl hover:scale-105 transition-all duration-200 flex items-center justify-center w-14 h-14 relative cursor-pointer" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); pointer-events: auto;" onclick="console.log('Button clicked'); toggleMessagePanel(event);">
-            <svg class="w-7 h-7 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+        <button id="messageToggleBtn" class="text-white rounded-full p-3.5 shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center w-14 h-14 relative cursor-pointer" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); pointer-events: auto;" onclick="console.log('Button clicked'); toggleMessagePanel(event);">
+            <svg class="w-6 h-6 pointer-events-none" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H5.17L4 17.17V4h16v12z"/>
+                <path d="M7 9h10v2H7zm0-3h10v2H7z"/>
             </svg>
-            <span id="messageNotificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden font-medium">0</span>
+            <span id="messageNotificationBadge" class="absolute -top-1 -right-1 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden font-medium shadow-md">0</span>
         </button>
-        
+
         <!-- Message Panel -->
-        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-96 bg-white rounded-2xl shadow-2xl border border-gray-200">
-            <div class="p-4 border-b border-gray-700 text-white rounded-t-2xl flex justify-between items-center" style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%);">
+        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-[calc(100vw-3rem)]">
+            <div class="p-4 border-b text-white rounded-t-2xl flex justify-between items-center" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
                 <h3 class="font-semibold text-sm tracking-wide">Messages</h3>
-                <button id="forceHideNotifications" class="text-xs text-gray-300 hover:text-white transition-colors" title="Mark all as read">Mark all read</button>
+                <button id="forceHideNotifications" class="text-xs text-blue-100 hover:text-white transition-colors" title="Mark all as read">Mark all read</button>
             </div>
             <div id="conversationTabs" class="max-h-96 overflow-y-auto">
                 <div id="noConversations" class="p-4 text-gray-500 text-center">
