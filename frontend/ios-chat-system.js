@@ -80,9 +80,10 @@ class IOSChatSystem {
             }
 
             // Check if conversation already exists
+            // Select only needed columns to reduce egress costs
             const existingConversation = await this.supabase
                 .from('conversations')
-                .select('*')
+                .select('id, listing_id, sender_email, receiver_email, created_at, last_message_at')
                 .eq('listing_id', listingId)
                 .or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`)
                 .or(`sender_email.eq.${receiverEmail},receiver_email.eq.${receiverEmail}`)
@@ -133,9 +134,10 @@ class IOSChatSystem {
                 console.log('💬 Getting messages for conversation:', conversationId);
             }
 
+            // Select only needed columns to reduce egress costs
             const messages = await this.supabase
                 .from('messages')
-                .select('*')
+                .select('id, conversation_id, sender_email, content, message_type, file_url, file_name, file_size, file_type, created_at, read')
                 .eq('conversation_id', conversationId)
                 .order('created_at', { ascending: true })
                 .exec();
@@ -578,8 +580,8 @@ class IOSChatSystem {
         // Initial check
         checkForNewMessages();
 
-        // Poll every 2 seconds
-        const interval = setInterval(checkForNewMessages, 2000);
+        // Poll every 30 seconds (reduced from 2s to lower egress costs)
+        const interval = setInterval(checkForNewMessages, 30000);
         this.activeListeners.set(conversationId, interval);
 
         // Return cleanup function

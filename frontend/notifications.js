@@ -99,9 +99,10 @@ class NotificationService {
     async checkMessageRelevance(message) {
         try {
             // Check if this is a landlord reply to one of user's negotiations
+            // Select only needed columns to reduce egress costs
             const { data: conversation } = await this.supabase
                 .from('conversations')
-                .select('*')
+                .select('id, listing_id, sender_email, receiver_email')
                 .eq('id', message.conversation_id)
                 .or(`sender_email.eq.${this.userEmail},receiver_email.eq.${this.userEmail}`)
                 .maybeSingle();
@@ -161,9 +162,10 @@ class NotificationService {
 
         try {
             // Load from ai_chats table
+            // Select only needed columns to reduce egress costs
             const { data: aiChats, error } = await this.supabase
                 .from('ai_chats')
-                .select('*')
+                .select('id, title, conversation_data, created_at')
                 .eq('user_email', this.userEmail)
                 .order('created_at', { ascending: false })
                 .limit(20);

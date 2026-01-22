@@ -486,9 +486,10 @@ class ChatSystem {
         console.log('🔄 Loading messages for conversation:', conversationId);
         
         try {
+            // Select only needed columns to reduce egress costs
             const { data: messages, error } = await this.supabase
                 .from('messages')
-                .select('*')
+                .select('id, conversation_id, sender_email, content, message_type, file_url, file_name, file_size, file_type, created_at')
                 .eq('conversation_id', conversationId)
                 .order('created_at', { ascending: true });
 
@@ -661,9 +662,10 @@ class ChatSystem {
      * Find existing conversation or create new one
      */
     async findOrCreateConversation(currentUser, listing) {
+        // Select only needed columns to reduce egress costs
         const { data: conversations, error } = await this.supabase
             .from('conversations')
-            .select('*')
+            .select('id, listing_id, sender_email, receiver_email, created_at')
             .eq('listing_id', listing.id)
             .eq('sender_email', currentUser.email)
             .eq('receiver_email', listing.user_email);
