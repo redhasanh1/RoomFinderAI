@@ -372,9 +372,8 @@ class AddListingForm {
         const storageApiUrl = `${config.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
 
         for (const fileObj of files) {
-            const file = fileObj.file;
-            const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
-            const filePath = fileName;
+            let file = fileObj.file;
+            const originalSize = file.size;
 
             // Determine content type
             const contentType = this.getContentType(file);
@@ -384,13 +383,27 @@ class AddListingForm {
                 assignedType: contentType
             });
 
-            // Validate image files
+            // Validate and compress image files
             if (contentType.startsWith('image/')) {
                 await this.validateImageFile(file);
+
+                // Compress image before upload to reduce egress costs
+                const compressedBlob = await this.compressImage(file, 1200, 0.8);
+
+                // Create a new File object from the compressed blob
+                file = new File([compressedBlob], file.name, {
+                    type: 'image/jpeg',
+                    lastModified: Date.now()
+                });
+
+                console.log(`📦 Original: ${(originalSize / 1024).toFixed(1)}KB, Compressed: ${(file.size / 1024).toFixed(1)}KB`);
             }
 
+            const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            const filePath = fileName;
+
             try {
-                const uploadResult = await this.uploadFileToStorage(file, filePath, contentType, storageApiUrl, config);
+                const uploadResult = await this.uploadFileToStorage(file, filePath, contentType.startsWith('image/') ? 'image/jpeg' : contentType, storageApiUrl, config);
                 uploadedMedia.push(uploadResult);
             } catch (err) {
                 console.error('Upload failed for', file.name, err);
@@ -432,6 +445,65 @@ class AddListingForm {
                 img.src = e.target.result;
             };
             reader.readAsDataURL(file);
+        });
+    }
+
+    /**
+     * Compress image before upload to reduce egress costs
+     * @param {File} file - Original image file
+     * @param {number} maxWidth - Maximum width (default 1200px)
+     * @param {number} quality - JPEG quality 0-1 (default 0.8)
+     * @returns {Promise<Blob>} Compressed image blob
+     */
+    async compressImage(file, maxWidth = 1200, quality = 0.8) {
+        return new Promise((resolve, reject) => {
+            // Skip compression for non-image files
+            if (!file.type.startsWith('image/')) {
+                resolve(file);
+                return;
+            }
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+
+            img.onload = () => {
+                let { width, height } = img;
+
+                // Only resize if image is larger than maxWidth
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to JPEG blob for better compression
+                canvas.toBlob(
+                    (blob) => {
+                        if (blob) {
+                            console.log(`📸 Image compressed: ${(file.size / 1024).toFixed(1)}KB -> ${(blob.size / 1024).toFixed(1)}KB (${((1 - blob.size / file.size) * 100).toFixed(0)}% reduction)`);
+                            resolve(blob);
+                        } else {
+                            resolve(file); // Fallback to original
+                        }
+                    },
+                    'image/jpeg',
+                    quality
+                );
+
+                // Clean up object URL
+                URL.revokeObjectURL(img.src);
+            };
+
+            img.onerror = () => {
+                URL.revokeObjectURL(img.src);
+                resolve(file); // Fallback to original on error
+            };
+
+            img.src = URL.createObjectURL(file);
         });
     }
 

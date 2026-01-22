@@ -81,10 +81,17 @@ class MessagingPanel {
 
     /**
      * Start periodic updates for conversations
+     * Optimized: Only polls when page is visible to reduce egress costs
      */
     startPeriodicUpdates() {
-        // Update conversations every 30 seconds if user is authenticated
+        // Update conversations every 30 seconds if user is authenticated AND page is visible
         this.updateInterval = setInterval(() => {
+            // Skip polling when page is not visible to save bandwidth
+            if (document.hidden) {
+                console.log('⏸️ Skipping conversation poll - page not visible');
+                return;
+            }
+
             const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
             if (currentUser) {
                 this.loadUserConversations();
@@ -144,61 +151,82 @@ class MessagingPanel {
 
     /**
      * Get unread counts for conversations
+     * Optimized: Uses batch queries instead of N+1 queries to reduce egress costs
      */
     async getUnreadCounts(conversations, currentUser, supabase) {
         if (!conversations || conversations.length === 0) {
             return [];
         }
 
-        const conversationsWithUnread = [];
+        try {
+            // Get all conversation IDs
+            const conversationIds = conversations.map(c => c.id);
 
-        for (const conv of conversations) {
-            try {
-                // Get user's last read timestamp
-                const { data: readData } = await supabase
-                    .from('conversation_reads')
-                    .select('last_read_at')
-                    .eq('conversation_id', conv.id)
-                    .eq('user_email', currentUser.email)
-                    .single();
+            // BATCH QUERY 1: Get all last_read_at timestamps in a single query
+            const { data: readDataArray } = await supabase
+                .from('conversation_reads')
+                .select('conversation_id, last_read_at')
+                .in('conversation_id', conversationIds)
+                .eq('user_email', currentUser.email);
 
-                const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
+            // Create a map for quick lookup
+            const readDataMap = new Map();
+            if (readDataArray) {
+                readDataArray.forEach(rd => {
+                    readDataMap.set(rd.conversation_id, rd.last_read_at);
+                });
+            }
 
-                // Count unread messages
-                const { count: unreadCount } = await supabase
-                    .from('messages')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('conversation_id', conv.id)
-                    .neq('sender_email', currentUser.email)
-                    .gt('created_at', lastReadAt);
+            // BATCH QUERY 2: Get unread counts for all conversations
+            // Using a single query with grouping would be ideal, but Supabase doesn't support it well
+            // Instead, we get all relevant messages and count client-side
+            const { data: allMessages } = await supabase
+                .from('messages')
+                .select('conversation_id, created_at')
+                .in('conversation_id', conversationIds)
+                .neq('sender_email', currentUser.email);
 
-                // Determine other user details
+            // Count unread messages per conversation
+            const unreadCountMap = new Map();
+            if (allMessages) {
+                allMessages.forEach(msg => {
+                    const lastReadAt = readDataMap.get(msg.conversation_id) || '1970-01-01T00:00:00Z';
+                    if (new Date(msg.created_at) > new Date(lastReadAt)) {
+                        unreadCountMap.set(
+                            msg.conversation_id,
+                            (unreadCountMap.get(msg.conversation_id) || 0) + 1
+                        );
+                    }
+                });
+            }
+
+            // Build result array
+            return conversations.map(conv => {
                 const isUserSender = conv.sender_email === currentUser.email;
                 const otherUserEmail = isUserSender ? conv.receiver_email : conv.sender_email;
                 const listingTitle = conv.listings?.title || 'Unknown Property';
+                const lastReadAt = readDataMap.get(conv.id) || '1970-01-01T00:00:00Z';
 
-                conversationsWithUnread.push({
+                return {
                     ...conv,
-                    unread_count: unreadCount || 0,
+                    unread_count: unreadCountMap.get(conv.id) || 0,
                     other_user_email: otherUserEmail,
                     listing_title: listingTitle,
                     last_read_at: lastReadAt
-                });
+                };
+            });
 
-            } catch (error) {
-                console.error('Error processing conversation:', conv.id, error);
-                // Add conversation anyway with 0 unread count
-                conversationsWithUnread.push({
-                    ...conv,
-                    unread_count: 0,
-                    other_user_email: conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email,
-                    listing_title: conv.listings?.title || 'Unknown Property',
-                    last_read_at: '1970-01-01T00:00:00Z'
-                });
-            }
+        } catch (error) {
+            console.error('Error in batch getUnreadCounts:', error);
+            // Fallback: return conversations with 0 unread
+            return conversations.map(conv => ({
+                ...conv,
+                unread_count: 0,
+                other_user_email: conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email,
+                listing_title: conv.listings?.title || 'Unknown Property',
+                last_read_at: '1970-01-01T00:00:00Z'
+            }));
         }
-
-        return conversationsWithUnread;
     }
 
     /**

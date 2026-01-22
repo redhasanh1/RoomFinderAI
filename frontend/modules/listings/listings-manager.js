@@ -41,9 +41,10 @@ class ListingsManager {
         }
 
         try {
+            // Select only needed columns to reduce egress costs
             let query = supabase
                 .from('listings')
-                .select('*')
+                .select('id, title, price, city, street, postalCode, house_type, bedrooms, utilities, description, media, user_email, created_at')
                 .order(this.currentSort, { ascending: this.currentSortDirection === 'asc' });
 
             if (limit) {
