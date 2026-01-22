@@ -303,13 +303,10 @@ class AIChatHandler {
             console.log('🏙️ Extracted city:', result.city);
         }
 
-        // Extract country names as location fallback (with common typo tolerance)
-        const countryMatch = message.match(/\b(pak[ia]?[st]+an|canada|usa|united states|uk|united kingdom|australia|france|germany|india|china|japan|iran|russia)\b/i);
+        // Extract country names as location fallback
+        const countryMatch = message.match(/\b(pakistan|canada|usa|united states|uk|united kingdom|australia|france|germany|india|china|japan|iran|russia)\b/i);
         if (countryMatch && !result.city) {
-            // Normalize typos to correct spelling
-            let country = countryMatch[1].toLowerCase().trim();
-            if (country.match(/pak/i)) country = 'pakistan';
-            result.city = country;
+            result.city = countryMatch[1].toLowerCase().trim();
             console.log('🌍 Extracted country as location:', result.city);
         }
 
@@ -325,23 +322,21 @@ class AIChatHandler {
             }
         }
         
-        // Extract house type (check specific types before generic ones, with typo tolerance)
+        // Extract house type (fallback only - OpenAI handles this primarily)
         const msg = message.toLowerCase();
-        if (msg.includes('apartment') || msg.match(/apartm[ae]nt/)) {
+        if (msg.includes('apartment')) {
             result.house_type = 'Apartment';
-        } else if (msg.includes('condo') || msg.match(/cond[oa]/)) {
+        } else if (msg.includes('condo')) {
             result.house_type = 'Condo';
-        } else if (msg.match(/town\s*h[ou]+se?/i) || msg.match(/townho[use]+/i)) {
-            // Matches: townhouse, town house, townhosue, townhous, etc.
+        } else if (msg.includes('townhouse') || msg.includes('town house')) {
             result.house_type = 'Townhouse';
-        } else if (msg.match(/\bh[ou]+se?\b/) && !msg.match(/town/)) {
-            // Matches: house, hous, houe, but not if "town" is present
+        } else if (msg.includes('house')) {
             result.house_type = 'House';
         } else if (msg.includes('studio')) {
             result.house_type = 'Studio';
         } else if (msg.includes('basement')) {
             result.house_type = 'Basement';
-        } else if (msg.match(/\broom\b/)) {
+        } else if (msg.includes('room')) {
             result.house_type = 'Room';
         }
         
