@@ -4401,29 +4401,23 @@
                     conversationsWithUnread.push(conv);
                 }
 
-                // Filter conversations to only include those between registered users
+                // Filter conversations to include those where current user is a participant
+                // (relaxed check - don't require both users to be in profiles)
                 const filteredConversations = [];
                 for (const conv of conversationsWithUnread) {
-                    // Check if both sender and receiver are in profiles database
-                    const { data: senderProfile } = await supabase
-                        .from('profiles')
-                        .select('email')
-                        .eq('email', conv.sender_email)
-                        .single();
-                    
-                    const { data: receiverProfile } = await supabase
-                        .from('profiles')
-                        .select('email')
-                        .eq('email', conv.receiver_email)
-                        .single();
+                    // Check if current user is a participant (either sender or receiver)
+                    const isParticipant = conv.sender_email === currentUser.email || conv.receiver_email === currentUser.email;
 
-                    if (senderProfile && receiverProfile) {
+                    if (isParticipant) {
                         // Apply local read status - if conversation was marked as read locally, keep it as 0
                         if (locallyReadConversations.has(conv.id)) {
                             console.log('🔒 Preserving local read status for conversation:', conv.id);
                             conv.unread_count = 0;
                         }
                         filteredConversations.push(conv);
+                        console.log('✅ Including conversation:', conv.id, 'between', conv.sender_email, 'and', conv.receiver_email);
+                    } else {
+                        console.log('⚠️ Skipping conversation (not a participant):', conv.id);
                     }
                 }
 
