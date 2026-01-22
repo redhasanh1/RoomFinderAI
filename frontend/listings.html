@@ -4235,22 +4235,6 @@
                 return;
             }
 
-            let isMessagingPanelOpen = false;
-
-            // Toggle message panel - use event.stopPropagation to prevent document click from immediately closing it
-            messageToggleBtn.addEventListener('click', async (event) => {
-                event.stopPropagation();
-                isMessagingPanelOpen = !isMessagingPanelOpen;
-                if (isMessagingPanelOpen) {
-                    messagePanel.classList.remove('hidden');
-                    messagePanel.classList.add('animate-fade-in');
-                    await loadUserConversations();
-                } else {
-                    messagePanel.classList.add('hidden');
-                    messagePanel.classList.remove('animate-fade-in');
-                }
-            });
-
             // Prevent clicks inside panel from closing it
             messagePanel.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -4275,15 +4259,6 @@
                     displayConversations();
                 });
             }
-
-            // Close panel when clicking outside
-            document.addEventListener('click', (event) => {
-                if (isMessagingPanelOpen && !event.target.closest('#messagingPanel')) {
-                    messagePanel.classList.add('hidden');
-                    messagePanel.classList.remove('animate-fade-in');
-                    isMessagingPanelOpen = false;
-                }
-            });
 
             console.log('✅ Messaging panel setup complete');
 
