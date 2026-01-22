@@ -5328,7 +5328,7 @@
         
         // Global message panel toggle (backup for onclick handler)
         let messagePanelOpen = false;
-        async function toggleMessagePanel(event) {
+        window.toggleMessagePanel = async function(event) {
             if (event) event.stopPropagation();
             const messagePanel = document.getElementById('messagePanel');
             if (!messagePanel) {
