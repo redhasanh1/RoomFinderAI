@@ -4346,6 +4346,7 @@
             // Load user's conversations
             async function loadUserConversations() {
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                console.log('📬 loadUserConversations - currentUser:', currentUser?.email);
                 if (!currentUser) return;
 
                 // First verify current user is registered in profiles
@@ -4355,6 +4356,8 @@
                     .eq('email', currentUser.email)
                     .single();
 
+                console.log('📬 Profile check:', { found: !!currentProfile, error: profileError?.message });
+
                 if (profileError || !currentProfile) {
                     console.error('Current user not found in profiles database:', profileError);
                     const conversationTabs = document.getElementById('conversationTabs');
@@ -4362,6 +4365,7 @@
                     return;
                 }
 
+                console.log('📬 Querying conversations for:', currentUser.email);
                 const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
@@ -4370,6 +4374,8 @@
                     `)
                     .or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`)
                     .order('created_at', { ascending: false });
+
+                console.log('📬 Conversations query result:', { count: conversations?.length, error: error?.message, conversations });
 
                 if (error) {
                     console.error('Error loading conversations:', error);
