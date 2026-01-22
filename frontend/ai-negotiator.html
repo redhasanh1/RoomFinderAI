@@ -489,9 +489,9 @@
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
         
-        /* Send button - matching user bubble colors */
+        /* Send button - purple theme */
         .send-button {
-            background: linear-gradient(135deg, #0066FF 0%, #00D4AA 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             border-radius: 12px;
             padding: 12px 20px;
@@ -499,20 +499,18 @@
             font-weight: 600;
             transition: all 0.3s ease;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0, 102, 255, 0.25);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
 
         .send-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 102, 255, 0.4);
-            filter: brightness(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
 
         .send-button:disabled {
             opacity: 0.5;
             cursor: not-allowed;
             transform: none;
-            box-shadow: none;
         }
         
         /* Scroll styles */
@@ -1246,14 +1244,7 @@
                         aiNegotiator.clearConversationHistory();
                         document.getElementById('chatMessages').innerHTML = `
                             <div class="chat-bubble ai">
-                                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
-                                <p>👋 Hello! I'm your AI-powered rental negotiation assistant.</p>
-                                <p class="mt-2">Tell me what you're looking for and I'll help you:</p>
-                                <ul class="mt-2 ml-4 space-y-1 text-sm">
-                                    <li>🔍 Find matching properties</li>
-                                    <li>💬 Contact landlords professionally</li>
-                                    <li>💰 Negotiate better rental deals</li>
-                                </ul>
+                                <p>👋 Hi! What kind of place are you looking for?</p>
                             </div>
                         `;
                     }
