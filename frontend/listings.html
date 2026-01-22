@@ -2423,6 +2423,18 @@
         const mediaInput = document.getElementById('media');
         const mediaPreview = document.getElementById('mediaPreview');
         let uploadedFiles = [];
+        let isProcessingFiles = false;
+
+        // Clean up object URLs to prevent memory leaks
+        function cleanupUploadedFiles() {
+            uploadedFiles.forEach(f => {
+                if (f.data && f.data.startsWith('blob:')) {
+                    URL.revokeObjectURL(f.data);
+                }
+            });
+            uploadedFiles = [];
+            mediaPreview.innerHTML = '';
+        }
 
         // Image compression function - WebP with JPEG fallback
         async function compressImage(file, maxDimension = 2048, quality = 0.82) {
@@ -2472,9 +2484,16 @@
         }
 
         mediaInput.addEventListener('change', async () => {
-            mediaPreview.innerHTML = '';
-            uploadedFiles = [];
+            // Prevent re-entrancy
+            if (isProcessingFiles) return;
+
+            // Clean up previous files
+            cleanupUploadedFiles();
+
             const files = Array.from(mediaInput.files);
+
+            // Skip if no files selected (e.g., form reset)
+            if (files.length === 0) return;
 
             // Limit to 10 photos
             if (files.length > 10) {
@@ -2482,6 +2501,8 @@
                 mediaInput.value = '';
                 return;
             }
+
+            isProcessingFiles = true;
 
             // Filter to only image files
             const imageFiles = files.filter(file => file.type.startsWith('image/'));
@@ -2533,6 +2554,7 @@
             }
 
             console.log('Files processed:', uploadedFiles.map(f => f.name));
+            isProcessingFiles = false;
         });
 
         // Upload media to Supabase
@@ -3110,8 +3132,7 @@
                 console.log('Updated localStorage with new listing:', newListing);
 
                 e.target.reset();
-                mediaPreview.innerHTML = '';
-                uploadedFiles = [];
+                cleanupUploadedFiles();
 
                 alert('Listing added successfully!');
                 console.log('🔄 Refreshing listings and map after new listing added');
