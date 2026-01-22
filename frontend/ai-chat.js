@@ -52,7 +52,7 @@ class AIChatHandler {
 
         chatMessages.innerHTML = `
             <div class="chat-bubble ai">
-                <p>Hi! I can help you find your next home. Describe what you're looking for, or pick a quick start below:</p>
+                <p>I can help you find a rental and negotiate a lower price with the landlord. What are you looking for?</p>
             </div>
             <div class="flex flex-wrap gap-2 mt-3 mb-4">
                 <button onclick="window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
