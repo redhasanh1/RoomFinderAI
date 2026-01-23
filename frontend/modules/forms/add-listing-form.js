@@ -455,12 +455,13 @@ class AddListingForm {
      * Submit listing to database
      */
     async submitListing(listing) {
-        const supabase = window.configManager ? window.configManager.getSupabase() : null;
-        if (!supabase) {
+        // Use global supabase client (from listings.html) or configManager
+        const db = window.supabase || window.configManager?.getSupabase();
+        if (!db || typeof db.from !== 'function') {
             throw new Error('Database connection not available');
         }
 
-        const { data, error } = await supabase
+        const { data, error } = await db
             .from('listings')
             .insert([listing])
             .select();
@@ -622,9 +623,14 @@ class AddListingForm {
      */
     async uploadMedia(files) {
         const uploadedMedia = [];
-        const config = window.configManager ? window.configManager.getConfig() : null;
 
-        if (!config) {
+        // Get config from configManager or global variables (from listings.html)
+        const config = window.configManager?.getConfig() || {
+            SUPABASE_URL: window.SUPABASE_URL,
+            SUPABASE_ANON_KEY: window.SUPABASE_ANON_KEY
+        };
+
+        if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
             throw new Error('Configuration not available');
         }
 
