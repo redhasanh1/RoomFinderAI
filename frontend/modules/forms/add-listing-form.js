@@ -33,7 +33,159 @@ class AddListingForm {
 
         this.isInitialized = true;
         console.log('✅ Add Listing Form initialized');
+
+        // Check for pending listing from photo wizard (auto-fill)
+        this.checkForPendingListing();
+
         return true;
+    }
+
+    /**
+     * Check for pending listing data from photo wizard and auto-fill form
+     */
+    checkForPendingListing() {
+        // Check URL param
+        const urlParams = new URLSearchParams(window.location.search);
+        const autoFill = urlParams.get('autoFill');
+
+        // Check localStorage
+        const pendingData = localStorage.getItem('pendingListing');
+
+        if (autoFill === 'true' && pendingData) {
+            try {
+                const listing = JSON.parse(pendingData);
+                console.log('📋 Found pending listing, auto-filling form:', listing);
+
+                // Check if data is recent (within 5 minutes)
+                if (listing.timestamp && (Date.now() - listing.timestamp) < 5 * 60 * 1000) {
+                    this.autoFillFromWizard(listing);
+
+                    // Clear the pending data and URL param
+                    localStorage.removeItem('pendingListing');
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                } else {
+                    console.log('⏰ Pending listing data expired, clearing');
+                    localStorage.removeItem('pendingListing');
+                }
+            } catch (e) {
+                console.error('Failed to parse pending listing:', e);
+                localStorage.removeItem('pendingListing');
+            }
+        }
+    }
+
+    /**
+     * Auto-fill form from wizard data
+     */
+    async autoFillFromWizard(listing) {
+        // Show the form first
+        this.showForm();
+
+        // Small delay to ensure form is visible
+        await new Promise(resolve => setTimeout(resolve, 300));
+
+        // Fill in the fields
+        const fieldMap = {
+            'title': listing.title,
+            'houseType': listing.house_type,
+            'bedrooms': listing.bedrooms,
+            'price': listing.price,
+            'description': listing.description
+        };
+
+        // Location fields
+        if (listing.location) {
+            if (listing.location.city) {
+                const cityField = document.getElementById('city');
+                if (cityField) cityField.value = listing.location.city;
+            }
+            if (listing.location.state) {
+                const stateField = document.getElementById('state');
+                if (stateField) stateField.value = listing.location.state;
+            }
+            if (listing.location.zip) {
+                const zipField = document.getElementById('zipCode');
+                if (zipField) zipField.value = listing.location.zip;
+            }
+        }
+
+        // Fill basic fields with animation
+        for (const [fieldId, value] of Object.entries(fieldMap)) {
+            if (!value) continue;
+
+            const element = document.getElementById(fieldId);
+            if (!element) continue;
+
+            if (element.tagName === 'SELECT') {
+                element.value = value;
+                element.dispatchEvent(new Event('change'));
+            } else {
+                // Typewriter effect
+                await this.typewriterFill(element, String(value));
+            }
+
+            // Flash effect
+            element.style.transition = 'background-color 0.3s';
+            element.style.backgroundColor = '#EEF2FF';
+            setTimeout(() => { element.style.backgroundColor = ''; }, 500);
+
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        // Handle image if available
+        if (listing.imageDataUrl && this.mediaInput) {
+            try {
+                // Convert dataUrl back to file
+                const response = await fetch(listing.imageDataUrl);
+                const blob = await response.blob();
+                const file = new File([blob], 'listing-photo.jpg', { type: 'image/jpeg' });
+
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                this.mediaInput.files = dt.files;
+                this.mediaInput.dispatchEvent(new Event('change'));
+            } catch (e) {
+                console.error('Failed to restore image:', e);
+            }
+        }
+
+        // Show success toast
+        this.showAutoFillToast(listing);
+    }
+
+    /**
+     * Typewriter fill effect for inputs
+     */
+    async typewriterFill(element, text) {
+        element.value = '';
+        for (let i = 0; i < text.length; i++) {
+            element.value += text[i];
+            await new Promise(resolve => setTimeout(resolve, 20));
+        }
+    }
+
+    /**
+     * Show toast notification for auto-fill
+     */
+    showAutoFillToast(listing) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50';
+        toast.innerHTML = `
+            <div class="flex items-center gap-3">
+                <div class="text-2xl">✨</div>
+                <div>
+                    <p class="font-bold">GOD MODE Auto-Fill Complete!</p>
+                    <p class="text-sm opacity-90">Grade: ${listing.unitGrade || 'B'} | ${listing.targetDemo || 'General Renters'}</p>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transition = 'opacity 0.5s';
+            setTimeout(() => toast.remove(), 500);
+        }, 4000);
     }
 
     /**
