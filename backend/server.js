@@ -4030,21 +4030,10 @@ app.post('/api/analyze-property-photo', async (req, res) => {
         const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
 
         if (!workerUrl) {
-            console.log('⚠️ CLOUDFLARE_WORKER_URL not configured, using fallback analysis');
-
-            // Return a fallback response when worker is not configured
-            return res.json({
-                success: true,
-                analysis: {
-                    title: 'Beautiful Property for Rent',
-                    house_type: 'Apartment',
-                    bedrooms: 2,
-                    description: 'A wonderful property with modern amenities. Please add more details to complete your listing. This is a placeholder description as the AI vision service is not yet configured.',
-                    suggestedPrice: 1500,
-                    features: ['Modern interior', 'Natural lighting'],
-                    confidence: 0.3
-                },
-                message: 'AI vision service not configured. Using placeholder data.'
+            console.error('❌ CLOUDFLARE_WORKER_URL not configured');
+            return res.status(500).json({
+                success: false,
+                error: 'AI vision service not configured. Contact support.'
             });
         }
 
@@ -4067,28 +4056,26 @@ app.post('/api/analyze-property-photo', async (req, res) => {
 
     } catch (error) {
         console.error('❌ Property photo analysis error:', error.message);
+        console.error('Full error:', error.response?.data || error);
 
         // Handle specific error types
         if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
             return res.status(503).json({
                 success: false,
-                error: 'AI vision service is currently unavailable',
-                fallback: true
+                error: 'Cannot connect to Cloudflare Worker. Check CLOUDFLARE_WORKER_URL.'
             });
         }
 
         if (error.response?.status === 429) {
             return res.status(429).json({
                 success: false,
-                error: 'AI service rate limit reached. Free tier allows ~50-100 analyses per day. Please try again tomorrow.',
-                fallback: true
+                error: 'Cloudflare rate limit hit. Try again later.'
             });
         }
 
         res.status(500).json({
             success: false,
-            error: error.message || 'Failed to analyze property photo',
-            fallback: true
+            error: error.response?.data?.error || error.message || 'Cloudflare Worker failed'
         });
     }
 });

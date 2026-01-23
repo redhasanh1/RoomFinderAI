@@ -119,17 +119,18 @@ Focus on:
                 };
 
             } catch (parseError) {
-                // Fallback if parsing fails
                 console.error('Failed to parse AI response:', parseError);
-                analysis = {
-                    title: 'Beautiful Property for Rent',
-                    house_type: 'Apartment',
-                    bedrooms: 1,
-                    description: 'A wonderful property awaiting your personal touch. Upload additional photos for a more detailed analysis.',
-                    suggestedPrice: 1500,
-                    features: ['Property listing'],
-                    confidence: 0.3
-                };
+                console.error('Raw response:', response);
+                return new Response(JSON.stringify({
+                    success: false,
+                    error: 'LLaVA returned invalid response. Try a clearer photo.'
+                }), {
+                    status: 500,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': '*'
+                    }
+                });
             }
 
             return new Response(JSON.stringify({
@@ -147,8 +148,7 @@ Focus on:
 
             return new Response(JSON.stringify({
                 success: false,
-                error: error instanceof Error ? error.message : 'Analysis failed',
-                fallback: true
+                error: error instanceof Error ? error.message : 'LLaVA analysis failed'
             }), {
                 status: 500,
                 headers: {
