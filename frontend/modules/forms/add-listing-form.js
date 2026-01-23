@@ -1105,7 +1105,11 @@ if (document.readyState === 'loading') {
 
 // Global functions for backward compatibility
 window.toggleAddListingForm = () => {
-    if (window.addListingForm) {
+    // Show Photo Wizard first for AI-powered listing creation
+    if (window.photoListingWizard) {
+        window.photoListingWizard.show();
+    } else if (window.addListingForm) {
+        // Fallback to manual form if wizard not loaded
         window.addListingForm.toggleForm();
     }
 };
