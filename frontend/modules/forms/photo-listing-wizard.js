@@ -857,5 +857,3 @@ window.showPhotoWizard = () => {
         window.photoListingWizard.show();
     }
 };
-
-export default window.photoListingWizard;
