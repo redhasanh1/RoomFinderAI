@@ -480,8 +480,14 @@ class PhotoListingWizard {
      * Show the wizard modal
      */
     show() {
-        if (!this.modal) this.createModal();
-
+        if (!this.modal) {
+            this.createModal();
+            this.setupEventListeners();
+        }
+        if (!this.modal) {
+            console.error('Failed to create photo wizard modal');
+            return;
+        }
         this.resetToStep1();
         this.modal.classList.remove('hidden');
         document.body.style.overflow = 'hidden';
