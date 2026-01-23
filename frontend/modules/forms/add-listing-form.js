@@ -99,13 +99,17 @@ class AddListingForm {
                 const cityField = document.getElementById('city');
                 if (cityField) cityField.value = listing.location.city;
             }
-            if (listing.location.state) {
-                const stateField = document.getElementById('state');
-                if (stateField) stateField.value = listing.location.state;
+            if (listing.location.country) {
+                const countryField = document.getElementById('country');
+                if (countryField) countryField.value = listing.location.country;
+            }
+            if (listing.location.street) {
+                const streetField = document.getElementById('street');
+                if (streetField) streetField.value = listing.location.street;
             }
             if (listing.location.zip) {
-                const zipField = document.getElementById('zipCode');
-                if (zipField) zipField.value = listing.location.zip;
+                const postalField = document.getElementById('postalCode');
+                if (postalField) postalField.value = listing.location.zip;
             }
         }
 
