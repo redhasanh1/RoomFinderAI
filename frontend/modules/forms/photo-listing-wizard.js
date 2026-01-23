@@ -1096,7 +1096,7 @@ class PhotoListingWizard {
     /**
      * Apply results to the listing form
      */
-    applyResults() {
+    async applyResults() {
         if (!this.analysisResult) return;
 
         const analysis = this.analysisResult;
@@ -1116,13 +1116,30 @@ class PhotoListingWizard {
             timestamp: Date.now()
         };
 
-        // Save the image as base64 if available
+        // Save a small thumbnail instead of full image to avoid localStorage quota issues
         if (this.uploadedImage && this.uploadedImage.dataUrl) {
-            listingData.imageDataUrl = this.uploadedImage.dataUrl;
+            try {
+                const thumbnail = await this.createThumbnail(this.uploadedImage.dataUrl, 150);
+                listingData.imageThumbnail = thumbnail;
+            } catch (err) {
+                console.warn('Could not create thumbnail:', err);
+            }
         }
 
-        localStorage.setItem('pendingListing', JSON.stringify(listingData));
-        console.log('Saved pending listing to localStorage:', listingData);
+        try {
+            localStorage.setItem('pendingListing', JSON.stringify(listingData));
+            console.log('Saved pending listing to localStorage:', listingData);
+        } catch (err) {
+            console.warn('localStorage quota exceeded, continuing without saving:', err);
+            // Clear old data and try again with minimal data
+            localStorage.removeItem('pendingListing');
+            try {
+                delete listingData.imageThumbnail;
+                localStorage.setItem('pendingListing', JSON.stringify(listingData));
+            } catch (e) {
+                console.error('Could not save listing data to localStorage');
+            }
+        }
 
         // Hide wizard
         this.hide();
@@ -1286,6 +1303,46 @@ class PhotoListingWizard {
      */
     delay(ms) {
         return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
+     * Create a small thumbnail from a data URL to save in localStorage
+     * @param {string} dataUrl - The original image data URL
+     * @param {number} maxSize - Maximum width/height in pixels
+     * @returns {Promise<string>} - Compressed thumbnail data URL
+     */
+    createThumbnail(dataUrl, maxSize = 150) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+
+                let { width, height } = img;
+
+                // Scale down to fit within maxSize
+                if (width > height) {
+                    if (width > maxSize) {
+                        height = (height * maxSize) / width;
+                        width = maxSize;
+                    }
+                } else {
+                    if (height > maxSize) {
+                        width = (width * maxSize) / height;
+                        height = maxSize;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Use low quality JPEG for small file size
+                resolve(canvas.toDataURL('image/jpeg', 0.5));
+            };
+            img.onerror = () => reject(new Error('Failed to load image for thumbnail'));
+            img.src = dataUrl;
+        });
     }
 }
 
