@@ -10,7 +10,7 @@ class PhotoListingWizard {
         this.isAnalyzing = false;
         this.analysisResult = null;
         this.uploadedImage = null;
-        this.maxImageSize = 4 * 1024 * 1024; // 4MB for AI analysis
+        this.maxImageSize = 20 * 1024 * 1024; // 20MB - preserve EXIF GPS data
         this.locationData = null; // GPS-extracted location
         this.exifData = null; // Full EXIF data
     }
@@ -74,7 +74,7 @@ class PhotoListingWizard {
                                     </div>
                                     <p class="text-gray-600 font-medium">Drop your photo here</p>
                                     <p class="text-gray-400 text-sm mt-1">or click to browse</p>
-                                    <p class="text-gray-400 text-xs mt-3">JPEG, PNG up to 4MB</p>
+                                    <p class="text-gray-400 text-xs mt-3">JPEG, PNG up to 20MB</p>
                                 </div>
 
                                 <!-- Preview (hidden initially) -->
@@ -542,7 +542,7 @@ class PhotoListingWizard {
 
         // Validate file size
         if (file.size > this.maxImageSize) {
-            alert('Image is too large. Please select an image under 4MB.');
+            alert('Image is too large. Please select an image under 20MB.');
             return;
         }
 
