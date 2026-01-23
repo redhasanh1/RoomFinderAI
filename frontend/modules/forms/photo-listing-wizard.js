@@ -142,56 +142,121 @@ class PhotoListingWizard {
                             </div>
                         </div>
 
-                        <!-- Step 3: Results/Error -->
-                        <div id="wizardStep3" class="hidden p-8">
-                            <!-- Success state -->
+                        <!-- Step 3: Results/Error - GOD MODE SCORECARD -->
+                        <div id="wizardStep3" class="hidden p-6">
+                            <!-- Success state - GOD MODE UI -->
                             <div id="analysisSuccess" class="hidden">
-                                <div class="text-center mb-6">
-                                    <div class="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-full mb-3">
-                                        <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-                                        </svg>
+                                <!-- Header with Grade -->
+                                <div class="text-center mb-4">
+                                    <div class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
+                                        <span>GOD MODE</span>
+                                        <span class="bg-white/20 px-2 py-0.5 rounded">ANALYSIS COMPLETE</span>
                                     </div>
-                                    <h3 class="text-xl font-bold text-gray-800">Analysis Complete!</h3>
-                                    <p class="text-gray-500 text-sm mt-1">Review the auto-filled details below</p>
                                 </div>
 
-                                <!-- Results preview -->
-                                <div class="bg-gray-50 rounded-xl p-4 space-y-3 mb-6">
+                                <!-- Unit Grade Card -->
+                                <div class="bg-gradient-to-br from-gray-900 to-gray-800 rounded-xl p-4 mb-4 text-white">
                                     <div class="flex items-center justify-between">
-                                        <span class="text-gray-500 text-sm">Title</span>
-                                        <span id="resultTitle" class="font-medium text-gray-800 text-right max-w-[200px] truncate"></span>
+                                        <div>
+                                            <p class="text-gray-400 text-xs uppercase tracking-wide">Unit Grade</p>
+                                            <p id="resultGrade" class="text-4xl font-black">A-</p>
+                                            <p id="resultGradeDesc" class="text-sm text-gray-400">Luxury Finishes Detected</p>
+                                        </div>
+                                        <div class="text-right">
+                                            <p class="text-gray-400 text-xs uppercase tracking-wide">Luxury Score</p>
+                                            <p id="resultLuxuryScore" class="text-3xl font-bold text-purple-400">7/10</p>
+                                        </div>
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-gray-500 text-sm">Type</span>
-                                        <span id="resultType" class="font-medium text-gray-800"></span>
+                                </div>
+
+                                <!-- Pricing Card -->
+                                <div class="bg-green-50 border border-green-200 rounded-xl p-4 mb-4">
+                                    <div class="flex items-center justify-between mb-2">
+                                        <span class="text-green-800 font-semibold">Recommended Rent</span>
+                                        <span id="resultPrice" class="text-2xl font-black text-green-600">$2,450</span>
                                     </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-gray-500 text-sm">Bedrooms</span>
-                                        <span id="resultBedrooms" class="font-medium text-gray-800"></span>
+                                    <div id="resultPremiumRow" class="flex items-center gap-2 text-sm">
+                                        <span class="bg-green-200 text-green-800 px-2 py-0.5 rounded font-medium" id="resultPremium">+$250</span>
+                                        <span class="text-green-700">above area average</span>
                                     </div>
-                                    <div id="resultLocationRow" class="flex items-center justify-between hidden">
-                                        <span class="text-gray-500 text-sm">Location</span>
-                                        <span id="resultLocation" class="font-medium text-green-600 flex items-center gap-1">
+                                </div>
+
+                                <!-- Money Features (What's Adding Value) -->
+                                <div id="moneyFeaturesSection" class="mb-4">
+                                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-2 font-semibold">Why This Price?</p>
+                                    <div id="moneyFeaturesList" class="space-y-1">
+                                        <!-- Dynamically populated -->
+                                    </div>
+                                </div>
+
+                                <!-- Flaws (Fix These to Charge More) -->
+                                <div id="flawsSection" class="mb-4 hidden">
+                                    <p class="text-xs uppercase tracking-wide text-orange-600 mb-2 font-semibold">Fix These to Charge More</p>
+                                    <div id="flawsList" class="space-y-2">
+                                        <!-- Dynamically populated -->
+                                    </div>
+                                </div>
+
+                                <!-- Staging Alert -->
+                                <div id="stagingAlert" class="mb-4 hidden">
+                                    <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-3">
+                                        <div class="flex items-center gap-2 text-yellow-800 font-semibold text-sm mb-1">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                             </svg>
-                                            <span id="resultLocationText"></span>
-                                        </span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-gray-500 text-sm">Suggested Price</span>
-                                        <span id="resultPrice" class="font-medium text-gray-800"></span>
-                                    </div>
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-gray-500 text-sm">Confidence</span>
-                                        <span id="resultConfidence" class="font-medium"></span>
+                                            Photo Needs Staging
+                                        </div>
+                                        <p id="stagingIssuesList" class="text-yellow-700 text-xs">Detected: clutter, mess</p>
+                                        <button id="autoStageBtn" class="mt-2 w-full bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-1.5 rounded-lg font-medium transition">
+                                            Auto-Clean Photo (AI)
+                                        </button>
                                     </div>
                                 </div>
 
-                                <button id="applyResultsBtn" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-3 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition">
-                                    Apply to Listing Form
+                                <!-- Target Demo -->
+                                <div class="bg-purple-50 rounded-xl p-3 mb-4">
+                                    <p class="text-xs uppercase tracking-wide text-purple-600 mb-1 font-semibold">Target Audience</p>
+                                    <p id="resultTargetDemo" class="font-medium text-purple-900">Tech Professionals</p>
+                                    <div id="vibeKeywords" class="flex flex-wrap gap-1 mt-2">
+                                        <!-- Dynamically populated -->
+                                    </div>
+                                </div>
+
+                                <!-- Location (if detected) -->
+                                <div id="resultLocationRow" class="bg-blue-50 rounded-xl p-3 mb-4 hidden">
+                                    <div class="flex items-center gap-2">
+                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                        </svg>
+                                        <div>
+                                            <p class="text-xs text-blue-600 font-semibold">Location Detected from Photo</p>
+                                            <p id="resultLocationText" class="font-medium text-blue-900">Seattle, WA 98101</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Quick Stats Row -->
+                                <div class="grid grid-cols-3 gap-2 mb-4 text-center">
+                                    <div class="bg-gray-100 rounded-lg p-2">
+                                        <p class="text-lg font-bold text-gray-800" id="resultType">House</p>
+                                        <p class="text-xs text-gray-500">Type</p>
+                                    </div>
+                                    <div class="bg-gray-100 rounded-lg p-2">
+                                        <p class="text-lg font-bold text-gray-800" id="resultBedrooms">3</p>
+                                        <p class="text-xs text-gray-500">Bedrooms</p>
+                                    </div>
+                                    <div class="bg-gray-100 rounded-lg p-2">
+                                        <p class="text-lg font-bold" id="resultConfidence">85%</p>
+                                        <p class="text-xs text-gray-500">Confidence</p>
+                                    </div>
+                                </div>
+
+                                <!-- Hidden fields for form -->
+                                <input type="hidden" id="resultTitle" value="">
+
+                                <button id="applyResultsBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-bold hover:from-green-600 hover:to-emerald-700 transition shadow-lg">
+                                    AUTO-GENERATE LISTING
                                 </button>
                             </div>
 
@@ -828,7 +893,7 @@ class PhotoListingWizard {
     }
 
     /**
-     * Show analysis results
+     * Show analysis results - GOD MODE SCORECARD
      */
     showResults() {
         document.getElementById('wizardStep2')?.classList.add('hidden');
@@ -838,15 +903,101 @@ class PhotoListingWizard {
 
         const analysis = this.analysisResult;
 
-        // Populate results
-        document.getElementById('resultTitle').textContent = analysis.title || 'N/A';
-        document.getElementById('resultType').textContent = analysis.house_type || 'N/A';
-        document.getElementById('resultBedrooms').textContent = analysis.bedrooms || 'N/A';
-        document.getElementById('resultPrice').textContent = analysis.suggestedPrice
-            ? `$${analysis.suggestedPrice.toLocaleString()}/mo`
-            : 'N/A';
+        // ========== UNIT GRADE ==========
+        const gradeEl = document.getElementById('resultGrade');
+        const gradeDescEl = document.getElementById('resultGradeDesc');
+        const luxuryScoreEl = document.getElementById('resultLuxuryScore');
 
-        // Show location if detected from EXIF
+        if (gradeEl) gradeEl.textContent = analysis.unitGrade || 'B';
+        if (luxuryScoreEl) luxuryScoreEl.textContent = `${analysis.luxuryScore || 5}/10`;
+
+        // Grade description
+        const gradeDescriptions = {
+            'A+': 'Exceptional Luxury Property',
+            'A': 'Premium Finishes Detected',
+            'A-': 'Luxury Finishes Detected',
+            'B+': 'Above Average Quality',
+            'B': 'Solid Mid-Range Property',
+            'B-': 'Average with Potential',
+            'C+': 'Basic but Functional',
+            'C': 'Budget-Friendly Option',
+            'C-': 'Needs Improvement'
+        };
+        if (gradeDescEl) gradeDescEl.textContent = gradeDescriptions[analysis.unitGrade] || 'Property Analyzed';
+
+        // ========== PRICING ==========
+        const priceEl = document.getElementById('resultPrice');
+        const premiumEl = document.getElementById('resultPremium');
+        const premiumRowEl = document.getElementById('resultPremiumRow');
+
+        if (priceEl) priceEl.textContent = analysis.suggestedPrice ? `$${analysis.suggestedPrice.toLocaleString()}/mo` : 'N/A';
+
+        if (analysis.premiumAboveAvg && analysis.premiumAboveAvg > 0) {
+            if (premiumEl) premiumEl.textContent = `+$${analysis.premiumAboveAvg.toLocaleString()}`;
+            premiumRowEl?.classList.remove('hidden');
+        } else {
+            premiumRowEl?.classList.add('hidden');
+        }
+
+        // ========== MONEY FEATURES ==========
+        const moneyFeaturesSection = document.getElementById('moneyFeaturesSection');
+        const moneyFeaturesList = document.getElementById('moneyFeaturesList');
+
+        if (moneyFeaturesList && analysis.moneyFeatures && analysis.moneyFeatures.length > 0) {
+            moneyFeaturesList.innerHTML = analysis.moneyFeatures.map(f => `
+                <div class="flex items-center justify-between bg-green-50 rounded-lg px-3 py-2">
+                    <span class="text-green-800 text-sm">${f.feature}</span>
+                    <span class="text-green-600 font-semibold text-sm">+$${f.value}</span>
+                </div>
+            `).join('');
+            moneyFeaturesSection?.classList.remove('hidden');
+        } else {
+            moneyFeaturesSection?.classList.add('hidden');
+        }
+
+        // ========== FLAWS ==========
+        const flawsSection = document.getElementById('flawsSection');
+        const flawsList = document.getElementById('flawsList');
+
+        if (flawsList && analysis.flaws && analysis.flaws.length > 0) {
+            flawsList.innerHTML = analysis.flaws.map(f => `
+                <div class="bg-orange-50 rounded-lg px-3 py-2">
+                    <div class="flex items-center justify-between">
+                        <span class="text-orange-800 text-sm font-medium">${f.issue}</span>
+                        <span class="text-orange-600 font-semibold text-xs">+$${f.potentialGain} if fixed</span>
+                    </div>
+                    <p class="text-orange-600 text-xs mt-1">${f.fix}</p>
+                </div>
+            `).join('');
+            flawsSection?.classList.remove('hidden');
+        } else {
+            flawsSection?.classList.add('hidden');
+        }
+
+        // ========== STAGING ALERT ==========
+        const stagingAlert = document.getElementById('stagingAlert');
+        const stagingIssuesList = document.getElementById('stagingIssuesList');
+
+        if (analysis.needsStaging && analysis.stagingIssues && analysis.stagingIssues.length > 0) {
+            if (stagingIssuesList) stagingIssuesList.textContent = `Detected: ${analysis.stagingIssues.join(', ')}`;
+            stagingAlert?.classList.remove('hidden');
+        } else {
+            stagingAlert?.classList.add('hidden');
+        }
+
+        // ========== TARGET DEMOGRAPHIC ==========
+        const targetDemoEl = document.getElementById('resultTargetDemo');
+        const vibeKeywordsEl = document.getElementById('vibeKeywords');
+
+        if (targetDemoEl) targetDemoEl.textContent = analysis.targetDemo || 'General Renters';
+
+        if (vibeKeywordsEl && analysis.vibeKeywords && analysis.vibeKeywords.length > 0) {
+            vibeKeywordsEl.innerHTML = analysis.vibeKeywords.map(k => `
+                <span class="bg-purple-200 text-purple-800 px-2 py-0.5 rounded text-xs font-medium">${k}</span>
+            `).join('');
+        }
+
+        // ========== LOCATION ==========
         const locationRow = document.getElementById('resultLocationRow');
         const locationText = document.getElementById('resultLocationText');
         const location = analysis.location || this.locationData;
@@ -855,30 +1006,30 @@ class PhotoListingWizard {
             const locationStr = location.state
                 ? `${location.city}, ${location.state}${location.zip ? ' ' + location.zip : ''}`
                 : location.city;
-            locationText.textContent = locationStr;
+            if (locationText) locationText.textContent = locationStr;
             locationRow?.classList.remove('hidden');
         } else {
             locationRow?.classList.add('hidden');
         }
 
-        // Confidence indicator
+        // ========== BASIC INFO ==========
+        const titleEl = document.getElementById('resultTitle');
+        const typeEl = document.getElementById('resultType');
+        const bedroomsEl = document.getElementById('resultBedrooms');
+
+        if (titleEl) titleEl.value = analysis.title || '';
+        if (typeEl) typeEl.textContent = analysis.house_type || 'N/A';
+        if (bedroomsEl) bedroomsEl.textContent = analysis.bedrooms || 'N/A';
+
+        // ========== CONFIDENCE ==========
         const confidenceEl = document.getElementById('resultConfidence');
         const confidence = analysis.confidence || 0;
         const confidencePercent = Math.round(confidence * 100);
 
-        let confidenceClass = 'confidence-low';
-        let confidenceText = 'Low';
-
-        if (confidence >= 0.8) {
-            confidenceClass = 'confidence-high';
-            confidenceText = 'High';
-        } else if (confidence >= 0.5) {
-            confidenceClass = 'confidence-medium';
-            confidenceText = 'Medium';
+        if (confidenceEl) {
+            confidenceEl.textContent = `${confidencePercent}%`;
+            confidenceEl.className = `text-lg font-bold ${confidence >= 0.8 ? 'text-green-600' : confidence >= 0.6 ? 'text-yellow-600' : 'text-red-500'}`;
         }
-
-        confidenceEl.textContent = `${confidencePercent}% (${confidenceText})`;
-        confidenceEl.className = `font-medium ${confidenceClass}`;
     }
 
     /**
