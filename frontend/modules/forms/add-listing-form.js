@@ -238,8 +238,11 @@ class AddListingForm {
      * Setup form submission handling
      */
     setupFormSubmission() {
+        console.log('✅ Setting up form submission handler');
         this.form.addEventListener('submit', async (e) => {
+            console.log('📝 Form submit event triggered');
             e.preventDefault();
+            console.log('✅ Default form submission prevented');
             await this.handleFormSubmission(e);
         });
     }
@@ -294,39 +297,88 @@ class AddListingForm {
      * Handle form submission
      */
     async handleFormSubmission(e) {
-        console.log('📝 Handling form submission');
+        console.log('📝 [SUBMIT] Starting form submission handler');
 
-        // Check authentication
-        const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
+        // Check authentication - try multiple methods
+        let currentUser = null;
+
+        // Method 1: Try window.authManager (if available)
+        if (window.authManager && typeof window.authManager.getCurrentUser === 'function') {
+            currentUser = window.authManager.getCurrentUser();
+            console.log('🔐 [SUBMIT] Auth method: window.authManager');
+        }
+
+        // Method 2: Fallback to localStorage (most reliable)
         if (!currentUser) {
+            try {
+                currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                console.log('🔐 [SUBMIT] Auth method: localStorage');
+            } catch (e) {
+                console.error('❌ [SUBMIT] Failed to parse currentUser from localStorage:', e);
+            }
+        }
+
+        // Method 3: Try UniversalAuth (if available)
+        if (!currentUser && window.UniversalAuth && typeof window.UniversalAuth.getCurrentUser === 'function') {
+            currentUser = await window.UniversalAuth.getCurrentUser();
+            console.log('🔐 [SUBMIT] Auth method: UniversalAuth');
+        }
+
+        if (!currentUser) {
+            console.error('❌ [SUBMIT] No authenticated user found after trying all methods');
             alert('Please log in to add a listing.');
             window.location.href = '/login';
             return;
         }
+        console.log('✅ [SUBMIT] User authenticated:', currentUser.email);
+
+        // Disable submit button and show loading state
+        const submitBtn = this.form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
+        if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="inline-block animate-spin mr-2">⏳</span> Adding listing...';
+        }
 
         try {
             // Upload media files
+            console.log('📤 [SUBMIT] Uploading media files...');
             const media = this.uploadedFiles.length > 0 ? await this.uploadMedia(this.uploadedFiles) : [];
+            console.log('✅ [SUBMIT] Media uploaded:', media.length, 'files');
 
             // Collect and validate form data
+            console.log('📋 [SUBMIT] Collecting form data...');
             const listingData = this.collectFormData(currentUser, media);
 
+            console.log('🔍 [SUBMIT] Validating form data...');
             if (!this.validateFormData(listingData)) {
+                console.error('❌ [SUBMIT] Form validation failed');
                 return;
             }
+            console.log('✅ [SUBMIT] Form data validated');
 
-            console.log('📋 Submitting listing:', listingData);
+            console.log('💾 [SUBMIT] Submitting to database:', listingData);
 
             // Submit to database
             const result = await this.submitListing(listingData);
+            console.log('✅ [SUBMIT] Database insert successful:', result);
 
             if (result.success) {
+                console.log('🎉 [SUBMIT] Calling handleSuccessfulSubmission...');
                 await this.handleSuccessfulSubmission(result.data, currentUser, media);
+                console.log('✅ [SUBMIT] Complete! Listing added and displayed');
             }
 
         } catch (err) {
-            console.error('Submission failed:', err);
+            console.error('❌ [SUBMIT] Submission failed:', err);
+            console.error('❌ [SUBMIT] Error stack:', err.stack);
             alert('Failed to add listing: ' + (err.message || err));
+        } finally {
+            // Re-enable submit button
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
         }
     }
 
@@ -440,19 +492,28 @@ class AddListingForm {
         localStorage.setItem('users', JSON.stringify(users));
         localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-        console.log('Updated localStorage with new listing:', newListing);
+        console.log('✅ Updated localStorage with new listing:', newListing);
+
+        // Refresh listings display FIRST before showing success message
+        console.log('🔄 Refreshing listings and map after new listing added');
+        try {
+            if (window.listingsManager) {
+                console.log('📋 Calling listingsManager.refresh()...');
+                await window.listingsManager.refresh();
+                console.log('✅ Listings refreshed successfully');
+            } else {
+                console.warn('⚠️ listingsManager not available');
+            }
+        } catch (refreshError) {
+            console.error('❌ Error refreshing listings:', refreshError);
+            // Don't fail completely - listing is already in database
+        }
 
         // Reset form
         this.resetForm();
 
-        // Show success message
+        // Show success message AFTER refresh completes
         alert('Listing added successfully!');
-
-        // Refresh listings display
-        console.log('🔄 Refreshing listings and map after new listing added');
-        if (window.listingsManager) {
-            await window.listingsManager.refresh();
-        }
 
         // Hide form
         this.hideForm();
@@ -810,12 +871,17 @@ class AddListingForm {
      * Show the form
      */
     showForm() {
+        console.log('📝 [FORM] showForm() called');
         const section = document.getElementById('addListingSection');
         if (section) {
+            console.log('✅ [FORM] Form section found, showing form');
             section.classList.remove('hidden');
             section.scrollIntoView({ behavior: 'smooth', block: 'start' });
             this.isFormVisible = true;
             this.updateToggleButtons(true);
+            console.log('✅ [FORM] Form is now visible');
+        } else {
+            console.error('❌ [FORM] addListingSection element not found!');
         }
     }
 
@@ -823,11 +889,16 @@ class AddListingForm {
      * Hide the form
      */
     hideForm() {
+        console.log('📝 [FORM] hideForm() called');
         const section = document.getElementById('addListingSection');
         if (section) {
+            console.log('✅ [FORM] Form section found, hiding form');
             section.classList.add('hidden');
             this.isFormVisible = false;
             this.updateToggleButtons(false);
+            console.log('✅ [FORM] Form is now hidden');
+        } else {
+            console.error('❌ [FORM] addListingSection element not found!');
         }
     }
 
