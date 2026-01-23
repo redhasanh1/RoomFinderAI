@@ -712,6 +712,182 @@ class AddListingForm {
     }
 
     /**
+     * Populate form fields from AI analysis
+     * @param {Object} analysisData - Data from photo analysis
+     * @param {Object} options - Options for population (animate, file)
+     */
+    async populateFromAI(analysisData, options = {}) {
+        console.log('🤖 Populating form from AI analysis:', analysisData);
+
+        if (!analysisData) {
+            console.warn('No analysis data provided');
+            return;
+        }
+
+        const { animate = true, file = null } = options;
+
+        // Show the form first
+        this.showForm();
+
+        // If a file was provided, add it to the upload
+        if (file) {
+            const mediaInput = this.mediaInput;
+            if (mediaInput) {
+                const dt = new DataTransfer();
+                dt.items.add(file);
+                mediaInput.files = dt.files;
+                this.handleFileSelection();
+            }
+        }
+
+        // Field mapping from AI analysis to form fields
+        const fieldMapping = [
+            { formId: 'title', dataKey: 'title' },
+            { formId: 'houseType', dataKey: 'house_type', isSelect: true },
+            { formId: 'bedrooms', dataKey: 'bedrooms' },
+            { formId: 'price', dataKey: 'suggestedPrice' },
+            { formId: 'description', dataKey: 'description' }
+        ];
+
+        if (animate) {
+            // Animated population with typewriter effect
+            for (const mapping of fieldMapping) {
+                const element = document.getElementById(mapping.formId);
+                const value = analysisData[mapping.dataKey];
+
+                if (!element || value === undefined || value === null) continue;
+
+                await this.delay(150); // Stagger delay
+
+                if (mapping.isSelect) {
+                    element.value = value;
+                    element.dispatchEvent(new Event('change'));
+                    this.flashField(element);
+                } else if (mapping.formId === 'description') {
+                    await this.typewriterEffect(element, String(value), 15);
+                } else {
+                    await this.typewriterEffect(element, String(value), 30);
+                }
+            }
+        } else {
+            // Immediate population without animation
+            for (const mapping of fieldMapping) {
+                const element = document.getElementById(mapping.formId);
+                const value = analysisData[mapping.dataKey];
+
+                if (!element || value === undefined || value === null) continue;
+
+                element.value = value;
+                element.dispatchEvent(new Event('change'));
+            }
+        }
+
+        // Show confidence indicator
+        this.showConfidenceIndicator(analysisData.confidence);
+
+        console.log('✅ Form populated from AI analysis');
+    }
+
+    /**
+     * Typewriter effect for input fields
+     */
+    async typewriterEffect(element, text, charDelay = 20) {
+        element.value = '';
+        element.classList.add('ai-typing');
+
+        for (let i = 0; i < text.length; i++) {
+            element.value += text[i];
+            if (element.tagName === 'TEXTAREA') {
+                element.scrollTop = element.scrollHeight;
+            }
+            await this.delay(charDelay);
+        }
+
+        element.classList.remove('ai-typing');
+        this.flashField(element);
+    }
+
+    /**
+     * Flash field to indicate AI completion
+     */
+    flashField(element) {
+        element.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
+        element.style.backgroundColor = '#EEF2FF';
+        element.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.3)';
+
+        setTimeout(() => {
+            element.style.backgroundColor = '';
+            element.style.boxShadow = '';
+        }, 500);
+    }
+
+    /**
+     * Show confidence indicator for AI analysis
+     */
+    showConfidenceIndicator(confidence) {
+        if (confidence === undefined) return;
+
+        const confidencePercent = Math.round(confidence * 100);
+        let message, bgClass, icon;
+
+        if (confidence >= 0.8) {
+            message = `AI confidence: ${confidencePercent}% - Ready to review!`;
+            bgClass = 'bg-green-500';
+            icon = '✅';
+        } else if (confidence >= 0.5) {
+            message = `AI confidence: ${confidencePercent}% - Please verify details`;
+            bgClass = 'bg-yellow-500';
+            icon = '⚠️';
+        } else {
+            message = `AI confidence: ${confidencePercent}% - Manual review recommended`;
+            bgClass = 'bg-red-500';
+            icon = '❗';
+        }
+
+        // Create or update confidence badge
+        let badge = document.getElementById('aiConfidenceBadge');
+        if (!badge) {
+            badge = document.createElement('div');
+            badge.id = 'aiConfidenceBadge';
+            badge.className = 'fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 text-white flex items-center gap-2 animate-slide-up';
+
+            // Add animation styles if not present
+            if (!document.getElementById('aiFormStyles')) {
+                const style = document.createElement('style');
+                style.id = 'aiFormStyles';
+                style.textContent = `
+                    @keyframes slideUp {
+                        from { opacity: 0; transform: translateY(20px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                    .animate-slide-up { animation: slideUp 0.3s ease-out; }
+                    .ai-typing { border-right: 2px solid #8B5CF6; }
+                `;
+                document.head.appendChild(style);
+            }
+
+            document.body.appendChild(badge);
+        }
+
+        badge.className = `fixed bottom-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 text-white flex items-center gap-2 animate-slide-up ${bgClass}`;
+        badge.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+
+        // Auto-hide after 6 seconds
+        setTimeout(() => {
+            badge.style.opacity = '0';
+            badge.style.transition = 'opacity 0.3s ease';
+            setTimeout(() => badge.remove(), 300);
+        }, 6000);
+    }
+
+    /**
+     * Utility delay function
+     */
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    /**
      * Destroy form
      */
     destroy() {
