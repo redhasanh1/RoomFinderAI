@@ -5843,6 +5843,7 @@
         // New User Interface Functions for Enhanced UX
 
         // Add Listing Form Toggle
+        // Now shows the Photo Wizard first for AI-powered listing creation
         function toggleAddListingForm() {
             const section = document.getElementById('addListingSection');
             if (!section) {
@@ -5850,7 +5851,13 @@
                 return;
             }
             if (section.classList.contains('hidden')) {
-                showAddListingForm();
+                // Show the Photo Wizard for AI-powered photo-to-listing
+                if (window.photoListingWizard) {
+                    window.photoListingWizard.show();
+                } else {
+                    // Fallback to manual form if wizard not loaded
+                    showAddListingForm();
+                }
             } else {
                 hideAddListingForm();
             }
@@ -6859,7 +6866,10 @@
         // Initialize enhanced features when page loads
         // Multiple independent pathways ensure listings load reliably
     </script>
-    
+
+    <!-- Photo Listing Wizard - AI-powered photo-to-listing -->
+    <script src="modules/forms/photo-listing-wizard.js"></script>
+
     <!-- Android Navigation Fix -->
     <script src="js/android-navigation-fix.js"></script>
 </body>
