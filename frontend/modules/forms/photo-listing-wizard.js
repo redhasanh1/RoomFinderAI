@@ -247,9 +247,15 @@ class PhotoListingWizard {
                                         <p class="text-xs text-gray-500">Bedrooms</p>
                                     </div>
                                     <div class="bg-gray-100 rounded-lg p-2">
-                                        <p class="text-lg font-bold" id="resultConfidence">85%</p>
+                                        <p class="text-lg font-bold text-green-600" id="resultConfidence">85%</p>
                                         <p class="text-xs text-gray-500">Confidence</p>
                                     </div>
+                                </div>
+
+                                <!-- FOMO Description -->
+                                <div class="bg-gray-50 rounded-xl p-3 mb-4">
+                                    <p class="text-xs uppercase tracking-wide text-gray-500 mb-1 font-semibold">AI-Generated Description</p>
+                                    <p id="resultDescription" class="text-gray-700 text-sm"></p>
                                 </div>
 
                                 <!-- Hidden fields for form -->
@@ -1021,9 +1027,23 @@ class PhotoListingWizard {
         if (typeEl) typeEl.textContent = analysis.house_type || 'N/A';
         if (bedroomsEl) bedroomsEl.textContent = analysis.bedrooms || 'N/A';
 
+        // ========== DESCRIPTION ==========
+        const descEl = document.getElementById('resultDescription');
+        if (descEl && analysis.description) {
+            descEl.textContent = analysis.description;
+        }
+
         // ========== CONFIDENCE ==========
         const confidenceEl = document.getElementById('resultConfidence');
-        const confidence = analysis.confidence || 0;
+        // Calculate confidence based on what we detected
+        let confidence = analysis.confidence;
+        if (!confidence || confidence === 0) {
+            // Fallback: calculate from features
+            confidence = 0.65;
+            if (analysis.moneyFeatures && analysis.moneyFeatures.length > 0) confidence += analysis.moneyFeatures.length * 0.05;
+            if (analysis.luxuryScore && analysis.luxuryScore > 5) confidence += 0.1;
+            confidence = Math.min(0.95, confidence);
+        }
         const confidencePercent = Math.round(confidence * 100);
 
         if (confidenceEl) {
