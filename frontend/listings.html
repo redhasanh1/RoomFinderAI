@@ -4449,7 +4449,13 @@
             function displayConversations() {
                 const conversationTabs = document.getElementById('conversationTabs');
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                
+
+                // Guard clause: exit if element doesn't exist
+                if (!conversationTabs) {
+                    console.log('conversationTabs element not found, skipping display');
+                    return;
+                }
+
                 if (globalUserConversations.length === 0) {
                     conversationTabs.innerHTML = '<div id="noConversations" class="p-4 text-gray-500 text-center">No conversations yet</div>';
                     return;
