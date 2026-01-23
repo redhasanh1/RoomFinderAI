@@ -1022,7 +1022,7 @@ class PhotoListingWizard {
                 if (locationSourceText) locationSourceText.textContent = 'Location from Photo GPS';
                 if (locationSourceText) locationSourceText.className = 'text-xs font-semibold text-green-600';
                 if (locationText) locationText.className = 'font-medium text-green-900';
-                if (locationIcon) locationIcon.className = 'w-5 h-5 text-green-600';
+                if (locationIcon) locationIcon.setAttribute('class', 'w-5 h-5 text-green-600');
                 if (locationBadge) {
                     locationBadge.textContent = 'GPS';
                     locationBadge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-green-200 text-green-800';
@@ -1032,7 +1032,7 @@ class PhotoListingWizard {
                 if (locationSourceText) locationSourceText.textContent = 'AI Estimated Location';
                 if (locationSourceText) locationSourceText.className = 'text-xs font-semibold text-purple-600';
                 if (locationText) locationText.className = 'font-medium text-purple-900';
-                if (locationIcon) locationIcon.className = 'w-5 h-5 text-purple-600';
+                if (locationIcon) locationIcon.setAttribute('class', 'w-5 h-5 text-purple-600');
                 if (locationBadge) {
                     locationBadge.textContent = 'AI';
                     locationBadge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-purple-200 text-purple-800';
