@@ -24,12 +24,9 @@ DROP POLICY IF EXISTS "Allow AI negotiator to insert notifications" ON ai_chats;
 CREATE POLICY "Users can view their own ai_chats" ON ai_chats
     FOR SELECT USING (user_email = current_setting('app.current_user_email', true));
 
--- Policy 2: Users can insert their own ai_chats
-CREATE POLICY "Users can insert their own ai_chats" ON ai_chats
-    FOR INSERT WITH CHECK (user_email = current_setting('app.current_user_email', true));
-
--- Policy 3: Allow AI negotiator to insert notifications for any user (bypass RLS for AI)
-CREATE POLICY "Allow AI negotiator to insert notifications" ON ai_chats
+-- Policy 2: Allow all inserts (simplified to fix AI notification issue)
+-- This allows both users to insert their own chats AND AI to insert for any user
+CREATE POLICY "Allow all ai_chat inserts" ON ai_chats
     FOR INSERT WITH CHECK (true);
 
 -- Alternative approach: Allow all inserts (simpler)
