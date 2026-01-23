@@ -264,47 +264,54 @@ class AINegotiator {
         return sorted.length % 2 !== 0 ? sorted[mid] : Math.round((sorted[mid - 1] + sorted[mid]) / 2);
     }
 
-    // Generate intelligent negotiation message
+    // Generate strategic initial negotiation message - ELITE NEGOTIATOR STYLE
     async generateNegotiationMessage(listing, userBudget, marketData) {
         try {
-            console.log('🤖 Generating negotiation message for:', listing.title);
+            console.log('🤖 Generating elite negotiation message for:', listing.title);
+
+            // STRATEGIC PRICING: Start at 65-70% of listing, but never below market minimum
+            // This gives room to negotiate UP while staying credible
+            const strategicStart = Math.max(
+                Math.round(listing.price * 0.65),  // 65% of asking
+                marketData.min || Math.round(listing.price * 0.5),  // Never below market min
+                Math.round(userBudget * 0.7)  // Start below user's max to have room
+            );
+
+            // Apply Ackerman pricing - precise number feels calculated
+            const initialOffer = this.getAckermanPrice(strategicStart);
+
+            // Check if market data supports our position
+            const marketSupportsUs = marketData.average && marketData.average < listing.price;
 
             const prompt = `
-            You are an expert rental negotiator. Generate a professional negotiation message for this rental:
+You are an ELITE NEGOTIATOR making first contact. Confident, direct, professional. No fluff.
 
-            LISTING DETAILS:
-            - Title: ${listing.title}
-            - Current Price: $${listing.price}/month
-            - Type: ${listing.house_type}
-            - Bedrooms: ${listing.bedrooms}
-            - Location: ${listing.city || 'Not specified'}
-            - Utilities: ${listing.utilities}
+===== PROPERTY =====
+- ${listing.title} in ${listing.city}
+- Asking: $${listing.price}/month
+- Type: ${listing.house_type}, ${listing.bedrooms} bedrooms
 
-            USER REQUIREMENTS:
-            - Budget: $${userBudget}
-            - Looking for: ${listing.house_type}
+===== YOUR OPENING OFFER =====
+$${initialOffer}/month (strategic anchor - room to negotiate up)
 
-            MARKET DATA:
-            - Average market price: $${marketData.average}
-            - Market range: $${marketData.min} - $${marketData.max}
-            - Data source: ${marketData.source}
-            - Analysis: ${marketData.analysis || 'Standard market conditions'}
+===== MARKET INTELLIGENCE =====
+${marketSupportsUs ? `Market average: $${marketData.average}/month - USE THIS to justify your offer!` : 'No useful market data - focus on your value as a tenant'}
 
-            NEGOTIATION STRATEGY:
-            1. Be professional and respectful
-            2. Express genuine interest in the property
-            3. Mention you're a qualified tenant ready to move quickly
-            4. If listing price is above market average or user budget, suggest a lower price with justification
-            5. Offer quick decision-making and reliable tenancy
-            6. Keep message concise (2-3 sentences max)
+===== ELITE OPENING TACTICS =====
+1. Express genuine interest (1 sentence max)
+2. State your offer as a CONSTRAINT: "My budget allows $${initialOffer}" (Phantom Authority - subtle)
+3. Mention you're ready to sign immediately (creates urgency for them)
+4. Keep it SHORT - 2 sentences MAX. Long messages = desperation.
 
-            PRICING LOGIC:
-            - If listing price > market average: Suggest price closer to market average
-            - If listing price > user budget: Suggest price within budget
-            - If listing price is fair: Express interest and ask about flexibility
+===== NLP TRIGGERS =====
+✅ USE: "I need", "The goal is", "Fair"
+❌ AVOID: "I think", "Maybe", "Would you consider", "Please"
 
-            Generate ONLY the message content (no "Dear" or signatures):
-            `;
+===== EXAMPLE FORMAT =====
+"Interested in [property]. My budget allows $${initialOffer}/month - I'm a reliable tenant ready to sign today."
+
+Generate ONLY the message. No greetings, no signatures.
+`;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -314,9 +321,9 @@ class AINegotiator {
                     'OpenAI-Organization': this.config.OPENAI_ORG_ID
                 },
                 body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                    model: this.config.OPENAI_MODEL || 'gpt-4',
                     messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 150,
+                    max_tokens: 100,
                     temperature: 0.7
                 })
             });
@@ -327,19 +334,21 @@ class AINegotiator {
 
             const data = await response.json();
             const message = data.choices[0].message.content.trim();
-            
-            console.log('✅ Generated negotiation message');
+
+            console.log('✅ Generated elite negotiation message with offer:', initialOffer);
             return message;
 
         } catch (error) {
-            console.warn('⚠️ OpenAI unavailable (CORS/network issue), using template message');
+            console.warn('⚠️ OpenAI unavailable, using elite fallback');
 
-            // Fallback message - always works
-            const suggestion = listing.price > marketData.average ?
-                `Would you consider $${Math.round(marketData.average * 0.95)} based on current market rates?` :
-                'Are you open to any flexibility on the rent?';
+            // Strategic fallback - still uses elite style
+            const strategicStart = Math.max(
+                Math.round(listing.price * 0.65),
+                Math.round(userBudget * 0.7)
+            );
+            const initialOffer = this.getAckermanPrice(strategicStart);
 
-            return `Hi! I'm very interested in your ${listing.house_type} "${listing.title}". I'm a qualified tenant ready to move quickly. ${suggestion}`;
+            return `Interested in ${listing.title}. My budget allows $${initialOffer}/month - I'm a reliable tenant ready to sign today.`;
         }
     }
 
@@ -684,9 +693,17 @@ class AINegotiator {
 
     // Detect off-topic messages and generate witty redirects
     getOffTopicResponse(content, negotiation) {
-        const lower = content.toLowerCase();
+        const lower = content.toLowerCase().trim();
         const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget };
         const currentOffer = state.lastOffer || negotiation.userBudget;
+
+        // DON'T catch legitimate negotiation responses - let them go to normal analysis
+        // "no", "nah", "nope" = rejections (handle in negotiation logic)
+        // Messages with prices = counter-offers
+        // Messages about "offer" = competing offers
+        if (/\b(no|nah|nope|yes|yeah|ok|okay|offer|price|\$|\d{3,4})\b/i.test(lower)) {
+            return null; // Let normal negotiation handle these
+        }
 
         // Inappropriate/sexual content - deflect with humor
         const inappropriatePatterns = [
@@ -697,27 +714,55 @@ class AINegotiator {
 
         for (const pattern of inappropriatePatterns) {
             if (pattern.test(lower)) {
+                // Calculate next offer (increment from current)
+                const nextOffer = this.getAckermanPrice(currentOffer + 50);
                 const wittyResponses = [
-                    `Ha! I appreciate the creativity, but I'm here for the apartment, not a date. 😄 So... $${currentOffer}/month - we doing this or what?`,
-                    `Smooth. But the only thing I'm trying to get into is that apartment. $${currentOffer}/month work for you?`,
-                    `Lol nice try. I'm flattered, but let's keep this professional. Back to business - $${currentOffer}/month?`,
-                    `😂 You're funny. But seriously though, I need a place to live, not a Tinder match. Can we do $${currentOffer}?`
+                    `Ha! I appreciate the creativity, but I'm here for the apartment, not a date. 😄 So... $${nextOffer}/month - we doing this or what?`,
+                    `Smooth. But the only thing I'm trying to get into is that apartment. $${nextOffer}/month work for you?`,
+                    `Lol nice try. I'm flattered, but let's keep this professional. Back to business - $${nextOffer}/month?`,
+                    `😂 You're funny. But seriously though, I need a place to live, not a Tinder match. Can we do $${nextOffer}?`
                 ];
                 return wittyResponses[Math.floor(Math.random() * wittyResponses.length)];
             }
         }
 
-        // Random/test messages - playful redirect
-        if (/^(lol|lmao|haha|wtf|bruh|test|testing|asdf|hello|hi|hey)$/i.test(lower.trim()) || lower.trim().length < 4) {
+        // Only catch truly random/test messages (not negotiation responses)
+        if (/^(lol|lmao|haha|bruh|test|testing|asdf|hello|hi|hey|yo|sup|wassup|how are you)$/i.test(lower)) {
+            const nextOffer = this.getAckermanPrice(currentOffer + 25);
             const playfulResponses = [
-                `Haha, I feel you. But real talk - $${currentOffer}/month, can we make it happen?`,
-                `Lol. Anyway... about that apartment? $${currentOffer}/month sound fair?`,
-                `😄 Alright alright. So we doing this deal or what? $${currentOffer}/month.`
+                `Haha, I feel you. But real talk - $${nextOffer}/month, can we make it happen?`,
+                `Lol. Anyway... about that apartment? $${nextOffer}/month sound fair?`,
+                `😄 Alright alright. So we doing this deal or what? $${nextOffer}/month.`
             ];
             return playfulResponses[Math.floor(Math.random() * playfulResponses.length)];
         }
 
         return null; // Not off-topic, continue normal processing
+    }
+
+    // Detect and handle "competing offer" scenarios - CRITICAL for negotiation
+    detectCompetingOffer(content) {
+        const lower = content.toLowerCase();
+
+        // Patterns for competing offers
+        const competingOfferPatterns = [
+            /(?:got|have|received|already have|someone|another).+?(?:offer|offering).+?\$?(\d+)/i,
+            /offer(?:ing|ed)?\s+(?:of\s+)?\$?(\d+)/i,
+            /\$(\d+)\s+(?:offer|from|already)/i
+        ];
+
+        for (const pattern of competingOfferPatterns) {
+            const match = content.match(pattern);
+            if (match) {
+                const competingPrice = parseInt(match[1]);
+                if (competingPrice > 0) {
+                    console.log('🎯 COMPETING OFFER DETECTED:', competingPrice);
+                    return { hasCompetingOffer: true, competingPrice };
+                }
+            }
+        }
+
+        return { hasCompetingOffer: false };
     }
 
     // Analyze landlord's reply
@@ -740,7 +785,7 @@ class AINegotiator {
         // Check for simple acceptance patterns IMMEDIATELY
         const simpleReply = replyContent.trim().toLowerCase();
         const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
-        
+
         if (isSimpleAcceptance) {
             console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
             const lastOffer = this.extractLastOfferedPrice(negotiation);
@@ -755,6 +800,83 @@ class AINegotiator {
                 responseStrategy: 'thank',
                 suggestedResponse: `Excellent! Thank you for accepting the $${lastOffer || negotiation.userBudget}/month offer.`,
                 negotiationPhase: 'closing'
+            };
+        }
+
+        // Check for COMPETING OFFER - this is critical to handle properly
+        const competingOfferCheck = this.detectCompetingOffer(replyContent);
+        if (competingOfferCheck.hasCompetingOffer) {
+            const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [] };
+            const competingPrice = competingOfferCheck.competingPrice;
+
+            // Calculate our counter: match or slightly beat the competing offer if within budget
+            const maxOffer = Math.round(listing.price * 0.90);
+            let ourCounter;
+
+            if (competingPrice <= negotiation.userBudget) {
+                // We can match or beat it - offer slightly more
+                ourCounter = Math.min(competingPrice + this.getAckermanPrice(10), maxOffer);
+            } else if (competingPrice <= maxOffer) {
+                // Competing offer is above our budget but within reason - try to match
+                ourCounter = Math.min(competingPrice, maxOffer);
+            } else {
+                // Competing offer is too high - offer our max with explanation
+                ourCounter = maxOffer;
+            }
+
+            // Make sure we don't repeat offers
+            while (state.offersMade.includes(ourCounter) && ourCounter < maxOffer) {
+                ourCounter += 5;
+            }
+
+            const ackermanCounter = this.getAckermanPrice(ourCounter);
+
+            console.log('💰 COMPETING OFFER RESPONSE: Their offer $', competingPrice, '-> Our counter $', ackermanCounter);
+
+            return {
+                sentiment: 'neutral',
+                priceOffered: competingPrice,
+                acceptsOffer: false,
+                makesCounterOffer: true,
+                shouldRespond: true,
+                isFinalized: false,
+                responseStrategy: 'competing_offer',
+                competingPrice: competingPrice,
+                suggestedResponse: `$${competingPrice}? That's strong. My budget is capped at $${ackermanCounter}. Help me bridge that gap?`,
+                negotiationPhase: 'bargaining'
+            };
+        }
+
+        // Check for simple rejections - handle locally without AI for speed
+        const isSimpleRejection = /^(no|nah|nope|too low|can't do that|not possible)$/i.test(simpleReply);
+        if (isSimpleRejection) {
+            console.log('❌ REJECTION DETECTED:', simpleReply);
+            const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [], concessionCount: 0 };
+            const maxOffer = Math.round(listing.price * 0.90);
+
+            // Calculate next offer - ALWAYS increment after rejection
+            const increments = [75, 50, 35, 25, 15];
+            const increment = increments[Math.min(state.concessionCount || 0, increments.length - 1)];
+            let nextOffer = Math.min((state.lastOffer || negotiation.userBudget) + increment, maxOffer);
+
+            // Never repeat an offer
+            while (state.offersMade.includes(nextOffer) && nextOffer < maxOffer) {
+                nextOffer += 10;
+            }
+
+            const ackermanOffer = this.getAckermanPrice(nextOffer);
+
+            return {
+                sentiment: 'negative',
+                priceOffered: null,
+                acceptsOffer: false,
+                makesCounterOffer: false,
+                shouldRespond: true,
+                isFinalized: false,
+                responseStrategy: 'rejection_counter',
+                nextOffer: ackermanOffer,
+                suggestedResponse: `It sounds like that doesn't work. What would make $${ackermanOffer} work today?`,
+                negotiationPhase: 'bargaining'
             };
         }
 
@@ -904,6 +1026,68 @@ class AINegotiator {
             if (analysis.responseStrategy === 'redirect' && analysis.suggestedResponse) {
                 console.log('😄 Using witty redirect response');
                 return analysis.suggestedResponse;
+            }
+
+            // Handle COMPETING OFFER - use elite Mirror + Phantom Authority tactic
+            if (analysis.responseStrategy === 'competing_offer') {
+                console.log('🎯 Handling competing offer with elite tactics');
+                const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [], concessionCount: 0 };
+                const competingPrice = analysis.competingPrice || analysis.priceOffered;
+                const maxOffer = Math.round(listing.price * 0.90);
+
+                // Calculate counter - try to match/beat competing offer if possible
+                let ourCounter = competingPrice <= negotiation.userBudget
+                    ? Math.min(competingPrice + 25, maxOffer)
+                    : Math.min(Math.round(negotiation.userBudget * 1.1), maxOffer);
+
+                // Never repeat an offer
+                while (state.offersMade.includes(ourCounter) && ourCounter < maxOffer) {
+                    ourCounter += 10;
+                }
+
+                const ackermanCounter = this.getAckermanPrice(ourCounter);
+
+                // Update state
+                if (!negotiation.negotiationState) negotiation.negotiationState = state;
+                negotiation.negotiationState.offersMade.push(ackermanCounter);
+                negotiation.negotiationState.lastOffer = ackermanCounter;
+                negotiation.negotiationState.concessionCount++;
+
+                // Elite response: Mirror + Phantom Authority
+                const competingOfferResponses = [
+                    `$${competingPrice}? That's strong. My budget is capped at $${ackermanCounter}. Help me bridge that gap?`,
+                    `$${competingPrice}... I hear you. The best I can authorize is $${ackermanCounter}. I'm ready to sign today.`,
+                    `$${competingPrice}? Respect. I can do $${ackermanCounter} and close immediately. A sure thing vs. a maybe?`,
+                    `Competing offer at $${competingPrice}? I can match at $${ackermanCounter} and sign today. What do you say?`
+                ];
+                return competingOfferResponses[Math.floor(Math.random() * competingOfferResponses.length)];
+            }
+
+            // Handle REJECTION - increment offer and try new tactic
+            if (analysis.responseStrategy === 'rejection_counter') {
+                console.log('❌ Handling rejection with offer increment');
+                const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [], concessionCount: 0 };
+                const nextOffer = analysis.nextOffer;
+
+                // Update state
+                if (!negotiation.negotiationState) negotiation.negotiationState = state;
+                negotiation.negotiationState.offersMade.push(nextOffer);
+                negotiation.negotiationState.lastOffer = nextOffer;
+                negotiation.negotiationState.concessionCount++;
+                negotiation.negotiationState.offersRejected = (negotiation.negotiationState.offersRejected || 0) + 1;
+
+                // Vary response based on rejection count
+                const rejectionCount = negotiation.negotiationState.offersRejected;
+                const weeklyVacancyCost = Math.round(listing.price / 4);
+
+                const rejectionResponses = [
+                    `It sounds like that doesn't work. What would make $${nextOffer} work today?`,
+                    `I hear you. Let me stretch to $${nextOffer}. That's genuinely my limit. Can we close?`,
+                    `Every week vacant costs you $${weeklyVacancyCost}. I'm at $${nextOffer} and ready to sign now.`,
+                    `Would it be unreasonable to consider $${nextOffer}? I need to make a decision today.`,
+                    `You probably think I'm being difficult. I get it. $${nextOffer} is every dollar I have.`
+                ];
+                return rejectionResponses[Math.min(rejectionCount - 1, rejectionResponses.length - 1)];
             }
 
             if (analysis.isFinalized && analysis.acceptsOffer) {
