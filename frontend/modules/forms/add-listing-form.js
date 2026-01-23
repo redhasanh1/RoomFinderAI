@@ -1094,6 +1094,15 @@ class AddListingForm {
 // Create global instance
 window.addListingForm = new AddListingForm();
 
+// Auto-initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        window.addListingForm.init();
+    });
+} else {
+    window.addListingForm.init();
+}
+
 // Global functions for backward compatibility
 window.toggleAddListingForm = () => {
     if (window.addListingForm) {
@@ -1118,5 +1127,3 @@ window.showManualForm = () => {
         window.addListingForm.showManualForm();
     }
 };
-
-export default window.addListingForm;
