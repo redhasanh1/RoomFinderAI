@@ -8,7 +8,6 @@ Allow: /signup.html
 Allow: /pricing.html
 
 # Disallow sensitive pages
-Disallow: /dashboard.html
 Disallow: /profile.html
 Disallow: /test-complete.html
 Disallow: /test-website.html
