@@ -679,7 +679,13 @@ class PhotoListingWizard {
         document.getElementById('analysisSuccess')?.classList.add('hidden');
         document.getElementById('analysisError')?.classList.remove('hidden');
 
-        document.getElementById('errorMessage').textContent = message || 'Something went wrong. Please try again.';
+        const errorEl = document.getElementById('errorMessage');
+        if (errorEl) {
+            errorEl.textContent = message || 'Something went wrong. Please try again.';
+        } else {
+            console.error('Photo analysis error:', message);
+            alert('Analysis failed: ' + (message || 'Unknown error'));
+        }
     }
 
     /**
