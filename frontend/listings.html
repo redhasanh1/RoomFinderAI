@@ -6031,13 +6031,17 @@
                 mapContainer.classList.remove('hidden');
 
                 // IMPROVED: Wait for browser reflow before initializing map
-                if (typeof initializeMap === 'function') {
+                if (typeof initMap === 'function') {
                     // Use requestAnimationFrame to ensure DOM is fully rendered
                     requestAnimationFrame(() => {
                         setTimeout(() => {
                             console.log('🗺️ Initializing map after container is fully visible...');
-                            initializeMap();
-                        }, 50); // Small additional delay after animation frame
+                            initMap();
+                            // Also update markers if listings exist
+                            if (typeof updateMap === 'function' && window.currentListings) {
+                                setTimeout(() => updateMap(window.currentListings), 200);
+                            }
+                        }, 150); // Delay for DOM reflow
                     });
                 }
             }
