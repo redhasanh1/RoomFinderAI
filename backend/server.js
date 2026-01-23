@@ -4014,7 +4014,7 @@ app.post('/api/analyze-property-photo', async (req, res) => {
     console.log('🖼️ Property photo analysis endpoint called');
 
     try {
-        const { image } = req.body;
+        const { image, location } = req.body;
 
         if (!image || !Array.isArray(image)) {
             console.log('❌ Invalid image data received');
@@ -4025,6 +4025,9 @@ app.post('/api/analyze-property-photo', async (req, res) => {
         }
 
         console.log(`📸 Image received: ${image.length} bytes`);
+        if (location) {
+            console.log(`📍 Location data: ${location.city}, ${location.state} ${location.zip}`);
+        }
 
         // Check if Cloudflare Worker URL is configured
         const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
@@ -4039,10 +4042,13 @@ app.post('/api/analyze-property-photo', async (req, res) => {
 
         console.log(`🔗 Calling Cloudflare Worker: ${workerUrl}`);
 
-        // Call the Cloudflare Worker
-        const workerResponse = await axios.post(workerUrl, {
-            image: image
-        }, {
+        // Call the Cloudflare Worker with image and optional location
+        const requestBody = { image };
+        if (location) {
+            requestBody.location = location;
+        }
+
+        const workerResponse = await axios.post(workerUrl, requestBody, {
             headers: {
                 'Content-Type': 'application/json'
             },
@@ -4076,6 +4082,93 @@ app.post('/api/analyze-property-photo', async (req, res) => {
         res.status(500).json({
             success: false,
             error: error.response?.data?.error || error.message || 'Cloudflare Worker failed'
+        });
+    }
+});
+
+// ========================================
+// REVERSE GEOCODING (OpenStreetMap Nominatim)
+// ========================================
+
+/**
+ * POST /api/reverse-geocode
+ * Convert GPS coordinates to address using OpenStreetMap Nominatim (FREE)
+ */
+app.post('/api/reverse-geocode', async (req, res) => {
+    console.log('📍 Reverse geocode endpoint called');
+
+    try {
+        const { lat, lng } = req.body;
+
+        if (!lat || !lng || typeof lat !== 'number' || typeof lng !== 'number') {
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid coordinates. Expected { lat: number, lng: number }'
+            });
+        }
+
+        // Validate coordinate ranges
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+            return res.status(400).json({
+                success: false,
+                error: 'Coordinates out of range'
+            });
+        }
+
+        console.log(`🗺️ Looking up: ${lat}, ${lng}`);
+
+        // Call OpenStreetMap Nominatim (FREE, no API key needed)
+        const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+
+        const response = await axios.get(nominatimUrl, {
+            headers: {
+                'User-Agent': 'RoomFinderAI/1.0 (property listing app)',
+                'Accept-Language': 'en'
+            },
+            timeout: 10000
+        });
+
+        const data = response.data;
+
+        if (!data || !data.address) {
+            console.log('📍 No address found for coordinates');
+            return res.json({
+                success: true,
+                city: null,
+                state: null,
+                zip: null,
+                country: null
+            });
+        }
+
+        const address = data.address;
+
+        // Extract location components
+        const result = {
+            success: true,
+            city: address.city || address.town || address.village || address.municipality || address.county || null,
+            state: address.state || address.province || null,
+            zip: address.postcode || null,
+            country: address.country || null,
+            neighborhood: address.suburb || address.neighbourhood || null,
+            displayName: data.display_name || null
+        };
+
+        console.log(`✅ Location resolved: ${result.city}, ${result.state} ${result.zip}`);
+
+        res.json(result);
+
+    } catch (error) {
+        console.error('❌ Reverse geocode error:', error.message);
+
+        // Don't fail the whole flow if geocoding fails
+        res.json({
+            success: false,
+            error: 'Geocoding service unavailable',
+            city: null,
+            state: null,
+            zip: null,
+            country: null
         });
     }
 });
