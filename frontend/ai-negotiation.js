@@ -936,13 +936,38 @@ class AINegotiator {
         const marketData = negotiation.marketData || await this.getMarketData(
             listing.city, listing.house_type, listing.bedrooms
         );
-        
-        const suggestion = Math.min(
-            negotiation.userBudget, 
-            Math.round(marketData.average * 0.95)
-        );
-        
-        return `I understand your position. Based on current market data for similar ${listing.house_type}s in ${listing.city}, comparable properties are typically renting for around $${marketData.average}/month. Would you consider $${suggestion}/month? I'm a qualified, reliable tenant with excellent references and I'm ready to move in immediately.`;
+
+        // Get negotiation state
+        const state = negotiation.negotiationState || {
+            offersMade: [],
+            lastOffer: negotiation.userBudget,
+            concessionCount: 0
+        };
+
+        // CRITICAL: Get highest previous offer to never go backwards
+        const highestPrevious = state.offersMade.length > 0 ? Math.max(...state.offersMade) : negotiation.userBudget;
+        const baseline = Math.max(state.lastOffer || 0, highestPrevious);
+
+        // Calculate next offer with increment
+        const increments = [50, 25, 15, 10, 5];
+        const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+        let suggestion = Math.min(baseline + increment, listing.price);
+
+        // NEVER repeat an offer
+        while (state.offersMade.includes(suggestion) && suggestion < listing.price) {
+            suggestion += 5;
+        }
+
+        console.log('📊 generateMarketBasedResponse: baseline:', baseline, '-> suggestion:', suggestion);
+
+        // Track this offer
+        if (negotiation.negotiationState) {
+            negotiation.negotiationState.offersMade.push(suggestion);
+            negotiation.negotiationState.lastOffer = suggestion;
+            negotiation.negotiationState.concessionCount++;
+        }
+
+        return `$${suggestion}/month - that's my best offer. Market data shows similar ${listing.house_type}s in ${listing.city} average $${marketData.average}/month. I'm ready to sign today with excellent references. What do you say?`;
     }
 
     // Generate contextual response using AI with psychological tactics
