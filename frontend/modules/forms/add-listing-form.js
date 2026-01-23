@@ -641,30 +641,40 @@ class AddListingForm {
     async uploadMedia(files) {
         const uploadedMedia = [];
 
-        // Get config - try multiple methods
-        let supabaseUrl = null;
+        // Build config object from available sources
+        let config = null;
 
         // Method 1: Try window.configManager
         if (window.configManager && typeof window.configManager.getConfig === 'function') {
-            const config = window.configManager.getConfig();
+            config = window.configManager.getConfig();
             if (config && config.SUPABASE_URL) {
-                supabaseUrl = config.SUPABASE_URL;
                 console.log('📤 [UPLOAD] Config method: window.configManager');
+            } else {
+                config = null;
             }
         }
 
-        // Method 2: Try global SUPABASE_URL variable (from listings.html)
-        if (!supabaseUrl && typeof window.SUPABASE_URL !== 'undefined' && window.SUPABASE_URL) {
-            supabaseUrl = window.SUPABASE_URL;
-            console.log('📤 [UPLOAD] Config method: window.SUPABASE_URL (global)');
+        // Method 2: Try global variables (from listings.html)
+        if (!config && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+            config = {
+                SUPABASE_URL: window.SUPABASE_URL,
+                SUPABASE_ANON_KEY: window.SUPABASE_ANON_KEY
+            };
+            console.log('📤 [UPLOAD] Config method: global variables');
         }
 
-        if (!supabaseUrl) {
-            console.error('❌ [UPLOAD] Supabase URL not available');
+        if (!config || !config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+            console.error('❌ [UPLOAD] Config not available:', {
+                hasConfig: !!config,
+                hasUrl: !!(config && config.SUPABASE_URL),
+                hasKey: !!(config && config.SUPABASE_ANON_KEY),
+                windowUrl: !!window.SUPABASE_URL,
+                windowKey: !!window.SUPABASE_ANON_KEY
+            });
             throw new Error('Configuration not available - please refresh the page');
         }
 
-        const storageApiUrl = `${supabaseUrl}/storage/v1/object/listing-media/Photos`;
+        const storageApiUrl = `${config.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
         console.log('📤 [UPLOAD] Using storage API URL:', storageApiUrl);
 
         for (const fileObj of files) {
