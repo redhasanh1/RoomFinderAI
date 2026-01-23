@@ -455,34 +455,24 @@ class AddListingForm {
      * Submit listing to database
      */
     async submitListing(listing) {
-        // Get Supabase client - the listings page creates a global 'supabase' variable
-        // We need to access it from window since it's created without var/let/const
+        // Get Supabase client - try multiple sources
         let supabaseClient = null;
 
-        // Method 1: Try window.configManager (if available)
-        if (window.configManager && typeof window.configManager.getSupabase === 'function') {
+        // Method 1: Try window.supabaseClient (set by listings.html)
+        if (window.supabaseClient && typeof window.supabaseClient.from === 'function') {
+            supabaseClient = window.supabaseClient;
+            console.log('💾 [SUBMIT] Supabase method: window.supabaseClient');
+        }
+
+        // Method 2: Try window.configManager
+        if (!supabaseClient && window.configManager && typeof window.configManager.getSupabase === 'function') {
             supabaseClient = window.configManager.getSupabase();
             console.log('💾 [SUBMIT] Supabase method: window.configManager');
         }
 
-        // Method 2: Try accessing through window object
-        // Since listings.html does: supabase = window.supabase.createClient(...)
-        // without let/var/const, it becomes window.supabase (overwriting the library)
-        if (!supabaseClient && window.supabase && typeof window.supabase.from === 'function') {
-            supabaseClient = window.supabase;
-            console.log('💾 [SUBMIT] Supabase method: window.supabase (global client)');
-        }
-
         if (!supabaseClient) {
             console.error('❌ [SUBMIT] Supabase client not available');
-            console.error('❌ [SUBMIT] Debug info:', {
-                hasConfigManager: !!window.configManager,
-                hasWindowSupabase: !!window.supabase,
-                windowSupabaseType: typeof window.supabase,
-                windowSupabaseHasFrom: window.supabase && typeof window.supabase.from === 'function',
-                windowKeys: Object.keys(window).filter(key => key.toLowerCase().includes('supabase'))
-            });
-            throw new Error('Configuration not available - please refresh the page');
+            throw new Error('Database not ready - please refresh the page');
         }
 
         console.log('✅ [SUBMIT] Supabase client found, inserting listing...');
