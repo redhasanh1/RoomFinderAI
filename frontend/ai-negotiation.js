@@ -1455,11 +1455,26 @@ Generate ONLY the message. No greetings, no signatures.
                                 console.log('❌ Direct UI update failed:', error.message);
                             }
                             
-                            // PRIORITY 2: Try database notification (may fail due to constraints)
+                            // PRIORITY 2: Try database notification
                             try {
+                                console.log('💾 [NEGOTIATION] Attempting to notify tenant of deal acceptance...');
                                 await this.notifyNegotiationComplete(negotiation, message.content);
+                                console.log('✅ [NEGOTIATION] Tenant notification sent successfully');
                             } catch (dbError) {
-                                console.log('Database notification failed (expected):', dbError.message);
+                                console.error('❌ [NEGOTIATION] Database notification failed:', dbError);
+                                console.error('❌ [NEGOTIATION] Error details:', {
+                                    message: dbError.message,
+                                    code: dbError.code,
+                                    details: dbError.details,
+                                    hint: dbError.hint
+                                });
+                                // Try alternative notification via direct message
+                                console.log('🔄 [NEGOTIATION] Attempting fallback notification method...');
+                                try {
+                                    await this.sendDirectNotification(negotiation, message.content);
+                                } catch (fallbackError) {
+                                    console.error('❌ [NEGOTIATION] Fallback notification also failed:', fallbackError);
+                                }
                             }
                             
                             // PRIORITY 3: Store in localStorage as backup
@@ -1661,8 +1676,12 @@ Generate ONLY the message. No greetings, no signatures.
         }
 
         // Check for simple acceptance patterns IMMEDIATELY
-        const simpleReply = replyContent.trim().toLowerCase();
-        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
+        // Remove punctuation and trim
+        const simpleReply = replyContent.trim().toLowerCase().replace(/[!.,?]+$/g, '');
+
+        // More flexible regex to catch variations like "yes that works", "ok sounds good", etc.
+        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)(\s+(that|it|this))?\s*(works|sounds good|sounds great|for me)?[!.?]*$/i.test(simpleReply) ||
+                                   /^(i|we|that|it|this)?\s*(accept|agree|sounds good|works for me|that works)$/i.test(simpleReply);
 
         if (isSimpleAcceptance) {
             console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
@@ -2843,15 +2862,46 @@ Generate ONLY the response. No fluff. No signatures.
             const { data, error } = await this.supabase
                 .from('ai_chats')
                 .insert(notificationData);
-                
+
             if (error) {
                 console.error('❌ Database error:', error);
+                throw error; // Throw error so it can be caught and fallback can be attempted
             } else {
                 console.log('✅ Negotiation completion notification sent successfully');
             }
-            
+
         } catch (error) {
             console.error('Error notifying negotiation complete:', error);
+            throw error; // Re-throw to allow fallback handling
+        }
+    }
+
+    // Fallback notification method using direct message to conversation
+    async sendDirectNotification(negotiation, landlordMessage) {
+        try {
+            console.log('📤 [FALLBACK] Sending direct notification via messages table');
+
+            const successMessage = `🎉 DEAL ACCEPTED!\n\nThe landlord has accepted your offer for ${negotiation.listingTitle}!\n\nFinal Price: $${negotiation.finalPrice}/month\nOriginal Price: $${negotiation.originalPrice}/month\n\nLandlord's response: "${landlordMessage}"\n\n✅ Next steps: Contact the landlord to finalize the rental agreement.`;
+
+            // Send as a message in the conversation
+            const { error } = await this.supabase
+                .from('messages')
+                .insert({
+                    conversation_id: negotiation.conversationId,
+                    sender_email: 'ai-negotiator@roomfinder.com',
+                    message_text: successMessage,
+                    created_at: new Date().toISOString()
+                });
+
+            if (error) {
+                console.error('❌ [FALLBACK] Direct notification failed:', error);
+                throw error;
+            }
+
+            console.log('✅ [FALLBACK] Direct notification sent successfully');
+        } catch (error) {
+            console.error('❌ [FALLBACK] sendDirectNotification error:', error);
+            throw error;
         }
     }
 
