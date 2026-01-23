@@ -157,13 +157,13 @@ class AddListingForm {
     }
 
     /**
-     * Typewriter fill effect for inputs
+     * Typewriter fill effect for inputs (10x faster)
      */
     async typewriterFill(element, text) {
         element.value = '';
         for (let i = 0; i < text.length; i++) {
             element.value += text[i];
-            await new Promise(resolve => setTimeout(resolve, 20));
+            await new Promise(resolve => setTimeout(resolve, 2));
         }
     }
 
@@ -1002,23 +1002,23 @@ class AddListingForm {
         ];
 
         if (animate) {
-            // Animated population with typewriter effect
+            // Animated population with typewriter effect (10x faster)
             for (const mapping of fieldMapping) {
                 const element = document.getElementById(mapping.formId);
                 const value = analysisData[mapping.dataKey];
 
                 if (!element || value === undefined || value === null) continue;
 
-                await this.delay(150); // Stagger delay
+                await this.delay(15); // Stagger delay (was 150ms)
 
                 if (mapping.isSelect) {
                     element.value = value;
                     element.dispatchEvent(new Event('change'));
                     this.flashField(element);
                 } else if (mapping.formId === 'description') {
-                    await this.typewriterEffect(element, String(value), 15);
+                    await this.typewriterEffect(element, String(value), 2);
                 } else {
-                    await this.typewriterEffect(element, String(value), 30);
+                    await this.typewriterEffect(element, String(value), 3);
                 }
             }
         } else {
@@ -1041,9 +1041,9 @@ class AddListingForm {
     }
 
     /**
-     * Typewriter effect for input fields
+     * Typewriter effect for input fields (10x faster)
      */
-    async typewriterEffect(element, text, charDelay = 20) {
+    async typewriterEffect(element, text, charDelay = 2) {
         element.value = '';
         element.classList.add('ai-typing');
 
@@ -1060,17 +1060,17 @@ class AddListingForm {
     }
 
     /**
-     * Flash field to indicate AI completion
+     * Flash field to indicate AI completion (10x faster)
      */
     flashField(element) {
-        element.style.transition = 'background-color 0.3s ease, box-shadow 0.3s ease';
+        element.style.transition = 'background-color 0.05s ease, box-shadow 0.05s ease';
         element.style.backgroundColor = '#EEF2FF';
         element.style.boxShadow = '0 0 0 2px rgba(139, 92, 246, 0.3)';
 
         setTimeout(() => {
             element.style.backgroundColor = '';
             element.style.boxShadow = '';
-        }, 500);
+        }, 50);
     }
 
     /**
