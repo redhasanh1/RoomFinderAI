@@ -64,27 +64,34 @@ export default {
 
             // Run LLaVA vision model
             const response = await env.AI.run('@cf/llava-hf/llava-1.5-7b-hf', {
-                prompt: `You are a real estate listing assistant. Analyze this property photo carefully and extract details for a rental listing.
+                prompt: `Look at this property photo carefully. Describe what you see, then return JSON.
 
-IMPORTANT: Return ONLY valid JSON with NO additional text or explanation. The response must be parseable JSON.
+IMPORTANT: Actually analyze the image. Do NOT use placeholder values. Do NOT copy example values.
 
-Analyze the image and return this exact JSON structure:
+What type of property is this? Look for:
+- House exterior with yard/driveway = "House"
+- Apartment interior or apartment building = "Apartment"
+- Condo-style building or unit = "Condo"
+- Attached multi-unit rowhouse = "Townhouse"
+
+How many bedrooms? Count beds visible, or estimate from room sizes and layout.
+
+What is the condition and quality level? This affects price:
+- Budget/basic condition: $800-1200/month
+- Average/decent condition: $1300-1800/month
+- Nice/updated finishes: $1900-2500/month
+- Luxury/high-end: $2600+/month
+
+Return ONLY this JSON (no other text):
 {
-    "title": "A compelling, descriptive title for this property (max 60 characters)",
-    "house_type": "One of: Apartment, House, Condo, or Townhouse",
-    "bedrooms": <estimated number of bedrooms as integer, use 1 if unsure>,
-    "description": "A compelling 100-200 word description highlighting the property's best features, natural lighting, space, and appeal to potential renters",
-    "suggestedPrice": <estimated monthly rent in USD as integer based on visible quality and features>,
-    "features": ["list", "of", "detected", "features", "like hardwood floors", "natural light", "modern kitchen"],
-    "confidence": <0.0 to 1.0 confidence score for overall analysis>
-}
-
-Focus on:
-- Room type visible (living room, bedroom, kitchen, etc.)
-- Visible amenities and features
-- Overall condition and style
-- Natural lighting
-- Space and layout`,
+"title": "<write a specific title describing what you see in this image>",
+"house_type": "<House OR Apartment OR Condo OR Townhouse based on what you see>",
+"bedrooms": <your bedroom count estimate as a number>,
+"description": "<describe the actual room/property visible: flooring, walls, windows, furniture, lighting, condition>",
+"suggestedPrice": <your price estimate as a number based on quality you observe>,
+"features": ["<actual feature 1 you see>", "<actual feature 2 you see>"],
+"confidence": <0.5 if image is unclear, 0.7 if decent view, 0.9 if clear full view>
+}`,
                 image: image
             }) as { response?: string };
 
