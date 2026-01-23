@@ -82,7 +82,7 @@ class AddListingForm {
         this.showForm();
 
         // Small delay to ensure form is visible
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Fill in the fields
         const fieldMap = {
@@ -93,7 +93,7 @@ class AddListingForm {
             'description': listing.description
         };
 
-        // Location fields
+        // Location fields - instant fill
         if (listing.location) {
             if (listing.location.city) {
                 const cityField = document.getElementById('city');
@@ -113,27 +113,23 @@ class AddListingForm {
             }
         }
 
-        // Fill basic fields with animation
+        // Fill basic fields instantly (no typewriter animation for speed)
         for (const [fieldId, value] of Object.entries(fieldMap)) {
             if (!value) continue;
 
             const element = document.getElementById(fieldId);
             if (!element) continue;
 
+            // Instant fill - no typewriter effect
+            element.value = String(value);
             if (element.tagName === 'SELECT') {
-                element.value = value;
                 element.dispatchEvent(new Event('change'));
-            } else {
-                // Typewriter effect
-                await this.typewriterFill(element, String(value));
             }
 
-            // Flash effect
-            element.style.transition = 'background-color 0.3s';
+            // Quick flash effect
+            element.style.transition = 'background-color 0.2s';
             element.style.backgroundColor = '#EEF2FF';
-            setTimeout(() => { element.style.backgroundColor = ''; }, 500);
-
-            await new Promise(resolve => setTimeout(resolve, 200));
+            setTimeout(() => { element.style.backgroundColor = ''; }, 300);
         }
 
         // Handle image if available (full image or thumbnail)
@@ -512,29 +508,25 @@ class AddListingForm {
 
         console.log('✅ Updated localStorage with new listing:', newListing);
 
-        // Refresh listings display FIRST before showing success message
-        console.log('🔄 Refreshing listings and map after new listing added');
-        try {
-            if (window.listingsManager) {
-                console.log('📋 Calling listingsManager.refresh()...');
-                await window.listingsManager.refresh();
-                console.log('✅ Listings refreshed successfully');
-            } else {
-                console.warn('⚠️ listingsManager not available');
-            }
-        } catch (refreshError) {
-            console.error('❌ Error refreshing listings:', refreshError);
-            // Don't fail completely - listing is already in database
-        }
+        // Show success message immediately (don't block on refresh)
+        alert('Listing added successfully!');
 
         // Reset form
         this.resetForm();
 
-        // Show success message AFTER refresh completes
-        alert('Listing added successfully!');
-
         // Hide form
         this.hideForm();
+
+        // Refresh listings in background (non-blocking for faster UX)
+        console.log('🔄 Refreshing listings in background...');
+        if (window.listingsManager) {
+            window.listingsManager.refresh().then(() => {
+                console.log('✅ Listings refreshed successfully');
+            }).catch(refreshError => {
+                console.error('❌ Error refreshing listings:', refreshError);
+                // Don't fail - listing is already in database
+            });
+        }
     }
 
     /**
@@ -677,7 +669,8 @@ class AddListingForm {
         const storageApiUrl = `${config.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
         console.log('📤 [UPLOAD] Using storage API URL:', storageApiUrl);
 
-        for (const fileObj of files) {
+        // Process and upload all files in parallel for speed
+        const uploadPromises = files.map(async (fileObj, index) => {
             let file = fileObj.file;
             const originalSize = file.size;
 
@@ -705,19 +698,23 @@ class AddListingForm {
                 console.log(`📦 Original: ${(originalSize / 1024).toFixed(1)}KB, Compressed: ${(file.size / 1024).toFixed(1)}KB`);
             }
 
-            const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+            // Use unique timestamp + index to avoid collisions in parallel uploads
+            const fileName = `${Date.now()}-${index}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
             const filePath = fileName;
 
-            try {
-                const uploadResult = await this.uploadFileToStorage(file, filePath, contentType.startsWith('image/') ? 'image/jpeg' : contentType, storageApiUrl, config);
-                uploadedMedia.push(uploadResult);
-            } catch (err) {
-                console.error('Upload failed for', file.name, err);
-                throw err;
-            }
-        }
+            const uploadResult = await this.uploadFileToStorage(file, filePath, contentType.startsWith('image/') ? 'image/jpeg' : contentType, storageApiUrl, config);
+            return uploadResult;
+        });
 
-        return uploadedMedia;
+        // Wait for all uploads to complete in parallel
+        try {
+            const results = await Promise.all(uploadPromises);
+            console.log(`✅ All ${results.length} files uploaded in parallel`);
+            return results;
+        } catch (err) {
+            console.error('❌ Parallel upload failed:', err);
+            throw err;
+        }
     }
 
     /**
@@ -815,6 +812,7 @@ class AddListingForm {
 
     /**
      * Upload file to storage
+     * Simplified: upload succeeds or throws error, no verification loop needed
      */
     async uploadFileToStorage(file, filePath, contentType, storageApiUrl, config) {
         const formData = new FormData();
@@ -838,10 +836,7 @@ class AddListingForm {
 
         const publicUrl = `${config.SUPABASE_URL}/storage/v1/object/public/listing-media/Photos/${filePath}`;
 
-        // Verify upload
-        await this.verifyUpload(publicUrl, contentType, file, filePath, storageApiUrl, config);
-
-        console.log('Uploaded media:', {
+        console.log('✅ Uploaded media:', {
             name: file.name,
             type: contentType,
             url: publicUrl
@@ -853,65 +848,6 @@ class AddListingForm {
             url: publicUrl,
             data: null // Don't store data URL for uploaded files
         };
-    }
-
-    /**
-     * Verify file upload and fix MIME type if needed
-     */
-    async verifyUpload(publicUrl, expectedContentType, file, filePath, storageApiUrl, config) {
-        let verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
-        let serverContentType = verifyResponse.headers.get('Content-Type');
-
-        console.log('Server-reported content type:', {
-            name: file.name,
-            serverContentType
-        });
-
-        if (serverContentType !== expectedContentType) {
-            console.warn('MIME type mismatch detected. Server returned:', serverContentType, 'Expected:', expectedContentType);
-
-            // Delete and re-upload with explicit content type
-            await fetch(`${storageApiUrl}/${filePath}`, {
-                method: 'DELETE',
-                headers: {
-                    'Authorization': `Bearer ${config.SUPABASE_ANON_KEY}`,
-                    'apikey': config.SUPABASE_ANON_KEY
-                }
-            });
-
-            const reUploadFormData = new FormData();
-            reUploadFormData.append('file', file);
-            reUploadFormData.append('cacheControl', '3600');
-            reUploadFormData.append('upsert', 'false');
-            reUploadFormData.append('contentType', expectedContentType);
-
-            const reUploadResponse = await fetch(`${storageApiUrl}/${filePath}`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${config.SUPABASE_ANON_KEY}`,
-                    'apikey': config.SUPABASE_ANON_KEY
-                },
-                body: reUploadFormData
-            });
-
-            if (!reUploadResponse.ok) {
-                const errorText = await reUploadResponse.text();
-                throw new Error(`Re-upload failed: ${reUploadResponse.status} - ${errorText}`);
-            }
-
-            // Verify again
-            verifyResponse = await fetch(publicUrl, { method: 'HEAD' });
-            serverContentType = verifyResponse.headers.get('Content-Type');
-
-            console.log('After re-upload, server-reported content type:', {
-                name: file.name,
-                serverContentType
-            });
-
-            if (serverContentType !== expectedContentType) {
-                throw new Error(`Failed to set correct MIME type for ${file.name}. Server returned ${serverContentType}, expected ${expectedContentType}.`);
-            }
-        }
     }
 
     /**
