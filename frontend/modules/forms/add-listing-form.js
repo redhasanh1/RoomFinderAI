@@ -295,10 +295,33 @@ class AddListingForm {
     async handleFormSubmission(e) {
         console.log('📝 [SUBMIT] Starting form submission handler');
 
-        // Check authentication
-        const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
+        // Check authentication - try multiple methods
+        let currentUser = null;
+
+        // Method 1: Try window.authManager (if available)
+        if (window.authManager && typeof window.authManager.getCurrentUser === 'function') {
+            currentUser = window.authManager.getCurrentUser();
+            console.log('🔐 [SUBMIT] Auth method: window.authManager');
+        }
+
+        // Method 2: Fallback to localStorage (most reliable)
         if (!currentUser) {
-            console.error('❌ [SUBMIT] No authenticated user found');
+            try {
+                currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                console.log('🔐 [SUBMIT] Auth method: localStorage');
+            } catch (e) {
+                console.error('❌ [SUBMIT] Failed to parse currentUser from localStorage:', e);
+            }
+        }
+
+        // Method 3: Try UniversalAuth (if available)
+        if (!currentUser && window.UniversalAuth && typeof window.UniversalAuth.getCurrentUser === 'function') {
+            currentUser = await window.UniversalAuth.getCurrentUser();
+            console.log('🔐 [SUBMIT] Auth method: UniversalAuth');
+        }
+
+        if (!currentUser) {
+            console.error('❌ [SUBMIT] No authenticated user found after trying all methods');
             alert('Please log in to add a listing.');
             window.location.href = '/login';
             return;
