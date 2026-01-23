@@ -4001,6 +4001,98 @@ app.get('/api/brevo-status', async (req, res) => {
     }
 });
 
+// ========================================
+// PROPERTY PHOTO AI ANALYSIS (Cloudflare Workers AI)
+// ========================================
+
+/**
+ * POST /api/analyze-property-photo
+ * Analyzes a property photo using Cloudflare Workers AI (LLaVA)
+ * FREE: 10,000 neurons/day
+ */
+app.post('/api/analyze-property-photo', async (req, res) => {
+    console.log('🖼️ Property photo analysis endpoint called');
+
+    try {
+        const { image } = req.body;
+
+        if (!image || !Array.isArray(image)) {
+            console.log('❌ Invalid image data received');
+            return res.status(400).json({
+                success: false,
+                error: 'Invalid image data. Expected base64-encoded image as array of bytes.'
+            });
+        }
+
+        console.log(`📸 Image received: ${image.length} bytes`);
+
+        // Check if Cloudflare Worker URL is configured
+        const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
+
+        if (!workerUrl) {
+            console.log('⚠️ CLOUDFLARE_WORKER_URL not configured, using fallback analysis');
+
+            // Return a fallback response when worker is not configured
+            return res.json({
+                success: true,
+                analysis: {
+                    title: 'Beautiful Property for Rent',
+                    house_type: 'Apartment',
+                    bedrooms: 2,
+                    description: 'A wonderful property with modern amenities. Please add more details to complete your listing. This is a placeholder description as the AI vision service is not yet configured.',
+                    suggestedPrice: 1500,
+                    features: ['Modern interior', 'Natural lighting'],
+                    confidence: 0.3
+                },
+                message: 'AI vision service not configured. Using placeholder data.'
+            });
+        }
+
+        console.log(`🔗 Calling Cloudflare Worker: ${workerUrl}`);
+
+        // Call the Cloudflare Worker
+        const workerResponse = await axios.post(workerUrl, {
+            image: image
+        }, {
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            timeout: 30000 // 30 second timeout
+        });
+
+        console.log('✅ Cloudflare Worker response received');
+        console.log('📊 Analysis result:', JSON.stringify(workerResponse.data).substring(0, 200) + '...');
+
+        res.json(workerResponse.data);
+
+    } catch (error) {
+        console.error('❌ Property photo analysis error:', error.message);
+
+        // Handle specific error types
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+            return res.status(503).json({
+                success: false,
+                error: 'AI vision service is currently unavailable',
+                fallback: true
+            });
+        }
+
+        if (error.response?.status === 429) {
+            return res.status(429).json({
+                success: false,
+                error: 'AI service rate limit reached. Free tier allows ~50-100 analyses per day. Please try again tomorrow.',
+                fallback: true
+            });
+        }
+
+        res.status(500).json({
+            success: false,
+            error: error.message || 'Failed to analyze property photo',
+            fallback: true
+        });
+    }
+});
+
 // API: AI Negotiator chat with OpenAI integration
 app.post('/api/ai-negotiate', async (req, res) => {
     console.log('🤖 AI Negotiate endpoint called');
