@@ -1101,30 +1101,56 @@ class PhotoListingWizard {
 
         const analysis = this.analysisResult;
 
+        // Save analysis to localStorage for the listings page
+        const listingData = {
+            title: analysis.title || '',
+            house_type: analysis.house_type || 'Apartment',
+            bedrooms: analysis.bedrooms || 2,
+            price: analysis.suggestedPrice || 1800,
+            description: analysis.description || '',
+            location: analysis.location || null,
+            features: analysis.features || [],
+            luxuryScore: analysis.luxuryScore || 5,
+            unitGrade: analysis.unitGrade || 'B',
+            targetDemo: analysis.targetDemo || '',
+            timestamp: Date.now()
+        };
+
+        // Save the image as base64 if available
+        if (this.uploadedImage && this.uploadedImage.dataUrl) {
+            listingData.imageDataUrl = this.uploadedImage.dataUrl;
+        }
+
+        localStorage.setItem('pendingListing', JSON.stringify(listingData));
+        console.log('Saved pending listing to localStorage:', listingData);
+
         // Hide wizard
         this.hide();
 
-        // Show the add listing form
-        if (window.addListingForm) {
+        // Check if we're on the listings page
+        const onListingsPage = window.location.pathname.includes('listings');
+
+        if (onListingsPage && window.addListingForm) {
+            // Already on listings page - show form and populate
             window.addListingForm.showForm();
-        }
 
-        // Add the uploaded image to the form
-        if (this.uploadedImage && window.addListingForm) {
-            // Transfer the uploaded file to the form's file input
-            const mediaInput = document.getElementById('media');
-            if (mediaInput && this.uploadedImage.file) {
-                const dt = new DataTransfer();
-                dt.items.add(this.uploadedImage.file);
-                mediaInput.files = dt.files;
-
-                // Trigger change event to update preview
-                mediaInput.dispatchEvent(new Event('change'));
+            // Add the uploaded image to the form
+            if (this.uploadedImage) {
+                const mediaInput = document.getElementById('media');
+                if (mediaInput && this.uploadedImage.file) {
+                    const dt = new DataTransfer();
+                    dt.items.add(this.uploadedImage.file);
+                    mediaInput.files = dt.files;
+                    mediaInput.dispatchEvent(new Event('change'));
+                }
             }
-        }
 
-        // Populate form fields with typewriter animation
-        this.populateFormWithAnimation(analysis);
+            // Populate form fields with typewriter animation
+            this.populateFormWithAnimation(analysis);
+        } else {
+            // Navigate to listings page - it will auto-load the form
+            window.location.href = 'listings.html?autoFill=true';
+        }
     }
 
     /**
