@@ -11,6 +11,25 @@ class AINegotiator {
         this.init();
     }
 
+    // Get combined tactic for each negotiation round
+    getTacticForRound(round) {
+        const tactics = [
+            'mirroring_phantom',      // Round 1: Mirror + Phantom Authority
+            'labeling_loss',          // Round 2: Label + Loss Aversion
+            'calibrated_no',          // Round 3: Calibrated Question + "No" Technique
+            'accusation_ackerman',    // Round 4: Accusation Audit + Ackerman Math
+            'phantom_pressure'        // Round 5: Phantom + Time Pressure
+        ];
+        return tactics[round % tactics.length];
+    }
+
+    // Generate Ackerman-style precise number (looks calculated, not arbitrary)
+    getAckermanPrice(basePrice) {
+        // Add random variation (-15 to +15) to seem precisely calculated
+        const variation = Math.floor(Math.random() * 30) - 15;
+        return basePrice + variation;
+    }
+
     // Initialize the negotiation engine
     async init() {
         try {
@@ -1343,7 +1362,7 @@ class AINegotiator {
         }
     }
 
-    // Generate market-based negotiation response to rejections
+    // Generate market-based negotiation response to rejections - ELITE FBI-STYLE NEGOTIATOR
     async generateMarketBasedNegotiation(negotiation, listing, landlordMessage, analysis) {
         try {
             const marketData = negotiation.marketData || await this.getMarketData(
@@ -1390,12 +1409,13 @@ class AINegotiator {
                 nextOffer += 5;
             }
 
-            console.log('   - Next offer will be:', nextOffer, '(increment:', increment, ')');
+            // Apply Ackerman pricing - precise numbers feel calculated, not arbitrary
+            const ackermanOffer = this.getAckermanPrice(nextOffer);
 
-            // Select which tactic to use based on what hasn't been used yet
-            const availableTactics = ['mirroring', 'labeling', 'calibrated_question', 'loss_aversion', 'accusation_audit'];
-            const unusedTactics = availableTactics.filter(t => !state.tacticsUsed.includes(t));
-            const tacticToUse = unusedTactics.length > 0 ? unusedTactics[0] : 'calibrated_question';
+            console.log('   - Next offer will be:', nextOffer, '(Ackerman:', ackermanOffer, ', increment:', increment, ')');
+
+            // Select combined tactic based on round
+            const tacticToUse = this.getTacticForRound(state.offersRejected);
 
             // Build full conversation history
             const fullHistory = negotiation.messages.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
@@ -1403,91 +1423,106 @@ class AINegotiator {
             // Check if market data is actually useful (different from listing price)
             const hasUsefulMarketData = marketData.average && Math.abs(marketData.average - listing.price) > 50;
 
+            // Calculate vacancy cost for loss aversion
+            const weeklyVacancyCost = Math.round(listing.price / 4);
+
             const prompt = `
-            You are a MASTER rental negotiator using FBI-level psychological tactics. Respond to this landlord who rejected your offer.
+You are an ELITE NEGOTIATOR. Ruthless but professional. Direct, no fluff, but not rude. Your goal is to secure the property at the target price.
 
-            ===== LANDLORD'S MESSAGE =====
-            "${landlordMessage}"
+===== LANDLORD'S MESSAGE =====
+"${landlordMessage}"
 
-            ===== FULL CONVERSATION HISTORY =====
-            ${fullHistory || 'This is the first exchange.'}
+===== CONVERSATION HISTORY =====
+${fullHistory || 'First exchange'}
 
-            ===== PROPERTY DETAILS =====
-            - Property: ${listing.title}
-            - Asking price: $${listing.price}/month
-            - Type: ${listing.house_type}, ${listing.bedrooms} bedrooms
-            - Location: ${listing.city}
+===== PROPERTY & CONSTRAINTS =====
+- Property: ${listing.title} in ${listing.city}
+- Asking: $${listing.price}/month
+- Your offer: $${ackermanOffer}/month
+- Hard ceiling: $${maxOffer}/month (NEVER exceed)
 
-            ===== MARKET DATA =====
-            ${hasUsefulMarketData ? `
-            - Average rent nearby: $${marketData.average}/month (USE THIS - it supports your position!)
-            - Range: $${marketData.min} - $${marketData.max}
-            - Based on ${marketData.count} comparable properties
-            ` : `
-            - No useful market data available
-            - DO NOT cite market data or averages in your response
-            - Focus on your value as a tenant instead
-            `}
+===== PSYCHOLOGICAL WEAPONS =====
 
-            ===== NEGOTIATION STATE =====
-            - My budget: $${negotiation.userBudget}/month
-            - Last offer I made: $${lastOffer}/month
-            - Times rejected: ${state.offersRejected}
-            - Next offer to make: $${nextOffer}/month (ONLY if needed)
-            - MAX offer allowed: $${maxOffer}/month (90% of asking - NEVER go above this)
+**PHANTOM AUTHORITY** - Subtle hints at external constraints (use sparingly, ~30% of responses):
+- "My budget is capped at $${ackermanOffer}" (implies external limit)
+- "I can't authorize above $${ackermanOffer}" (sounds like someone else controls it)
+- Only occasionally mention "advisor" or "partner" - keep it subtle
+- Makes it: "You + Me vs. The Budget" instead of "You vs. Me"
 
-            ===== PSYCHOLOGICAL TACTIC TO USE: ${tacticToUse.toUpperCase()} =====
+**ACKERMAN FRAMING** - Use precise numbers:
+- Offer $${ackermanOffer} (not round numbers like $${Math.round(nextOffer / 100) * 100})
+- "This is my calculated maximum after expenses"
+- Precise numbers feel like real limits, not arbitrary guesses
 
-            TACTIC INSTRUCTIONS:
-            ${tacticToUse === 'mirroring' ? `
-            MIRRORING: Repeat the landlord's last 3-5 words as a question.
-            Example: If they said "I have an offer at $1100" → respond "$1100? That's interesting..."
-            This makes them elaborate and feel heard.
-            ` : ''}
-            ${tacticToUse === 'labeling' ? `
-            LABELING: Name their emotion or situation to build rapport.
-            Examples:
-            - "It seems like you're weighing multiple options..."
-            - "It sounds like the price is really important to you..."
-            - "I sense that you've had bad experiences with tenants before..."
-            This validates their feelings and opens dialogue.
-            ` : ''}
-            ${tacticToUse === 'calibrated_question' ? `
-            CALIBRATED QUESTIONS: Ask "how" or "what" instead of arguing.
-            Examples:
-            - "How am I supposed to make that work with my budget?"
-            - "What would it take for you to consider $${nextOffer}?"
-            - "How can we bridge this gap together?"
-            This puts the problem-solving on them without confrontation.
-            ` : ''}
-            ${tacticToUse === 'loss_aversion' ? `
-            LOSS AVERSION: Frame what they might lose by not accepting.
-            Examples:
-            - "I'm ready to sign today. If I walk, you'll need to keep showing the place, deal with no-shows..."
-            - "A guaranteed reliable tenant vs. waiting and hoping for a maybe..."
-            - "The longer this sits empty, the more rent you're losing..."
-            People fear loss more than they value gain.
-            ` : ''}
-            ${tacticToUse === 'accusation_audit' ? `
-            ACCUSATION AUDIT: Preemptively address their objections.
-            Examples:
-            - "You probably think I'm lowballing you, and I get that..."
-            - "I know this is below your asking price..."
-            - "You might feel like I'm not valuing your property..."
-            This disarms them by saying what they're thinking before they do.
-            ` : ''}
+**NLP TRIGGERS**:
+✅ USE: "Correct", "Fair", "The goal is", "Let's resolve", "I need"
+❌ AVOID: "I think", "Maybe", "Can we", "Please", "How about"
 
-            CRITICAL RULES:
-            1. NEVER repeat the exact same offer after rejection - either increase slightly or use a different tactic
-            2. Use the ${tacticToUse} tactic naturally in your response
-            3. Keep response to 2-3 sentences MAX
-            4. Be respectful but confident
-            5. If offering a new price, use $${nextOffer} (NEVER offer more than $${maxOffer})
-            6. After the tactic, STOP TALKING - don't over-explain (strategic silence)
-            7. ${hasUsefulMarketData ? 'You CAN cite market data to support your position' : 'Do NOT mention market data or averages - we have none'}
+**"NO" TECHNIQUE**:
+- Ask: "Would it be unreasonable to consider $${ackermanOffer}?"
+- Gets psychological commitment when they say "No, it's not unreasonable"
+- Then: "Great, so $${ackermanOffer} works?"
 
-            Generate ONLY the response (no "Dear landlord" or signatures):
-            `;
+**LOSS AVERSION WITH MATH**:
+- Weekly vacancy cost: $${weeklyVacancyCost}
+- Say: "Every week vacant costs you $${weeklyVacancyCost}. My offer today stops the bleeding."
+
+===== TACTIC FOR THIS ROUND: ${tacticToUse.toUpperCase()} =====
+
+TACTIC COMBINATIONS:
+${tacticToUse === 'mirroring_phantom' ? `
+**MIRRORING + PHANTOM AUTHORITY**
+1. Mirror their last 3-5 words as a question
+2. Then hint at budget constraint (without naming "advisor" every time)
+Example: "$1100? My budget is capped at $${ackermanOffer}. Help me bridge that gap?"
+` : ''}
+${tacticToUse === 'labeling_loss' ? `
+**LABELING + LOSS AVERSION**
+1. Label their emotion/situation: "It sounds like...", "It seems like..."
+2. Then frame the cost of waiting: vacancy = $${weeklyVacancyCost}/week lost
+Example: "It sounds like you're weighing options. Every week vacant is $${weeklyVacancyCost} lost. I'm ready at $${ackermanOffer} today."
+` : ''}
+${tacticToUse === 'calibrated_no' ? `
+**CALIBRATED QUESTION + "NO" TECHNIQUE**
+1. Ask "How..." or "What..." to make them problem-solve
+2. Use "Would it be unreasonable..." to get their "no"
+Example: "What would it take to make $${ackermanOffer} work? Would it be unreasonable to close at that today?"
+` : ''}
+${tacticToUse === 'accusation_ackerman' ? `
+**ACCUSATION AUDIT + ACKERMAN MATH**
+1. Preempt their objection: "You probably think..."
+2. Counter with precise calculated number
+Example: "You probably think I'm being difficult. I get it. After calculating my exact expenses, $${ackermanOffer} is every dollar I have."
+` : ''}
+${tacticToUse === 'phantom_pressure' ? `
+**PHANTOM AUTHORITY + TIME PRESSURE**
+1. Hint at external constraint on budget
+2. Add urgency without desperation
+Example: "I can't authorize above $${ackermanOffer}. I need to make a decision today - what do you say?"
+` : ''}
+
+===== RESPONSE TEMPLATES FOR COMMON SCENARIOS =====
+
+IF landlord mentions "competing offer at $X":
+→ Mirror + Phantom: "$X? That's strong. My budget is capped at $${ackermanOffer}. Help me bridge that gap?"
+
+IF landlord says "no" or rejects:
+→ Label + Calibrated: "It sounds like that doesn't work. What would make $${ackermanOffer} work today?"
+
+IF landlord says "price is firm":
+→ Phantom + Flexibility: "I understand. I can't authorize above $${ackermanOffer}. Any flexibility on move-in or lease terms?"
+
+===== CRITICAL RULES =====
+1. MAX 2 sentences - Long text = desperation
+2. Use ${tacticToUse} tactic IMMEDIATELY in your response
+3. State offer as CONSTRAINT not REQUEST ("The best I can authorize is $${ackermanOffer}" not "Can we do $${ackermanOffer}?")
+4. End with offer or question, then STOP (strategic silence)
+5. NEVER exceed $${maxOffer}
+6. ${hasUsefulMarketData ? `USE market data: Average is $${marketData.average}` : 'NO market data - pivot to reliability and ready-to-sign'}
+7. NEVER repeat an offer already in: ${state.offersMade.join(', ') || 'none'}
+
+Generate ONLY the response. No fluff. No signatures.
+`;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
@@ -1545,33 +1580,53 @@ class AINegotiator {
         } catch (error) {
             console.error('Error generating market-based negotiation:', error);
 
-            // Enhanced fallback with tactical response
+            // Enhanced fallback with elite negotiator tactics
             const marketData = negotiation.marketData || { average: negotiation.userBudget };
             const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, concessionCount: 0, offersMade: [] };
 
             // CRITICAL: Get highest previous offer to avoid going backwards
             const highestPrevious = state.offersMade.length > 0 ? Math.max(...state.offersMade) : negotiation.userBudget;
             const baseline = Math.max(state.lastOffer || 0, highestPrevious);
+            const maxOffer = Math.round(listing.price * 0.90);
 
             const increment = [50, 25, 15, 10, 5][Math.min(state.concessionCount, 4)];
-            let counterOffer = Math.min(baseline + increment, listing.price);
+            let counterOffer = Math.min(baseline + increment, maxOffer);
 
             // NEVER repeat an offer
-            while (state.offersMade.includes(counterOffer) && counterOffer < listing.price) {
+            while (state.offersMade.includes(counterOffer) && counterOffer < maxOffer) {
                 counterOffer += 5;
             }
 
-            console.log('📊 Fallback counter-offer:', counterOffer, '(baseline:', baseline, ', increment:', increment, ')');
+            // Apply Ackerman pricing - precise numbers feel calculated
+            const ackermanOffer = this.getAckermanPrice(counterOffer);
+
+            console.log('📊 Fallback counter-offer:', ackermanOffer, '(base:', counterOffer, ', baseline:', baseline, ')');
 
             // Track this offer in state
             if (negotiation.negotiationState) {
-                negotiation.negotiationState.offersMade.push(counterOffer);
-                negotiation.negotiationState.lastOffer = counterOffer;
+                negotiation.negotiationState.offersMade.push(ackermanOffer);
+                negotiation.negotiationState.lastOffer = ackermanOffer;
                 negotiation.negotiationState.concessionCount++;
             }
 
-            // Use a calibrated question as fallback tactic
-            return `How can we make $${counterOffer}/month work? I'm ready to sign today with excellent references. Similar ${listing.house_type}s in ${listing.city} average $${marketData.average}/month.`;
+            // Use elite negotiator fallback tactics based on round
+            const tacticRound = state.offersRejected || 0;
+            const weeklyVacancyCost = Math.round(listing.price / 4);
+
+            const fallbackResponses = [
+                // Round 0: Phantom Authority
+                `My budget is capped at $${ackermanOffer}. I'm ready to sign today. What would it take?`,
+                // Round 1: Loss Aversion
+                `Every week vacant costs you $${weeklyVacancyCost}. The best I can authorize is $${ackermanOffer}.`,
+                // Round 2: Calibrated Question + No Technique
+                `Would it be unreasonable to consider $${ackermanOffer}? I need to make a decision today.`,
+                // Round 3: Accusation Audit
+                `You probably think I'm being difficult. After calculating my expenses, $${ackermanOffer} is genuinely my limit.`,
+                // Round 4+: Final offer
+                `$${ackermanOffer} is every dollar I have. A guaranteed tenant today vs. uncertain waiting. What do you say?`
+            ];
+
+            return fallbackResponses[Math.min(tacticRound, fallbackResponses.length - 1)];
         }
     }
 
