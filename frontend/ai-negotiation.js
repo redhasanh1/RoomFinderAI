@@ -809,21 +809,23 @@ Generate ONLY the message. No greetings, no signatures.
         if (competingOfferCheck.hasCompetingOffer) {
             const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [] };
             const competingPrice = competingOfferCheck.competingPrice;
+            const lastOffer = state.lastOffer || negotiation.userBudget;
 
-            // Calculate our counter: match or slightly beat the competing offer if within budget
+            // Calculate our counter: try to match competing offer, but NEVER go below our last offer
             const maxOffer = Math.round(listing.price * 0.90);
             let ourCounter;
 
-            if (competingPrice <= negotiation.userBudget) {
-                // We can match or beat it - offer slightly more
-                ourCounter = Math.min(competingPrice + this.getAckermanPrice(10), maxOffer);
-            } else if (competingPrice <= maxOffer) {
-                // Competing offer is above our budget but within reason - try to match
+            if (competingPrice <= maxOffer) {
+                // We can potentially match the competing offer
                 ourCounter = Math.min(competingPrice, maxOffer);
             } else {
-                // Competing offer is too high - offer our max with explanation
+                // Competing offer is above our max - offer our maximum
                 ourCounter = maxOffer;
             }
+
+            // CRITICAL: Never go BELOW what we already offered - that's backwards negotiation!
+            ourCounter = Math.max(ourCounter, lastOffer + 25);
+            ourCounter = Math.min(ourCounter, maxOffer); // Still respect max cap
 
             // Make sure we don't repeat offers
             while (state.offersMade.includes(ourCounter) && ourCounter < maxOffer) {
@@ -1035,11 +1037,26 @@ Generate ONLY the message. No greetings, no signatures.
                 const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [], concessionCount: 0 };
                 const competingPrice = analysis.competingPrice || analysis.priceOffered;
                 const maxOffer = Math.round(listing.price * 0.90);
+                const lastOffer = state.lastOffer || negotiation.userBudget;
 
-                // Calculate counter - try to match/beat competing offer if possible
-                let ourCounter = competingPrice <= negotiation.userBudget
-                    ? Math.min(competingPrice + 25, maxOffer)
-                    : Math.min(Math.round(negotiation.userBudget * 1.1), maxOffer);
+                // CRITICAL: Never go BELOW what we already offered!
+                // When landlord claims competing offer, we should increase from our last offer
+                // or match the competing price if we can afford it - NEVER decrease
+                let ourCounter;
+
+                if (competingPrice <= maxOffer) {
+                    // We can potentially match - offer our max or match, whichever is lower
+                    ourCounter = Math.min(competingPrice, maxOffer);
+                } else {
+                    // Competing offer is above our max - offer our maximum
+                    ourCounter = maxOffer;
+                }
+
+                // NEVER go below our last offer - that's terrible negotiation
+                ourCounter = Math.max(ourCounter, lastOffer + 25);
+
+                // Cap at maxOffer
+                ourCounter = Math.min(ourCounter, maxOffer);
 
                 // Never repeat an offer
                 while (state.offersMade.includes(ourCounter) && ourCounter < maxOffer) {
