@@ -86,25 +86,61 @@ export default {
 
       // Detect quality for pricing
       let suggestedPrice = 1800;
-      if (textLower.includes("luxury") || textLower.includes("large") || textLower.includes("spacious")) {
+      let quality = "well-maintained";
+      if (textLower.includes("luxury") || textLower.includes("elegant") || textLower.includes("spacious")) {
         suggestedPrice = 2800;
-      } else if (textLower.includes("well-maintained") || textLower.includes("modern")) {
+        quality = "luxurious";
+      } else if (textLower.includes("large") || textLower.includes("two-story")) {
+        suggestedPrice = 2500;
+        quality = "spacious";
+      } else if (textLower.includes("well-maintained") || textLower.includes("modern") || textLower.includes("updated")) {
         suggestedPrice = 2200;
+        quality = "modern";
+      } else if (textLower.includes("cozy") || textLower.includes("charming")) {
+        suggestedPrice = 1600;
+        quality = "charming";
       }
 
       // Extract features mentioned
       const features: string[] = [];
-      const keywords = ["garage", "brick", "driveway", "parking", "yard", "patio", "fireplace", "hardwood"];
-      for (const keyword of keywords) {
-        if (textLower.includes(keyword)) features.push(keyword);
+      const featureMap: Record<string, string> = {
+        "garage": "Garage",
+        "brick": "Brick exterior",
+        "driveway": "Driveway",
+        "parking": "Parking available",
+        "yard": "Yard",
+        "patio": "Patio",
+        "fireplace": "Fireplace",
+        "hardwood": "Hardwood floors",
+        "pool": "Pool",
+        "garden": "Garden",
+        "balcony": "Balcony",
+        "basement": "Basement",
+        "attic": "Attic"
+      };
+
+      for (const [keyword, label] of Object.entries(featureMap)) {
+        if (textLower.includes(keyword)) features.push(label);
       }
-      if (features.length === 0) features.push("See photos");
+      if (features.length === 0) features.push("See photos for details");
+
+      // Detect listing type (sale vs rent) - default to rent but check for sale keywords
+      let listingType = "Rent";
+      if (textLower.includes("sale") || textLower.includes("selling") || textLower.includes("buy")) {
+        listingType = "Sale";
+      }
+
+      // Generate a nice formatted description
+      const bedroomText = bedrooms === 1 ? "1 bedroom" : bedrooms + " bedrooms";
+      const featureList = features.slice(0, 4).join(", ");
+
+      const niceDescription = `Beautiful ${quality} ${house_type.toLowerCase()} available for ${listingType.toLowerCase()}. This ${bedroomText} property features ${featureList.toLowerCase() || "modern amenities"}. ${rawText.slice(0, 300)}`;
 
       const analysis: AnalysisResult = {
-        title: house_type + " for Rent",
+        title: quality.charAt(0).toUpperCase() + quality.slice(1) + " " + house_type + " for " + listingType,
         house_type: house_type,
         bedrooms: bedrooms,
-        description: rawText.slice(0, 500),
+        description: niceDescription.slice(0, 600),
         suggestedPrice: suggestedPrice,
         features: features.slice(0, 6),
         confidence: 0.75
