@@ -944,21 +944,34 @@ class AINegotiator {
             concessionCount: 0
         };
 
-        // CRITICAL: Get highest previous offer to never go backwards
-        const highestPrevious = state.offersMade.length > 0 ? Math.max(...state.offersMade) : negotiation.userBudget;
-        const baseline = Math.max(state.lastOffer || 0, highestPrevious);
+        // Calculate reasonable starting point - never more than 85% of listing price
+        const maxReasonableOffer = Math.round(listing.price * 0.90); // Cap at 90% of asking
+        const startingPoint = Math.min(negotiation.userBudget || Math.round(listing.price * 0.70), maxReasonableOffer);
+
+        // Get highest previous offer, but cap it at 90% of listing
+        const highestPrevious = state.offersMade.length > 0
+            ? Math.min(Math.max(...state.offersMade), maxReasonableOffer)
+            : startingPoint;
+        const baseline = Math.max(state.lastOffer || startingPoint, highestPrevious);
 
         // Calculate next offer with increment
         const increments = [50, 25, 15, 10, 5];
         const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
-        let suggestion = Math.min(baseline + increment, listing.price);
+
+        // CRITICAL: Never offer more than 90% of listing price - leave room to negotiate
+        let suggestion = Math.min(baseline + increment, maxReasonableOffer);
 
         // NEVER repeat an offer
-        while (state.offersMade.includes(suggestion) && suggestion < listing.price) {
+        while (state.offersMade.includes(suggestion) && suggestion < maxReasonableOffer) {
             suggestion += 5;
         }
 
-        console.log('📊 generateMarketBasedResponse: baseline:', baseline, '-> suggestion:', suggestion);
+        // If we've hit max, use a calibrated question instead of another offer
+        if (suggestion >= maxReasonableOffer) {
+            return `$${maxReasonableOffer}/month is genuinely my max. I'm a reliable tenant ready to sign today. Can we make this work?`;
+        }
+
+        console.log('📊 generateMarketBasedResponse: baseline:', baseline, '-> suggestion:', suggestion, '(max:', maxReasonableOffer, ')');
 
         // Track this offer
         if (negotiation.negotiationState) {
@@ -967,7 +980,14 @@ class AINegotiator {
             negotiation.negotiationState.concessionCount++;
         }
 
-        return `$${suggestion}/month - that's my best offer. Market data shows similar ${listing.house_type}s in ${listing.city} average $${marketData.average}/month. I'm ready to sign today with excellent references. What do you say?`;
+        // Only mention market data if it's actually useful (different from listing price)
+        const hasUsefulMarketData = marketData.average && Math.abs(marketData.average - listing.price) > 50;
+
+        if (hasUsefulMarketData && marketData.average < listing.price) {
+            return `$${suggestion}/month - similar ${listing.house_type}s nearby average $${marketData.average}. I'm ready to sign today. What do you say?`;
+        } else {
+            return `$${suggestion}/month. I'm a reliable tenant with great references, ready to move in immediately. Can we make this work?`;
+        }
     }
 
     // Generate contextual response using AI with psychological tactics
@@ -1341,27 +1361,33 @@ class AINegotiator {
                 tacticsUsed: []
             };
 
-            // CRITICAL: Get the highest offer we've ever made to avoid going backwards
-            const highestPreviousOffer = state.offersMade.length > 0 ? Math.max(...state.offersMade) : 0;
-            const lastOffer = Math.max(state.lastOffer || 0, highestPreviousOffer, negotiation.userBudget);
+            // CRITICAL: Never offer more than 90% of listing price - always leave negotiation room
+            const maxOffer = Math.round(listing.price * 0.90);
+            const startingPoint = negotiation.userBudget || Math.round(listing.price * 0.70);
+
+            // Get the highest offer we've ever made, capped at 90%
+            const highestPreviousOffer = state.offersMade.length > 0
+                ? Math.min(Math.max(...state.offersMade), maxOffer)
+                : startingPoint;
+            const lastOffer = Math.min(Math.max(state.lastOffer || startingPoint, highestPreviousOffer), maxOffer);
 
             console.log('📊 Negotiation state check:');
             console.log('   - All offers made:', state.offersMade);
             console.log('   - Highest previous offer:', highestPreviousOffer);
             console.log('   - Last offer baseline:', lastOffer);
+            console.log('   - Max offer cap (90%):', maxOffer);
 
             // Calculate next offer using incremental concessions
             let nextOffer = lastOffer;
 
             // Incremental concession logic: smaller increases each time
-            // But ALWAYS increase from our highest previous offer
             const increments = [50, 25, 15, 10, 5]; // Decreasing increments
             const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
-            nextOffer = Math.min(lastOffer + increment, listing.price);
+            nextOffer = Math.min(lastOffer + increment, maxOffer); // Cap at 90%, not 100%
 
             // CRITICAL: Make sure we NEVER offer the same price twice
-            while (state.offersMade.includes(nextOffer) && nextOffer < listing.price) {
-                nextOffer += 5; // Keep incrementing by $5 until we have a new offer
+            while (state.offersMade.includes(nextOffer) && nextOffer < maxOffer) {
+                nextOffer += 5;
             }
 
             console.log('   - Next offer will be:', nextOffer, '(increment:', increment, ')');
@@ -1373,6 +1399,9 @@ class AINegotiator {
 
             // Build full conversation history
             const fullHistory = negotiation.messages.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
+
+            // Check if market data is actually useful (different from listing price)
+            const hasUsefulMarketData = marketData.average && Math.abs(marketData.average - listing.price) > 50;
 
             const prompt = `
             You are a MASTER rental negotiator using FBI-level psychological tactics. Respond to this landlord who rejected your offer.
@@ -1390,15 +1419,22 @@ class AINegotiator {
             - Location: ${listing.city}
 
             ===== MARKET DATA =====
-            - Average rent: $${marketData.average}/month
+            ${hasUsefulMarketData ? `
+            - Average rent nearby: $${marketData.average}/month (USE THIS - it supports your position!)
             - Range: $${marketData.min} - $${marketData.max}
-            - Comparable properties: ${marketData.count}
+            - Based on ${marketData.count} comparable properties
+            ` : `
+            - No useful market data available
+            - DO NOT cite market data or averages in your response
+            - Focus on your value as a tenant instead
+            `}
 
             ===== NEGOTIATION STATE =====
             - My budget: $${negotiation.userBudget}/month
             - Last offer I made: $${lastOffer}/month
             - Times rejected: ${state.offersRejected}
             - Next offer to make: $${nextOffer}/month (ONLY if needed)
+            - MAX offer allowed: $${maxOffer}/month (90% of asking - NEVER go above this)
 
             ===== PSYCHOLOGICAL TACTIC TO USE: ${tacticToUse.toUpperCase()} =====
 
@@ -1446,8 +1482,9 @@ class AINegotiator {
             2. Use the ${tacticToUse} tactic naturally in your response
             3. Keep response to 2-3 sentences MAX
             4. Be respectful but confident
-            5. If offering a new price, use $${nextOffer}
+            5. If offering a new price, use $${nextOffer} (NEVER offer more than $${maxOffer})
             6. After the tactic, STOP TALKING - don't over-explain (strategic silence)
+            7. ${hasUsefulMarketData ? 'You CAN cite market data to support your position' : 'Do NOT mention market data or averages - we have none'}
 
             Generate ONLY the response (no "Dear landlord" or signatures):
             `;
