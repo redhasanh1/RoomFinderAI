@@ -350,11 +350,12 @@ class AINegotiator {
             }
 
             if (!negotiation) {
-                console.log('⚠️ No active negotiation found, creating new one');
+                console.log('⚠️ No active negotiation found, reconstructing from database...');
 
                 // Try to get user email and budget from conversation and localStorage
                 let userEmail = 'user@example.com'; // Default fallback
                 let userBudget = null; // Will be calculated dynamically
+                let previousMessages = [];
 
                 try {
                     const { data: conversation, error: convError } = await this.supabase
@@ -373,11 +374,76 @@ class AINegotiator {
                             userEmail = conversation.receiver_email;
                         }
                     }
+
+                    // CRITICAL: Fetch ALL previous messages to reconstruct negotiation history
+                    const { data: messages, error: msgError } = await this.supabase
+                        .from('messages')
+                        .select('*')
+                        .eq('conversation_id', conversationId)
+                        .order('created_at', { ascending: true });
+
+                    if (!msgError && messages) {
+                        previousMessages = messages;
+                        console.log('📜 Found', previousMessages.length, 'previous messages in conversation');
+                    }
                 } catch (error) {
-                    console.log('Could not fetch conversation details, using default email');
+                    console.log('Could not fetch conversation details:', error.message);
                 }
 
-                // Try to get user budget from localStorage or calculate from listing price
+                // Extract offers already made from previous messages
+                const offersMade = [];
+                const landlordCounters = [];
+                let lastOffer = null;
+                let rejectionCount = 0;
+                const reconstructedMessages = [];
+
+                for (const msg of previousMessages) {
+                    const isAI = msg.sender_email === 'ai-negotiator@roomfinder.com' ||
+                                 msg.content?.includes('AI Negotiator');
+
+                    // Extract prices from message
+                    const priceMatches = msg.content?.match(/\$(\d+)/g) || [];
+                    const prices = priceMatches.map(p => parseInt(p.replace('$', '')));
+
+                    if (isAI && prices.length > 0) {
+                        // AI made an offer - track all prices mentioned
+                        for (const price of prices) {
+                            if (!offersMade.includes(price)) {
+                                offersMade.push(price);
+                            }
+                        }
+                        lastOffer = prices[prices.length - 1]; // Last price in message
+                    } else if (!isAI && prices.length > 0) {
+                        // Landlord mentioned a price - might be counter-offer
+                        for (const price of prices) {
+                            if (!landlordCounters.includes(price)) {
+                                landlordCounters.push(price);
+                            }
+                        }
+                    }
+
+                    // Check for rejection words in landlord messages
+                    if (!isAI) {
+                        const msgLower = msg.content?.toLowerCase() || '';
+                        if (/\b(no|nope|can't|cannot|won't|too low|not possible)\b/.test(msgLower)) {
+                            rejectionCount++;
+                        }
+                    }
+
+                    reconstructedMessages.push({
+                        sender: isAI ? 'ai' : 'landlord',
+                        content: msg.content,
+                        timestamp: new Date(msg.created_at)
+                    });
+                }
+
+                console.log('📊 Reconstructed negotiation history:');
+                console.log('   - Offers we made:', offersMade);
+                console.log('   - Last offer:', lastOffer);
+                console.log('   - Landlord counters:', landlordCounters);
+                console.log('   - Rejection count:', rejectionCount);
+
+                // Try to get user budget from localStorage
                 try {
                     const savedBudget = localStorage.getItem('ai_negotiation_budget');
                     if (savedBudget) {
@@ -388,14 +454,20 @@ class AINegotiator {
                     console.log('Could not retrieve budget from localStorage');
                 }
 
-                // If no saved budget, calculate a reasonable starting offer based on listing price
+                // If no saved budget, use the HIGHEST offer we've made as our budget baseline
+                // This prevents going backwards in negotiation
                 if (!userBudget) {
-                    // Start at 15-20% below asking price as initial negotiation position
-                    userBudget = Math.round(listing.price * 0.82);
-                    console.log('📊 Calculated budget from listing price:', userBudget, '(82% of', listing.price, ')');
+                    if (offersMade.length > 0) {
+                        userBudget = Math.max(...offersMade);
+                        console.log('📊 Using highest previous offer as budget baseline:', userBudget);
+                    } else {
+                        // Fallback: calculate from listing price
+                        userBudget = Math.round(listing.price * 0.82);
+                        console.log('📊 Calculated budget from listing price:', userBudget);
+                    }
                 }
 
-                // Create new negotiation state from this reply with proper tracking
+                // Create negotiation state with RECONSTRUCTED history
                 negotiation = {
                     listingId: listing.id,
                     listingTitle: listing.title,
@@ -405,20 +477,21 @@ class AINegotiator {
                     landlordEmail: listing.user_email,
                     status: 'active',
                     startTime: new Date(),
-                    messages: [],
-                    // Enhanced state tracking for psychological tactics
+                    messages: reconstructedMessages,
+                    // Enhanced state tracking - RECONSTRUCTED from history
                     negotiationState: {
-                        offersMade: [], // Track all offers we've made
-                        offersRejected: 0, // Count of rejections
-                        lastOffer: null, // Last price we offered
-                        landlordCounters: [], // Track landlord's counter-offers
-                        tacticsUsed: [], // Track which tactics we've used
-                        concessionCount: 0, // How many times we've increased our offer
-                        maxConcessions: 4, // Don't concede more than this many times
-                        currentPhase: 'opening' // opening, bargaining, closing, final
+                        offersMade: offersMade,
+                        offersRejected: rejectionCount,
+                        lastOffer: lastOffer || userBudget,
+                        landlordCounters: landlordCounters,
+                        tacticsUsed: [], // Can't reconstruct this, start fresh
+                        concessionCount: offersMade.length > 0 ? offersMade.length - 1 : 0,
+                        maxConcessions: 4,
+                        currentPhase: rejectionCount > 0 ? 'bargaining' : 'opening'
                     }
                 };
                 this.activeNegotiations.set(conversationId, negotiation);
+                console.log('✅ Negotiation state reconstructed successfully');
             }
 
             // Analyze the landlord's reply
@@ -1243,16 +1316,30 @@ class AINegotiator {
                 tacticsUsed: []
             };
 
+            // CRITICAL: Get the highest offer we've ever made to avoid going backwards
+            const highestPreviousOffer = state.offersMade.length > 0 ? Math.max(...state.offersMade) : 0;
+            const lastOffer = Math.max(state.lastOffer || 0, highestPreviousOffer, negotiation.userBudget);
+
+            console.log('📊 Negotiation state check:');
+            console.log('   - All offers made:', state.offersMade);
+            console.log('   - Highest previous offer:', highestPreviousOffer);
+            console.log('   - Last offer baseline:', lastOffer);
+
             // Calculate next offer using incremental concessions
-            const lastOffer = state.lastOffer || negotiation.userBudget;
             let nextOffer = lastOffer;
 
             // Incremental concession logic: smaller increases each time
-            if (state.offersRejected > 0) {
-                const increments = [50, 25, 15, 10]; // Decreasing increments
-                const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
-                nextOffer = Math.min(lastOffer + increment, listing.price, negotiation.userBudget * 1.1);
+            // But ALWAYS increase from our highest previous offer
+            const increments = [50, 25, 15, 10, 5]; // Decreasing increments
+            const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+            nextOffer = Math.min(lastOffer + increment, listing.price);
+
+            // CRITICAL: Make sure we NEVER offer the same price twice
+            while (state.offersMade.includes(nextOffer) && nextOffer < listing.price) {
+                nextOffer += 5; // Keep incrementing by $5 until we have a new offer
             }
+
+            console.log('   - Next offer will be:', nextOffer, '(increment:', increment, ')');
 
             // Select which tactic to use based on what hasn't been used yet
             const availableTactics = ['mirroring', 'labeling', 'calibrated_question', 'loss_aversion', 'accusation_audit'];
@@ -1398,9 +1485,28 @@ class AINegotiator {
 
             // Enhanced fallback with tactical response
             const marketData = negotiation.marketData || { average: negotiation.userBudget };
-            const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, concessionCount: 0 };
-            const increment = [50, 25, 15, 10][Math.min(state.concessionCount, 3)];
-            const counterOffer = Math.min((state.lastOffer || negotiation.userBudget) + increment, listing.price);
+            const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, concessionCount: 0, offersMade: [] };
+
+            // CRITICAL: Get highest previous offer to avoid going backwards
+            const highestPrevious = state.offersMade.length > 0 ? Math.max(...state.offersMade) : negotiation.userBudget;
+            const baseline = Math.max(state.lastOffer || 0, highestPrevious);
+
+            const increment = [50, 25, 15, 10, 5][Math.min(state.concessionCount, 4)];
+            let counterOffer = Math.min(baseline + increment, listing.price);
+
+            // NEVER repeat an offer
+            while (state.offersMade.includes(counterOffer) && counterOffer < listing.price) {
+                counterOffer += 5;
+            }
+
+            console.log('📊 Fallback counter-offer:', counterOffer, '(baseline:', baseline, ', increment:', increment, ')');
+
+            // Track this offer in state
+            if (negotiation.negotiationState) {
+                negotiation.negotiationState.offersMade.push(counterOffer);
+                negotiation.negotiationState.lastOffer = counterOffer;
+                negotiation.negotiationState.concessionCount++;
+            }
 
             // Use a calibrated question as fallback tactic
             return `How can we make $${counterOffer}/month work? I'm ready to sign today with excellent references. Similar ${listing.house_type}s in ${listing.city} average $${marketData.average}/month.`;
