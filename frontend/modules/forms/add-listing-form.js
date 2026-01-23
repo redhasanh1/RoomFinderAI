@@ -455,21 +455,49 @@ class AddListingForm {
      * Submit listing to database
      */
     async submitListing(listing) {
-        const supabase = window.configManager ? window.configManager.getSupabase() : null;
-        if (!supabase) {
-            throw new Error('Database connection not available');
+        // Get Supabase client - the listings page creates a global 'supabase' variable
+        // We need to access it from window since it's created without var/let/const
+        let supabaseClient = null;
+
+        // Method 1: Try window.configManager (if available)
+        if (window.configManager && typeof window.configManager.getSupabase === 'function') {
+            supabaseClient = window.configManager.getSupabase();
+            console.log('💾 [SUBMIT] Supabase method: window.configManager');
         }
 
-        const { data, error } = await supabase
+        // Method 2: Try accessing through window object
+        // Since listings.html does: supabase = window.supabase.createClient(...)
+        // without let/var/const, it becomes window.supabase (overwriting the library)
+        if (!supabaseClient && window.supabase && typeof window.supabase.from === 'function') {
+            supabaseClient = window.supabase;
+            console.log('💾 [SUBMIT] Supabase method: window.supabase (global client)');
+        }
+
+        if (!supabaseClient) {
+            console.error('❌ [SUBMIT] Supabase client not available');
+            console.error('❌ [SUBMIT] Debug info:', {
+                hasConfigManager: !!window.configManager,
+                hasWindowSupabase: !!window.supabase,
+                windowSupabaseType: typeof window.supabase,
+                windowSupabaseHasFrom: window.supabase && typeof window.supabase.from === 'function',
+                windowKeys: Object.keys(window).filter(key => key.toLowerCase().includes('supabase'))
+            });
+            throw new Error('Configuration not available - please refresh the page');
+        }
+
+        console.log('✅ [SUBMIT] Supabase client found, inserting listing...');
+
+        const { data, error } = await supabaseClient
             .from('listings')
             .insert([listing])
             .select();
 
         if (error) {
-            console.error('Error inserting listing:', error);
+            console.error('❌ [SUBMIT] Database insert error:', error);
             throw new Error('Failed to add listing: ' + error.message);
         }
 
+        console.log('✅ [SUBMIT] Database insert successful:', data);
         return { success: true, data: data[0] };
     }
 
@@ -622,13 +650,32 @@ class AddListingForm {
      */
     async uploadMedia(files) {
         const uploadedMedia = [];
-        const config = window.configManager ? window.configManager.getConfig() : null;
 
-        if (!config) {
-            throw new Error('Configuration not available');
+        // Get config - try multiple methods
+        let supabaseUrl = null;
+
+        // Method 1: Try window.configManager
+        if (window.configManager && typeof window.configManager.getConfig === 'function') {
+            const config = window.configManager.getConfig();
+            if (config && config.SUPABASE_URL) {
+                supabaseUrl = config.SUPABASE_URL;
+                console.log('📤 [UPLOAD] Config method: window.configManager');
+            }
         }
 
-        const storageApiUrl = `${config.SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
+        // Method 2: Try global SUPABASE_URL variable (from listings.html)
+        if (!supabaseUrl && typeof window.SUPABASE_URL !== 'undefined' && window.SUPABASE_URL) {
+            supabaseUrl = window.SUPABASE_URL;
+            console.log('📤 [UPLOAD] Config method: window.SUPABASE_URL (global)');
+        }
+
+        if (!supabaseUrl) {
+            console.error('❌ [UPLOAD] Supabase URL not available');
+            throw new Error('Configuration not available - please refresh the page');
+        }
+
+        const storageApiUrl = `${supabaseUrl}/storage/v1/object/listing-media/Photos`;
+        console.log('📤 [UPLOAD] Using storage API URL:', storageApiUrl);
 
         for (const fileObj of files) {
             let file = fileObj.file;
