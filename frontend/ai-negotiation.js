@@ -351,16 +351,18 @@ class AINegotiator {
 
             if (!negotiation) {
                 console.log('⚠️ No active negotiation found, creating new one');
-                
-                // Try to get user email from conversation
+
+                // Try to get user email and budget from conversation and localStorage
                 let userEmail = 'user@example.com'; // Default fallback
+                let userBudget = null; // Will be calculated dynamically
+
                 try {
                     const { data: conversation, error: convError } = await this.supabase
                         .from('conversations')
                         .select('sender_email, receiver_email')
                         .eq('id', conversationId)
                         .maybeSingle();
-                    
+
                     if (convError) {
                         console.log('Error fetching conversation:', convError.message);
                     } else if (conversation) {
@@ -374,18 +376,47 @@ class AINegotiator {
                 } catch (error) {
                     console.log('Could not fetch conversation details, using default email');
                 }
-                
-                // Create new negotiation state from this reply
+
+                // Try to get user budget from localStorage or calculate from listing price
+                try {
+                    const savedBudget = localStorage.getItem('ai_negotiation_budget');
+                    if (savedBudget) {
+                        userBudget = parseInt(savedBudget);
+                        console.log('📊 Retrieved budget from localStorage:', userBudget);
+                    }
+                } catch (e) {
+                    console.log('Could not retrieve budget from localStorage');
+                }
+
+                // If no saved budget, calculate a reasonable starting offer based on listing price
+                if (!userBudget) {
+                    // Start at 15-20% below asking price as initial negotiation position
+                    userBudget = Math.round(listing.price * 0.82);
+                    console.log('📊 Calculated budget from listing price:', userBudget, '(82% of', listing.price, ')');
+                }
+
+                // Create new negotiation state from this reply with proper tracking
                 negotiation = {
                     listingId: listing.id,
                     listingTitle: listing.title,
                     originalPrice: listing.price,
-                    userBudget: 1000, // Default from your scenario
+                    userBudget: userBudget,
                     userEmail: userEmail,
                     landlordEmail: listing.user_email,
                     status: 'active',
                     startTime: new Date(),
-                    messages: []
+                    messages: [],
+                    // Enhanced state tracking for psychological tactics
+                    negotiationState: {
+                        offersMade: [], // Track all offers we've made
+                        offersRejected: 0, // Count of rejections
+                        lastOffer: null, // Last price we offered
+                        landlordCounters: [], // Track landlord's counter-offers
+                        tacticsUsed: [], // Track which tactics we've used
+                        concessionCount: 0, // How many times we've increased our offer
+                        maxConcessions: 4, // Don't concede more than this many times
+                        currentPhase: 'opening' // opening, bargaining, closing, final
+                    }
                 };
                 this.activeNegotiations.set(conversationId, negotiation);
             }
@@ -588,23 +619,41 @@ class AINegotiator {
             const lastAIMessage = negotiation.messages
                 .filter(m => m.sender === 'ai')
                 .pop();
-            
+
+            // Build FULL conversation history for context
+            const fullHistory = negotiation.messages.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
+
+            // Get negotiation state
+            const state = negotiation.negotiationState || {
+                offersMade: [],
+                lastOffer: negotiation.userBudget,
+                offersRejected: 0
+            };
+
             const prompt = `
-            Analyze this landlord reply in a rental negotiation:
+            Analyze this landlord reply in a rental negotiation.
 
-            LANDLORD REPLY: "${replyContent}"
-            
-            NEGOTIATION CONTEXT:
+            ===== LANDLORD'S REPLY =====
+            "${replyContent}"
+
+            ===== FULL CONVERSATION HISTORY =====
+            ${fullHistory || 'First exchange'}
+
+            ===== NEGOTIATION STATE =====
             - Original listing price: $${listing.price}
-            - Last AI offer/message: "${lastAIMessage?.content || 'Initial contact'}"
-            - User budget: $${negotiation.userBudget}
-            - Current negotiation status: ${negotiation.status}
-            - Conversation history: ${negotiation.messages.slice(-3).map(m => `${m.sender}: ${m.content}`).join(' | ')}
+            - Our budget: $${negotiation.userBudget}
+            - Last offer we made: $${state.lastOffer}
+            - All offers we've made: ${state.offersMade.join(', ') || 'None yet'}
+            - Times rejected: ${state.offersRejected}
+            - Current status: ${negotiation.status}
 
-            Analyze the reply and return JSON:
+            ===== LAST AI MESSAGE =====
+            "${lastAIMessage?.content || 'Initial contact'}"
+
+            Analyze and return JSON:
             {
                 "sentiment": "positive/neutral/negative",
-                "priceOffered": null or number,
+                "priceOffered": null or number (extract any $ amount they mention),
                 "acceptsOffer": true/false,
                 "makesCounterOffer": true/false,
                 "shouldRespond": true/false,
@@ -615,14 +664,22 @@ class AINegotiator {
                 "negotiationPhase": "initial/bargaining/closing/rejected"
             }
 
-            ANALYSIS RULES:
-            - "sure", "yes", "ok", "sounds good" = acceptance of last offer
-            - If they accept: isFinalized=true, agreedPrice=last offered price
-            - If they counter with price: extract exact number, shouldRespond=true
-            - If they say "market price isn't $X": shouldRespond=true with market data
-            - If outright rejection: shouldRespond=true for one final attempt
-            - Simple positive words like "sure" mean agreement to last proposal
-            - Extract prices carefully: look for $XXX or XXX/month patterns
+            CRITICAL ANALYSIS RULES:
+            1. ACCEPTANCE DETECTION:
+               - "sure", "yes", "ok", "okay", "sounds good", "deal", "fine", "agreed" = ACCEPTANCE
+               - If accepted: isFinalized=true, agreedPrice=${state.lastOffer}
+
+            2. COUNTER-OFFER DETECTION:
+               - Look for any price mention: "$1100", "1100/month", "eleven hundred"
+               - If they give a number: makesCounterOffer=true, priceOffered=that number
+
+            3. REJECTION DETECTION:
+               - "no", "can't do that", "too low", "not possible" = rejection
+               - shouldRespond=true (we should try a different approach)
+
+            4. NEVER assume rejection if they're just discussing or asking questions
+
+            5. Extract prices carefully - any $ or number followed by "month" or "per month"
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -653,25 +710,44 @@ class AINegotiator {
 
         } catch (error) {
             console.error('Error with AI analysis, using enhanced fallback:', error);
-            
+
+            // Get negotiation state for proper tracking
+            const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, offersMade: [] };
+
             // Enhanced fallback analysis with better detection
             const replyLower = replyContent.toLowerCase().trim();
             const hasPrice = replyContent.match(/\$(\d+)/);
-            const seemsPositive = /\b(yes|ok|sure|accept|agree|sounds good|works|fine|deal|great|perfect)\b/i.test(replyContent);
-            const hasAcceptanceWords = /\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|perfect|great|excellent)\b/i.test(replyLower);
-            
-            console.log('🔧 Fallback analysis - hasAcceptanceWords:', hasAcceptanceWords, 'for:', replyLower);
-            
+            const priceValue = hasPrice ? parseInt(hasPrice[1]) : null;
+
+            // Acceptance detection
+            const hasAcceptanceWords = /\b(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|perfect|great|excellent|absolutely|yep|yeah)\b/i.test(replyLower);
+
+            // Rejection detection
+            const hasRejectionWords = /\b(no|nope|can't|cannot|won't|too low|not possible|firm|fixed|non-negotiable)\b/i.test(replyLower);
+
+            // Question/discussion detection (not rejection)
+            const isDiscussion = /\?|what if|how about|consider|maybe|perhaps/i.test(replyContent);
+
+            console.log('🔧 Fallback analysis - acceptance:', hasAcceptanceWords, 'rejection:', hasRejectionWords, 'discussion:', isDiscussion);
+
+            // Determine sentiment
+            let sentiment = 'neutral';
+            if (hasAcceptanceWords && !hasRejectionWords) sentiment = 'positive';
+            else if (hasRejectionWords && !isDiscussion) sentiment = 'negative';
+
+            // Get the last offer we made for acceptance tracking
+            const lastOffer = state.lastOffer || this.extractLastOfferedPrice(negotiation);
+
             return {
-                sentiment: seemsPositive ? 'positive' : 'neutral',
-                priceOffered: hasPrice ? parseInt(hasPrice[1]) : null,
-                acceptsOffer: hasAcceptanceWords && !hasPrice,
+                sentiment: sentiment,
+                priceOffered: priceValue,
+                acceptsOffer: hasAcceptanceWords && !hasPrice && !hasRejectionWords,
                 makesCounterOffer: !!hasPrice,
                 shouldRespond: true,
-                isFinalized: hasAcceptanceWords && !hasPrice,
-                agreedPrice: (hasAcceptanceWords && !hasPrice) ? this.extractLastOfferedPrice(negotiation) : null,
-                responseStrategy: (hasAcceptanceWords && !hasPrice) ? 'thank' : (hasPrice ? 'counter' : 'clarify'),
-                negotiationPhase: (hasAcceptanceWords && !hasPrice) ? 'closing' : 'bargaining'
+                isFinalized: hasAcceptanceWords && !hasPrice && !hasRejectionWords,
+                agreedPrice: (hasAcceptanceWords && !hasPrice && !hasRejectionWords) ? lastOffer : null,
+                responseStrategy: hasAcceptanceWords ? 'thank' : (hasPrice ? 'counter' : (hasRejectionWords ? 'negotiate' : 'clarify')),
+                negotiationPhase: hasAcceptanceWords ? 'closing' : (hasRejectionWords ? 'bargaining' : 'bargaining')
             };
         }
     }
@@ -707,23 +783,78 @@ class AINegotiator {
         }
     }
 
-    // Generate advanced counter-offer with market analysis
+    // Generate advanced counter-offer with market analysis and psychological tactics
     async generateAdvancedCounterOffer(analysis, negotiation, listing) {
         const userBudget = negotiation.userBudget;
         const counterPrice = analysis.priceOffered;
         const marketData = negotiation.marketData;
 
+        // Get or initialize state
+        const state = negotiation.negotiationState || {
+            offersMade: [],
+            lastOffer: userBudget,
+            concessionCount: 0,
+            landlordCounters: []
+        };
+
+        // Track landlord's counter-offer
+        if (!state.landlordCounters) state.landlordCounters = [];
+        state.landlordCounters.push(counterPrice);
+
+        // If counter is within budget, accept with enthusiasm
         if (counterPrice <= userBudget) {
-            return `Perfect! $${counterPrice}/month works excellently for me. I'm ready to proceed immediately and can provide excellent references. When can we arrange to finalize the rental agreement?`;
-        } else {
-            const maxOffer = Math.min(userBudget, Math.round(counterPrice * 0.92));
-            let justification = '';
-            
+            // Update state
+            if (!negotiation.negotiationState) negotiation.negotiationState = state;
+            negotiation.negotiationState.lastOffer = counterPrice;
+
+            return `$${counterPrice}/month? Done. I'm ready to sign today. When can we finalize this?`;
+        }
+
+        // Calculate our counter using incremental concession strategy
+        // Don't just offer 92% of their counter - make strategic increments from our last offer
+        const lastOffer = state.lastOffer || userBudget;
+        const increments = [50, 25, 15, 10]; // Decreasing increments show we're reaching our limit
+        const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+
+        // Our new offer: last offer + small increment, but never exceed budget or their counter
+        let newOffer = Math.min(lastOffer + increment, userBudget, counterPrice);
+
+        // Don't repeat the exact same offer
+        if (state.offersMade.includes(newOffer)) {
+            newOffer = Math.min(newOffer + 5, userBudget);
+        }
+
+        // Update state
+        if (!negotiation.negotiationState) negotiation.negotiationState = state;
+        negotiation.negotiationState.lastOffer = newOffer;
+        negotiation.negotiationState.offersMade.push(newOffer);
+        negotiation.negotiationState.concessionCount++;
+
+        console.log('📊 Counter-offer strategy: Their offer $', counterPrice, '-> Our counter $', newOffer);
+        console.log('📊 Concession #', negotiation.negotiationState.concessionCount, ', increments left:', increments.length - state.concessionCount);
+
+        // Use different tactics based on concession count
+        if (state.concessionCount === 0) {
+            // First counter - use labeling + market data
+            let response = `$${counterPrice}... I hear you.`;
             if (marketData && counterPrice > marketData.average) {
-                justification = ` Given that similar properties in the area average around $${marketData.average}/month,`;
+                response += ` Looking at comparable ${listing.house_type}s averaging $${marketData.average}, would $${newOffer} work?`;
+            } else {
+                response += ` How about we meet at $${newOffer}? I'm ready to sign immediately.`;
             }
-            
-            return `I really appreciate your counter-offer!${justification} Would you consider $${maxOffer}/month? This fits perfectly within my budget and I can guarantee immediate occupancy with excellent references. I'm a serious, reliable tenant looking to establish a long-term rental relationship.`;
+            return response;
+
+        } else if (state.concessionCount === 1) {
+            // Second counter - use calibrated question
+            return `How am I supposed to make $${counterPrice} work? I can stretch to $${newOffer} - that's genuinely my limit. What would it take?`;
+
+        } else if (state.concessionCount === 2) {
+            // Third counter - use loss aversion
+            return `I can do $${newOffer}. I'm ready to sign today with references in hand. If I walk, you're back to showings and no-shows. Can we make this work?`;
+
+        } else {
+            // Final attempts - accusation audit + firm stance
+            return `You probably think I'm being difficult. I get it. But $${newOffer} is genuinely where I am. A guaranteed tenant today vs. an uncertain wait - what do you say?`;
         }
     }
 
@@ -741,27 +872,70 @@ class AINegotiator {
         return `I understand your position. Based on current market data for similar ${listing.house_type}s in ${listing.city}, comparable properties are typically renting for around $${marketData.average}/month. Would you consider $${suggestion}/month? I'm a qualified, reliable tenant with excellent references and I'm ready to move in immediately.`;
     }
 
-    // Generate contextual response using AI
+    // Generate contextual response using AI with psychological tactics
     async generateContextualResponse(analysis, negotiation, listing) {
         try {
+            // Build full conversation history
+            const fullHistory = negotiation.messages.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
+
+            // Get negotiation state
+            const state = negotiation.negotiationState || {
+                offersMade: [],
+                lastOffer: negotiation.userBudget,
+                tacticsUsed: [],
+                concessionCount: 0
+            };
+
+            // Choose tactic based on phase and what's been used
+            let tacticToUse = 'calibrated_question';
+            if (analysis.negotiationPhase === 'opening') {
+                tacticToUse = 'labeling';
+            } else if (analysis.sentiment === 'neutral') {
+                tacticToUse = 'loss_aversion';
+            }
+
+            // Avoid repeating tactics
+            const usedTactics = state.tacticsUsed || [];
+            if (usedTactics.includes(tacticToUse)) {
+                const allTactics = ['mirroring', 'labeling', 'calibrated_question', 'loss_aversion', 'accusation_audit'];
+                tacticToUse = allTactics.find(t => !usedTactics.includes(t)) || 'calibrated_question';
+            }
+
             const prompt = `
-            Generate a persuasive rental negotiation response based on this context:
-            
-            LANDLORD'S SENTIMENT: ${analysis.sentiment}
-            STRATEGY NEEDED: ${analysis.responseStrategy}
-            NEGOTIATION PHASE: ${analysis.negotiationPhase}
-            
-            PROPERTY: ${listing.title} - $${listing.price}/month (${listing.house_type})
-            USER BUDGET: $${negotiation.userBudget}/month
-            CONVERSATION: ${negotiation.messages.slice(-2).map(m => `${m.sender}: ${m.content}`).join(' | ')}
-            
-            Generate a professional, persuasive response (2-3 sentences max) that:
-            1. Acknowledges their position respectfully
-            2. Emphasizes tenant reliability and quick decision-making
-            3. Makes a reasonable counter-proposal if needed
-            4. Shows genuine interest in the property
-            
-            Be concise and professional. Do NOT include greetings or signatures.
+            You are a MASTER negotiator using proven psychological tactics. Generate a response.
+
+            ===== LANDLORD'S SENTIMENT: ${analysis.sentiment} =====
+            ===== STRATEGY NEEDED: ${analysis.responseStrategy} =====
+            ===== NEGOTIATION PHASE: ${analysis.negotiationPhase} =====
+
+            ===== FULL CONVERSATION HISTORY =====
+            ${fullHistory || 'First exchange'}
+
+            ===== PROPERTY =====
+            ${listing.title} - $${listing.price}/month (${listing.house_type})
+
+            ===== MY POSITION =====
+            Budget: $${negotiation.userBudget}/month
+            Last offer: $${state.lastOffer}/month
+            Offers made so far: ${state.offersMade.join(', ') || 'None yet'}
+
+            ===== TACTIC TO USE: ${tacticToUse.toUpperCase()} =====
+
+            TACTIC GUIDE:
+            - MIRRORING: Repeat their last few words as a question to make them elaborate
+            - LABELING: Name their emotion ("It seems like...", "It sounds like...")
+            - CALIBRATED QUESTION: Ask "How..." or "What..." questions
+            - LOSS AVERSION: Frame what they lose by not accepting
+            - ACCUSATION AUDIT: Address their objection before they raise it
+
+            RULES:
+            1. Use the ${tacticToUse} tactic naturally
+            2. NEVER repeat an offer that was already rejected
+            3. 2-3 sentences MAX
+            4. After making your point, STOP (strategic silence)
+            5. Be confident but respectful
+
+            Generate ONLY the response:
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -774,20 +948,38 @@ class AINegotiator {
                 body: JSON.stringify({
                     model: this.config.OPENAI_MODEL || 'gpt-4',
                     messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 120,
+                    max_tokens: 150,
                     temperature: 0.7
                 })
             });
 
             if (response.ok) {
                 const data = await response.json();
-                return data.choices[0].message.content.trim();
+                const responseText = data.choices[0].message.content.trim();
+
+                // Track the tactic used
+                if (!negotiation.negotiationState) {
+                    negotiation.negotiationState = { tacticsUsed: [], offersMade: [], lastOffer: negotiation.userBudget };
+                }
+                negotiation.negotiationState.tacticsUsed.push(tacticToUse);
+
+                // Track any price mentioned
+                const priceMatch = responseText.match(/\$(\d+)/);
+                if (priceMatch) {
+                    negotiation.negotiationState.lastOffer = parseInt(priceMatch[1]);
+                    negotiation.negotiationState.offersMade.push(parseInt(priceMatch[1]));
+                }
+
+                console.log('✅ Generated contextual response with tactic:', tacticToUse);
+                return responseText;
             }
         } catch (error) {
             console.error('Error generating contextual response:', error);
         }
-        
-        return `Thank you for your consideration. I'm very interested in this ${listing.house_type} and I'm a reliable tenant ready to move quickly. Is there any flexibility we can work with?`;
+
+        // Fallback with calibrated question (never repeats same offer)
+        const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget };
+        return `How can we make this work? I'm a reliable tenant ready to sign immediately. What would it take to get to $${state.lastOffer}?`;
     }
 
     // Send negotiation message
@@ -957,9 +1149,20 @@ class AINegotiator {
             // Generate negotiation message
             const message = await this.generateNegotiationMessage(listing, userBudget, marketData);
 
-            // Create negotiation tracking
+            // Create negotiation tracking with enhanced state for psychological tactics
             const negotiationId = `neg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-            
+
+            // Extract the initial offer from the message
+            const initialOfferMatch = message.match(/\$(\d+)/);
+            const initialOffer = initialOfferMatch ? parseInt(initialOfferMatch[1]) : userBudget;
+
+            // Save budget to localStorage for recovery
+            try {
+                localStorage.setItem('ai_negotiation_budget', userBudget.toString());
+            } catch (e) {
+                console.log('Could not save budget to localStorage');
+            }
+
             this.activeNegotiations.set(negotiationId, {
                 listingId: listing.id,
                 listingTitle: listing.title,
@@ -974,7 +1177,18 @@ class AINegotiator {
                     sender: 'ai',
                     content: message,
                     timestamp: new Date()
-                }]
+                }],
+                // Enhanced negotiation state for psychological tactics
+                negotiationState: {
+                    offersMade: [initialOffer], // Track all offers we've made
+                    offersRejected: 0, // Count of rejections
+                    lastOffer: initialOffer, // Last price we offered
+                    landlordCounters: [], // Track landlord's counter-offers
+                    tacticsUsed: [], // Track which tactics we've used
+                    concessionCount: 0, // How many times we've increased our offer
+                    maxConcessions: 4, // Don't concede more than 4 times
+                    currentPhase: 'opening' // opening, bargaining, closing, final
+                }
             });
 
             return {
@@ -1017,48 +1231,113 @@ class AINegotiator {
             const marketData = negotiation.marketData || await this.getMarketData(
                 listing.city, listing.house_type, listing.bedrooms
             );
-            
-            console.log('🏠 Using market data for negotiation:', marketData);
-            
-            const prompt = `
-            You are an expert rental negotiator responding to a landlord who has rejected or objected to your offer. Generate a persuasive, professional response that uses market data strategically.
 
-            LANDLORD'S REJECTION: "${landlordMessage}"
-            
-            PROPERTY DETAILS:
+            console.log('🏠 Using market data for negotiation:', marketData);
+
+            // Get negotiation state for tactical decisions
+            const state = negotiation.negotiationState || {
+                offersMade: [],
+                offersRejected: 0,
+                lastOffer: null,
+                concessionCount: 0,
+                tacticsUsed: []
+            };
+
+            // Calculate next offer using incremental concessions
+            const lastOffer = state.lastOffer || negotiation.userBudget;
+            let nextOffer = lastOffer;
+
+            // Incremental concession logic: smaller increases each time
+            if (state.offersRejected > 0) {
+                const increments = [50, 25, 15, 10]; // Decreasing increments
+                const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+                nextOffer = Math.min(lastOffer + increment, listing.price, negotiation.userBudget * 1.1);
+            }
+
+            // Select which tactic to use based on what hasn't been used yet
+            const availableTactics = ['mirroring', 'labeling', 'calibrated_question', 'loss_aversion', 'accusation_audit'];
+            const unusedTactics = availableTactics.filter(t => !state.tacticsUsed.includes(t));
+            const tacticToUse = unusedTactics.length > 0 ? unusedTactics[0] : 'calibrated_question';
+
+            // Build full conversation history
+            const fullHistory = negotiation.messages.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
+
+            const prompt = `
+            You are a MASTER rental negotiator using FBI-level psychological tactics. Respond to this landlord who rejected your offer.
+
+            ===== LANDLORD'S MESSAGE =====
+            "${landlordMessage}"
+
+            ===== FULL CONVERSATION HISTORY =====
+            ${fullHistory || 'This is the first exchange.'}
+
+            ===== PROPERTY DETAILS =====
             - Property: ${listing.title}
-            - Current asking price: $${listing.price}/month
-            - Type: ${listing.house_type}
-            - Bedrooms: ${listing.bedrooms}
+            - Asking price: $${listing.price}/month
+            - Type: ${listing.house_type}, ${listing.bedrooms} bedrooms
             - Location: ${listing.city}
-            
-            MARKET DATA:
-            - Average market price: $${marketData.average}/month
-            - Price range: $${marketData.min} - $${marketData.max}
-            - Number of comparable properties: ${marketData.count}
-            - Data source: ${marketData.source}
-            
-            YOUR USER'S BUDGET: $${negotiation.userBudget}/month
-            
-            NEGOTIATION CONTEXT:
-            - This is ${negotiation.finalAttempt ? 'a final attempt' : 'an active negotiation'}
-            - Previous conversation: ${negotiation.messages.slice(-2).map(m => `${m.sender}: ${m.content}`).join(' | ')}
-            
-            RESPONSE STRATEGY:
-            1. Acknowledge their concerns respectfully
-            2. Present market data as evidence (if asking price is above market average)
-            3. Emphasize your value as a tenant (reliability, immediate move-in, excellent care)
-            4. Make a strategic counter-offer based on market data and budget
-            5. Create urgency without being pushy
-            6. Keep it professional and concise (3-4 sentences max)
-            
-            PRICING LOGIC:
-            - If their price is above market average: Justify lower price with market data
-            - If market supports their price: Offer value-adds (longer lease, maintenance, etc.)
-            - If they rejected based on price: Focus on tenant quality and reliability
-            - Always stay within user's budget of $${negotiation.userBudget}
-            
-            Generate ONLY the response message (no greetings or signatures):
+
+            ===== MARKET DATA =====
+            - Average rent: $${marketData.average}/month
+            - Range: $${marketData.min} - $${marketData.max}
+            - Comparable properties: ${marketData.count}
+
+            ===== NEGOTIATION STATE =====
+            - My budget: $${negotiation.userBudget}/month
+            - Last offer I made: $${lastOffer}/month
+            - Times rejected: ${state.offersRejected}
+            - Next offer to make: $${nextOffer}/month (ONLY if needed)
+
+            ===== PSYCHOLOGICAL TACTIC TO USE: ${tacticToUse.toUpperCase()} =====
+
+            TACTIC INSTRUCTIONS:
+            ${tacticToUse === 'mirroring' ? `
+            MIRRORING: Repeat the landlord's last 3-5 words as a question.
+            Example: If they said "I have an offer at $1100" → respond "$1100? That's interesting..."
+            This makes them elaborate and feel heard.
+            ` : ''}
+            ${tacticToUse === 'labeling' ? `
+            LABELING: Name their emotion or situation to build rapport.
+            Examples:
+            - "It seems like you're weighing multiple options..."
+            - "It sounds like the price is really important to you..."
+            - "I sense that you've had bad experiences with tenants before..."
+            This validates their feelings and opens dialogue.
+            ` : ''}
+            ${tacticToUse === 'calibrated_question' ? `
+            CALIBRATED QUESTIONS: Ask "how" or "what" instead of arguing.
+            Examples:
+            - "How am I supposed to make that work with my budget?"
+            - "What would it take for you to consider $${nextOffer}?"
+            - "How can we bridge this gap together?"
+            This puts the problem-solving on them without confrontation.
+            ` : ''}
+            ${tacticToUse === 'loss_aversion' ? `
+            LOSS AVERSION: Frame what they might lose by not accepting.
+            Examples:
+            - "I'm ready to sign today. If I walk, you'll need to keep showing the place, deal with no-shows..."
+            - "A guaranteed reliable tenant vs. waiting and hoping for a maybe..."
+            - "The longer this sits empty, the more rent you're losing..."
+            People fear loss more than they value gain.
+            ` : ''}
+            ${tacticToUse === 'accusation_audit' ? `
+            ACCUSATION AUDIT: Preemptively address their objections.
+            Examples:
+            - "You probably think I'm lowballing you, and I get that..."
+            - "I know this is below your asking price..."
+            - "You might feel like I'm not valuing your property..."
+            This disarms them by saying what they're thinking before they do.
+            ` : ''}
+
+            CRITICAL RULES:
+            1. NEVER repeat the exact same offer after rejection - either increase slightly or use a different tactic
+            2. Use the ${tacticToUse} tactic naturally in your response
+            3. Keep response to 2-3 sentences MAX
+            4. Be respectful but confident
+            5. If offering a new price, use $${nextOffer}
+            6. After the tactic, STOP TALKING - don't over-explain (strategic silence)
+
+            Generate ONLY the response (no "Dear landlord" or signatures):
             `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -1082,18 +1361,49 @@ class AINegotiator {
 
             const data = await response.json();
             const negotiationResponse = data.choices[0].message.content.trim();
-            
-            console.log('✅ Generated market-based negotiation response');
+
+            // Update negotiation state with the tactic used and new offer
+            if (!negotiation.negotiationState) {
+                negotiation.negotiationState = {
+                    offersMade: [],
+                    offersRejected: 0,
+                    lastOffer: null,
+                    landlordCounters: [],
+                    tacticsUsed: [],
+                    concessionCount: 0,
+                    maxConcessions: 4,
+                    currentPhase: 'bargaining'
+                };
+            }
+
+            negotiation.negotiationState.tacticsUsed.push(tacticToUse);
+            negotiation.negotiationState.offersRejected++;
+
+            // If response contains a new price offer, track it
+            const priceMatch = negotiationResponse.match(/\$(\d+)/);
+            if (priceMatch) {
+                const offeredPrice = parseInt(priceMatch[1]);
+                negotiation.negotiationState.offersMade.push(offeredPrice);
+                negotiation.negotiationState.lastOffer = offeredPrice;
+                negotiation.negotiationState.concessionCount++;
+                console.log('📊 Tracked new offer:', offeredPrice, 'Concession count:', negotiation.negotiationState.concessionCount);
+            }
+
+            console.log('✅ Generated market-based negotiation response using tactic:', tacticToUse);
+            console.log('📊 Negotiation state:', negotiation.negotiationState);
             return negotiationResponse;
 
         } catch (error) {
             console.error('Error generating market-based negotiation:', error);
-            
-            // Fallback to simpler market-based response
+
+            // Enhanced fallback with tactical response
             const marketData = negotiation.marketData || { average: negotiation.userBudget };
-            const counterOffer = Math.min(negotiation.userBudget, Math.round(marketData.average * 0.97));
-            
-            return `I understand your position. Based on current market data for similar ${listing.house_type}s in ${listing.city}, comparable properties average around $${marketData.average}/month. I'm offering $${counterOffer}/month with immediate occupancy and excellent references. I'm a reliable tenant who values long-term stability. Would this work for you?`;
+            const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget, concessionCount: 0 };
+            const increment = [50, 25, 15, 10][Math.min(state.concessionCount, 3)];
+            const counterOffer = Math.min((state.lastOffer || negotiation.userBudget) + increment, listing.price);
+
+            // Use a calibrated question as fallback tactic
+            return `How can we make $${counterOffer}/month work? I'm ready to sign today with excellent references. Similar ${listing.house_type}s in ${listing.city} average $${marketData.average}/month.`;
         }
     }
 
