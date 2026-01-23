@@ -682,11 +682,62 @@ class AINegotiator {
         }
     }
 
+    // Detect off-topic messages and generate witty redirects
+    getOffTopicResponse(content, negotiation) {
+        const lower = content.toLowerCase();
+        const state = negotiation.negotiationState || { lastOffer: negotiation.userBudget };
+        const currentOffer = state.lastOffer || negotiation.userBudget;
+
+        // Inappropriate/sexual content - deflect with humor
+        const inappropriatePatterns = [
+            /\b(sex|sexual|blowjob|bj|bjs|handjob|fuck|dick|cock|pussy|naked|nude|xxx)\b/i,
+            /\b(prostitut|escort|hooker|whore)\b/i,
+            /\bwhat (sexual|services)\b/i
+        ];
+
+        for (const pattern of inappropriatePatterns) {
+            if (pattern.test(lower)) {
+                const wittyResponses = [
+                    `Ha! I appreciate the creativity, but I'm here for the apartment, not a date. 😄 So... $${currentOffer}/month - we doing this or what?`,
+                    `Smooth. But the only thing I'm trying to get into is that apartment. $${currentOffer}/month work for you?`,
+                    `Lol nice try. I'm flattered, but let's keep this professional. Back to business - $${currentOffer}/month?`,
+                    `😂 You're funny. But seriously though, I need a place to live, not a Tinder match. Can we do $${currentOffer}?`
+                ];
+                return wittyResponses[Math.floor(Math.random() * wittyResponses.length)];
+            }
+        }
+
+        // Random/test messages - playful redirect
+        if (/^(lol|lmao|haha|wtf|bruh|test|testing|asdf|hello|hi|hey)$/i.test(lower.trim()) || lower.trim().length < 4) {
+            const playfulResponses = [
+                `Haha, I feel you. But real talk - $${currentOffer}/month, can we make it happen?`,
+                `Lol. Anyway... about that apartment? $${currentOffer}/month sound fair?`,
+                `😄 Alright alright. So we doing this deal or what? $${currentOffer}/month.`
+            ];
+            return playfulResponses[Math.floor(Math.random() * playfulResponses.length)];
+        }
+
+        return null; // Not off-topic, continue normal processing
+    }
+
     // Analyze landlord's reply
     async analyzeReply(replyContent, negotiation, listing) {
         console.log('🔍 Starting reply analysis for:', replyContent);
-        
-        // First check for simple acceptance patterns IMMEDIATELY
+
+        // FIRST: Check for off-topic/inappropriate content - respond with personality!
+        const wittyRedirect = this.getOffTopicResponse(replyContent, negotiation);
+        if (wittyRedirect) {
+            console.log('😄 Off-topic detected, using witty redirect');
+            return {
+                sentiment: 'off_topic',
+                shouldRespond: true,
+                isFinalized: false,
+                suggestedResponse: wittyRedirect,
+                responseStrategy: 'redirect'
+            };
+        }
+
+        // Check for simple acceptance patterns IMMEDIATELY
         const simpleReply = replyContent.trim().toLowerCase();
         const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)$/i.test(simpleReply);
         
@@ -849,6 +900,12 @@ class AINegotiator {
         if (!analysis.shouldRespond) return null;
 
         try {
+            // Handle witty redirects for off-topic messages
+            if (analysis.responseStrategy === 'redirect' && analysis.suggestedResponse) {
+                console.log('😄 Using witty redirect response');
+                return analysis.suggestedResponse;
+            }
+
             if (analysis.isFinalized && analysis.acceptsOffer) {
                 const finalPrice = analysis.agreedPrice || this.extractLastOfferedPrice(negotiation);
                 console.log('🎉 GENERATING FINAL ACCEPTANCE RESPONSE - Price:', finalPrice);
@@ -985,9 +1042,18 @@ class AINegotiator {
             suggestion += 5;
         }
 
-        // If we've hit max, use a calibrated question instead of another offer
+        // If we've hit max, vary the response to avoid repetition
         if (suggestion >= maxReasonableOffer) {
-            return `$${maxReasonableOffer}/month is genuinely my max. I'm a reliable tenant ready to sign today. Can we make this work?`;
+            const maxOfferVariations = [
+                `$${maxReasonableOffer}/month is genuinely my max. I'm a reliable tenant ready to sign today. Can we make this work?`,
+                `Look, $${maxReasonableOffer} is every dollar I have. A guaranteed tenant today vs. more showings and uncertainty. What do you say?`,
+                `I can't go higher than $${maxReasonableOffer}. But I'm ready to sign right now with references in hand. Deal?`,
+                `$${maxReasonableOffer} - that's my ceiling. I know it's below asking, but I'm a sure thing. Let's close this.`,
+                `Would it be unreasonable to lock this in at $${maxReasonableOffer}? I can move fast and I won't waste your time.`
+            ];
+            // Pick based on rejection count to ensure variety
+            const variationIndex = (state.offersRejected || 0) % maxOfferVariations.length;
+            return maxOfferVariations[variationIndex];
         }
 
         console.log('📊 generateMarketBasedResponse: baseline:', baseline, '-> suggestion:', suggestion, '(max:', maxReasonableOffer, ')');
