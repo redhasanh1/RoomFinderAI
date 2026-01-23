@@ -1,7 +1,7 @@
 /**
  * RoomFinderAI Vision Worker
- * Analyzes property photos using Cloudflare Workers AI (LLaVA)
- * FREE: 10,000 neurons/day
+ * Analyzes property photos using Cloudflare Workers AI (Llama 3.2 Vision)
+ * FREE: ~50 images/day on free tier
  */
 
 export interface Env {
@@ -16,6 +16,37 @@ interface AnalysisResult {
   suggestedPrice: number;
   features: string[];
   confidence: number;
+  condition: number; // 1-5 quality rating
+}
+
+// Location multipliers for major US metro areas (by zip code prefix)
+const locationMultipliers: Record<string, number> = {
+  // San Francisco Bay Area
+  "941": 2.5, "940": 2.3, "945": 2.2, "943": 2.0,
+  // New York City
+  "100": 2.8, "101": 2.6, "102": 2.5, "103": 2.4, "104": 2.3, "110": 2.2, "111": 2.1,
+  // Los Angeles
+  "900": 2.2, "901": 2.1, "902": 2.0, "903": 1.9, "904": 1.8,
+  // Seattle
+  "981": 2.0, "980": 1.9, "982": 1.8,
+  // Boston
+  "021": 2.1, "022": 2.0, "020": 1.9,
+  // Miami
+  "331": 1.8, "330": 1.7, "332": 1.6,
+  // Austin
+  "787": 1.7, "786": 1.6,
+  // Denver
+  "802": 1.6, "800": 1.5,
+  // Chicago
+  "606": 1.5, "605": 1.4, "604": 1.3,
+  // Default
+  "default": 1.0
+};
+
+function getLocationMultiplier(zip: string | undefined): number {
+  if (!zip) return 1.0;
+  const prefix = zip.substring(0, 3);
+  return locationMultipliers[prefix] || locationMultipliers["default"];
 }
 
 export default {
@@ -38,8 +69,17 @@ export default {
     }
 
     try {
-      const body = await request.json() as { image: number[] };
+      const body = await request.json() as {
+        image: number[];
+        location?: {
+          city?: string;
+          state?: string;
+          zip?: string;
+          country?: string;
+        };
+      };
       const image = body.image;
+      const location = body.location;
 
       if (!image || !Array.isArray(image)) {
         return new Response(JSON.stringify({ success: false, error: "No image" }), {
@@ -48,10 +88,31 @@ export default {
         });
       }
 
-      // Call LLaVA - returns "description" field, NOT "response"
-      const response = await env.AI.run("@cf/llava-hf/llava-1.5-7b-hf", {
+      // Chain-of-Thought prompt for better analysis
+      const prompt = `Analyze this property photo step by step:
+
+STEP 1 - Property Type: Is this a house exterior, apartment interior, condo, or townhouse? Look for: yard/driveway = house, lobby/corridor = apartment, balcony with shared walls = condo.
+
+STEP 2 - Bedrooms: Estimate number of bedrooms. If exterior: small house = 2-3, medium = 3-4, large/two-story = 4-6. If interior: count visible doors, room sizes.
+
+STEP 3 - Condition (1-5):
+1 = Needs major work (visible damage, outdated)
+2 = Fair (functional but dated)
+3 = Good (well-maintained, average)
+4 = Very Good (modern updates, nice finishes)
+5 = Luxury (high-end finishes, exceptional quality)
+
+STEP 4 - Features: List visible features like garage, yard, pool, hardwood floors, fireplace, modern kitchen, etc.
+
+STEP 5 - Overall: Brief description of the property.
+
+Provide your analysis clearly.`;
+
+      // Use Llama 3.2 11B Vision - much better than LLaVA!
+      const response = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
         image: image,
-        prompt: "Describe this property. What type house or apartment? How many bedrooms? What features?"
+        prompt: prompt,
+        max_tokens: 500
       }) as { description?: string; response?: string };
 
       const rawText = response.description || response.response || "";
@@ -84,22 +145,61 @@ export default {
         bedrooms = 3;
       }
 
-      // Detect quality for pricing
-      let suggestedPrice = 1800;
-      let quality = "well-maintained";
-      if (textLower.includes("luxury") || textLower.includes("elegant") || textLower.includes("spacious")) {
-        suggestedPrice = 2800;
-        quality = "luxurious";
-      } else if (textLower.includes("large") || textLower.includes("two-story")) {
-        suggestedPrice = 2500;
-        quality = "spacious";
-      } else if (textLower.includes("well-maintained") || textLower.includes("modern") || textLower.includes("updated")) {
-        suggestedPrice = 2200;
-        quality = "modern";
-      } else if (textLower.includes("cozy") || textLower.includes("charming")) {
-        suggestedPrice = 1600;
-        quality = "charming";
+      // Detect condition rating (1-5)
+      let condition = 3;
+      const conditionMatch = rawText.match(/condition[:\s]*(\d)/i) || rawText.match(/(\d)\s*(?:out of\s*)?(?:\/\s*)?5/i);
+      if (conditionMatch) {
+        condition = Math.min(5, Math.max(1, parseInt(conditionMatch[1])));
+      } else if (textLower.includes("luxury") || textLower.includes("exceptional") || textLower.includes("high-end")) {
+        condition = 5;
+      } else if (textLower.includes("very good") || textLower.includes("modern") || textLower.includes("updated") || textLower.includes("renovated")) {
+        condition = 4;
+      } else if (textLower.includes("well-maintained") || textLower.includes("good condition") || textLower.includes("average")) {
+        condition = 3;
+      } else if (textLower.includes("dated") || textLower.includes("fair") || textLower.includes("needs updating")) {
+        condition = 2;
+      } else if (textLower.includes("needs work") || textLower.includes("fixer") || textLower.includes("damaged")) {
+        condition = 1;
       }
+
+      // Quality descriptors based on condition
+      const qualityDescriptors: Record<number, string> = {
+        1: "fixer-upper",
+        2: "charming",
+        3: "well-maintained",
+        4: "modern",
+        5: "luxurious"
+      };
+      let quality = qualityDescriptors[condition] || "well-maintained";
+
+      // Base price from condition
+      const basePrices: Record<number, number> = {
+        1: 1200,
+        2: 1500,
+        3: 1800,
+        4: 2400,
+        5: 3200
+      };
+      let suggestedPrice = basePrices[condition] || 1800;
+
+      // Adjust by bedrooms
+      suggestedPrice += (bedrooms - 2) * 300;
+
+      // Adjust by property type
+      if (house_type === "House") {
+        suggestedPrice *= 1.2;
+      } else if (house_type === "Condo") {
+        suggestedPrice *= 1.1;
+      } else if (house_type === "Townhouse") {
+        suggestedPrice *= 1.15;
+      }
+
+      // Apply location multiplier if location data provided
+      const locationMultiplier = getLocationMultiplier(location?.zip);
+      suggestedPrice = Math.round(suggestedPrice * locationMultiplier);
+
+      // Cap and round
+      suggestedPrice = Math.round(suggestedPrice / 50) * 50; // Round to nearest 50
 
       // Extract features mentioned
       const features: string[] = [];
@@ -136,14 +236,27 @@ export default {
 
       const niceDescription = `Beautiful ${quality} ${house_type.toLowerCase()} available for ${listingType.toLowerCase()}. This ${bedroomText} property features ${featureList.toLowerCase() || "modern amenities"}. ${rawText.slice(0, 300)}`;
 
-      const analysis: AnalysisResult = {
-        title: quality.charAt(0).toUpperCase() + quality.slice(1) + " " + house_type + " for " + listingType,
+      // Calculate confidence based on how much info we extracted
+      let confidence = 0.6; // Base confidence for Llama 3.2 Vision
+      if (bedroomMatch) confidence += 0.1;
+      if (features.length > 2) confidence += 0.1;
+      if (conditionMatch) confidence += 0.1;
+      if (location?.city) confidence += 0.1; // Boost confidence if we have location
+      confidence = Math.min(0.95, confidence);
+
+      // Build location string for title
+      const locationStr = location?.city ? ` in ${location.city}` : "";
+
+      const analysis: AnalysisResult & { location?: typeof location } = {
+        title: quality.charAt(0).toUpperCase() + quality.slice(1) + " " + bedrooms + "-Bedroom " + house_type + " for " + listingType + locationStr,
         house_type: house_type,
         bedrooms: bedrooms,
         description: niceDescription.slice(0, 600),
         suggestedPrice: suggestedPrice,
         features: features.slice(0, 6),
-        confidence: 0.75
+        confidence: confidence,
+        condition: condition,
+        ...(location && { location })
       };
 
       return new Response(JSON.stringify({ success: true, analysis: analysis }), {
@@ -151,7 +264,7 @@ export default {
       });
 
     } catch (err) {
-      const error = err instanceof Error ? err.message : "LLaVA analysis failed";
+      const error = err instanceof Error ? err.message : "Vision analysis failed";
       return new Response(JSON.stringify({ success: false, error: error }), {
         status: 500,
         headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }

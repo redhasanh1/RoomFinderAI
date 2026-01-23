@@ -11,6 +11,8 @@ class PhotoListingWizard {
         this.analysisResult = null;
         this.uploadedImage = null;
         this.maxImageSize = 4 * 1024 * 1024; // 4MB for AI analysis
+        this.locationData = null; // GPS-extracted location
+        this.exifData = null; // Full EXIF data
     }
 
     /**
@@ -167,6 +169,16 @@ class PhotoListingWizard {
                                     <div class="flex items-center justify-between">
                                         <span class="text-gray-500 text-sm">Bedrooms</span>
                                         <span id="resultBedrooms" class="font-medium text-gray-800"></span>
+                                    </div>
+                                    <div id="resultLocationRow" class="flex items-center justify-between hidden">
+                                        <span class="text-gray-500 text-sm">Location</span>
+                                        <span id="resultLocation" class="font-medium text-green-600 flex items-center gap-1">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                            </svg>
+                                            <span id="resultLocationText"></span>
+                                        </span>
                                     </div>
                                     <div class="flex items-center justify-between">
                                         <span class="text-gray-500 text-sm">Suggested Price</span>
@@ -432,6 +444,8 @@ class PhotoListingWizard {
 
         this.uploadedImage = null;
         this.analysisResult = null;
+        this.locationData = null;
+        this.exifData = null;
     }
 
     /**
@@ -498,6 +512,7 @@ class PhotoListingWizard {
         if (!this.uploadedImage || this.isAnalyzing) return;
 
         this.isAnalyzing = true;
+        this.locationData = null;
 
         // Show step 2
         document.getElementById('wizardStep1')?.classList.add('hidden');
@@ -513,26 +528,49 @@ class PhotoListingWizard {
         this.animateAnalysisIcons();
 
         try {
-            // Compress image for API
-            const compressedImage = await this.compressImageForAPI(this.uploadedImage.file);
+            // Step 1: Extract EXIF GPS data (runs in parallel with image compression)
+            const [compressedImage, gpsData] = await Promise.all([
+                this.compressImageForAPI(this.uploadedImage.file),
+                this.extractEXIF(this.uploadedImage.file)
+            ]);
+
+            console.log('GPS data extracted:', gpsData);
+
+            // Step 2: Reverse geocode if GPS found
+            let locationData = null;
+            if (gpsData && gpsData.lat && gpsData.lng) {
+                console.log(`Found GPS: ${gpsData.lat}, ${gpsData.lng}`);
+                locationData = await this.reverseGeocode(gpsData.lat, gpsData.lng);
+                console.log('Location resolved:', locationData);
+                this.locationData = locationData;
+            }
 
             // Convert to byte array
             const base64Data = compressedImage.split(',')[1];
             const byteArray = Array.from(atob(base64Data), c => c.charCodeAt(0));
 
-            // Call the backend API
+            // Step 3: Call the backend API with image and location
+            const requestBody = { image: byteArray };
+            if (locationData) {
+                requestBody.location = locationData;
+            }
+
             const response = await fetch('/api/analyze-property-photo', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ image: byteArray })
+                body: JSON.stringify(requestBody)
             });
 
             const result = await response.json();
 
             if (result.success && result.analysis) {
                 this.analysisResult = result.analysis;
+                // Store location in analysis result if not already there
+                if (locationData && !this.analysisResult.location) {
+                    this.analysisResult.location = locationData;
+                }
                 this.showResults();
             } else {
                 throw new Error(result.error || 'Analysis failed');
@@ -581,6 +619,164 @@ class PhotoListingWizard {
 
             img.src = URL.createObjectURL(file);
         });
+    }
+
+    /**
+     * Extract EXIF GPS data from image file
+     * Returns { lat, lng } or null if no GPS data found
+     */
+    async extractEXIF(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                try {
+                    const view = new DataView(e.target.result);
+
+                    // Check for JPEG
+                    if (view.getUint16(0, false) !== 0xFFD8) {
+                        resolve(null);
+                        return;
+                    }
+
+                    const length = view.byteLength;
+                    let offset = 2;
+
+                    while (offset < length) {
+                        if (view.getUint16(offset, false) === 0xFFE1) {
+                            // Found EXIF marker
+                            const exifData = this.parseEXIF(view, offset + 4);
+                            resolve(exifData);
+                            return;
+                        }
+                        offset += 2 + view.getUint16(offset + 2, false);
+                    }
+
+                    resolve(null);
+                } catch (err) {
+                    console.log('EXIF extraction error:', err);
+                    resolve(null);
+                }
+            };
+
+            reader.onerror = () => resolve(null);
+
+            // Only read first 128KB (EXIF is always near the beginning)
+            reader.readAsArrayBuffer(file.slice(0, 128 * 1024));
+        });
+    }
+
+    /**
+     * Parse EXIF data from DataView
+     */
+    parseEXIF(view, start) {
+        try {
+            // Check for "Exif" string
+            if (String.fromCharCode(view.getUint8(start), view.getUint8(start + 1),
+                view.getUint8(start + 2), view.getUint8(start + 3)) !== 'Exif') {
+                return null;
+            }
+
+            const tiffOffset = start + 6;
+            const littleEndian = view.getUint16(tiffOffset, false) === 0x4949;
+
+            const ifdOffset = view.getUint32(tiffOffset + 4, littleEndian);
+            const numEntries = view.getUint16(tiffOffset + ifdOffset, littleEndian);
+
+            let gpsOffset = null;
+
+            // Find GPS IFD pointer (tag 0x8825)
+            for (let i = 0; i < numEntries; i++) {
+                const entryOffset = tiffOffset + ifdOffset + 2 + (i * 12);
+                const tag = view.getUint16(entryOffset, littleEndian);
+
+                if (tag === 0x8825) {
+                    gpsOffset = view.getUint32(entryOffset + 8, littleEndian);
+                    break;
+                }
+            }
+
+            if (!gpsOffset) return null;
+
+            // Parse GPS IFD
+            const gpsIfdOffset = tiffOffset + gpsOffset;
+            const gpsEntries = view.getUint16(gpsIfdOffset, littleEndian);
+
+            let latRef = null, lat = null, lngRef = null, lng = null;
+
+            for (let i = 0; i < gpsEntries; i++) {
+                const entryOffset = gpsIfdOffset + 2 + (i * 12);
+                const tag = view.getUint16(entryOffset, littleEndian);
+                const valueOffset = tiffOffset + view.getUint32(entryOffset + 8, littleEndian);
+
+                switch (tag) {
+                    case 1: // GPSLatitudeRef
+                        latRef = String.fromCharCode(view.getUint8(entryOffset + 8));
+                        break;
+                    case 2: // GPSLatitude
+                        lat = this.parseGPSCoordinate(view, valueOffset, littleEndian);
+                        break;
+                    case 3: // GPSLongitudeRef
+                        lngRef = String.fromCharCode(view.getUint8(entryOffset + 8));
+                        break;
+                    case 4: // GPSLongitude
+                        lng = this.parseGPSCoordinate(view, valueOffset, littleEndian);
+                        break;
+                }
+            }
+
+            if (lat !== null && lng !== null) {
+                // Apply reference (N/S, E/W)
+                if (latRef === 'S') lat = -lat;
+                if (lngRef === 'W') lng = -lng;
+
+                return { lat, lng };
+            }
+
+            return null;
+        } catch (err) {
+            console.log('EXIF parse error:', err);
+            return null;
+        }
+    }
+
+    /**
+     * Parse GPS coordinate from EXIF rational values (degrees, minutes, seconds)
+     */
+    parseGPSCoordinate(view, offset, littleEndian) {
+        try {
+            const degrees = view.getUint32(offset, littleEndian) / view.getUint32(offset + 4, littleEndian);
+            const minutes = view.getUint32(offset + 8, littleEndian) / view.getUint32(offset + 12, littleEndian);
+            const seconds = view.getUint32(offset + 16, littleEndian) / view.getUint32(offset + 20, littleEndian);
+
+            return degrees + (minutes / 60) + (seconds / 3600);
+        } catch (err) {
+            return null;
+        }
+    }
+
+    /**
+     * Reverse geocode GPS coordinates to address via backend API
+     */
+    async reverseGeocode(lat, lng) {
+        try {
+            const response = await fetch('/api/reverse-geocode', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ lat, lng })
+            });
+
+            if (!response.ok) {
+                console.log('Reverse geocode failed:', response.status);
+                return null;
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (err) {
+            console.log('Reverse geocode error:', err);
+            return null;
+        }
     }
 
     /**
@@ -649,6 +845,21 @@ class PhotoListingWizard {
         document.getElementById('resultPrice').textContent = analysis.suggestedPrice
             ? `$${analysis.suggestedPrice.toLocaleString()}/mo`
             : 'N/A';
+
+        // Show location if detected from EXIF
+        const locationRow = document.getElementById('resultLocationRow');
+        const locationText = document.getElementById('resultLocationText');
+        const location = analysis.location || this.locationData;
+
+        if (location && location.city) {
+            const locationStr = location.state
+                ? `${location.city}, ${location.state}${location.zip ? ' ' + location.zip : ''}`
+                : location.city;
+            locationText.textContent = locationStr;
+            locationRow?.classList.remove('hidden');
+        } else {
+            locationRow?.classList.add('hidden');
+        }
 
         // Confidence indicator
         const confidenceEl = document.getElementById('resultConfidence');
@@ -726,12 +937,25 @@ class PhotoListingWizard {
      * Populate form fields with typewriter animation
      */
     async populateFormWithAnimation(analysis) {
+        // Build location string if available
+        const location = analysis.location || this.locationData;
+        let locationStr = '';
+        if (location && location.city) {
+            locationStr = location.state
+                ? `${location.city}, ${location.state}`
+                : location.city;
+        }
+
         const fields = [
             { id: 'title', value: analysis.title, delay: 0 },
             { id: 'houseType', value: analysis.house_type, isSelect: true, delay: 200 },
             { id: 'bedrooms', value: analysis.bedrooms, delay: 400 },
-            { id: 'price', value: analysis.suggestedPrice, delay: 600 },
-            { id: 'description', value: analysis.description, delay: 800 }
+            { id: 'location', value: locationStr, delay: 500 }, // Add location if field exists
+            { id: 'city', value: location?.city || '', delay: 500 }, // Some forms use city field
+            { id: 'state', value: location?.state || '', isSelect: true, delay: 550 },
+            { id: 'zipCode', value: location?.zip || '', delay: 600 },
+            { id: 'price', value: analysis.suggestedPrice, delay: 700 },
+            { id: 'description', value: analysis.description, delay: 900 }
         ];
 
         for (const field of fields) {
