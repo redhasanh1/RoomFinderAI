@@ -222,17 +222,18 @@ class PhotoListingWizard {
                                     </div>
                                 </div>
 
-                                <!-- Location (if detected) -->
-                                <div id="resultLocationRow" class="bg-blue-50 rounded-xl p-3 mb-4 hidden">
+                                <!-- Location (GPS or AI Estimate - ALWAYS SHOWN) -->
+                                <div id="resultLocationRow" class="rounded-xl p-3 mb-4">
                                     <div class="flex items-center gap-2">
-                                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg class="w-5 h-5" id="locationIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                         </svg>
-                                        <div>
-                                            <p class="text-xs text-blue-600 font-semibold">Location Detected from Photo</p>
-                                            <p id="resultLocationText" class="font-medium text-blue-900">Seattle, WA 98101</p>
+                                        <div class="flex-1">
+                                            <p class="text-xs font-semibold" id="locationSourceText">Location Detected from Photo</p>
+                                            <p id="resultLocationText" class="font-medium">Seattle, WA 98101</p>
                                         </div>
+                                        <span id="locationBadge" class="text-xs px-2 py-0.5 rounded font-medium">GPS</span>
                                     </div>
                                 </div>
 
@@ -1003,19 +1004,41 @@ class PhotoListingWizard {
             `).join('');
         }
 
-        // ========== LOCATION ==========
+        // ========== LOCATION (Always shown - GPS or AI estimate) ==========
         const locationRow = document.getElementById('resultLocationRow');
         const locationText = document.getElementById('resultLocationText');
-        const location = analysis.location || this.locationData;
+        const locationSourceText = document.getElementById('locationSourceText');
+        const locationBadge = document.getElementById('locationBadge');
+        const locationIcon = document.getElementById('locationIcon');
+        const location = analysis.location;
 
         if (location && location.city) {
-            const locationStr = location.state
-                ? `${location.city}, ${location.state}${location.zip ? ' ' + location.zip : ''}`
-                : location.city;
+            const locationStr = `${location.city}, ${location.state || ''} ${location.zip || ''} ${location.country || ''}`.trim();
             if (locationText) locationText.textContent = locationStr;
+
+            // Style based on source (GPS vs AI estimate)
+            if (location.source === 'gps') {
+                locationRow.className = 'bg-green-50 border border-green-200 rounded-xl p-3 mb-4';
+                if (locationSourceText) locationSourceText.textContent = 'Location from Photo GPS';
+                if (locationSourceText) locationSourceText.className = 'text-xs font-semibold text-green-600';
+                if (locationText) locationText.className = 'font-medium text-green-900';
+                if (locationIcon) locationIcon.className = 'w-5 h-5 text-green-600';
+                if (locationBadge) {
+                    locationBadge.textContent = 'GPS';
+                    locationBadge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-green-200 text-green-800';
+                }
+            } else {
+                locationRow.className = 'bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4';
+                if (locationSourceText) locationSourceText.textContent = 'AI Estimated Location';
+                if (locationSourceText) locationSourceText.className = 'text-xs font-semibold text-purple-600';
+                if (locationText) locationText.className = 'font-medium text-purple-900';
+                if (locationIcon) locationIcon.className = 'w-5 h-5 text-purple-600';
+                if (locationBadge) {
+                    locationBadge.textContent = 'AI';
+                    locationBadge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-purple-200 text-purple-800';
+                }
+            }
             locationRow?.classList.remove('hidden');
-        } else {
-            locationRow?.classList.add('hidden');
         }
 
         // ========== BASIC INFO ==========
