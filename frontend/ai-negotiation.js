@@ -269,11 +269,12 @@ class AINegotiator {
         try {
             console.log('🤖 Generating elite negotiation message for:', listing.title);
 
-            // STRATEGIC PRICING: Start at 65-70% of listing, but never below market minimum
+            // STRATEGIC PRICING: Start at 65-70% of listing price
             // This gives room to negotiate UP while staying credible
+            // NOTE: Do NOT use marketData.min as a floor - it may include the current listing
+            // and would defeat the purpose of negotiating below asking price
             const strategicStart = Math.max(
-                Math.round(listing.price * 0.65),  // 65% of asking
-                marketData.min || Math.round(listing.price * 0.5),  // Never below market min
+                Math.round(listing.price * 0.65),  // 65% of asking - strong anchor
                 Math.round(userBudget * 0.7)  // Start below user's max to have room
             );
 
