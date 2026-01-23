@@ -88,10 +88,17 @@ class AIChatHandler {
         }
 
         console.log('🔔 Setting up real-time subscription for user:', this.currentUser.email);
-        
+
+        // Unsubscribe from existing channel if any
+        if (this.negotiationChannel) {
+            console.log('🔄 Removing existing subscription');
+            this.supabase.removeChannel(this.negotiationChannel);
+        }
+
         try {
-            const channel = this.supabase
-                .channel(`negotiation_updates_${Date.now()}`)
+            // Use consistent channel name instead of timestamp
+            this.negotiationChannel = this.supabase
+                .channel(`negotiation_updates_${this.currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}`)
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
