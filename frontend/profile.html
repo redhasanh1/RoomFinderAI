@@ -2067,8 +2067,9 @@
                         console.warn('⚠️ Listing not found in database, cleaning up localStorage orphan');
                         currentUserListings = currentUserListings.filter(l => l.id !== id);
                         cleanupLocalStorage();
-                        loadUserListings(currentUser);
-                        alert('Listing removed (it was not saved to the database).');
+                        alert('Listing removed (it was not saved to the database). Page will refresh.');
+                        // Force page reload to ensure clean state
+                        window.location.reload();
                     } else {
                         throw new Error(result.error || 'Failed to delete listing');
                     }
