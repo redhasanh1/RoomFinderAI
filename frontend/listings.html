@@ -34,6 +34,39 @@
         let listingsAlreadyFetched = false; // Prevent duplicate fetches
         let initializationInProgress = false; // Prevent duplicate initializations
 
+        // Master visibility change handler - resets UI state when tab becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                console.log('🔄 Tab visible - resetting UI state');
+
+                // Reset navigation visibility (fix nav items disappearing)
+                document.querySelectorAll('.dropdown-menu, [class*="dropdown"]').forEach(el => {
+                    el.style.visibility = '';
+                    el.style.opacity = '';
+                });
+                const desktopNav = document.querySelector('.desktop-nav');
+                if (desktopNav) desktopNav.style.visibility = '';
+
+                // Reset initialization flag to allow re-init if needed
+                initializationInProgress = false;
+
+                // Re-init photo wizard if modal got lost
+                if (window.photoListingWizard && !window.photoListingWizard.modal) {
+                    console.log('🔄 Re-initializing photo wizard...');
+                    window.photoListingWizard.init();
+                }
+
+                // Re-init messages panel if button lost its handler
+                if (typeof setupMessagingPanel === 'function') {
+                    const msgBtn = document.getElementById('messageToggleBtn');
+                    if (msgBtn && !msgBtn._hasClickHandler) {
+                        console.log('🔄 Re-initializing messaging panel...');
+                        setupMessagingPanel();
+                    }
+                }
+            }
+        });
+
         function showError(message) {
             console.error(message);
             alert(message);
@@ -4322,6 +4355,13 @@
                 return;
             }
 
+            // Prevent duplicate handler setup
+            if (messageToggleBtn._hasClickHandler) {
+                console.log('📬 Messaging panel already initialized, skipping');
+                return;
+            }
+            messageToggleBtn._hasClickHandler = true;
+
             // Prevent clicks inside panel from closing it
             messagePanel.addEventListener('click', (event) => {
                 event.stopPropagation();
@@ -6121,13 +6161,9 @@
                     showError('Unable to load listings. Please refresh the page.');
                 }
             } finally {
-                // Ensure flag is always reset after completion
-                setTimeout(() => {
-                    if (initializationInProgress) {
-                        console.log('🔄 Resetting initializationInProgress flag after completion');
-                        initializationInProgress = false;
-                    }
-                }, 5000); // Reset after 5 seconds as safety measure
+                // Always reset flag after completion
+                initializationInProgress = false;
+                console.log('🔄 initializationInProgress reset to false');
             }
         }
 

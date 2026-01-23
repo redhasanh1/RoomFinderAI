@@ -1163,9 +1163,23 @@ if (document.readyState === 'loading') {
 
 // Global functions for backward compatibility
 window.toggleAddListingForm = () => {
-    // Always show Photo Wizard for AI-powered listing creation
-    if (window.photoListingWizard) {
-        window.photoListingWizard.show();
+    try {
+        // Always show Photo Wizard for AI-powered listing creation
+        if (window.photoListingWizard) {
+            window.photoListingWizard.show();
+        } else {
+            // Fallback: show manual form if wizard not available
+            console.warn('Photo wizard not available, falling back to manual form');
+            if (window.addListingForm) {
+                window.addListingForm.showForm();
+            }
+        }
+    } catch (err) {
+        console.error('Error showing listing form:', err);
+        // Try to recover by showing manual form
+        if (window.addListingForm) {
+            window.addListingForm.showForm();
+        }
     }
 };
 
