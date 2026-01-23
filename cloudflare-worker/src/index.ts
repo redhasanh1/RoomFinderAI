@@ -1,22 +1,58 @@
 /**
- * RoomFinderAI Vision Worker
- * Analyzes property photos using Cloudflare Workers AI (Llama 3.2 Vision)
- * FREE: ~50 images/day on free tier
+ * RoomFinderAI "GOD MODE" Vision Worker
+ * The "Slumlord to Landlord" Engine
+ * Analyzes, Judges, and Maximizes Rent in Real-Time
  */
 
 export interface Env {
   AI: Ai;
 }
 
-interface AnalysisResult {
+interface MoneyFeature {
+  feature: string;
+  value: number; // Dollar value added to rent
+}
+
+interface Flaw {
+  issue: string;
+  fix: string;
+  potentialGain: number; // How much more rent if fixed
+}
+
+interface GodModeAnalysis {
+  // Basic Info
   title: string;
   house_type: "Apartment" | "House" | "Condo" | "Townhouse";
   bedrooms: number;
   description: string;
+
+  // GOD MODE: The Wealth Detector
+  luxuryScore: number; // 1-10
+  unitGrade: string; // A+, A, A-, B+, etc.
+
+  // GOD MODE: Money Features (things that ADD value)
+  moneyFeatures: MoneyFeature[];
+
+  // GOD MODE: Flaws (things to FIX to charge more)
+  flaws: Flaw[];
+
+  // GOD MODE: Predatory Pricing
+  basePrice: number;
   suggestedPrice: number;
+  premiumAboveAvg: number; // How much above area average
+
+  // GOD MODE: Target Demographic
+  targetDemo: string;
+  vibeKeywords: string[];
+
+  // GOD MODE: FOMO Copy
+  fomoLines: string[];
+
+  // Meta
   features: string[];
   confidence: number;
-  condition: number; // 1-5 quality rating
+  needsStaging: boolean; // Should we call MarkRemoverAI?
+  stagingIssues: string[]; // What to remove
 }
 
 // Location multipliers for major US metro areas (by zip code prefix)
@@ -43,10 +79,30 @@ const locationMultipliers: Record<string, number> = {
   "default": 1.0
 };
 
+// Base rent by property type
+const baseRentByType: Record<string, number> = {
+  "Apartment": 1600,
+  "Condo": 1900,
+  "Townhouse": 2100,
+  "House": 2400
+};
+
 function getLocationMultiplier(zip: string | undefined): number {
   if (!zip) return 1.0;
   const prefix = zip.substring(0, 3);
   return locationMultipliers[prefix] || locationMultipliers["default"];
+}
+
+function calculateGrade(luxuryScore: number): string {
+  if (luxuryScore >= 9) return "A+";
+  if (luxuryScore >= 8) return "A";
+  if (luxuryScore >= 7) return "A-";
+  if (luxuryScore >= 6) return "B+";
+  if (luxuryScore >= 5) return "B";
+  if (luxuryScore >= 4) return "B-";
+  if (luxuryScore >= 3) return "C+";
+  if (luxuryScore >= 2) return "C";
+  return "C-";
 }
 
 export default {
@@ -88,31 +144,41 @@ export default {
         });
       }
 
-      // Chain-of-Thought prompt for better analysis
-      const prompt = `Analyze this property photo step by step:
+      // GOD MODE PROMPT - The "Wealth Detector" + "Judge"
+      const prompt = `You are a ruthless real estate appraiser. Analyze this property photo and JUDGE it for maximum rent extraction.
 
-STEP 1 - Property Type: Is this a house exterior, apartment interior, condo, or townhouse? Look for: yard/driveway = house, lobby/corridor = apartment, balcony with shared walls = condo.
+PROPERTY TYPE: House, Apartment, Condo, or Townhouse?
 
-STEP 2 - Bedrooms: Estimate number of bedrooms. If exterior: small house = 2-3, medium = 3-4, large/two-story = 4-6. If interior: count visible doors, room sizes.
+BEDROOMS: Estimate count (1-10)
 
-STEP 3 - Condition (1-5):
-1 = Needs major work (visible damage, outdated)
-2 = Fair (functional but dated)
-3 = Good (well-maintained, average)
-4 = Very Good (modern updates, nice finishes)
-5 = Luxury (high-end finishes, exceptional quality)
+LUXURY SCORE (1-10): Rate the finishes and quality.
+- 1-3: Budget/dated (laminate, white appliances, builder-grade)
+- 4-6: Average (decent but nothing special)
+- 7-8: Upscale (granite, stainless steel, hardwood)
+- 9-10: Luxury (high-end finishes, designer touches)
 
-STEP 4 - Features: List visible features like garage, yard, pool, hardwood floors, fireplace, modern kitchen, etc.
+MONEY FEATURES (things that ADD rent value):
+List premium features you see: granite countertops, stainless appliances, hardwood floors, large windows, high ceilings, modern fixtures, exposed brick, updated kitchen, walk-in closet, natural light, bay windows, recessed lighting, etc.
 
-STEP 5 - Overall: Brief description of the property.
+FLAWS (things that HURT rent value):
+List issues: old thermostat, dated lighting (boob lights), carpet stains, small windows, popcorn ceiling, old appliances, clutter, mess, poor staging, etc.
 
-Provide your analysis clearly.`;
+STAGING ISSUES (things to REMOVE from photo):
+List any: clutter, mess, trash cans, toilet seats up, personal items, dirty dishes, unmade beds, etc.
 
-      // Use Llama 3.2 11B Vision - much better than LLaVA!
+VIBE CHECK: What demographic would love this?
+- Exposed brick/industrial = Hipsters ("Industrial chic, loft vibes")
+- White/beige/neutral = Families ("Safe, quiet, cozy")
+- Modern/LED/sleek = Tech bros ("Modern, high-speed ready")
+- Traditional/crown molding = Professionals ("Classic, elegant")
+
+Provide detailed analysis.`;
+
+      // Use Llama 3.2 11B Vision for GOD MODE analysis
       const response = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
         image: image,
         prompt: prompt,
-        max_tokens: 500
+        max_tokens: 800
       }) as { description?: string; response?: string };
 
       const rawText = response.description || response.response || "";
@@ -126,137 +192,232 @@ Provide your analysis clearly.`;
 
       const textLower = rawText.toLowerCase();
 
-      // Detect property type from description
-      let house_type: AnalysisResult["house_type"] = "Apartment";
-      if (textLower.includes("house") || textLower.includes("garage") || textLower.includes("yard")) {
+      // ========== PROPERTY TYPE ==========
+      let house_type: GodModeAnalysis["house_type"] = "Apartment";
+      if (textLower.includes("house") || textLower.includes("garage") || textLower.includes("yard") || textLower.includes("driveway")) {
         house_type = "House";
       } else if (textLower.includes("condo")) {
         house_type = "Condo";
-      } else if (textLower.includes("townhouse")) {
+      } else if (textLower.includes("townhouse") || textLower.includes("town house")) {
         house_type = "Townhouse";
       }
 
-      // Detect bedrooms
+      // ========== BEDROOMS ==========
       let bedrooms = 2;
-      const bedroomMatch = rawText.match(/(\d+)\s*bed/i);
+      const bedroomMatch = rawText.match(/(\d+)\s*(?:bed|bedroom|br)/i);
       if (bedroomMatch) {
         bedrooms = Math.min(10, Math.max(1, parseInt(bedroomMatch[1])));
-      } else if (textLower.includes("large") || textLower.includes("two-story")) {
-        bedrooms = 3;
+      } else if (textLower.includes("large") || textLower.includes("two-story") || textLower.includes("spacious")) {
+        bedrooms = 4;
       }
 
-      // Detect condition rating (1-5)
-      let condition = 3;
-      const conditionMatch = rawText.match(/condition[:\s]*(\d)/i) || rawText.match(/(\d)\s*(?:out of\s*)?(?:\/\s*)?5/i);
-      if (conditionMatch) {
-        condition = Math.min(5, Math.max(1, parseInt(conditionMatch[1])));
-      } else if (textLower.includes("luxury") || textLower.includes("exceptional") || textLower.includes("high-end")) {
-        condition = 5;
-      } else if (textLower.includes("very good") || textLower.includes("modern") || textLower.includes("updated") || textLower.includes("renovated")) {
-        condition = 4;
-      } else if (textLower.includes("well-maintained") || textLower.includes("good condition") || textLower.includes("average")) {
-        condition = 3;
-      } else if (textLower.includes("dated") || textLower.includes("fair") || textLower.includes("needs updating")) {
-        condition = 2;
-      } else if (textLower.includes("needs work") || textLower.includes("fixer") || textLower.includes("damaged")) {
-        condition = 1;
+      // ========== LUXURY SCORE (1-10) ==========
+      let luxuryScore = 5;
+      const luxuryMatch = rawText.match(/luxury\s*score[:\s]*(\d+)/i) || rawText.match(/(\d+)\s*(?:out of\s*)?(?:\/\s*)?10/i);
+      if (luxuryMatch) {
+        luxuryScore = Math.min(10, Math.max(1, parseInt(luxuryMatch[1])));
+      } else {
+        // Infer from keywords
+        const luxuryIndicators = ["granite", "stainless", "hardwood", "high-end", "luxury", "designer", "marble", "quartz", "premium", "upscale", "renovated", "modern"];
+        const budgetIndicators = ["laminate", "dated", "old", "basic", "builder-grade", "carpet", "worn", "faded", "outdated"];
+
+        let luxuryPoints = 5;
+        luxuryIndicators.forEach(ind => { if (textLower.includes(ind)) luxuryPoints += 1; });
+        budgetIndicators.forEach(ind => { if (textLower.includes(ind)) luxuryPoints -= 1; });
+        luxuryScore = Math.min(10, Math.max(1, luxuryPoints));
       }
 
-      // Quality descriptors based on condition
-      const qualityDescriptors: Record<number, string> = {
-        1: "fixer-upper",
-        2: "charming",
-        3: "well-maintained",
-        4: "modern",
-        5: "luxurious"
-      };
-      let quality = qualityDescriptors[condition] || "well-maintained";
+      const unitGrade = calculateGrade(luxuryScore);
 
-      // Base price from condition
-      const basePrices: Record<number, number> = {
-        1: 1200,
-        2: 1500,
-        3: 1800,
-        4: 2400,
-        5: 3200
-      };
-      let suggestedPrice = basePrices[condition] || 1800;
-
-      // Adjust by bedrooms
-      suggestedPrice += (bedrooms - 2) * 300;
-
-      // Adjust by property type
-      if (house_type === "House") {
-        suggestedPrice *= 1.2;
-      } else if (house_type === "Condo") {
-        suggestedPrice *= 1.1;
-      } else if (house_type === "Townhouse") {
-        suggestedPrice *= 1.15;
-      }
-
-      // Apply location multiplier if location data provided
-      const locationMultiplier = getLocationMultiplier(location?.zip);
-      suggestedPrice = Math.round(suggestedPrice * locationMultiplier);
-
-      // Cap and round
-      suggestedPrice = Math.round(suggestedPrice / 50) * 50; // Round to nearest 50
-
-      // Extract features mentioned
-      const features: string[] = [];
-      const featureMap: Record<string, string> = {
-        "garage": "Garage",
-        "brick": "Brick exterior",
-        "driveway": "Driveway",
-        "parking": "Parking available",
-        "yard": "Yard",
-        "patio": "Patio",
-        "fireplace": "Fireplace",
-        "hardwood": "Hardwood floors",
-        "pool": "Pool",
-        "garden": "Garden",
-        "balcony": "Balcony",
-        "basement": "Basement",
-        "attic": "Attic"
+      // ========== MONEY FEATURES (Premium Additions) ==========
+      const moneyFeatures: MoneyFeature[] = [];
+      const moneyFeatureMap: Record<string, number> = {
+        "granite": 100, "granite countertop": 100,
+        "stainless steel": 75, "stainless appliances": 75,
+        "hardwood": 100, "hardwood floor": 100,
+        "large window": 75, "bay window": 150, "floor-to-ceiling": 200,
+        "high ceiling": 100, "vaulted ceiling": 125,
+        "modern fixture": 50, "recessed lighting": 50,
+        "exposed brick": 150,
+        "updated kitchen": 150, "modern kitchen": 150,
+        "walk-in closet": 75,
+        "natural light": 75,
+        "fireplace": 100,
+        "pool": 200,
+        "garage": 150,
+        "balcony": 100,
+        "patio": 75,
+        "yard": 100,
+        "waterfall island": 175,
+        "quartz": 125,
+        "marble": 150,
+        "smart home": 100,
+        "nest": 50,
+        "central air": 75
       };
 
-      for (const [keyword, label] of Object.entries(featureMap)) {
-        if (textLower.includes(keyword)) features.push(label);
+      for (const [feature, value] of Object.entries(moneyFeatureMap)) {
+        if (textLower.includes(feature)) {
+          moneyFeatures.push({ feature: feature.charAt(0).toUpperCase() + feature.slice(1), value });
+        }
       }
+
+      // ========== FLAWS (Things to Fix) ==========
+      const flaws: Flaw[] = [];
+      const flawMap: Record<string, { fix: string; gain: number }> = {
+        "old thermostat": { fix: "Replace with Nest/smart thermostat", gain: 50 },
+        "dated lighting": { fix: "Install recessed lighting", gain: 75 },
+        "boob light": { fix: "Replace with modern fixtures", gain: 50 },
+        "yellow lighting": { fix: "Switch to 5000K daylight bulbs", gain: 25 },
+        "popcorn ceiling": { fix: "Remove popcorn texture", gain: 100 },
+        "old appliances": { fix: "Upgrade to stainless steel", gain: 100 },
+        "carpet stain": { fix: "Deep clean or replace carpet", gain: 75 },
+        "worn carpet": { fix: "Replace with LVP flooring", gain: 150 },
+        "small window": { fix: "Add mirrors to increase light perception", gain: 25 },
+        "dated cabinet": { fix: "Paint cabinets white/gray", gain: 100 },
+        "brass fixture": { fix: "Replace with brushed nickel", gain: 50 },
+        "laminate counter": { fix: "Upgrade to granite/quartz", gain: 125 },
+        "linoleum": { fix: "Replace with tile or LVP", gain: 100 }
+      };
+
+      for (const [issue, fixData] of Object.entries(flawMap)) {
+        if (textLower.includes(issue)) {
+          flaws.push({ issue: issue.charAt(0).toUpperCase() + issue.slice(1), fix: fixData.fix, potentialGain: fixData.gain });
+        }
+      }
+
+      // ========== STAGING ISSUES (Things to Remove from Photo) ==========
+      const stagingIssues: string[] = [];
+      const stagingKeywords = ["clutter", "mess", "messy", "trash", "trash can", "toilet seat", "personal item", "dirty", "dishes", "unmade bed", "laundry", "clothes on floor", "toys scattered"];
+      for (const keyword of stagingKeywords) {
+        if (textLower.includes(keyword)) {
+          stagingIssues.push(keyword.charAt(0).toUpperCase() + keyword.slice(1));
+        }
+      }
+      const needsStaging = stagingIssues.length > 0;
+
+      // ========== TARGET DEMOGRAPHIC & VIBE ==========
+      let targetDemo = "General Renters";
+      let vibeKeywords: string[] = [];
+
+      if (textLower.includes("exposed brick") || textLower.includes("industrial") || textLower.includes("loft")) {
+        targetDemo = "Young Professionals / Hipsters";
+        vibeKeywords = ["Industrial Chic", "Loft Vibes", "Artisan", "Urban"];
+      } else if (textLower.includes("white") && (textLower.includes("neutral") || textLower.includes("beige") || textLower.includes("family"))) {
+        targetDemo = "Families";
+        vibeKeywords = ["Safe", "Quiet", "Cozy", "Family-Friendly"];
+      } else if (textLower.includes("led") || textLower.includes("sleek") || textLower.includes("smart") || textLower.includes("modern")) {
+        targetDemo = "Tech Professionals";
+        vibeKeywords = ["Modern", "High-Speed Ready", "Smart Home", "Sleek"];
+      } else if (textLower.includes("traditional") || textLower.includes("crown molding") || textLower.includes("classic")) {
+        targetDemo = "Established Professionals";
+        vibeKeywords = ["Classic", "Elegant", "Timeless", "Sophisticated"];
+      } else if (luxuryScore >= 7) {
+        targetDemo = "High-Income Renters";
+        vibeKeywords = ["Premium", "Upscale", "Executive"];
+      } else {
+        vibeKeywords = ["Comfortable", "Convenient", "Well-Located"];
+      }
+
+      // ========== PREDATORY PRICING ==========
+      const basePrice = baseRentByType[house_type] || 1800;
+
+      // Calculate money feature bonus
+      const featureBonus = moneyFeatures.reduce((sum, f) => sum + f.value, 0);
+
+      // Calculate flaw penalty (but cap it)
+      const flawPenalty = Math.min(200, flaws.length * 30);
+
+      // Luxury score bonus: $50 per point above 5
+      const luxuryBonus = Math.max(0, (luxuryScore - 5) * 75);
+
+      // Bedroom adjustment
+      const bedroomBonus = (bedrooms - 2) * 300;
+
+      // Location multiplier
+      const locationMult = getLocationMultiplier(location?.zip);
+
+      // Calculate final price
+      let suggestedPrice = (basePrice + featureBonus + luxuryBonus + bedroomBonus - flawPenalty) * locationMult;
+      suggestedPrice = Math.round(suggestedPrice / 25) * 25; // Round to nearest $25
+
+      // Premium above average
+      const avgPrice = basePrice * locationMult;
+      const premiumAboveAvg = suggestedPrice - avgPrice;
+
+      // ========== FOMO LINES ==========
+      const fomoLines: string[] = [];
+      if (moneyFeatures.some(f => f.feature.toLowerCase().includes("window"))) {
+        fomoLines.push("Only unit in the building with premium window views");
+      }
+      if (luxuryScore >= 7) {
+        fomoLines.push("Top 10% finishes in the area - won't last 48 hours");
+      }
+      if (textLower.includes("renovated") || textLower.includes("updated")) {
+        fomoLines.push("Just renovated - first tenant gets it pristine");
+      }
+      if (moneyFeatures.length >= 3) {
+        fomoLines.push(`${moneyFeatures.length} premium upgrades rarely seen at this price point`);
+      }
+      if (fomoLines.length === 0) {
+        fomoLines.push("Priced to move - serious inquiries only");
+      }
+
+      // ========== FEATURES LIST ==========
+      const features = moneyFeatures.map(f => f.feature).slice(0, 6);
       if (features.length === 0) features.push("See photos for details");
 
-      // Detect listing type (sale vs rent) - default to rent but check for sale keywords
-      let listingType = "Rent";
-      if (textLower.includes("sale") || textLower.includes("selling") || textLower.includes("buy")) {
-        listingType = "Sale";
-      }
+      // ========== DESCRIPTION ==========
+      const locationStr = location?.city ? ` in ${location.city}` : "";
+      const gradeEmoji = luxuryScore >= 8 ? "Premium" : luxuryScore >= 6 ? "Quality" : "Value";
+      const title = `${gradeEmoji} ${bedrooms}-Bedroom ${house_type}${locationStr}`;
 
-      // Generate a nice formatted description
-      const bedroomText = bedrooms === 1 ? "1 bedroom" : bedrooms + " bedrooms";
-      const featureList = features.slice(0, 4).join(", ");
+      const niceDescription = `${vibeKeywords[0] || "Beautiful"} ${house_type.toLowerCase()} perfect for ${targetDemo.toLowerCase()}. This ${bedrooms}-bedroom property features ${features.slice(0, 3).join(", ").toLowerCase() || "modern amenities"}. ${fomoLines[0]}`;
 
-      const niceDescription = `Beautiful ${quality} ${house_type.toLowerCase()} available for ${listingType.toLowerCase()}. This ${bedroomText} property features ${featureList.toLowerCase() || "modern amenities"}. ${rawText.slice(0, 300)}`;
-
-      // Calculate confidence based on how much info we extracted
-      let confidence = 0.6; // Base confidence for Llama 3.2 Vision
+      // ========== CONFIDENCE ==========
+      let confidence = 0.65;
       if (bedroomMatch) confidence += 0.1;
-      if (features.length > 2) confidence += 0.1;
-      if (conditionMatch) confidence += 0.1;
-      if (location?.city) confidence += 0.1; // Boost confidence if we have location
+      if (moneyFeatures.length > 2) confidence += 0.1;
+      if (luxuryMatch) confidence += 0.1;
+      if (location?.city) confidence += 0.05;
       confidence = Math.min(0.95, confidence);
 
-      // Build location string for title
-      const locationStr = location?.city ? ` in ${location.city}` : "";
-
-      const analysis: AnalysisResult & { location?: typeof location } = {
-        title: quality.charAt(0).toUpperCase() + quality.slice(1) + " " + bedrooms + "-Bedroom " + house_type + " for " + listingType + locationStr,
-        house_type: house_type,
-        bedrooms: bedrooms,
+      // ========== BUILD RESPONSE ==========
+      const analysis: GodModeAnalysis & { location?: typeof location; rawAnalysis?: string } = {
+        title,
+        house_type,
+        bedrooms,
         description: niceDescription.slice(0, 600),
-        suggestedPrice: suggestedPrice,
-        features: features.slice(0, 6),
-        confidence: confidence,
-        condition: condition,
-        ...(location && { location })
+
+        // GOD MODE
+        luxuryScore,
+        unitGrade,
+        moneyFeatures: moneyFeatures.slice(0, 5),
+        flaws: flaws.slice(0, 5),
+
+        // Pricing
+        basePrice: Math.round(basePrice * locationMult),
+        suggestedPrice,
+        premiumAboveAvg: Math.round(premiumAboveAvg),
+
+        // Demographics
+        targetDemo,
+        vibeKeywords,
+
+        // FOMO
+        fomoLines: fomoLines.slice(0, 3),
+
+        // Staging
+        needsStaging,
+        stagingIssues,
+
+        // Standard
+        features,
+        confidence,
+
+        // Include location and raw for debugging
+        ...(location && { location }),
+        rawAnalysis: rawText.slice(0, 500)
       };
 
       return new Response(JSON.stringify({ success: true, analysis: analysis }), {
