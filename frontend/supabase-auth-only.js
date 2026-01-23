@@ -175,7 +175,7 @@ async function initializeAuth() {
             
             if (event === 'SIGNED_OUT') {
                 // Redirect to login if on protected page
-                const protectedPaths = ['/dashboard.html', '/profile.html', '/listings.html'];
+                const protectedPaths = ['/profile.html', '/listings.html'];
                 if (protectedPaths.includes(window.location.pathname)) {
                     window.location.href = '/login.html';
                 }
