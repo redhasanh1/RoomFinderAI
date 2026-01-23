@@ -1,7 +1,6 @@
 /**
- * RoomFinderAI "GOD MODE" Vision Worker
- * The "Slumlord to Landlord" Engine
- * Analyzes, Judges, and Maximizes Rent in Real-Time
+ * RoomFinderAI Property Vision Worker
+ * Analyzes property photos using Cloudflare Workers AI
  */
 
 export interface Env {
@@ -19,40 +18,40 @@ interface Flaw {
   potentialGain: number; // How much more rent if fixed
 }
 
-interface GodModeAnalysis {
+interface PropertyAnalysis {
   // Basic Info
   title: string;
   house_type: "Apartment" | "House" | "Condo" | "Townhouse";
   bedrooms: number;
   description: string;
 
-  // GOD MODE: The Wealth Detector
+  // Quality Assessment
   luxuryScore: number; // 1-10
   unitGrade: string; // A+, A, A-, B+, etc.
 
-  // GOD MODE: Money Features (things that ADD value)
+  // Value-Add Features
   moneyFeatures: MoneyFeature[];
 
-  // GOD MODE: Flaws (things to FIX to charge more)
+  // Improvement Opportunities
   flaws: Flaw[];
 
-  // GOD MODE: Predatory Pricing
+  // Pricing
   basePrice: number;
   suggestedPrice: number;
-  premiumAboveAvg: number; // How much above area average
+  premiumAboveAvg: number;
 
-  // GOD MODE: Target Demographic
+  // Target Audience
   targetDemo: string;
   vibeKeywords: string[];
 
-  // GOD MODE: FOMO Copy
+  // Marketing Copy
   fomoLines: string[];
 
   // Meta
   features: string[];
   confidence: number;
-  needsStaging: boolean; // Should we call MarkRemoverAI?
-  stagingIssues: string[]; // What to remove
+  needsStaging: boolean;
+  stagingIssues: string[];
 }
 
 // Location multipliers for major US metro areas (by zip code prefix)
@@ -144,37 +143,36 @@ export default {
         });
       }
 
-      // GOD MODE PROMPT - The "Wealth Detector" + "Judge"
-      const prompt = `You are a ruthless real estate appraiser. Analyze this property photo and JUDGE it for maximum rent extraction.
+      // Vision analysis prompt - strict about only visible features
+      const prompt = `Analyze ONLY what you can actually see in this property photo. Be accurate - do NOT guess or assume features that aren't clearly visible.
 
-PROPERTY TYPE: House, Apartment, Condo, or Townhouse?
+PROPERTY TYPE: Is this a House, Apartment, Condo, or Townhouse? Only say what you can determine from the photo.
 
-BEDROOMS: Estimate count (1-10)
+BEDROOMS: Can you see a bedroom? If yes, estimate count. If not, say "cannot determine".
 
-LUXURY SCORE (1-10): Rate the finishes and quality.
+LUXURY SCORE (1-10): Rate ONLY the visible finishes.
 - 1-3: Budget/dated (laminate, white appliances, builder-grade)
 - 4-6: Average (decent but nothing special)
 - 7-8: Upscale (granite, stainless steel, hardwood)
 - 9-10: Luxury (high-end finishes, designer touches)
 
-MONEY FEATURES (things that ADD rent value):
-List premium features you see: granite countertops, stainless appliances, hardwood floors, large windows, high ceilings, modern fixtures, exposed brick, updated kitchen, walk-in closet, natural light, bay windows, recessed lighting, etc.
+VISIBLE PREMIUM FEATURES (ONLY list what you can clearly see):
+Examples: granite countertops, stainless appliances, hardwood floors, large windows, high ceilings, exposed brick, natural light.
+IMPORTANT: If you cannot clearly see a feature, do NOT list it. Say "none visible" if no premium features are clearly visible.
 
-FLAWS (things that HURT rent value):
-List issues: old thermostat, dated lighting (boob lights), carpet stains, small windows, popcorn ceiling, old appliances, clutter, mess, poor staging, etc.
+VISIBLE FLAWS (ONLY list what you can clearly see):
+Examples: old thermostat, dated lighting, carpet stains, popcorn ceiling.
+IMPORTANT: Do NOT list flaws you cannot see. Say "none visible" if no flaws are clearly visible.
 
-STAGING ISSUES (things to REMOVE from photo):
-List any: clutter, mess, trash cans, toilet seats up, personal items, dirty dishes, unmade beds, etc.
+STAGING ISSUES (ONLY if clearly visible):
+Examples: clutter, mess, dirty dishes, unmade bed.
+Say "none" if the space appears clean and staged.
 
-VIBE CHECK: What demographic would love this?
-- Exposed brick/industrial = Hipsters ("Industrial chic, loft vibes")
-- White/beige/neutral = Families ("Safe, quiet, cozy")
-- Modern/LED/sleek = Tech bros ("Modern, high-speed ready")
-- Traditional/crown molding = Professionals ("Classic, elegant")
+ROOM TYPE: What room is this? (kitchen, living room, bedroom, bathroom, exterior, etc.)
 
-Provide detailed analysis.`;
+Be conservative and accurate. Only describe what you actually see.`;
 
-      // Use Llama 3.2 11B Vision for GOD MODE analysis
+      // Use Llama 3.2 11B Vision for property analysis
       const response = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
         image: image,
         prompt: prompt,
@@ -193,7 +191,7 @@ Provide detailed analysis.`;
       const textLower = rawText.toLowerCase();
 
       // ========== PROPERTY TYPE ==========
-      let house_type: GodModeAnalysis["house_type"] = "Apartment";
+      let house_type: PropertyAnalysis["house_type"] = "Apartment";
       if (textLower.includes("house") || textLower.includes("garage") || textLower.includes("yard") || textLower.includes("driveway")) {
         house_type = "House";
       } else if (textLower.includes("condo")) {
@@ -229,6 +227,25 @@ Provide detailed analysis.`;
 
       const unitGrade = calculateGrade(luxuryScore);
 
+      // ========== HELPER: Check if feature is actually present (not negated) ==========
+      function isFeaturePresent(text: string, feature: string): boolean {
+        const idx = text.indexOf(feature);
+        if (idx === -1) return false;
+
+        // Check preceding context for negation (look back ~40 chars)
+        const precedingText = text.substring(Math.max(0, idx - 40), idx).toLowerCase();
+        const negationPatterns = [
+          "no ", "not ", "without ", "don't ", "doesn't ", "isn't ", "aren't ",
+          "lack", "missing", "absent", "n't see", "n't have", "could use",
+          "needs ", "upgrade to ", "replace with ", "could add "
+        ];
+
+        for (const neg of negationPatterns) {
+          if (precedingText.includes(neg)) return false;
+        }
+        return true;
+      }
+
       // ========== MONEY FEATURES (Premium Additions) ==========
       const moneyFeatures: MoneyFeature[] = [];
       const moneyFeatureMap: Record<string, number> = {
@@ -256,9 +273,16 @@ Provide detailed analysis.`;
         "central air": 75
       };
 
-      for (const [feature, value] of Object.entries(moneyFeatureMap)) {
-        if (textLower.includes(feature)) {
-          moneyFeatures.push({ feature: feature.charAt(0).toUpperCase() + feature.slice(1), value });
+      // Skip feature detection if AI explicitly says none visible
+      const noFeaturesVisible = textLower.includes("none visible") ||
+        textLower.includes("no premium features") ||
+        textLower.includes("cannot see any premium");
+
+      if (!noFeaturesVisible) {
+        for (const [feature, value] of Object.entries(moneyFeatureMap)) {
+          if (isFeaturePresent(textLower, feature)) {
+            moneyFeatures.push({ feature: feature.charAt(0).toUpperCase() + feature.slice(1), value });
+          }
         }
       }
 
@@ -280,8 +304,23 @@ Provide detailed analysis.`;
         "linoleum": { fix: "Replace with tile or LVP", gain: 100 }
       };
 
+      // Helper to check if flaw is explicitly mentioned (not as a suggestion)
+      function isFlawPresent(text: string, flaw: string): boolean {
+        const idx = text.indexOf(flaw);
+        if (idx === -1) return false;
+
+        // Check preceding context - reject if it's a suggestion/fix rather than observation
+        const precedingText = text.substring(Math.max(0, idx - 30), idx).toLowerCase();
+        const suggestionPatterns = ["replace with", "upgrade to", "install", "add ", "get "];
+
+        for (const sug of suggestionPatterns) {
+          if (precedingText.includes(sug)) return false;
+        }
+        return true;
+      }
+
       for (const [issue, fixData] of Object.entries(flawMap)) {
-        if (textLower.includes(issue)) {
+        if (isFlawPresent(textLower, issue)) {
           flaws.push({ issue: issue.charAt(0).toUpperCase() + issue.slice(1), fix: fixData.fix, potentialGain: fixData.gain });
         }
       }
@@ -383,13 +422,13 @@ Provide detailed analysis.`;
       confidence = Math.min(0.95, confidence);
 
       // ========== BUILD RESPONSE ==========
-      const analysis: GodModeAnalysis & { location?: typeof location; rawAnalysis?: string } = {
+      const analysis: PropertyAnalysis & { location?: typeof location; rawAnalysis?: string } = {
         title,
         house_type,
         bedrooms,
         description: niceDescription.slice(0, 600),
 
-        // GOD MODE
+        // Quality
         luxuryScore,
         unitGrade,
         moneyFeatures: moneyFeatures.slice(0, 5),
