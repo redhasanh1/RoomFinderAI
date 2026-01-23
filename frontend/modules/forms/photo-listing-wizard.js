@@ -1109,9 +1109,16 @@ class PhotoListingWizard {
      * Apply results to the listing form
      */
     async applyResults() {
-        if (!this.analysisResult) return;
+        console.log('🚀 [APPLY] applyResults called');
+
+        if (!this.analysisResult) {
+            console.error('❌ [APPLY] No analysis result available');
+            alert('No analysis results to apply. Please try again.');
+            return;
+        }
 
         const analysis = this.analysisResult;
+        console.log('📋 [APPLY] Analysis data:', analysis);
 
         // Save analysis to localStorage for the listings page
         const listingData = {
@@ -1155,13 +1162,27 @@ class PhotoListingWizard {
 
         // Hide wizard
         this.hide();
+        console.log('✅ [APPLY] Wizard hidden');
 
         // Check if we're on the listings page
         const onListingsPage = window.location.pathname.includes('listings');
+        console.log('📍 [APPLY] On listings page:', onListingsPage);
+        console.log('📍 [APPLY] addListingForm available:', !!window.addListingForm);
 
-        if (onListingsPage && window.addListingForm) {
+        if (onListingsPage) {
             // Already on listings page - show form and populate
-            window.addListingForm.showForm();
+            if (window.addListingForm) {
+                console.log('📝 [APPLY] Showing form via addListingForm...');
+                window.addListingForm.showForm();
+            } else {
+                // Fallback: directly show the form section
+                console.log('📝 [APPLY] Fallback: showing form section directly...');
+                const formSection = document.getElementById('addListingSection');
+                if (formSection) {
+                    formSection.classList.remove('hidden');
+                    formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
 
             // Add the uploaded image to the form
             if (this.uploadedImage) {
@@ -1175,9 +1196,11 @@ class PhotoListingWizard {
             }
 
             // Populate form fields with typewriter animation
+            console.log('📝 [APPLY] Populating form with animation...');
             this.populateFormWithAnimation(analysis);
         } else {
             // Navigate to listings page - it will auto-load the form
+            console.log('📝 [APPLY] Redirecting to listings page...');
             window.location.href = 'listings.html?autoFill=true';
         }
     }
