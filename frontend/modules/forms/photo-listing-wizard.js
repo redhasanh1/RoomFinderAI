@@ -149,8 +149,10 @@ class PhotoListingWizard {
                                 <!-- Header with Grade -->
                                 <div class="text-center mb-4">
                                     <div class="inline-flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-4 py-2 rounded-full text-sm font-bold mb-3">
-                                        <span>GOD MODE</span>
-                                        <span class="bg-white/20 px-2 py-0.5 rounded">ANALYSIS COMPLETE</span>
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                        </svg>
+                                        <span>Analysis Complete</span>
                                     </div>
                                 </div>
 
@@ -197,19 +199,21 @@ class PhotoListingWizard {
                                     </div>
                                 </div>
 
-                                <!-- Staging Alert -->
+                                <!-- Photo Tips -->
                                 <div id="stagingAlert" class="mb-4 hidden">
-                                    <div class="bg-yellow-50 border border-yellow-300 rounded-xl p-3">
-                                        <div class="flex items-center gap-2 text-yellow-800 font-semibold text-sm mb-1">
+                                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                                        <div class="flex items-center gap-2 text-blue-800 font-semibold text-sm mb-2">
                                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                                             </svg>
-                                            Photo Needs Staging
+                                            Photo Tips
                                         </div>
-                                        <p id="stagingIssuesList" class="text-yellow-700 text-xs">Detected: clutter, mess</p>
-                                        <button id="autoStageBtn" class="mt-2 w-full bg-yellow-500 hover:bg-yellow-600 text-white text-sm py-1.5 rounded-lg font-medium transition">
-                                            Auto-Clean Photo (AI)
-                                        </button>
+                                        <p id="stagingIssuesList" class="text-blue-700 text-sm"></p>
+                                        <ul class="text-blue-600 text-xs mt-2 space-y-1">
+                                            <li>• Good lighting makes photos stand out</li>
+                                            <li>• Shoot from corners to show more space</li>
+                                            <li>• Declutter surfaces before photographing</li>
+                                        </ul>
                                     </div>
                                 </div>
 
@@ -981,12 +985,25 @@ class PhotoListingWizard {
             flawsSection?.classList.add('hidden');
         }
 
-        // ========== STAGING ALERT ==========
+        // ========== PHOTO ADVICE ==========
         const stagingAlert = document.getElementById('stagingAlert');
         const stagingIssuesList = document.getElementById('stagingIssuesList');
 
         if (analysis.needsStaging && analysis.stagingIssues && analysis.stagingIssues.length > 0) {
-            if (stagingIssuesList) stagingIssuesList.textContent = `Detected: ${analysis.stagingIssues.join(', ')}`;
+            // Format issues as improvement advice
+            const issueAdvice = analysis.stagingIssues.map(issue => {
+                const adviceMap = {
+                    'clutter': 'Clear away clutter for cleaner photos',
+                    'mess': 'Tidy up the space before photographing',
+                    'dirty': 'A quick clean would improve this shot',
+                    'trash': 'Remove visible trash from the frame',
+                    'laundry': 'Put away laundry for a cleaner look',
+                    'dishes': 'Clear dishes from counters',
+                    'unmade bed': 'Make the bed for better bedroom photos'
+                };
+                return adviceMap[issue.toLowerCase()] || `Consider addressing: ${issue}`;
+            });
+            if (stagingIssuesList) stagingIssuesList.innerHTML = issueAdvice.map(a => `<span class="block">• ${a}</span>`).join('');
             stagingAlert?.classList.remove('hidden');
         } else {
             stagingAlert?.classList.add('hidden');
