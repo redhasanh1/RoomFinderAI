@@ -2019,19 +2019,40 @@
                     
                     const result = await response.json();
                     
-                    // Helper function to clean up localStorage
+                    // Helper function to clean up ALL localStorage locations
                     const cleanupLocalStorage = () => {
                         try {
+                            // Clean userListings_email
                             const userListingsKey = `userListings_${currentUser.email}`;
                             let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                             userListings = userListings.filter(l => l.id !== id);
                             safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
 
+                            // Clean allListings
                             let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
                             allListings = allListings.filter(l => l.id !== id);
                             safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
+
+                            // Clean currentUser.listings
+                            let storedUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                            if (storedUser.listings) {
+                                storedUser.listings = storedUser.listings.filter(l => l.id !== id);
+                                safeLocalStorageSetItem('currentUser', JSON.stringify(storedUser));
+                            }
+
+                            // Clean users array
+                            let users = JSON.parse(localStorage.getItem('users')) || [];
+                            users = users.map(u => {
+                                if (u.email === currentUser.email && u.listings) {
+                                    u.listings = u.listings.filter(l => l.id !== id);
+                                }
+                                return u;
+                            });
+                            safeLocalStorageSetItem('users', JSON.stringify(users));
+
+                            console.log('✅ Cleaned listing from all localStorage locations');
                         } catch (storageError) {
-                            console.warn('⚠️ Could not update localStorage cache after delete');
+                            console.warn('⚠️ Could not update localStorage cache after delete:', storageError);
                         }
                     };
 
