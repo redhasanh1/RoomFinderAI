@@ -208,12 +208,7 @@ class PhotoListingWizard {
                                             </svg>
                                             Photo Tips
                                         </div>
-                                        <p id="stagingIssuesList" class="text-blue-700 text-sm"></p>
-                                        <ul class="text-blue-600 text-xs mt-2 space-y-1">
-                                            <li>• Good lighting makes photos stand out</li>
-                                            <li>• Shoot from corners to show more space</li>
-                                            <li>• Declutter surfaces before photographing</li>
-                                        </ul>
+                                        <div id="stagingIssuesList" class="text-blue-700 text-sm space-y-1"></div>
                                     </div>
                                 </div>
 
