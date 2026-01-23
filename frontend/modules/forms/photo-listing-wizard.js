@@ -1030,7 +1030,7 @@ class PhotoListingWizard {
 
             // Style based on source (GPS vs AI estimate)
             if (location.source === 'gps') {
-                locationRow.className = 'bg-green-50 border border-green-200 rounded-xl p-3 mb-4';
+                if (locationRow) locationRow.className = 'bg-green-50 border border-green-200 rounded-xl p-3 mb-4';
                 if (locationSourceText) locationSourceText.textContent = 'Location from Photo GPS';
                 if (locationSourceText) locationSourceText.className = 'text-xs font-semibold text-green-600';
                 if (locationText) locationText.className = 'font-medium text-green-900';
@@ -1040,7 +1040,7 @@ class PhotoListingWizard {
                     locationBadge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-green-200 text-green-800';
                 }
             } else {
-                locationRow.className = 'bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4';
+                if (locationRow) locationRow.className = 'bg-purple-50 border border-purple-200 rounded-xl p-3 mb-4';
                 if (locationSourceText) locationSourceText.textContent = 'AI Estimated Location';
                 if (locationSourceText) locationSourceText.className = 'text-xs font-semibold text-purple-600';
                 if (locationText) locationText.className = 'font-medium text-purple-900';
@@ -1050,7 +1050,7 @@ class PhotoListingWizard {
                     locationBadge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-purple-200 text-purple-800';
                 }
             }
-            locationRow?.classList.remove('hidden');
+            if (locationRow) locationRow.classList.remove('hidden');
         }
 
         // ========== BASIC INFO ==========
