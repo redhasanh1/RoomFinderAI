@@ -30,6 +30,820 @@ class AINegotiator {
         return basePrice + variation;
     }
 
+    // ========================================
+    // PHASE 1: NATURAL RESPONSE TIMING
+    // ========================================
+
+    // Calculate human-like response delay based on context
+    calculateResponseDelay(context) {
+        const { messageLength = 0, responseLength = 0, emotionalContent = false, isComplexDecision = false } = context;
+
+        let delay = 800; // Base delay (800ms minimum)
+
+        // Reading time: ~50ms per word (average 5 chars per word)
+        delay += Math.min((messageLength / 5) * 50, 1500);
+
+        // Composing time: ~20ms per character of response
+        delay += Math.min(responseLength * 20, 1200);
+
+        // Thinking time for emotional or complex content
+        if (emotionalContent) delay += 800;
+        if (isComplexDecision) delay += 600;
+
+        // Add natural variance (±20%)
+        const variance = delay * 0.2 * (Math.random() * 2 - 1);
+        delay += variance;
+
+        // Clamp between 500ms and 4500ms
+        return Math.max(500, Math.min(4500, Math.round(delay)));
+    }
+
+    // ========================================
+    // PHASE 2: THREE VOICES SYSTEM (Chris Voss)
+    // ========================================
+
+    // Voice profiles for different negotiation contexts
+    voiceProfiles = {
+        playful: {
+            name: 'playful',
+            description: 'Warm, light humor, builds rapport',
+            triggers: ['default', 'rapport_building', 'positive_momentum'],
+            style: 'Upbeat and friendly, uses phrases like "I hear you!", "Let\'s figure this out", "Fair enough"',
+            tone: 'warm but confident'
+        },
+        late_night_dj: {
+            name: 'late_night_dj',
+            description: 'Calm, reassuring, de-escalates tension',
+            triggers: ['frustrated', 'anxious', 'aggressive', 'multiple_rejections'],
+            style: 'Slow, calming, uses "I completely understand...", "Take your time", "No pressure"',
+            tone: 'soothing and patient'
+        },
+        direct: {
+            name: 'direct',
+            description: 'Firm, assertive, for closing moments',
+            triggers: ['closing', 'final_offer', 'deadline'],
+            style: 'Confident and decisive, uses "I need to make a decision today", "This is my final position"',
+            tone: 'assertive but respectful'
+        }
+    };
+
+    // Select appropriate voice based on context
+    getVoiceForContext(landlordProfile, phase, rejectionCount = 0) {
+        // Late Night DJ voice for frustrated landlords or multiple rejections
+        if (landlordProfile?.emotionalState === 'frustrated' ||
+            landlordProfile?.emotionalState === 'aggressive' ||
+            rejectionCount >= 3) {
+            return this.voiceProfiles.late_night_dj;
+        }
+
+        // Direct voice for closing phase or final offers
+        if (phase === 'closing' || phase === 'final' || rejectionCount >= 4) {
+            return this.voiceProfiles.direct;
+        }
+
+        // Default to playful voice (80% of interactions)
+        return this.voiceProfiles.playful;
+    }
+
+    // Get voice instructions for prompt
+    getVoiceInstructions(voice) {
+        const instructions = {
+            playful: `
+VOICE: PLAYFUL/POSITIVE (Default)
+- Warm and approachable, like talking to a friendly neighbor
+- Light humor where appropriate ("Ha! Fair enough")
+- Phrases: "I hear you!", "Let's figure this out", "That makes sense"
+- Energy: Upbeat but not pushy
+- Goal: Build rapport while negotiating`,
+
+            late_night_dj: `
+VOICE: LATE-NIGHT DJ (De-escalation)
+- Calm, slow, measured pace
+- Soothing and patient, never rushed
+- Phrases: "I completely understand...", "Take your time", "No pressure at all"
+- Lower the temperature of the conversation
+- Goal: Reduce tension, rebuild trust`,
+
+            direct: `
+VOICE: DIRECT/ASSERTIVE (Closing)
+- Confident and decisive, no hedging
+- Clear and straightforward
+- Phrases: "I need to decide today", "This is where I am", "Let's close this"
+- Energy: Firm but respectful
+- Goal: Drive toward decision`
+        };
+
+        return instructions[voice.name] || instructions.playful;
+    }
+
+    // ========================================
+    // PHASE 3: INTELLIGENT TACTIC SELECTION
+    // ========================================
+
+    // Context-aware tactic selection (replaces round-based)
+    selectTacticForContext(context) {
+        const {
+            messageContent = '',
+            emotionalContent = false,
+            rejectionCount = 0,
+            priceObjection = false,
+            recentTactics = [],
+            landlordProfile = {},
+            phase = 'bargaining'
+        } = context;
+
+        // Score each tactic based on context
+        const scores = {
+            mirroring: 0,
+            labeling: 0,
+            calibrated_question: 0,
+            loss_aversion: 0,
+            phantom_authority: 0,
+            accusation_audit: 0,
+            no_technique: 0
+        };
+
+        // Short responses benefit from mirroring (get them talking)
+        if (messageContent.length < 50) scores.mirroring += 30;
+
+        // Emotional content benefits from labeling
+        if (emotionalContent) scores.labeling += 40;
+
+        // Multiple rejections benefit from loss aversion
+        if (rejectionCount >= 2) scores.loss_aversion += 35;
+
+        // Price objections benefit from phantom authority
+        if (priceObjection) scores.phantom_authority += 35;
+
+        // Frustrated landlords benefit from accusation audit
+        if (landlordProfile.emotionalState === 'frustrated') scores.accusation_audit += 40;
+
+        // Closing phase benefits from "no" technique
+        if (phase === 'closing') scores.no_technique += 30;
+
+        // Opening phase benefits from calibrated questions
+        if (phase === 'opening') scores.calibrated_question += 25;
+
+        // Penalize recently used tactics heavily (avoid repetition)
+        for (const tactic of recentTactics.slice(-2)) {
+            if (scores[tactic] !== undefined) {
+                scores[tactic] -= 50;
+            }
+        }
+
+        // Find highest scoring tactic
+        let bestTactic = 'calibrated_question';
+        let bestScore = -Infinity;
+
+        for (const [tactic, score] of Object.entries(scores)) {
+            if (score > bestScore) {
+                bestScore = score;
+                bestTactic = tactic;
+            }
+        }
+
+        return bestTactic;
+    }
+
+    // Get tactic instructions for prompt
+    getTacticInstructions(tactic) {
+        const instructions = {
+            mirroring: `**MIRRORING**: Repeat their last 3-5 words as a question to make them elaborate.
+Example: They say "I need more than that" → You say "$X? I need more than that?"`,
+
+            labeling: `**LABELING**: Name their emotion to show understanding.
+Phrases: "It sounds like...", "It seems like...", "I sense that..."
+Example: "It sounds like you're weighing multiple options here."`,
+
+            calibrated_question: `**CALIBRATED QUESTION**: Ask "How..." or "What..." questions to make them problem-solve WITH you.
+Examples: "How am I supposed to make that work?", "What would it take to close today?"`,
+
+            loss_aversion: `**LOSS AVERSION**: Frame what they LOSE by not accepting, not what they gain.
+Focus on: vacancy costs, time wasted, uncertainty
+Example: "Every week vacant is $X lost. I'm ready to sign today."`,
+
+            phantom_authority: `**PHANTOM AUTHORITY**: Hint at external constraints controlling your budget.
+Phrases: "My budget is capped at...", "I can't authorize above...", "The numbers don't allow..."
+Makes it: "You + Me vs. The Budget" instead of "You vs. Me"`,
+
+            accusation_audit: `**ACCUSATION AUDIT**: Preempt their objection before they raise it.
+Phrases: "You probably think...", "I know it might seem like..."
+Example: "You probably think I'm being difficult. I get it. $X is genuinely my limit."`,
+
+            no_technique: `**"NO" TECHNIQUE**: Ask questions designed to get a "no" response (which psychologically commits them).
+Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasonable" = commitment)`
+        };
+
+        return instructions[tactic] || instructions.calibrated_question;
+    }
+
+    // ========================================
+    // PHASE 4: RESPONSE VARIATION ENGINE
+    // ========================================
+
+    // Track used responses to prevent repetition
+    usedResponses = new Map(); // conversationId -> Set of used response hashes
+
+    // Response templates for various scenarios (8+ per scenario)
+    responseTemplates = {
+        rejection_counters: [
+            "It sounds like that doesn't work. What would make ${offer} work today?",
+            "I hear you. Let me stretch to ${offer}. That's genuinely my limit.",
+            "Would ${offer} be unreasonable? I need to decide today.",
+            "${offer} is where I'm at. Help me understand what would close this.",
+            "Fair enough. ${offer} and a guaranteed tenant today vs. more showings?",
+            "Got it. After running my numbers, ${offer} is every dollar I have.",
+            "Understood. What if I do ${offer} and sign immediately?",
+            "I appreciate you being direct. ${offer} - can we make this happen?",
+            "Respect. ${offer} with references in hand. What do you say?",
+            "${offer}. I'm ready to move fast. Can we close this today?"
+        ],
+
+        competing_offer_responses: [
+            "${competing}? That's strong. My budget is capped at ${offer}. Help me bridge that gap?",
+            "${competing}... I hear you. The best I can authorize is ${offer}. Ready to sign today.",
+            "${competing}? Respect. I can do ${offer} and close immediately. A sure thing vs. a maybe?",
+            "Competing offer at ${competing}? I'll match at ${offer} and sign today. What do you say?",
+            "${competing} is tough to beat. ${offer} is my ceiling, but I'm a guaranteed close.",
+            "I get it, ${competing} is higher. ${offer} + reliability. What's worth more to you?",
+            "${competing}? Fair. ${offer} is my limit, but zero risk of no-shows or backing out.",
+            "At ${competing}, I'd have to walk. But ${offer} and done today - can we make it work?"
+        ],
+
+        acceptance_responses: [
+            "Done! I'm ready to sign today. What are the next steps?",
+            "Excellent! Thank you. I can complete all paperwork immediately.",
+            "That works! I have references ready. When can we finalize?",
+            "Perfect. I appreciate you working with me. Let's make this happen.",
+            "Thank you! I'm a reliable tenant ready to proceed right now.",
+            "Great! I won't waste your time. What do you need from me?"
+        ],
+
+        max_offer_responses: [
+            "${offer}/month is genuinely my max. I'm a reliable tenant ready to sign today. Can we make this work?",
+            "Look, ${offer} is every dollar I have. A guaranteed tenant today vs. more showings and uncertainty. What do you say?",
+            "I can't go higher than ${offer}. But I'm ready to sign right now with references in hand. Deal?",
+            "${offer} - that's my ceiling. I know it's below asking, but I'm a sure thing. Let's close this.",
+            "Would it be unreasonable to lock this in at ${offer}? I can move fast and I won't waste your time.",
+            "${offer} is where the numbers stop working for me. But I'm committed and ready today.",
+            "After calculating everything, ${offer} is my absolute limit. Reliable tenant, immediate signing. Your call.",
+            "${offer}. That's it. But you get certainty today instead of gambling on the next showing."
+        ],
+
+        witty_redirects: [
+            "Ha! I appreciate the creativity, but I'm here for the apartment, not a date. So... ${offer}/month - we doing this or what?",
+            "Smooth. But the only thing I'm trying to get into is that apartment. ${offer}/month work for you?",
+            "Lol nice try. I'm flattered, but let's keep this professional. Back to business - ${offer}/month?",
+            "You're funny. But seriously though, I need a place to live, not a Tinder match. Can we do ${offer}?",
+            "Ha! You've got jokes. Let's save those for the housewarming party. ${offer}/month?",
+            "I like the energy, but I'm just here for the apartment! ${offer} - what do you say?"
+        ],
+
+        playful_redirects: [
+            "Haha, I feel you. But real talk - ${offer}/month, can we make it happen?",
+            "Lol. Anyway... about that apartment? ${offer}/month sound fair?",
+            "Alright alright. So we doing this deal or what? ${offer}/month.",
+            "Ha! Okay okay. Back to business - ${offer}/month work for you?",
+            "I like your style! But about that rent... ${offer}?"
+        ]
+    };
+
+    // Get a unique response that hasn't been used in this conversation
+    getUniqueResponse(conversationId, templateType, variables) {
+        // Initialize tracking for this conversation
+        if (!this.usedResponses.has(conversationId)) {
+            this.usedResponses.set(conversationId, new Set());
+        }
+
+        const usedSet = this.usedResponses.get(conversationId);
+        const templates = this.responseTemplates[templateType] || [];
+
+        // Try to find an unused template
+        const availableTemplates = templates.filter(t => !usedSet.has(t));
+
+        // If all used, reset and start over
+        const templatePool = availableTemplates.length > 0 ? availableTemplates : templates;
+
+        if (templatePool.length === 0) {
+            return null; // No templates available
+        }
+
+        // Pick random from available
+        const template = templatePool[Math.floor(Math.random() * templatePool.length)];
+
+        // Mark as used
+        usedSet.add(template);
+
+        // Apply variables
+        let response = template;
+        for (const [key, value] of Object.entries(variables)) {
+            response = response.replace(new RegExp(`\\$\\{${key}\\}`, 'g'), value);
+        }
+
+        return response;
+    }
+
+    // ========================================
+    // PHASE 5: CIALDINI PRINCIPLES
+    // ========================================
+
+    cialdiniPrinciples = {
+        reciprocity: {
+            name: 'Reciprocity',
+            description: 'Give something first to encourage giving back',
+            examples: [
+                "I can be flexible on move-in date if that helps",
+                "Happy to do a longer lease for stability",
+                "I can provide references upfront to make things easier"
+            ]
+        },
+        commitment: {
+            name: 'Commitment/Consistency',
+            description: 'Build on their previous statements',
+            examples: [
+                "You mentioned wanting a reliable tenant...",
+                "Earlier you said timing was important...",
+                "Since stability matters to you..."
+            ]
+        },
+        social_proof: {
+            name: 'Social Proof',
+            description: 'Reference what others have done',
+            examples: [
+                "Similar units in the area have gone for around ${marketAvg}",
+                "Other landlords I've worked with appreciated...",
+                "Properties like this typically rent for..."
+            ]
+        },
+        liking: {
+            name: 'Liking',
+            description: 'Build rapport through genuine appreciation',
+            examples: [
+                "I love the natural light in this place",
+                "The location is perfect for my commute",
+                "You've clearly taken good care of this property"
+            ]
+        },
+        authority: {
+            name: 'Authority',
+            description: 'Reference credible data or expertise',
+            examples: [
+                "Based on comparable rentals in the area...",
+                "Looking at current market rates...",
+                "The rental market data suggests..."
+            ]
+        },
+        scarcity: {
+            name: 'Scarcity',
+            description: 'Highlight your own constraints/urgency',
+            examples: [
+                "I need to make a decision by end of week",
+                "This is the last property in my budget range",
+                "I'm choosing between this and one other place today"
+            ]
+        },
+        unity: {
+            name: 'Unity',
+            description: 'Create shared identity/goals',
+            examples: [
+                "How can WE make this work?",
+                "What do we need to bridge this gap?",
+                "We're so close - let's figure this out together"
+            ]
+        }
+    };
+
+    // Select appropriate Cialdini principle based on context
+    selectCialdiniPrinciple(context) {
+        const {
+            phase = 'bargaining',
+            rejectionCount = 0,
+            landlordProfile = {},
+            hasMarketData = false
+        } = context;
+
+        // Opening phase: use liking to build rapport
+        if (phase === 'opening') {
+            return Math.random() > 0.5 ? 'liking' : 'reciprocity';
+        }
+
+        // If landlord mentioned something specific, use commitment
+        if (landlordProfile.concerns?.length > 0) {
+            return 'commitment';
+        }
+
+        // Multiple rejections: use scarcity or unity
+        if (rejectionCount >= 2) {
+            return Math.random() > 0.5 ? 'scarcity' : 'unity';
+        }
+
+        // If we have market data, use authority/social proof
+        if (hasMarketData) {
+            return Math.random() > 0.5 ? 'authority' : 'social_proof';
+        }
+
+        // Default: reciprocity
+        return 'reciprocity';
+    }
+
+    // ========================================
+    // PHASE 6: PERSONALITY ENGINE
+    // ========================================
+
+    // Analyze landlord's communication style
+    analyzeLandlordPersonality(messages) {
+        const landlordMessages = messages.filter(m => m.sender === 'landlord');
+
+        if (landlordMessages.length === 0) {
+            return this.getDefaultLandlordProfile();
+        }
+
+        // Analyze patterns
+        const allText = landlordMessages.map(m => m.content).join(' ');
+        const avgLength = allText.length / landlordMessages.length;
+
+        // Detect style indicators
+        const hasEmoji = /[\u{1F300}-\u{1F9FF}]/u.test(allText);
+        const isFormal = /dear|regards|sincerely|thank you|please/i.test(allText);
+        const isShort = avgLength < 50;
+        const isLong = avgLength > 200;
+        const hasExclamation = /!/.test(allText);
+        const hasQuestion = /\?/.test(allText);
+
+        // Detect emotional state
+        const frustrationWords = /no|can't|won't|firm|final|not possible|impossible/gi;
+        const positiveWords = /great|perfect|sounds good|interested|yes|okay|sure/gi;
+        const neutralWords = /let me|I'll think|consider|maybe|perhaps/gi;
+
+        const frustrationCount = (allText.match(frustrationWords) || []).length;
+        const positiveCount = (allText.match(positiveWords) || []).length;
+
+        // Calculate warmth level (0-100)
+        let warmthLevel = 50;
+        if (hasEmoji) warmthLevel += 15;
+        if (hasExclamation && !frustrationCount) warmthLevel += 10;
+        if (positiveCount > 0) warmthLevel += positiveCount * 10;
+        if (frustrationCount > 0) warmthLevel -= frustrationCount * 15;
+        if (isFormal) warmthLevel -= 10;
+        warmthLevel = Math.max(0, Math.min(100, warmthLevel));
+
+        // Determine style
+        let style = 'neutral';
+        if (warmthLevel >= 70) style = 'friendly';
+        else if (warmthLevel >= 50) style = 'warm';
+        else if (warmthLevel >= 30) style = 'business-like';
+        else style = 'skeptical';
+
+        // Determine emotional state
+        let emotionalState = 'neutral';
+        if (frustrationCount > positiveCount) emotionalState = 'frustrated';
+        else if (positiveCount > 0) emotionalState = 'interested';
+        else if (hasQuestion) emotionalState = 'engaged';
+
+        // Extract concerns
+        const concerns = [];
+        if (/price|budget|cost|money|afford/i.test(allText)) concerns.push('price');
+        if (/reliable|trust|reference|credit|background/i.test(allText)) concerns.push('tenant_quality');
+        if (/soon|quick|when|timing|move.?in/i.test(allText)) concerns.push('timing');
+        if (/lease|term|duration|months/i.test(allText)) concerns.push('lease_terms');
+
+        return {
+            style,
+            emotionalState,
+            warmthLevel,
+            concerns,
+            responsePatterns: {
+                averageLength: avgLength,
+                usesEmoji: hasEmoji,
+                formalityLevel: isFormal ? 'formal' : (hasEmoji || hasExclamation ? 'casual' : 'neutral')
+            },
+            messageCount: landlordMessages.length
+        };
+    }
+
+    // Default profile for new conversations
+    getDefaultLandlordProfile() {
+        return {
+            style: 'neutral',
+            emotionalState: 'neutral',
+            warmthLevel: 50,
+            concerns: [],
+            responsePatterns: {
+                averageLength: 0,
+                usesEmoji: false,
+                formalityLevel: 'neutral'
+            },
+            messageCount: 0
+        };
+    }
+
+    // ========================================
+    // PHASE 7: CONVERSATION MEMORY
+    // ========================================
+
+    // Initialize or update conversation memory
+    updateConversationMemory(negotiation, landlordMessage, aiResponse, analysis) {
+        if (!negotiation.memory) {
+            negotiation.memory = {
+                landlordConcerns: [],
+                effectivePhrases: [],
+                ineffectivePhrases: [],
+                rapportLevel: 50, // Start neutral (0-100)
+                topicsDiscussed: [],
+                sentimentTrend: [] // Track sentiment over time
+            };
+        }
+
+        const memory = negotiation.memory;
+
+        // Track landlord concerns mentioned
+        const concernPatterns = {
+            price: /price|budget|cost|money|afford|expensive|cheap/i,
+            reliability: /reliable|trust|reference|credit|background|secure/i,
+            timing: /soon|quick|when|timing|move.?in|available/i,
+            maintenance: /condition|repair|fix|maintain|clean/i,
+            noise: /quiet|noise|neighbor|peaceful/i
+        };
+
+        for (const [concern, pattern] of Object.entries(concernPatterns)) {
+            if (pattern.test(landlordMessage) && !memory.landlordConcerns.includes(concern)) {
+                memory.landlordConcerns.push(concern);
+            }
+        }
+
+        // Track sentiment trend
+        const sentiment = analysis?.sentiment || 'neutral';
+        memory.sentimentTrend.push({
+            sentiment,
+            timestamp: Date.now()
+        });
+
+        // Keep only last 10 sentiment records
+        if (memory.sentimentTrend.length > 10) {
+            memory.sentimentTrend.shift();
+        }
+
+        // Update rapport level based on sentiment
+        if (sentiment === 'positive') {
+            memory.rapportLevel = Math.min(100, memory.rapportLevel + 10);
+        } else if (sentiment === 'negative') {
+            memory.rapportLevel = Math.max(0, memory.rapportLevel - 15);
+        }
+
+        // Track topics discussed
+        const topicPatterns = {
+            price: /\$\d+|price|offer|budget/i,
+            lease: /lease|term|month|year/i,
+            moveIn: /move.?in|start|begin|available/i,
+            references: /reference|credit|background/i,
+            property: /apartment|unit|place|room|bedroom/i
+        };
+
+        for (const [topic, pattern] of Object.entries(topicPatterns)) {
+            if (pattern.test(landlordMessage) && !memory.topicsDiscussed.includes(topic)) {
+                memory.topicsDiscussed.push(topic);
+            }
+        }
+
+        return memory;
+    }
+
+    // ========================================
+    // PHASE 8: ESCALATION DETECTION
+    // ========================================
+
+    // Detect if landlord is warming up or cooling off
+    detectEscalation(negotiation) {
+        const memory = negotiation.memory;
+
+        if (!memory || !memory.sentimentTrend || memory.sentimentTrend.length < 2) {
+            return { direction: 'stable', recommendation: 'maintain_momentum' };
+        }
+
+        // Calculate recent sentiment trend
+        const recentSentiments = memory.sentimentTrend.slice(-5);
+        const sentimentValues = recentSentiments.map(s => {
+            switch (s.sentiment) {
+                case 'positive': return 1;
+                case 'neutral': return 0;
+                case 'negative': return -1;
+                default: return 0;
+            }
+        });
+
+        const avgSentiment = sentimentValues.reduce((a, b) => a + b, 0) / sentimentValues.length;
+
+        // Detect trend direction
+        const firstHalf = sentimentValues.slice(0, Math.floor(sentimentValues.length / 2));
+        const secondHalf = sentimentValues.slice(Math.floor(sentimentValues.length / 2));
+        const firstAvg = firstHalf.length > 0 ? firstHalf.reduce((a, b) => a + b, 0) / firstHalf.length : 0;
+        const secondAvg = secondHalf.length > 0 ? secondHalf.reduce((a, b) => a + b, 0) / secondHalf.length : 0;
+
+        const trend = secondAvg - firstAvg;
+
+        // Determine recommendation
+        let direction = 'stable';
+        let recommendation = 'maintain_momentum';
+
+        if (avgSentiment > 0.3 || trend > 0.3) {
+            direction = 'warming';
+            recommendation = 'push_for_close';
+        } else if (avgSentiment < -0.3 || trend < -0.3) {
+            direction = 'cooling';
+            recommendation = 'de_escalate';
+        } else if (memory.rapportLevel < 30) {
+            direction = 'at_risk';
+            recommendation = 'rebuild_rapport';
+        }
+
+        return {
+            direction,
+            recommendation,
+            rapportLevel: memory.rapportLevel,
+            avgSentiment,
+            trend
+        };
+    }
+
+    // ========================================
+    // PHASE 9: WALK-AWAY INTELLIGENCE
+    // ========================================
+
+    // Assess if the negotiation is still viable
+    assessViability(negotiation, listing) {
+        const state = negotiation.negotiationState || {};
+        const memory = negotiation.memory || {};
+
+        // Death signals that indicate we should walk away
+        const deathSignals = {
+            hardNo: false,
+            priceGapTooLarge: false,
+            rejectionLimit: false,
+            rapportDead: false
+        };
+
+        // Check for hard rejection language in recent messages
+        const recentLandlordMessages = negotiation.messages
+            .filter(m => m.sender === 'landlord')
+            .slice(-3)
+            .map(m => m.content.toLowerCase())
+            .join(' ');
+
+        if (/absolutely not|never|no way|not negotiable|don't bother|waste.?of.?time/i.test(recentLandlordMessages)) {
+            deathSignals.hardNo = true;
+        }
+
+        // Check if price gap is too large (they want >110% of our max)
+        const landlordCounters = state.landlordCounters || [];
+        if (landlordCounters.length > 0) {
+            const theirMin = Math.min(...landlordCounters);
+            const ourMax = Math.round(listing.price * 0.90);
+            if (theirMin > ourMax * 1.15) {
+                deathSignals.priceGapTooLarge = true;
+            }
+        }
+
+        // Check rejection limit
+        if ((state.offersRejected || 0) >= 6) {
+            deathSignals.rejectionLimit = true;
+        }
+
+        // Check rapport level
+        if (memory.rapportLevel !== undefined && memory.rapportLevel < 20) {
+            deathSignals.rapportDead = true;
+        }
+
+        // Calculate viability score (0-100)
+        let viability = 100;
+        if (deathSignals.hardNo) viability -= 50;
+        if (deathSignals.priceGapTooLarge) viability -= 30;
+        if (deathSignals.rejectionLimit) viability -= 25;
+        if (deathSignals.rapportDead) viability -= 20;
+        viability = Math.max(0, viability);
+
+        // Determine recommendation
+        let recommendation = 'continue';
+        if (viability <= 0) {
+            recommendation = 'walk_away';
+        } else if (viability <= 30) {
+            recommendation = 'final_offer';
+        } else if (viability <= 50) {
+            recommendation = 'change_approach';
+        }
+
+        return {
+            viable: viability > 30,
+            viability,
+            deathSignals,
+            recommendation,
+            reason: this.getViabilityReason(deathSignals, viability)
+        };
+    }
+
+    // Get human-readable reason for viability assessment
+    getViabilityReason(deathSignals, viability) {
+        const reasons = [];
+
+        if (deathSignals.hardNo) {
+            reasons.push('landlord gave hard rejection');
+        }
+        if (deathSignals.priceGapTooLarge) {
+            reasons.push('price gap too large to bridge');
+        }
+        if (deathSignals.rejectionLimit) {
+            reasons.push('exceeded maximum rejection attempts');
+        }
+        if (deathSignals.rapportDead) {
+            reasons.push('rapport has deteriorated significantly');
+        }
+
+        if (reasons.length === 0) {
+            return viability >= 70 ? 'negotiation progressing normally' : 'negotiation challenging but viable';
+        }
+
+        return reasons.join('; ');
+    }
+
+    // Generate graceful walk-away message
+    generateWalkAwayMessage(negotiation, listing) {
+        const messages = [
+            `I appreciate your time. It seems we're too far apart on price. If anything changes, I'm still interested in ${listing.title}. Best of luck!`,
+            `Thank you for considering my offer. We couldn't quite make the numbers work, but I wish you the best in finding the right tenant.`,
+            `I understand we couldn't come to terms. If your situation changes, I'd still love to rent this place. Thanks for the conversation.`,
+            `It looks like we're not going to be able to make this work, and I respect that. If things change on your end, feel free to reach out. Take care!`,
+            `I've really enjoyed this place, but the numbers just don't work for me. I hope you find a great tenant. Best wishes!`
+        ];
+
+        return messages[Math.floor(Math.random() * messages.length)];
+    }
+
+    // ========================================
+    // PHASE 10: PROPERTY PERSONALIZATION
+    // ========================================
+
+    // Generate property-specific personalization context
+    getPropertyPersonalization(listing) {
+        const personalizations = [];
+
+        // Location-based
+        if (listing.city) {
+            personalizations.push(`I like that it's in ${listing.city}`);
+        }
+
+        // Room configuration
+        if (listing.bedrooms) {
+            if (listing.bedrooms === 1) {
+                personalizations.push("The one-bedroom setup is perfect for me");
+            } else if (listing.bedrooms === 2) {
+                personalizations.push("The second bedroom would make a great home office");
+            } else if (listing.bedrooms >= 3) {
+                personalizations.push(`The ${listing.bedrooms} bedrooms give me the space I need`);
+            }
+        }
+
+        // Property type
+        if (listing.house_type) {
+            const typeComments = {
+                'apartment': "I've been specifically looking for an apartment like this",
+                'house': "A house gives me the space and privacy I'm looking for",
+                'condo': "A condo is perfect - I like the balance of space and amenities",
+                'studio': "A studio is exactly what I need - efficient and cozy",
+                'room': "This room setup works well for my situation"
+            };
+            if (typeComments[listing.house_type.toLowerCase()]) {
+                personalizations.push(typeComments[listing.house_type.toLowerCase()]);
+            }
+        }
+
+        // Title-based (extract features)
+        if (listing.title) {
+            const titleLower = listing.title.toLowerCase();
+            if (/modern|renovated|updated|new/i.test(titleLower)) {
+                personalizations.push("I love that it's been updated");
+            }
+            if (/view|scenic|overlooking/i.test(titleLower)) {
+                personalizations.push("The view is incredible");
+            }
+            if (/spacious|large|big/i.test(titleLower)) {
+                personalizations.push("The spacious layout is exactly what I wanted");
+            }
+            if (/quiet|peaceful|serene/i.test(titleLower)) {
+                personalizations.push("I really value a quiet environment");
+            }
+            if (/pet|dog|cat/i.test(titleLower)) {
+                personalizations.push("Pet-friendly is a must for me");
+            }
+        }
+
+        // Return 1-2 random personalizations
+        if (personalizations.length === 0) {
+            return `I really like ${listing.title || 'this property'}`;
+        }
+
+        const shuffled = personalizations.sort(() => Math.random() - 0.5);
+        return shuffled.slice(0, Math.min(2, shuffled.length)).join('. ');
+    }
+
     // Initialize the negotiation engine
     async init() {
         try {
@@ -284,13 +1098,29 @@ class AINegotiator {
             // Check if market data supports our position
             const marketSupportsUs = marketData.average && marketData.average < listing.price;
 
+            // PHASE 10: Get property personalization for opening
+            const propertyPersonalization = this.getPropertyPersonalization(listing);
+
+            // PHASE 2: Default to playful voice for opening
+            const voice = this.voiceProfiles.playful;
+            const voiceInstructions = this.getVoiceInstructions(voice);
+
+            // PHASE 5: Select opening Cialdini principle (liking for rapport)
+            const openingPrinciple = this.cialdiniPrinciples.liking;
+
             const prompt = `
 You are an ELITE NEGOTIATOR making first contact. Confident, direct, professional. No fluff.
+
+===== VOICE: PLAYFUL/POSITIVE =====
+${voiceInstructions}
 
 ===== PROPERTY =====
 - ${listing.title} in ${listing.city}
 - Asking: $${listing.price}/month
 - Type: ${listing.house_type}, ${listing.bedrooms} bedrooms
+
+===== PROPERTY PERSONALIZATION =====
+Express genuine interest by referencing: "${propertyPersonalization}"
 
 ===== YOUR OPENING OFFER =====
 $${initialOffer}/month (strategic anchor - room to negotiate up)
@@ -298,18 +1128,22 @@ $${initialOffer}/month (strategic anchor - room to negotiate up)
 ===== MARKET INTELLIGENCE =====
 ${marketSupportsUs ? `Market average: $${marketData.average}/month - USE THIS to justify your offer!` : 'No useful market data - focus on your value as a tenant'}
 
+===== CIALDINI PRINCIPLE: LIKING =====
+${openingPrinciple.description}
+Build rapport through genuine appreciation of the property.
+
 ===== ELITE OPENING TACTICS =====
-1. Express genuine interest (1 sentence max)
+1. Express genuine interest using property personalization (1 sentence max)
 2. State your offer as a CONSTRAINT: "My budget allows $${initialOffer}" (Phantom Authority - subtle)
 3. Mention you're ready to sign immediately (creates urgency for them)
 4. Keep it SHORT - 2 sentences MAX. Long messages = desperation.
 
 ===== NLP TRIGGERS =====
-✅ USE: "I need", "The goal is", "Fair"
+✅ USE: "I need", "The goal is", "Fair", "I like"
 ❌ AVOID: "I think", "Maybe", "Would you consider", "Please"
 
 ===== EXAMPLE FORMAT =====
-"Interested in [property]. My budget allows $${initialOffer}/month - I'm a reliable tenant ready to sign today."
+"[Property detail that caught your eye]. My budget allows $${initialOffer}/month - I'm a reliable tenant ready to sign today."
 
 Generate ONLY the message. No greetings, no signatures.
 `;
@@ -525,8 +1359,23 @@ Generate ONLY the message. No greetings, no signatures.
 
             // Analyze the landlord's reply
             const analysis = await this.analyzeReply(message.content, negotiation, listing);
-            
+
             console.log('📊 Reply analysis:', analysis);
+
+            // PHASE 6: Update landlord personality profile
+            negotiation.landlordProfile = this.analyzeLandlordPersonality(negotiation.messages.concat([{
+                sender: 'landlord',
+                content: message.content
+            }]));
+            console.log('👤 Updated landlord profile:', negotiation.landlordProfile);
+
+            // PHASE 7: Update conversation memory
+            this.updateConversationMemory(negotiation, message.content, null, analysis);
+            console.log('🧠 Updated conversation memory:', negotiation.memory);
+
+            // PHASE 8: Detect escalation
+            const escalation = this.detectEscalation(negotiation);
+            console.log('📈 Escalation status:', escalation);
 
             // Update negotiation state
             negotiation.messages.push({
@@ -555,10 +1404,17 @@ Generate ONLY the message. No greetings, no signatures.
                 
                 if (response) {
                     console.log('📝 Generated response:', response);
-                    
-                    // Wait a bit to simulate thinking time
-                    await new Promise(resolve => setTimeout(resolve, 2000));
-                    
+
+                    // Calculate natural response delay based on context
+                    const responseDelay = this.calculateResponseDelay({
+                        messageLength: message.content?.length || 0,
+                        responseLength: response.length,
+                        emotionalContent: analysis.sentiment === 'negative' || analysis.sentiment === 'positive',
+                        isComplexDecision: analysis.makesCounterOffer || analysis.isFinalized
+                    });
+                    console.log('⏱️ Using natural delay:', responseDelay, 'ms');
+                    await new Promise(resolve => setTimeout(resolve, responseDelay));
+
                     // Send the response
                     console.log('📤 Sending response to conversation:', conversationId);
                     const sentSuccessfully = await this.sendNegotiationMessage(conversationId, response, negotiation.userEmail);
@@ -658,7 +1514,15 @@ Generate ONLY the message. No greetings, no signatures.
                 
                 const marketResponse = await this.generateMarketBasedNegotiation(negotiation, listing, message.content, analysis);
                 if (marketResponse) {
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    // Calculate natural delay for market-based response
+                    const marketDelay = this.calculateResponseDelay({
+                        messageLength: message.content?.length || 0,
+                        responseLength: marketResponse.length,
+                        emotionalContent: true, // Rejections are emotional
+                        isComplexDecision: true
+                    });
+                    console.log('⏱️ Using market response delay:', marketDelay, 'ms');
+                    await new Promise(resolve => setTimeout(resolve, marketDelay));
                     await this.sendNegotiationMessage(conversationId, marketResponse, negotiation.userEmail);
                     
                     negotiation.messages.push({
@@ -717,25 +1581,38 @@ Generate ONLY the message. No greetings, no signatures.
             if (pattern.test(lower)) {
                 // Calculate next offer (increment from current)
                 const nextOffer = this.getAckermanPrice(currentOffer + 50);
-                const wittyResponses = [
-                    `Ha! I appreciate the creativity, but I'm here for the apartment, not a date. 😄 So... $${nextOffer}/month - we doing this or what?`,
-                    `Smooth. But the only thing I'm trying to get into is that apartment. $${nextOffer}/month work for you?`,
-                    `Lol nice try. I'm flattered, but let's keep this professional. Back to business - $${nextOffer}/month?`,
-                    `😂 You're funny. But seriously though, I need a place to live, not a Tinder match. Can we do $${nextOffer}?`
-                ];
-                return wittyResponses[Math.floor(Math.random() * wittyResponses.length)];
+
+                // PHASE 4: Use response variation engine for witty redirects
+                const conversationId = negotiation?.listingId || 'default';
+                const uniqueResponse = this.getUniqueResponse(conversationId, 'witty_redirects', {
+                    offer: nextOffer
+                });
+
+                if (uniqueResponse) {
+                    return uniqueResponse;
+                }
+
+                // Fallback
+                return `Ha! I appreciate the creativity, but I'm here for the apartment, not a date. So... $${nextOffer}/month - we doing this or what?`;
             }
         }
 
         // Only catch truly random/test messages (not negotiation responses)
         if (/^(lol|lmao|haha|bruh|test|testing|asdf|hello|hi|hey|yo|sup|wassup|how are you)$/i.test(lower)) {
             const nextOffer = this.getAckermanPrice(currentOffer + 25);
-            const playfulResponses = [
-                `Haha, I feel you. But real talk - $${nextOffer}/month, can we make it happen?`,
-                `Lol. Anyway... about that apartment? $${nextOffer}/month sound fair?`,
-                `😄 Alright alright. So we doing this deal or what? $${nextOffer}/month.`
-            ];
-            return playfulResponses[Math.floor(Math.random() * playfulResponses.length)];
+
+            // PHASE 4: Use response variation engine for playful redirects
+            const conversationId = negotiation?.listingId || 'default';
+            const uniqueResponse = this.getUniqueResponse(conversationId, 'playful_redirects', {
+                offer: nextOffer
+            });
+
+            if (uniqueResponse) {
+                return uniqueResponse;
+            }
+
+            // Fallback
+            return `Haha, I feel you. But real talk - $${nextOffer}/month, can we make it happen?`;
         }
 
         return null; // Not off-topic, continue normal processing
@@ -1071,14 +1948,19 @@ Generate ONLY the message. No greetings, no signatures.
                 negotiation.negotiationState.lastOffer = ackermanCounter;
                 negotiation.negotiationState.concessionCount++;
 
-                // Elite response: Mirror + Phantom Authority
-                const competingOfferResponses = [
-                    `$${competingPrice}? That's strong. My budget is capped at $${ackermanCounter}. Help me bridge that gap?`,
-                    `$${competingPrice}... I hear you. The best I can authorize is $${ackermanCounter}. I'm ready to sign today.`,
-                    `$${competingPrice}? Respect. I can do $${ackermanCounter} and close immediately. A sure thing vs. a maybe?`,
-                    `Competing offer at $${competingPrice}? I can match at $${ackermanCounter} and sign today. What do you say?`
-                ];
-                return competingOfferResponses[Math.floor(Math.random() * competingOfferResponses.length)];
+                // PHASE 4: Use response variation engine for competing offer responses
+                const conversationId = negotiation.listingId || 'default';
+                const uniqueResponse = this.getUniqueResponse(conversationId, 'competing_offer_responses', {
+                    competing: competingPrice,
+                    offer: ackermanCounter
+                });
+
+                if (uniqueResponse) {
+                    return uniqueResponse;
+                }
+
+                // Fallback if all responses used
+                return `$${competingPrice}? That's strong. My budget is capped at $${ackermanCounter}. Help me bridge that gap?`;
             }
 
             // Handle REJECTION - increment offer and try new tactic
@@ -1094,18 +1976,18 @@ Generate ONLY the message. No greetings, no signatures.
                 negotiation.negotiationState.concessionCount++;
                 negotiation.negotiationState.offersRejected = (negotiation.negotiationState.offersRejected || 0) + 1;
 
-                // Vary response based on rejection count
-                const rejectionCount = negotiation.negotiationState.offersRejected;
-                const weeklyVacancyCost = Math.round(listing.price / 4);
+                // PHASE 4: Use response variation engine for rejection responses
+                const conversationId = negotiation.listingId || 'default';
+                const uniqueResponse = this.getUniqueResponse(conversationId, 'rejection_counters', {
+                    offer: nextOffer
+                });
 
-                const rejectionResponses = [
-                    `It sounds like that doesn't work. What would make $${nextOffer} work today?`,
-                    `I hear you. Let me stretch to $${nextOffer}. That's genuinely my limit. Can we close?`,
-                    `Every week vacant costs you $${weeklyVacancyCost}. I'm at $${nextOffer} and ready to sign now.`,
-                    `Would it be unreasonable to consider $${nextOffer}? I need to make a decision today.`,
-                    `You probably think I'm being difficult. I get it. $${nextOffer} is every dollar I have.`
-                ];
-                return rejectionResponses[Math.min(rejectionCount - 1, rejectionResponses.length - 1)];
+                if (uniqueResponse) {
+                    return uniqueResponse;
+                }
+
+                // Fallback if all responses used
+                return `It sounds like that doesn't work. What would make $${nextOffer} work today?`;
             }
 
             if (analysis.isFinalized && analysis.acceptsOffer) {
@@ -1244,18 +2126,20 @@ Generate ONLY the message. No greetings, no signatures.
             suggestion += 5;
         }
 
-        // If we've hit max, vary the response to avoid repetition
+        // If we've hit max, use response variation engine for max offer responses
         if (suggestion >= maxReasonableOffer) {
-            const maxOfferVariations = [
-                `$${maxReasonableOffer}/month is genuinely my max. I'm a reliable tenant ready to sign today. Can we make this work?`,
-                `Look, $${maxReasonableOffer} is every dollar I have. A guaranteed tenant today vs. more showings and uncertainty. What do you say?`,
-                `I can't go higher than $${maxReasonableOffer}. But I'm ready to sign right now with references in hand. Deal?`,
-                `$${maxReasonableOffer} - that's my ceiling. I know it's below asking, but I'm a sure thing. Let's close this.`,
-                `Would it be unreasonable to lock this in at $${maxReasonableOffer}? I can move fast and I won't waste your time.`
-            ];
-            // Pick based on rejection count to ensure variety
-            const variationIndex = (state.offersRejected || 0) % maxOfferVariations.length;
-            return maxOfferVariations[variationIndex];
+            // PHASE 4: Use response variation engine for max offer responses
+            const conversationId = negotiation?.listingId || 'default';
+            const uniqueResponse = this.getUniqueResponse(conversationId, 'max_offer_responses', {
+                offer: maxReasonableOffer
+            });
+
+            if (uniqueResponse) {
+                return uniqueResponse;
+            }
+
+            // Fallback if all responses used
+            return `$${maxReasonableOffer}/month is genuinely my max. I'm a reliable tenant ready to sign today. Can we make this work?`;
         }
 
         console.log('📊 generateMarketBasedResponse: baseline:', baseline, '-> suggestion:', suggestion, '(max:', maxReasonableOffer, ')');
@@ -1593,7 +2477,20 @@ Generate ONLY the message. No greetings, no signatures.
                     concessionCount: 0, // How many times we've increased our offer
                     maxConcessions: 4, // Don't concede more than 4 times
                     currentPhase: 'opening' // opening, bargaining, closing, final
-                }
+                },
+                // PHASE 6: Landlord personality profile
+                landlordProfile: this.getDefaultLandlordProfile(),
+                // PHASE 7: Conversation memory
+                memory: {
+                    landlordConcerns: [],
+                    effectivePhrases: [],
+                    ineffectivePhrases: [],
+                    rapportLevel: 50, // Start neutral (0-100)
+                    topicsDiscussed: [],
+                    sentimentTrend: []
+                },
+                // PHASE 10: Property personalization
+                propertyPersonalization: this.getPropertyPersonalization(listing)
             });
 
             return {
@@ -1648,6 +2545,30 @@ Generate ONLY the message. No greetings, no signatures.
                 tacticsUsed: []
             };
 
+            // PHASE 6: Analyze landlord personality from message history
+            const landlordProfile = this.analyzeLandlordPersonality(negotiation.messages);
+            negotiation.landlordProfile = landlordProfile;
+            console.log('👤 Landlord profile:', landlordProfile);
+
+            // PHASE 7: Update conversation memory
+            this.updateConversationMemory(negotiation, landlordMessage, null, analysis);
+            const memory = negotiation.memory || {};
+            console.log('🧠 Conversation memory:', memory);
+
+            // PHASE 8: Detect escalation direction
+            const escalation = this.detectEscalation(negotiation);
+            console.log('📈 Escalation detection:', escalation);
+
+            // PHASE 9: Assess deal viability
+            const viability = this.assessViability(negotiation, listing);
+            console.log('💡 Deal viability:', viability);
+
+            // If deal is dead, generate walk-away message
+            if (viability.recommendation === 'walk_away') {
+                console.log('🚶 Generating walk-away message - deal no longer viable');
+                return this.generateWalkAwayMessage(negotiation, listing);
+            }
+
             // CRITICAL: Never offer more than 90% of listing price - always leave negotiation room
             const maxOffer = Math.round(listing.price * 0.90);
             const startingPoint = negotiation.userBudget || Math.round(listing.price * 0.70);
@@ -1682,8 +2603,35 @@ Generate ONLY the message. No greetings, no signatures.
 
             console.log('   - Next offer will be:', nextOffer, '(Ackerman:', ackermanOffer, ', increment:', increment, ')');
 
-            // Select combined tactic based on round
-            const tacticToUse = this.getTacticForRound(state.offersRejected);
+            // PHASE 2: Select voice based on context
+            const voice = this.getVoiceForContext(landlordProfile, state.currentPhase, state.offersRejected);
+            const voiceInstructions = this.getVoiceInstructions(voice);
+            console.log('🎙️ Selected voice:', voice.name);
+
+            // PHASE 3: Select tactic intelligently based on context
+            const tacticContext = {
+                messageContent: landlordMessage,
+                emotionalContent: analysis?.sentiment === 'negative' || landlordProfile.emotionalState === 'frustrated',
+                rejectionCount: state.offersRejected,
+                priceObjection: /price|too low|can't accept|firm/i.test(landlordMessage),
+                recentTactics: state.tacticsUsed,
+                landlordProfile: landlordProfile,
+                phase: state.currentPhase
+            };
+            const intelligentTactic = this.selectTacticForContext(tacticContext);
+            const tacticInstructions = this.getTacticInstructions(intelligentTactic);
+            console.log('🎯 Selected tactic:', intelligentTactic);
+
+            // PHASE 5: Select Cialdini principle
+            const cialdiniContext = {
+                phase: state.currentPhase,
+                rejectionCount: state.offersRejected,
+                landlordProfile: landlordProfile,
+                hasMarketData: marketData.average && Math.abs(marketData.average - listing.price) > 50
+            };
+            const selectedPrinciple = this.selectCialdiniPrinciple(cialdiniContext);
+            const principleInfo = this.cialdiniPrinciples[selectedPrinciple];
+            console.log('🔮 Selected Cialdini principle:', selectedPrinciple);
 
             // Build full conversation history
             const fullHistory = negotiation.messages.map(m => `${m.sender.toUpperCase()}: ${m.content}`).join('\n');
@@ -1694,8 +2642,26 @@ Generate ONLY the message. No greetings, no signatures.
             // Calculate vacancy cost for loss aversion
             const weeklyVacancyCost = Math.round(listing.price / 4);
 
+            // PHASE 10: Get property personalization
+            const propertyContext = negotiation.propertyPersonalization || this.getPropertyPersonalization(listing);
+
             const prompt = `
-You are an ELITE NEGOTIATOR. Ruthless but professional. Direct, no fluff, but not rude. Your goal is to secure the property at the target price.
+You are an ELITE NEGOTIATOR with tactical empathy. Your goal is to secure the property at the target price.
+
+===== VOICE FOR THIS MESSAGE: ${voice.name.toUpperCase()} =====
+${voiceInstructions}
+
+===== LANDLORD PROFILE =====
+- Style: ${landlordProfile.style}
+- Emotional State: ${landlordProfile.emotionalState}
+- Warmth Level: ${landlordProfile.warmthLevel}/100
+- Concerns: ${landlordProfile.concerns.join(', ') || 'none detected yet'}
+
+===== CONVERSATION MEMORY =====
+- Rapport Level: ${memory.rapportLevel || 50}/100
+- Escalation: ${escalation.direction} (${escalation.recommendation})
+- Their Concerns: ${memory.landlordConcerns?.join(', ') || 'none yet'}
+- Topics Discussed: ${memory.topicsDiscussed?.join(', ') || 'none yet'}
 
 ===== LANDLORD'S MESSAGE =====
 "${landlordMessage}"
@@ -1709,85 +2675,41 @@ ${fullHistory || 'First exchange'}
 - Your offer: $${ackermanOffer}/month
 - Hard ceiling: $${maxOffer}/month (NEVER exceed)
 
-===== PSYCHOLOGICAL WEAPONS =====
+===== TACTIC FOR THIS RESPONSE: ${intelligentTactic.toUpperCase()} =====
+${tacticInstructions}
 
-**PHANTOM AUTHORITY** - Subtle hints at external constraints (use sparingly, ~30% of responses):
-- "My budget is capped at $${ackermanOffer}" (implies external limit)
-- "I can't authorize above $${ackermanOffer}" (sounds like someone else controls it)
-- Only occasionally mention "advisor" or "partner" - keep it subtle
-- Makes it: "You + Me vs. The Budget" instead of "You vs. Me"
+===== CIALDINI PRINCIPLE TO WEAVE IN: ${principleInfo.name.toUpperCase()} =====
+${principleInfo.description}
+Examples: ${principleInfo.examples.slice(0, 2).join('; ')}
+
+===== PROPERTY PERSONALIZATION =====
+Reference if natural: "${propertyContext}"
+
+===== PSYCHOLOGICAL WEAPONS =====
 
 **ACKERMAN FRAMING** - Use precise numbers:
 - Offer $${ackermanOffer} (not round numbers like $${Math.round(nextOffer / 100) * 100})
-- "This is my calculated maximum after expenses"
 - Precise numbers feel like real limits, not arbitrary guesses
 
 **NLP TRIGGERS**:
 ✅ USE: "Correct", "Fair", "The goal is", "Let's resolve", "I need"
 ❌ AVOID: "I think", "Maybe", "Can we", "Please", "How about"
 
-**"NO" TECHNIQUE**:
-- Ask: "Would it be unreasonable to consider $${ackermanOffer}?"
-- Gets psychological commitment when they say "No, it's not unreasonable"
-- Then: "Great, so $${ackermanOffer} works?"
-
 **LOSS AVERSION WITH MATH**:
 - Weekly vacancy cost: $${weeklyVacancyCost}
-- Say: "Every week vacant costs you $${weeklyVacancyCost}. My offer today stops the bleeding."
-
-===== TACTIC FOR THIS ROUND: ${tacticToUse.toUpperCase()} =====
-
-TACTIC COMBINATIONS:
-${tacticToUse === 'mirroring_phantom' ? `
-**MIRRORING + PHANTOM AUTHORITY**
-1. Mirror their last 3-5 words as a question
-2. Then hint at budget constraint (without naming "advisor" every time)
-Example: "$1100? My budget is capped at $${ackermanOffer}. Help me bridge that gap?"
-` : ''}
-${tacticToUse === 'labeling_loss' ? `
-**LABELING + LOSS AVERSION**
-1. Label their emotion/situation: "It sounds like...", "It seems like..."
-2. Then frame the cost of waiting: vacancy = $${weeklyVacancyCost}/week lost
-Example: "It sounds like you're weighing options. Every week vacant is $${weeklyVacancyCost} lost. I'm ready at $${ackermanOffer} today."
-` : ''}
-${tacticToUse === 'calibrated_no' ? `
-**CALIBRATED QUESTION + "NO" TECHNIQUE**
-1. Ask "How..." or "What..." to make them problem-solve
-2. Use "Would it be unreasonable..." to get their "no"
-Example: "What would it take to make $${ackermanOffer} work? Would it be unreasonable to close at that today?"
-` : ''}
-${tacticToUse === 'accusation_ackerman' ? `
-**ACCUSATION AUDIT + ACKERMAN MATH**
-1. Preempt their objection: "You probably think..."
-2. Counter with precise calculated number
-Example: "You probably think I'm being difficult. I get it. After calculating my exact expenses, $${ackermanOffer} is every dollar I have."
-` : ''}
-${tacticToUse === 'phantom_pressure' ? `
-**PHANTOM AUTHORITY + TIME PRESSURE**
-1. Hint at external constraint on budget
-2. Add urgency without desperation
-Example: "I can't authorize above $${ackermanOffer}. I need to make a decision today - what do you say?"
-` : ''}
-
-===== RESPONSE TEMPLATES FOR COMMON SCENARIOS =====
-
-IF landlord mentions "competing offer at $X":
-→ Mirror + Phantom: "$X? That's strong. My budget is capped at $${ackermanOffer}. Help me bridge that gap?"
-
-IF landlord says "no" or rejects:
-→ Label + Calibrated: "It sounds like that doesn't work. What would make $${ackermanOffer} work today?"
-
-IF landlord says "price is firm":
-→ Phantom + Flexibility: "I understand. I can't authorize above $${ackermanOffer}. Any flexibility on move-in or lease terms?"
+- Use sparingly: "Every week vacant costs you $${weeklyVacancyCost}."
 
 ===== CRITICAL RULES =====
 1. MAX 2 sentences - Long text = desperation
-2. Use ${tacticToUse} tactic IMMEDIATELY in your response
-3. State offer as CONSTRAINT not REQUEST ("The best I can authorize is $${ackermanOffer}" not "Can we do $${ackermanOffer}?")
-4. End with offer or question, then STOP (strategic silence)
-5. NEVER exceed $${maxOffer}
-6. ${hasUsefulMarketData ? `USE market data: Average is $${marketData.average}` : 'NO market data - pivot to reliability and ready-to-sign'}
-7. NEVER repeat an offer already in: ${state.offersMade.join(', ') || 'none'}
+2. Use ${voice.name} voice tone throughout
+3. Apply ${intelligentTactic} tactic naturally
+4. Weave in ${principleInfo.name} principle subtly (don't force it)
+5. Reference property detail if it fits naturally
+6. State offer as CONSTRAINT not REQUEST
+7. End with offer or question, then STOP (strategic silence)
+8. NEVER exceed $${maxOffer}
+9. ${hasUsefulMarketData ? `USE market data: Average is $${marketData.average}` : 'NO market data - pivot to reliability and ready-to-sign'}
+10. NEVER repeat an offer already in: ${state.offersMade.join(', ') || 'none'}
 
 Generate ONLY the response. No fluff. No signatures.
 `;
