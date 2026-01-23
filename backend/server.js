@@ -1306,15 +1306,26 @@ app.delete('/api/listings/:id', async (req, res) => {
         if (supabase) {
             try {
                 // First verify the listing belongs to the user
+                console.log(`🔍 Looking up listing ${listingId} in Supabase...`);
                 const { data: listing, error: fetchError } = await supabase
                     .from('listings')
                     .select('*')
                     .eq('id', listingId)
                     .single();
-                
+
                 if (fetchError) {
-                    console.error('Error fetching listing:', fetchError);
-                    return res.status(404).json({ error: 'Listing not found' });
+                    console.error('❌ Error fetching listing:', fetchError);
+                    console.error('   Listing ID:', listingId);
+                    console.error('   User email:', userEmail);
+
+                    // Check if this is a "no rows" error vs actual error
+                    if (fetchError.code === 'PGRST116') {
+                        return res.status(404).json({
+                            error: 'Listing not found',
+                            details: `No listing exists with ID: ${listingId}`
+                        });
+                    }
+                    return res.status(404).json({ error: 'Listing not found', details: fetchError.message });
                 }
                 
                 // Check if user owns the listing

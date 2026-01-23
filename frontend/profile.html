@@ -2019,32 +2019,35 @@
                     
                     const result = await response.json();
                     
-                    if (response.ok) {
-                        console.log('✅ Listing deleted successfully:', result);
-                        
-                        // Remove from global variable immediately
-                        currentUserListings = currentUserListings.filter(l => l.id !== id);
-                        
-                        // Remove from localStorage cache (but don't fail if storage is full)
+                    // Helper function to clean up localStorage
+                    const cleanupLocalStorage = () => {
                         try {
                             const userListingsKey = `userListings_${currentUser.email}`;
                             let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
                             userListings = userListings.filter(l => l.id !== id);
                             safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
-                            
-                            // Also remove from allListings if it exists
+
                             let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
                             allListings = allListings.filter(l => l.id !== id);
                             safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
                         } catch (storageError) {
                             console.warn('⚠️ Could not update localStorage cache after delete');
                         }
-                        
-                        // Reload the listings display
+                    };
+
+                    if (response.ok) {
+                        console.log('✅ Listing deleted successfully:', result);
+                        currentUserListings = currentUserListings.filter(l => l.id !== id);
+                        cleanupLocalStorage();
                         loadUserListings(currentUser);
-                        
-                        // Show success message
                         alert('Listing deleted successfully!');
+                    } else if (response.status === 404) {
+                        // Listing not in database - it's an orphan in localStorage only
+                        console.warn('⚠️ Listing not found in database, cleaning up localStorage orphan');
+                        currentUserListings = currentUserListings.filter(l => l.id !== id);
+                        cleanupLocalStorage();
+                        loadUserListings(currentUser);
+                        alert('Listing removed (it was not saved to the database).');
                     } else {
                         throw new Error(result.error || 'Failed to delete listing');
                     }
