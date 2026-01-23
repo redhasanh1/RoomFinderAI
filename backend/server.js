@@ -4144,17 +4144,27 @@ app.post('/api/reverse-geocode', async (req, res) => {
         const address = data.address;
 
         // Extract location components
+        // Build street address from house_number and road
+        let street = null;
+        if (address.road) {
+            street = address.house_number
+                ? `${address.house_number} ${address.road}`
+                : address.road;
+        }
+
         const result = {
             success: true,
+            street: street,
             city: address.city || address.town || address.village || address.municipality || address.county || null,
             state: address.state || address.province || null,
             zip: address.postcode || null,
             country: address.country || null,
             neighborhood: address.suburb || address.neighbourhood || null,
-            displayName: data.display_name || null
+            displayName: data.display_name || null,
+            source: 'gps'
         };
 
-        console.log(`✅ Location resolved: ${result.city}, ${result.state} ${result.zip}`);
+        console.log(`✅ Location resolved: ${result.street}, ${result.city}, ${result.state} ${result.zip}`);
 
         res.json(result);
 

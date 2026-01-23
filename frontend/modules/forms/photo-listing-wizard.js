@@ -1199,10 +1199,10 @@ class PhotoListingWizard {
             { id: 'title', value: analysis.title, delay: 0 },
             { id: 'houseType', value: analysis.house_type, isSelect: true, delay: 200 },
             { id: 'bedrooms', value: analysis.bedrooms, delay: 400 },
-            { id: 'location', value: locationStr, delay: 500 }, // Add location if field exists
-            { id: 'city', value: location?.city || '', delay: 500 }, // Some forms use city field
-            { id: 'state', value: location?.state || '', isSelect: true, delay: 550 },
-            { id: 'zipCode', value: location?.zip || '', delay: 600 },
+            { id: 'city', value: location?.city || '', delay: 500 },
+            { id: 'country', value: location?.country || '', delay: 520 },
+            { id: 'street', value: location?.street || '', delay: 550 },
+            { id: 'postalCode', value: location?.zip || '', delay: 600 },
             { id: 'price', value: analysis.suggestedPrice, delay: 700 },
             { id: 'description', value: analysis.description, delay: 900 }
         ];
