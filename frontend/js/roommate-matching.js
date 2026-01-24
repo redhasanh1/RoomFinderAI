@@ -455,18 +455,42 @@ class RoomPalApp {
         this.showToast('Preferences saved!', 'success');
     }
 
-    handleMessageSubmit(e) {
+    async handleMessageSubmit(e) {
         e.preventDefault();
+
+        // Verify user is still authenticated
+        if (!this.requireAuth('send messages')) {
+            return;
+        }
 
         const form = e.target;
         const message = form.querySelector('textarea[name="message"]').value;
 
-        // In a real app, this would send through the API
-        console.log('Sending message:', message, 'to:', this.messageRecipient);
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Sending...';
+        submitBtn.disabled = true;
 
-        this.showToast('Message sent!', 'success');
-        this.closeMessageModal();
-        form.reset();
+        try {
+            // Send through API if available
+            if (this.api && this.api.initialized) {
+                const result = await this.api.sendMessage(this.messageRecipient.id, message);
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to send message');
+                }
+            }
+
+            this.showToast('Message sent!', 'success');
+            this.closeMessageModal();
+            form.reset();
+        } catch (error) {
+            console.error('Error sending message:', error);
+            this.showToast('Failed to send message. Please try again.', 'error');
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
     }
 
     handlePhotoUpload(e, type) {
@@ -545,6 +569,11 @@ class RoomPalApp {
     }
 
     inviteToGroup(seekerId) {
+        // Require login before inviting
+        if (!this.requireAuth('invite people to your group')) {
+            return;
+        }
+
         if (!this.userGroup) {
             if (confirm('You need to create a group first. Create one now?')) {
                 this.createGroup();
@@ -620,6 +649,11 @@ class RoomPalApp {
     // ==================== MODALS ====================
 
     openMessage(type, id, name) {
+        // Require login before messaging
+        if (!this.requireAuth('send messages')) {
+            return;
+        }
+
         this.messageRecipient = { type, id, name };
 
         const recipientEl = document.getElementById('messageRecipient');
@@ -666,6 +700,20 @@ class RoomPalApp {
     viewSeeker(seekerId) {
         console.log('Viewing seeker:', seekerId);
         // In a real app, this would open a detailed seeker profile
+    }
+
+    // ==================== AUTHENTICATION ====================
+
+    requireAuth(action = 'perform this action') {
+        // Check localStorage user first
+        if (this.currentUser) {
+            return true;
+        }
+
+        // Not authenticated - show message and redirect
+        alert(`Please log in to ${action}.`);
+        window.location.href = 'login.html';
+        return false;
     }
 
     // ==================== UTILITIES ====================
