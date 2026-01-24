@@ -30,6 +30,38 @@ class AINegotiator {
         return basePrice + variation;
     }
 
+    // Calculate percentage-based increment that scales with property value
+    calculatePercentageIncrement(listingPrice, concessionRound) {
+        // Percentage ranges that decrease with each concession (balanced 2-4% strategy)
+        const percentageRanges = [
+            { min: 0.03, max: 0.04 },   // Round 1: 3-4%
+            { min: 0.025, max: 0.035 }, // Round 2: 2.5-3.5%
+            { min: 0.02, max: 0.03 },   // Round 3: 2-3%
+            { min: 0.015, max: 0.025 }, // Round 4: 1.5-2.5%
+            { min: 0.01, max: 0.02 }    // Round 5+: 1-2%
+        ];
+
+        const roundIndex = Math.min(concessionRound, percentageRanges.length - 1);
+        const range = percentageRanges[roundIndex];
+
+        // Random percentage within range for this round
+        const randomPct = range.min + (Math.random() * (range.max - range.min));
+
+        // Calculate dollar increment
+        let increment = Math.round(listingPrice * randomPct);
+
+        // Apply minimum floor based on price tier
+        const minIncrement = listingPrice < 2000 ? 25 : (listingPrice < 5000 ? 50 : 75);
+        increment = Math.max(increment, minIncrement);
+
+        // Add authenticity variation (±10 dollars)
+        const authenticVariation = Math.floor(Math.random() * 20) - 10;
+        increment += authenticVariation;
+
+        // Ensure we never go below the floor
+        return Math.max(minIncrement, increment);
+    }
+
     // ========================================
     // PHASE 1: NATURAL RESPONSE TIMING
     // ========================================
@@ -256,7 +288,24 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
             "Understood. What if I do ${offer} and sign immediately?",
             "I appreciate you being direct. ${offer} - can we make this happen?",
             "Respect. ${offer} with references in hand. What do you say?",
-            "${offer}. I'm ready to move fast. Can we close this today?"
+            "${offer}. I'm ready to move fast. Can we close this today?",
+
+            // Additional 15 variants for better variation
+            "I respect that. ${offer} is where my budget lands - can we work with that?",
+            "Fair. ${offer} and I can move in this weekend. Does that help?",
+            "Understood. What if I offered ${offer} on a longer lease for stability?",
+            "Got it. ${offer} - plus I'm flexible on move-in date. Thoughts?",
+            "I hear you. ${offer} is genuinely where I am. Open to discussing terms?",
+            "${offer} feels right given the market. Can we align on that?",
+            "Makes sense. ${offer} with a 13-month lease to cover you year-round?",
+            "Cool. ${offer} - I'm pre-approved and ready. What do you need from me?",
+            "Alright. ${offer} and I can provide first/last/security upfront. Deal?",
+            "Right. ${offer} - quiet tenant, no pets, excellent credit. Works?",
+            "${offer} - I work from home so property care is a priority. Consider it?",
+            "Okay. ${offer} and I'm happy to meet in person to discuss. Available?",
+            "Noted. ${offer} - similar units nearby are going for that. Make sense?",
+            "${offer} is my comfort zone. Happy to share references now. Interested?",
+            "Appreciate the honesty. ${offer} - let's not let a great match slip away."
         ],
 
         competing_offer_responses: [
@@ -305,6 +354,34 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
             "Alright alright. So we doing this deal or what? ${offer}/month.",
             "Ha! Okay okay. Back to business - ${offer}/month work for you?",
             "I like your style! But about that rent... ${offer}?"
+        ],
+
+        // Softening phrases to show empathy (especially for frustrated landlords)
+        softening_phrases: [
+            "I totally get where you're coming from.",
+            "I appreciate you being straight with me.",
+            "Fair point.",
+            "Makes sense from your perspective.",
+            "I respect that position.",
+            "Completely understand.",
+            "That's reasonable to say.",
+            "I hear what you're saying.",
+            "You make a valid point.",
+            "I can see that."
+        ],
+
+        // Value propositions to demonstrate tenant quality
+        value_propositions: [
+            "I'm handy - happy to help with minor repairs",
+            "I work remotely so I can receive deliveries/contractors",
+            "I've rented from the same landlord for 5+ years",
+            "My current landlord can vouch for me",
+            "I keep places spotless - it's a thing",
+            "Zero late payments in my rental history",
+            "I'm quiet, no parties, respect neighbors",
+            "Happy to do a longer lease for mutual stability",
+            "I have excellent credit and strong references",
+            "I'm financially stable with steady employment"
         ]
     };
 
@@ -341,6 +418,57 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
         }
 
         return response;
+    }
+
+    // Construct dynamic message with contextual elements for authenticity
+    constructDynamicMessage(templateType, variables, landlordProfile, negotiation) {
+        // Get base template using the variation engine
+        let message = this.getUniqueResponse(
+            negotiation.listingId || 'default',
+            templateType,
+            variables
+        );
+
+        if (!message) return null;
+
+        // 30% chance to add softening phrase if landlord is frustrated
+        if (Math.random() < 0.3 && landlordProfile?.emotionalState === 'frustrated') {
+            const soften = this.responseTemplates.softening_phrases[
+                Math.floor(Math.random() * this.responseTemplates.softening_phrases.length)
+            ];
+            message = `${soften} ${message}`;
+        }
+
+        // 25% chance to add value proposition after 2+ concessions
+        const concessionCount = negotiation.negotiationState?.concessionCount || 0;
+        if (Math.random() < 0.25 && concessionCount >= 2) {
+            const value = this.responseTemplates.value_propositions[
+                Math.floor(Math.random() * this.responseTemplates.value_propositions.length)
+            ];
+            message += ` ${value}.`;
+        }
+
+        // Randomly vary sentence structure for authenticity
+        message = this.varyStructure(message);
+
+        return message;
+    }
+
+    // Helper to vary sentence structure for more natural messages
+    varyStructure(text) {
+        // Randomly convert some statements to questions (15% chance)
+        if (Math.random() < 0.15 && !text.includes('?')) {
+            return text.replace(/\.$/, '?');
+        }
+
+        // Randomly add conversational fillers (20% chance)
+        const fillers = ['', 'Look, ', 'Listen, ', 'Honestly, ', 'Real talk - '];
+        if (Math.random() < 0.2 && !text.match(/^(Look|Listen|Honestly|Real talk)/)) {
+            const filler = fillers[Math.floor(Math.random() * fillers.length)];
+            return filler + text;
+        }
+
+        return text;
     }
 
     // ========================================
@@ -1679,9 +1807,10 @@ Generate ONLY the message. No greetings, no signatures.
         // Remove punctuation and trim
         const simpleReply = replyContent.trim().toLowerCase().replace(/[!.,?]+$/g, '');
 
-        // More flexible regex to catch variations like "yes that works", "ok sounds good", etc.
-        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely)(\s+(that|it|this))?\s*(works|sounds good|sounds great|for me)?[!.?]*$/i.test(simpleReply) ||
-                                   /^(i|we|that|it|this)?\s*(accept|agree|sounds good|works for me|that works)$/i.test(simpleReply);
+        // Enhanced acceptance detection - catches more variations of positive responses
+        const isSimpleAcceptance = /^(sure|yes|ok|okay|sounds good|works|fine|agreed|deal|sounds great|yep|yeah|absolutely|lets do it|im in|done|accept|perfect|great|excellent)(\s+(that|it|this))?\s*(works|sounds good|sounds great|for me|lets do it)?[!.?]*$/i.test(simpleReply) ||
+                                   /^(i|we|that|it|this)?\s*(accept|agree|sounds good|works for me|that works|lets do this|im down)$/i.test(simpleReply) ||
+                                   /\b(you got it|you have a deal|deal|sold|im in)\b/i.test(simpleReply);
 
         if (isSimpleAcceptance) {
             console.log('🎯 IMMEDIATE ACCEPTANCE DETECTED:', simpleReply);
@@ -1754,8 +1883,8 @@ Generate ONLY the message. No greetings, no signatures.
             const maxOffer = Math.round(listing.price * 0.90);
 
             // Calculate next offer - ALWAYS increment after rejection
-            const increments = [75, 50, 35, 25, 15];
-            const increment = increments[Math.min(state.concessionCount || 0, increments.length - 1)];
+            // Use percentage-based increment that scales with property value
+            const increment = this.calculatePercentageIncrement(listing.price, state.concessionCount || 0);
             let nextOffer = Math.min((state.lastOffer || negotiation.userBudget) + increment, maxOffer);
 
             // Never repeat an offer
@@ -1967,15 +2096,17 @@ Generate ONLY the message. No greetings, no signatures.
                 negotiation.negotiationState.lastOffer = ackermanCounter;
                 negotiation.negotiationState.concessionCount++;
 
-                // PHASE 4: Use response variation engine for competing offer responses
-                const conversationId = negotiation.listingId || 'default';
-                const uniqueResponse = this.getUniqueResponse(conversationId, 'competing_offer_responses', {
-                    competing: competingPrice,
-                    offer: ackermanCounter
-                });
+                // PHASE 4: Use dynamic message constructor for competing offer responses
+                const landlordProfile = negotiation.landlordProfile || { emotionalState: 'neutral' };
+                const dynamicResponse = this.constructDynamicMessage(
+                    'competing_offer_responses',
+                    { competing: competingPrice, offer: ackermanCounter },
+                    landlordProfile,
+                    negotiation
+                );
 
-                if (uniqueResponse) {
-                    return uniqueResponse;
+                if (dynamicResponse) {
+                    return dynamicResponse;
                 }
 
                 // Fallback if all responses used
@@ -1995,14 +2126,17 @@ Generate ONLY the message. No greetings, no signatures.
                 negotiation.negotiationState.concessionCount++;
                 negotiation.negotiationState.offersRejected = (negotiation.negotiationState.offersRejected || 0) + 1;
 
-                // PHASE 4: Use response variation engine for rejection responses
-                const conversationId = negotiation.listingId || 'default';
-                const uniqueResponse = this.getUniqueResponse(conversationId, 'rejection_counters', {
-                    offer: nextOffer
-                });
+                // PHASE 4: Use dynamic message constructor for authentic rejection responses
+                const landlordProfile = negotiation.landlordProfile || { emotionalState: 'neutral' };
+                const dynamicResponse = this.constructDynamicMessage(
+                    'rejection_counters',
+                    { offer: nextOffer },
+                    landlordProfile,
+                    negotiation
+                );
 
-                if (uniqueResponse) {
-                    return uniqueResponse;
+                if (dynamicResponse) {
+                    return dynamicResponse;
                 }
 
                 // Fallback if all responses used
@@ -2065,8 +2199,8 @@ Generate ONLY the message. No greetings, no signatures.
         // Calculate our counter using incremental concession strategy
         // Don't just offer 92% of their counter - make strategic increments from our last offer
         const lastOffer = state.lastOffer || userBudget;
-        const increments = [50, 25, 15, 10]; // Decreasing increments show we're reaching our limit
-        const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+        // Use percentage-based increment that scales with property value
+        const increment = this.calculatePercentageIncrement(listing.price, state.concessionCount);
 
         // Our new offer: last offer + small increment, but never exceed budget or their counter
         let newOffer = Math.min(lastOffer + increment, userBudget, counterPrice);
@@ -2133,9 +2267,8 @@ Generate ONLY the message. No greetings, no signatures.
             : startingPoint;
         const baseline = Math.max(state.lastOffer || startingPoint, highestPrevious);
 
-        // Calculate next offer with increment
-        const increments = [50, 25, 15, 10, 5];
-        const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+        // Calculate next offer with percentage-based increment
+        const increment = this.calculatePercentageIncrement(listing.price, state.concessionCount);
 
         // CRITICAL: Never offer more than 90% of listing price - leave room to negotiate
         let suggestion = Math.min(baseline + increment, maxReasonableOffer);
@@ -2145,16 +2278,19 @@ Generate ONLY the message. No greetings, no signatures.
             suggestion += 5;
         }
 
-        // If we've hit max, use response variation engine for max offer responses
+        // If we've hit max, use dynamic message constructor for max offer responses
         if (suggestion >= maxReasonableOffer) {
-            // PHASE 4: Use response variation engine for max offer responses
-            const conversationId = negotiation?.listingId || 'default';
-            const uniqueResponse = this.getUniqueResponse(conversationId, 'max_offer_responses', {
-                offer: maxReasonableOffer
-            });
+            // PHASE 4: Use dynamic message constructor for authentic max offer responses
+            const landlordProfile = negotiation?.landlordProfile || { emotionalState: 'neutral' };
+            const dynamicResponse = this.constructDynamicMessage(
+                'max_offer_responses',
+                { offer: maxReasonableOffer },
+                landlordProfile,
+                negotiation
+            );
 
-            if (uniqueResponse) {
-                return uniqueResponse;
+            if (dynamicResponse) {
+                return dynamicResponse;
             }
 
             // Fallback if all responses used
@@ -2607,9 +2743,8 @@ Generate ONLY the message. No greetings, no signatures.
             // Calculate next offer using incremental concessions
             let nextOffer = lastOffer;
 
-            // Incremental concession logic: smaller increases each time
-            const increments = [50, 25, 15, 10, 5]; // Decreasing increments
-            const increment = increments[Math.min(state.concessionCount, increments.length - 1)];
+            // Incremental concession logic: percentage-based increases that scale with property value
+            const increment = this.calculatePercentageIncrement(listing.price, state.concessionCount);
             nextOffer = Math.min(lastOffer + increment, maxOffer); // Cap at 90%, not 100%
 
             // CRITICAL: Make sure we NEVER offer the same price twice
@@ -2842,33 +2977,70 @@ Generate ONLY the response. No fluff. No signatures.
     // Notify when negotiation is complete
     async notifyNegotiationComplete(negotiation, landlordMessage = null) {
         try {
-            console.log('📤 Sending negotiation completion notification for user:', negotiation.userEmail);
-            
-            const landlordReply = landlordMessage ? `\n\n**Landlord's Reply:** "${landlordMessage}"` : '';
+            console.log('🎉 Sending enhanced negotiation completion notification for user:', negotiation.userEmail);
+
+            // Calculate savings and percentage
             const savings = negotiation.originalPrice - negotiation.finalPrice;
-            const savingsText = savings > 0 ? `\nSavings: $${savings}/month` : '';
-            
+            const savingsPercent = Math.round((savings / negotiation.originalPrice) * 100);
+            const landlordReply = landlordMessage ? `\n\n**Landlord's Response:** "${landlordMessage}"` : '';
+
+            // Enhanced next steps guidance
+            const nextSteps = [
+                'Contact landlord to schedule viewing/signing',
+                'Prepare required documents (ID, references, pay stubs)',
+                'Review and sign lease agreement',
+                'Arrange security deposit and first month rent'
+            ];
+
             const notificationData = {
                 user_email: negotiation.userEmail,
                 conversation_data: JSON.stringify([{
                     role: 'assistant',
-                    content: `🎉 **Negotiation Successful!**\n\nProperty: ${negotiation.listingTitle}\nFinal Price: $${negotiation.finalPrice}/month\nOriginal Price: $${negotiation.originalPrice}/month${savingsText}${landlordReply}\n\n✅ The landlord has accepted your offer! Next steps: Contact the landlord to finalize the rental agreement.`
+                    content: `🎉 **NEGOTIATION SUCCESSFUL!**\n\nProperty: ${negotiation.listingTitle}\nFinal Price: $${negotiation.finalPrice}/month\nOriginal Price: $${negotiation.originalPrice}/month\nYou Saved: $${savings}/month (${savingsPercent}%)${landlordReply}\n\n**Next Steps:**\n${nextSteps.map((step, i) => `${i + 1}. ${step}`).join('\n')}\n\n✅ Your AI negotiator will continue to assist with the next phase.`,
+                    timestamp: new Date().toISOString()
                 }]),
-                title: `Negotiation Success: ${negotiation.listingTitle}`
+                title: `Deal Accepted: ${negotiation.listingTitle}`
             };
-            
-            console.log('📝 Notification data:', notificationData);
-            
+
+            console.log('📝 Enhanced notification data:', notificationData);
+
+            // Store in-app notification
             const { data, error } = await this.supabase
                 .from('ai_chats')
                 .insert(notificationData);
 
             if (error) {
                 console.error('❌ Database error:', error);
-                throw error; // Throw error so it can be caught and fallback can be attempted
-            } else {
-                console.log('✅ Negotiation completion notification sent successfully');
+                throw error;
             }
+
+            console.log('✅ In-app notification sent successfully');
+
+            // Send browser push notification if supported and permitted
+            if (typeof window !== 'undefined' && 'Notification' in window) {
+                if (Notification.permission === 'granted') {
+                    try {
+                        new Notification('Rental Deal Accepted! 🎉', {
+                            body: `${negotiation.listingTitle} - $${negotiation.finalPrice}/month (Saved $${savings}!)`,
+                            icon: '/assets/success-icon.png',
+                            badge: '/assets/badge-icon.png',
+                            tag: `negotiation-success-${negotiation.listingId}`,
+                            requireInteraction: true,
+                            vibrate: [200, 100, 200]
+                        });
+                        console.log('✅ Browser push notification sent');
+                    } catch (notifError) {
+                        console.warn('Browser notification failed:', notifError);
+                    }
+                } else if (Notification.permission === 'default') {
+                    // Request permission for future notifications
+                    Notification.requestPermission().then(permission => {
+                        console.log('Notification permission:', permission);
+                    });
+                }
+            }
+
+            console.log('✅ Negotiation completion notification process complete');
 
         } catch (error) {
             console.error('Error notifying negotiation complete:', error);
