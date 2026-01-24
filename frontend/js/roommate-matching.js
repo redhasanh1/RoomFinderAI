@@ -21,6 +21,9 @@ class RoomPalApp {
         // Load current user from localStorage
         this.loadCurrentUser();
 
+        // Update header to show user name if logged in
+        this.updateHeader();
+
         // Setup event listeners
         this.setupEventListeners();
 
@@ -44,6 +47,31 @@ class RoomPalApp {
         const storedGroup = localStorage.getItem('roommateGroup');
         if (storedGroup) {
             this.userGroup = JSON.parse(storedGroup);
+        }
+    }
+
+    updateHeader() {
+        const desktopAuth = document.getElementById('desktopAuthSection');
+        const mobileAuth = document.getElementById('mobileAuthLink');
+
+        if (this.currentUser) {
+            const userName = this.currentUser.firstName || this.currentUser.name || 'User';
+
+            // Update desktop header
+            if (desktopAuth) {
+                desktopAuth.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <span class="text-gray-700">Hi, ${userName}</span>
+                        <a href="profile.html" class="btn-secondary">Profile</a>
+                    </div>
+                `;
+            }
+
+            // Update mobile menu
+            if (mobileAuth) {
+                mobileAuth.textContent = `Hi, ${userName}`;
+                mobileAuth.href = 'profile.html';
+            }
         }
     }
 
