@@ -4,22 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <title>RoomPal - Smart Roommate Matching | RoomFinderAI</title>
-    <meta name="description" content="Find your perfect roommate pal with our advanced AI matching system. Professional, secure, and friendly roommate discovery platform.">
-    <meta name="keywords" content="roommate matching, AI roommate finder, professional roommate search, compatible roommates">
-    <meta property="og:title" content="RoomPal - Professional AI Roommate Matching">
-    <meta property="og:description" content="Advanced AI-powered roommate matching to find your perfect living pal with verified profiles and compatibility scoring.">
-    <meta property="og:type" content="website">
+    <title>RoomPal - Find Roommates Fast | RoomFinderAI</title>
+    <meta name="description" content="Find roommates quickly. Post your room or find roommate groups. No hassle, direct contact.">
 
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
     <!-- App Configuration -->
     <script>
-        window.AppConfig = {
-            supabase: null
-        };
-
+        window.AppConfig = { supabase: null };
         if (typeof supabase !== 'undefined') {
             const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
@@ -29,2326 +22,746 @@
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Lucide Icons CDN -->
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
 
-    <!-- Enhanced Styles -->
-    <link rel="stylesheet" href="css/roommate-matching.css">
-
     <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --glass-bg: rgba(255, 255, 255, 0.25);
-            --glass-border: rgba(255, 255, 255, 0.18);
-            --shadow-soft: 0 8px 32px rgba(31, 38, 135, 0.37);
-            --shadow-hard: 0 20px 40px rgba(0, 0, 0, 0.1);
-            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-            --transition-bounce: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f8fafc;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* Main Website Navigation Styles */
-        .premium-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition-smooth);
+        /* Clean Header */
+        .site-header {
+            background: #fff;
+            border-bottom: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
 
-        .premium-header.scrolled {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(25px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-
-        .nav-item {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 0.95rem;
-        }
-
-        .nav-item:hover {
-            color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-
-        .dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .dropdown-arrow {
-            font-size: 0.7rem;
-            transition: transform 0.2s ease;
-        }
-
-        .dropdown:hover .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
+        /* Clean Cards */
+        .card {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
             border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.05);
-            min-width: 200px;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-            z-index: 100;
-            padding: 0.5rem 0;
+            transition: box-shadow 0.2s, transform 0.2s;
+        }
+        .card:hover {
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            transform: translateY(-2px);
         }
 
-        .dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-
-        .dropdown-item {
-            display: block;
-            padding: 0.75rem 1.25rem;
-            color: #374151;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 400;
-            transition: all 0.15s ease;
-        }
-
-        .dropdown-item:hover {
-            background-color: rgba(102, 126, 234, 0.05);
-            color: #667eea;
-            padding-left: 1.5rem;
-        }
-
-        .brand-logo {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .gradient-text {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            background-clip: text;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        /* Mobile Menu Styles */
-        .mobile-menu-btn {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-around;
-            width: 30px;
-            height: 24px;
-            background: none;
-            border: none;
+        /* Section Selector Buttons */
+        .section-btn {
+            background: #fff;
+            border: 2px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 2rem;
             cursor: pointer;
-            padding: 0;
-            z-index: 60;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .section-btn:hover {
+            border-color: #6366f1;
+            background: #f5f3ff;
+        }
+        .section-btn.active {
+            border-color: #6366f1;
+            background: #eef2ff;
         }
 
-        .hamburger-line {
+        /* Primary Button */
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+        }
+        .btn-primary:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Secondary Button */
+        .btn-secondary {
+            background: #fff;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            padding: 12px 24px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover {
+            background: #f9fafb;
+            border-color: #9ca3af;
+        }
+
+        /* Message Button */
+        .btn-message {
+            background: #10b981;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            padding: 8px 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-message:hover {
+            background: #059669;
+        }
+
+        /* Form Inputs */
+        .form-input {
             width: 100%;
-            height: 3px;
-            background-color: #374151;
-            border-radius: 2px;
-            transition: all 0.3s ease;
-            transform-origin: center;
+            padding: 12px 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
         }
 
-        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
-            transform: rotate(45deg) translate(6px, 6px);
+        /* Verified Badge */
+        .verified-badge {
+            background: #dbeafe;
+            color: #1d4ed8;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-weight: 500;
         }
 
-        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
-            opacity: 0;
+        /* Filter Pills */
+        .filter-pill {
+            background: #fff;
+            border: 1px solid #d1d5db;
+            border-radius: 9999px;
+            padding: 8px 16px;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .filter-pill:hover, .filter-pill.active {
+            border-color: #6366f1;
+            background: #eef2ff;
+            color: #4f46e5;
         }
 
-        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
-            transform: rotate(-45deg) translate(6px, -6px);
+        /* Tabs */
+        .tab-btn {
+            padding: 12px 24px;
+            font-weight: 500;
+            color: #6b7280;
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .tab-btn:hover {
+            color: #374151;
+        }
+        .tab-btn.active {
+            color: #4f46e5;
+            border-bottom-color: #4f46e5;
         }
 
-        /* Hide hamburger when menu is open to avoid double X */
-        body.mobile-menu-open .mobile-menu-btn {
-            display: none !important;
+        /* Photo Upload */
+        .photo-upload {
+            border: 2px dashed #d1d5db;
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .photo-upload:hover {
+            border-color: #6366f1;
+            background: #f5f3ff;
         }
 
+        /* Room Card Image */
+        .room-image {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 8px 8px 0 0;
+        }
+
+        /* Seeker Avatar */
+        .seeker-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        /* Mobile Menu */
         .mobile-menu {
             position: fixed;
             top: 0;
-            left: 0;
-            width: 100%;
+            right: 0;
+            width: 300px;
             height: 100vh;
-            z-index: 55;
+            background: #fff;
+            z-index: 100;
+            transform: translateX(100%);
+            transition: transform 0.3s;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.1);
+        }
+        .mobile-menu.open { transform: translateX(0); }
+        .mobile-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 99;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.3s ease;
+            transition: all 0.3s;
         }
+        .mobile-overlay.open { opacity: 1; visibility: visible; }
 
-        .mobile-menu.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-        .mobile-menu-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-        }
-
-        .mobile-menu-content {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 320px;
-            height: 100%;
-            background: white;
-            transform: translateX(100%);
-            transition: transform 0.3s ease;
-            overflow-y: auto;
-        }
-
-        .mobile-menu.active .mobile-menu-content {
-            transform: translateX(0);
-        }
-
-        .mobile-menu-header {
+        /* Group Dashboard */
+        .group-member {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            padding: 1.5rem;
-            border-bottom: 1px solid #e5e7eb;
+            gap: 12px;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
         }
 
-        .mobile-menu-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #6b7280;
-        }
-
-        .mobile-menu-items {
-            padding: 1rem 0;
-        }
-
-        .mobile-menu-item {
-            display: block;
-            padding: 0.875rem 1.5rem;
-            color: #374151;
-            text-decoration: none;
-            font-weight: 500;
-            border-left: 4px solid transparent;
-            transition: all 0.2s ease;
-        }
-
-        .mobile-menu-item:hover {
-            background-color: #f3f4f6;
-            border-left-color: #667eea;
-            color: #667eea;
-        }
-
-        * {
-            scroll-behavior: smooth;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-        }
-
-        .font-display {
-            font-family: 'Space Grotesk', 'Inter', sans-serif;
-        }
-
-        /* Glass Morphism */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            box-shadow: var(--shadow-soft);
-        }
+        /* Hide sections by default */
+        .section-view { display: none; }
+        .section-view.active { display: block; }
 
         /* Animations */
-        @keyframes slideInUp {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        @keyframes slideInLeft {
-            from {
-                opacity: 0;
-                transform: translateX(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes slideInRight {
-            from {
-                opacity: 0;
-                transform: translateX(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateX(0);
-            }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
-        }
-
-        @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 20px rgba(102, 126, 234, 0.5); }
-            50% { box-shadow: 0 0 40px rgba(102, 126, 234, 0.8); }
-        }
-
-        .animate-slide-up {
-            animation: slideInUp 0.6s ease-out forwards;
-        }
-
-        .animate-slide-left {
-            animation: slideInLeft 0.6s ease-out forwards;
-        }
-
-        .animate-slide-right {
-            animation: slideInRight 0.6s ease-out forwards;
-        }
-
-        .animate-float {
-            animation: float 3s ease-in-out infinite;
-        }
-
-        .animate-pulse-glow {
-            animation: pulse-glow 2s ease-in-out infinite;
-        }
-
-        /* Step Indicator */
-        .step-indicator {
-            transition: var(--transition-smooth);
-        }
-
-        .step-indicator.active {
-            background: var(--primary-gradient);
-            transform: scale(1.2);
-        }
-
-        .step-indicator.completed {
-            background: var(--accent-gradient);
-        }
-
-        /* Buttons */
-        .btn-primary {
-            background: var(--primary-gradient);
-            transition: var(--transition-smooth);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-hard);
-        }
-
-        .btn-secondary {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            transition: var(--transition-smooth);
-        }
-
-        .btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.35);
-            transform: translateY(-2px);
-        }
-
-        /* Property Cards */
-        .property-card {
-            transition: var(--transition-smooth);
-            cursor: pointer;
-        }
-
-        .property-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-        }
-
-        .property-card.selected {
-            border: 2px solid #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        /* Roommate Cards */
-        .roommate-card {
-            transition: var(--transition-smooth);
-            cursor: pointer;
-        }
-
-        .roommate-card:hover {
-            transform: scale(1.05);
-            box-shadow: var(--shadow-hard);
-        }
-
-        .roommate-card.selected {
-            border: 2px solid #f093fb;
-            background: rgba(240, 147, 251, 0.1);
-        }
-
-        /* Hide steps initially */
-        .step-content {
-            display: none;
-            opacity: 0;
-            transform: translateY(20px);
-            transition: var(--transition-smooth);
-        }
-
-        .step-content.active {
-            display: block;
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* AI Visualization */
-        .ai-visualization {
-            position: relative;
-            overflow: hidden;
-        }
-
-        .ai-circle {
-            position: absolute;
-            border-radius: 50%;
-            opacity: 0.6;
-            animation: float 4s ease-in-out infinite;
-        }
-
-        .ai-circle:nth-child(1) {
-            width: 60px;
-            height: 60px;
-            background: rgba(102, 126, 234, 0.3);
-            top: 20%;
-            left: 10%;
-            animation-delay: 0s;
-        }
-
-        .ai-circle:nth-child(2) {
-            width: 40px;
-            height: 40px;
-            background: rgba(240, 147, 251, 0.3);
-            top: 60%;
-            right: 15%;
-            animation-delay: 1s;
-        }
-
-        .ai-circle:nth-child(3) {
-            width: 80px;
-            height: 80px;
-            background: rgba(79, 172, 254, 0.3);
-            bottom: 20%;
-            left: 20%;
-            animation-delay: 2s;
-        }
-
-        /* Responsive */
-        @media (max-width: 768px) {
-            .glass-card {
-                margin: 1rem;
-            }
-        }
+        .fade-in { animation: fadeIn 0.3s ease-out; }
     </style>
 </head>
 <body>
-    <!-- Premium Header -->
-    <header id="header" class="fixed top-0 w-full premium-header z-50">
-        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
-            <!-- Mobile Layout -->
-            <div class="flex items-center justify-between w-full md:w-auto">
-                <a href="index.html" class="text-xl md:text-2xl font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
+    <!-- Header -->
+    <header class="site-header sticky top-0 z-50">
+        <nav class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-xl font-bold text-gray-900">RoomFinderAI</a>
 
-                <!-- Mobile Menu Button -->
-                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                </button>
+            <!-- Desktop Nav -->
+            <div class="hidden md:flex items-center gap-6">
+                <a href="index.html" class="text-gray-600 hover:text-gray-900">Home</a>
+                <a href="listings.html" class="text-gray-600 hover:text-gray-900">Listings</a>
+                <span class="text-indigo-600 font-medium">RoomPal</span>
             </div>
 
-            <!-- Desktop Navigation -->
-            <div class="desktop-nav hidden md:flex items-center space-x-8">
-                <!-- Home - Standalone -->
-                <a href="index.html" class="nav-item">Home</a>
-
-                <!-- RoomPal - Current Page -->
-                <span class="nav-item" style="color: #667eea; background-color: rgba(102, 126, 234, 0.1);">RoomPal</span>
-
-                <!-- Browse Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
-                        Browse <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="browse-dropdown">
-                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
-                        <a href="https://www.roomfinderai.com/student-housing.html" class="dropdown-item">Student Housing</a>
-                    </div>
-                </div>
-
-                <!-- Tools Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
-                        Tools <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="tools-dropdown">
-                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
-                        <a href="https://www.roomfinderai.com/legal.html" class="dropdown-item">Legal Help</a>
-                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
-                    </div>
-                </div>
-
-                <!-- About Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
-                        More <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="about-dropdown">
-                        <a href="coming-soon.html" class="dropdown-item">About Us</a>
-                        <a href="pricing.html" class="dropdown-item">Pricing</a>
-                        <a href="index.html#contact" class="dropdown-item">Contact</a>
-                        <a href="support.html" class="dropdown-item">Support</a>
-                    </div>
-                </div>
+            <div class="hidden md:block">
+                <a href="login.html" class="btn-secondary">Login</a>
             </div>
 
-            <!-- Desktop Auth -->
-            <div class="desktop-auth hidden md:block">
-                <div id="authSection">
-                    <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
-                        Login/Register
-                    </a>
-                </div>
-            </div>
+            <!-- Mobile Menu Button -->
+            <button class="md:hidden p-2" onclick="toggleMobileMenu()">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                </svg>
+            </button>
         </nav>
-
-        <!-- Mobile Navigation Menu -->
-        <div class="mobile-menu" id="mobile-menu">
-            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
-            <div class="mobile-menu-content">
-                <div class="mobile-menu-header">
-                    <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
-                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
-                </div>
-
-                <div class="mobile-menu-items">
-                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
-                    <span class="mobile-menu-item" style="color: #667eea; background-color: #f3f4f6;">👥 RoomPal</span>
-                    <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏘️ Browse Listings</a>
-                    <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">🤖 AI Negotiator</a>
-                    <a href="login.html" class="mobile-menu-item" onclick="closeMobileMenu()">👤 Login/Register</a>
-                </div>
-            </div>
-        </div>
     </header>
 
-    <!-- Main Container -->
-    <div class="min-h-screen flex items-center justify-center pt-20 pb-10">
-        <div class="max-w-4xl mx-auto w-full">
-            <!-- Hero Section -->
-            <div class="text-center mb-12 animate-slide-up">
-                <h1 class="font-display text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-8 leading-tight">
-                    Find Your Perfect
-                    <span class="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent block mt-2">
-                        Roommate Match
-                    </span>
-                </h1>
-                <p class="text-lg md:text-xl text-blue-100 mb-12 max-w-3xl mx-auto leading-relaxed font-medium">
-                    Discover compatible roommates in your area. Browse verified profiles, see compatibility scores, and connect with your ideal living companions.
-                    <span class="block mt-4 text-blue-200 text-base font-normal">Join thousands who've found their perfect roommate match.</span>
-                </p>
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
 
-                <!-- Create Profile CTA -->
-                <div class="text-center mb-12">
-                    <button onclick="openCreateProfileModal()" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-3 mx-auto mb-4">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                        </svg>
-                        <span>Join the Community</span>
-                    </button>
-                    <p class="text-blue-300 text-sm">Create your profile to connect with compatible roommates</p>
-                </div>
-            </div>
-
-            <!-- Browse Profiles Section -->
-            <div id="faceCardsSection" class="glass-card rounded-3xl p-8 mx-4 mb-8">
-                <div class="text-center mb-8">
-                    <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
-                        <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                            <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                            </svg>
-                        </div>
-                        <span>Compatible Roommates Near You</span>
-                    </h2>
-                    <p class="text-blue-100 text-lg font-medium">
-                        Verified profiles with AI-powered compatibility matching
-                    </p>
-                </div>
-
-                <!-- Face Cards Grid -->
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="roommateCardsContainer"></div>
-            </div>
-
-            <!-- Assessment CTA Section -->
-            <div id="assessmentCTA" class="text-center mb-12">
-                <div class="glass-card rounded-2xl p-6 mx-4">
-                    <h3 class="text-white text-xl font-semibold mb-4">Want Better Matches?</h3>
-                    <p class="text-blue-200 mb-6">Take our comprehensive compatibility assessment to find roommates who truly match your lifestyle</p>
-                    <button onclick="startAssessment()" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-3 mx-auto">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <span>Start Compatibility Assessment</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Progress Indicator -->
-            <div id="progressSection" class="mb-12 hidden">
-                <!-- Back Button -->
-                <div class="flex justify-start mb-6 mx-4">
-                    <button onclick="goBackToFaceCards()" class="btn-secondary px-4 py-2 rounded-xl text-white font-medium flex items-center space-x-2 hover:scale-105 transition-transform duration-200">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-                        </svg>
-                        <span>Back to Browse</span>
-                    </button>
-                </div>
-
-                <!-- Progress Steps -->
-                <div class="flex justify-center">
-                    <div class="flex items-center space-x-4">
-                        <div class="step-indicator active w-4 h-4 rounded-full bg-white flex items-center justify-center">
-                            <span class="text-xs text-blue-900 font-bold">1</span>
-                        </div>
-                        <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
-                        <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
-                            <span class="text-xs text-white font-bold">2</span>
-                        </div>
-                        <div class="w-16 h-1 bg-white bg-opacity-30 rounded"></div>
-                        <div class="step-indicator w-4 h-4 rounded-full bg-white bg-opacity-30 flex items-center justify-center">
-                            <span class="text-xs text-white font-bold">3</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 1: Smart Property Discovery -->
-            <div id="step1" class="step-content">
-                <div class="glass-card rounded-3xl p-8 mx-4 animate-slide-up">
-                    <div class="text-center mb-8">
-                        <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
-                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
-                                </svg>
-                            </div>
-                            <span>Discover Your Ideal Space</span>
-                        </h2>
-                        <p class="text-blue-100 text-lg font-medium">
-                            Smart property recommendations tailored to your budget, location, and lifestyle preferences
-                        </p>
-                    </div>
-
-                    <!-- Quick Preferences -->
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                        <div class="text-center">
-                            <label class="block text-white font-semibold mb-2">Budget Range</label>
-                            <select name="budget" id="budget" class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300">
-                                <option value="">Select Budget</option>
-                                <option value="500-800">$500 - $800</option>
-                                <option value="800-1200">$800 - $1,200</option>
-                                <option value="1200-1800">$1,200 - $1,800</option>
-                                <option value="1800+">$1,800+</option>
-                            </select>
-                            <div class="validation-check hidden mt-1 flex items-center space-x-1">
-                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-xs text-green-400">Budget selected</span>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <label class="block text-white font-semibold mb-2">Location</label>
-                            <select name="location" id="location" class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300">
-                                <option value="">Select Area</option>
-                                <option value="downtown">Downtown</option>
-                                <option value="university">Near University</option>
-                                <option value="suburbs">Suburbs</option>
-                                <option value="beachside">Beachside</option>
-                            </select>
-                            <div class="validation-check hidden mt-1 flex items-center space-x-1">
-                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-xs text-green-400">Location selected</span>
-                            </div>
-                        </div>
-                        <div class="text-center">
-                            <label class="block text-white font-semibold mb-2">Room Type</label>
-                            <select name="roomType" id="roomType" class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-300">
-                                <option value="">Select Type</option>
-                                <option value="private">Private Room</option>
-                                <option value="shared">Shared Room</option>
-                                <option value="studio">Studio Share</option>
-                            </select>
-                            <div class="validation-check hidden mt-1 flex items-center space-x-1">
-                                <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-xs text-green-400">Room type selected</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Validation Progress -->
-                    <div class="text-center mb-6">
-                        <div class="inline-flex items-center space-x-4 bg-white bg-opacity-10 rounded-xl px-4 py-2">
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-gray-400 rounded-full validation-dot" data-field="budget"></div>
-                                <span class="text-xs text-blue-200">Budget</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-gray-400 rounded-full validation-dot" data-field="location"></div>
-                                <span class="text-xs text-blue-200">Location</span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="w-2 h-2 bg-gray-400 rounded-full validation-dot" data-field="roomType"></div>
-                                <span class="text-xs text-blue-200">Room Type</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <button id="step1-continue" onclick="nextStep(2)" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg opacity-50 cursor-not-allowed" disabled>
-                            <span class="flex items-center justify-center space-x-2">
-                                <span>Continue to Profile Setup</span>
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
-                                </svg>
-                            </span>
-                        </button>
-                        <p class="text-blue-300 text-sm mt-2 validation-message">Please complete all fields above to continue</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 2: Instant Profile Creation -->
-            <div id="step2" class="step-content">
-                <div class="glass-card rounded-3xl p-8 mx-4 animate-slide-up">
-                    <div class="text-center mb-8">
-                        <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
-                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
-                            </div>
-                            <span>Quick Profile Setup</span>
-                        </h2>
-                        <p class="text-blue-100 text-lg font-medium">
-                            Streamlined profile creation with intelligent preference suggestions
-                        </p>
-                    </div>
-
-                    <!-- Advanced Compatibility Assessment -->
-                    <div class="mb-8">
-                        <h3 class="text-white font-semibold text-xl mb-6 text-center flex items-center justify-center space-x-2">
-                            <svg class="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Advanced Compatibility Assessment</span>
-                        </h3>
-
-                        <!-- Living Habits & Schedule -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div class="glass-card rounded-2xl p-6">
-                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707"></path>
-                                    </svg>
-                                    <span>Daily Schedule</span>
-                                </h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Sleep Schedule</label>
-                                        <select name="sleepSchedule" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select your typical bedtime</option>
-                                            <option value="early-bird">Early Bird (9-10 PM)</option>
-                                            <option value="moderate">Moderate (10-11 PM)</option>
-                                            <option value="night-owl">Night Owl (11 PM - 1 AM)</option>
-                                            <option value="late-night">Very Late (After 1 AM)</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Work/Study Schedule</label>
-                                        <select name="workSchedule" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select your schedule</option>
-                                            <option value="traditional">Traditional (9-5)</option>
-                                            <option value="flexible">Flexible/Remote</option>
-                                            <option value="student">Student Schedule</option>
-                                            <option value="shift-work">Shift Work</option>
-                                            <option value="irregular">Irregular Hours</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card rounded-2xl p-6">
-                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"></path>
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5v4M16 5v4"></path>
-                                    </svg>
-                                    <span>Cleanliness & Organization</span>
-                                </h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Cleanliness Level (1-10)</label>
-                                        <input type="range" name="cleanlinessLevel" min="1" max="10" value="7" class="w-full h-2 bg-white bg-opacity-20 rounded-lg appearance-none slider">
-                                        <div class="flex justify-between text-xs text-blue-200 mt-1">
-                                            <span>Messy</span>
-                                            <span class="cleanliness-value">7</span>
-                                            <span>Spotless</span>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Organization Style</label>
-                                        <select name="organizationStyle" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select style</option>
-                                            <option value="minimalist">Minimalist</option>
-                                            <option value="organized">Well Organized</option>
-                                            <option value="lived-in">Lived-in Comfort</option>
-                                            <option value="casual">Casual/Relaxed</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Social & Personal Preferences -->
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div class="glass-card rounded-2xl p-6">
-                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                    </svg>
-                                    <span>Social Preferences</span>
-                                </h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Social Level</label>
-                                        <div class="grid grid-cols-2 gap-2">
-                                            <label class="flex items-center text-white text-sm">
-                                                <input type="radio" name="socialLevel" value="introvert" class="mr-2">
-                                                <span>More Introverted</span>
-                                            </label>
-                                            <label class="flex items-center text-white text-sm">
-                                                <input type="radio" name="socialLevel" value="extrovert" class="mr-2">
-                                                <span>More Extroverted</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Guest Policy</label>
-                                        <select name="guestPolicy" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select preference</option>
-                                            <option value="frequent">Frequent Guests Welcome</option>
-                                            <option value="occasional">Occasional Guests OK</option>
-                                            <option value="rare">Rare Guests Only</option>
-                                            <option value="no-guests">Prefer No Guests</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Communication Style</label>
-                                        <select name="communicationStyle" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select style</option>
-                                            <option value="chatty">Love to Chat</option>
-                                            <option value="friendly">Friendly but Respectful</option>
-                                            <option value="quiet">Keep to Myself</option>
-                                            <option value="minimal">Minimal Interaction</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="glass-card rounded-2xl p-6">
-                                <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2 2z"></path>
-                                    </svg>
-                                    <span>Living Space Usage</span>
-                                </h4>
-                                <div class="space-y-4">
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Kitchen Usage</label>
-                                        <select name="kitchenUsage" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select usage</option>
-                                            <option value="frequent-cook">Cook Most Meals</option>
-                                            <option value="moderate-cook">Cook Sometimes</option>
-                                            <option value="basic-cook">Basic Cooking Only</option>
-                                            <option value="rarely-cook">Rarely Cook</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Shared Meals</label>
-                                        <select name="sharedMeals" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select preference</option>
-                                            <option value="love-sharing">Love Sharing Meals</option>
-                                            <option value="sometimes">Sometimes Share</option>
-                                            <option value="rarely">Rarely Share</option>
-                                            <option value="separate">Keep Meals Separate</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-white text-sm mb-2">Common Area Usage</label>
-                                        <select name="commonAreaUsage" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                            <option value="">Select usage</option>
-                                            <option value="frequent">Use Common Areas Often</option>
-                                            <option value="moderate">Moderate Usage</option>
-                                            <option value="minimal">Minimal Usage</option>
-                                            <option value="private">Prefer Private Space</option>
-                                        </select>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Lifestyle & Personal Habits -->
-                        <div class="glass-card rounded-2xl p-6 mb-6">
-                            <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
-                                <span>Lifestyle & Habits</span>
-                            </h4>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                <div>
-                                    <label class="block text-white text-sm mb-2">Smoking</label>
-                                    <select name="smokingPolicy" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                        <option value="">Select policy</option>
-                                        <option value="no-smoking">No Smoking</option>
-                                        <option value="outside-only">Outside Only</option>
-                                        <option value="designated-area">Designated Area</option>
-                                        <option value="anywhere">Anywhere OK</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-white text-sm mb-2">Pets</label>
-                                    <select name="petPolicy" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                        <option value="">Select policy</option>
-                                        <option value="love-pets">Love Pets</option>
-                                        <option value="ok-with-pets">OK with Pets</option>
-                                        <option value="allergic">Allergic to Pets</option>
-                                        <option value="no-pets">No Pets Preferred</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-white text-sm mb-2">Noise Level</label>
-                                    <select name="noiseLevel" class="w-full px-3 py-2 rounded-lg bg-white bg-opacity-20 text-white border border-white border-opacity-30">
-                                        <option value="">Select preference</option>
-                                        <option value="quiet">Very Quiet</option>
-                                        <option value="moderate">Moderate Noise OK</option>
-                                        <option value="flexible">Pretty Flexible</option>
-                                        <option value="lively">Lively Environment</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Deal Breakers -->
-                        <div class="glass-card rounded-2xl p-6">
-                            <h4 class="text-white font-semibold mb-4 flex items-center space-x-2">
-                                <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
-                                </svg>
-                                <span>Deal Breakers (Check items that are absolutely unacceptable)</span>
-                            </h4>
-                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="smoking" class="mr-2 text-red-500">
-                                    <span>Indoor Smoking</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="loud-music" class="mr-2 text-red-500">
-                                    <span>Loud Music</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="overnight-guests" class="mr-2 text-red-500">
-                                    <span>Overnight Guests</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="messy" class="mr-2 text-red-500">
-                                    <span>Very Messy</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="pets" class="mr-2 text-red-500">
-                                    <span>Any Pets</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="parties" class="mr-2 text-red-500">
-                                    <span>House Parties</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="opposite-schedule" class="mr-2 text-red-500">
-                                    <span>Opposite Schedule</span>
-                                </label>
-                                <label class="flex items-center text-white text-sm">
-                                    <input type="checkbox" name="dealBreakers" value="different-lifestyle" class="mr-2 text-red-500">
-                                    <span>Very Different Lifestyle</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <button id="step2-continue" onclick="nextStep(3)" class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg flex items-center justify-center space-x-2 mx-auto">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                            </svg>
-                            <span>Find My Perfect Roommates</span>
-                        </button>
-                        <p class="text-blue-300 text-sm mt-3">Our AI will now analyze your preferences and find the most compatible roommates</p>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Step 3: AI Roommate Matching -->
-            <div id="step3" class="step-content">
-                <div class="glass-card rounded-3xl p-8 mx-4 animate-slide-up">
-                    <div class="text-center mb-8">
-                        <h2 class="font-display text-3xl font-bold text-white mb-4 flex items-center justify-center space-x-3">
-                            <div class="w-10 h-10 bg-white bg-opacity-20 rounded-xl flex items-center justify-center">
-                                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                            </div>
-                            <span>Your Perfect Matches</span>
-                        </h2>
-                        <p class="text-blue-100 text-lg font-medium">
-                            Discover verified roommates with high compatibility scores across multiple dimensions
-                        </p>
-                    </div>
-
-                    <!-- Matching Status -->
-                    <div class="text-center mb-8">
-                        <div class="inline-flex items-center space-x-2 bg-green-500 bg-opacity-20 text-green-300 px-4 py-2 rounded-full">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span class="font-semibold">3 Perfect Matches Found</span>
-                        </div>
-                    </div>
-
-                    <!-- Tinder-Style Card Stack -->
-                    <div class="relative">
-                        <!-- Card Stack Container -->
-                        <div id="card-stack" class="relative h-96 w-full max-w-sm mx-auto mb-8">
-                            <!-- Cards will be dynamically populated here -->
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="flex justify-center space-x-6 mb-8">
-                            <button id="pass-btn" class="w-16 h-16 bg-gradient-to-r from-red-500 to-red-600 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform duration-200 group">
-                                <svg class="w-8 h-8 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
-
-                            <button id="info-btn" class="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 transition-transform duration-200 group">
-                                <svg class="w-6 h-6 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                            </button>
-
-                            <button id="like-btn" class="w-16 h-16 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform duration-200 group">
-                                <svg class="w-8 h-8 text-white group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                                </svg>
-                            </button>
-                        </div>
-
-                        <!-- Card Counter -->
-                        <div class="text-center mb-6">
-                            <div class="inline-flex items-center space-x-2 bg-white bg-opacity-10 rounded-full px-4 py-2">
-                                <svg class="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 919.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                                </svg>
-                                <span id="card-counter" class="text-white font-medium">1 of 3</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Matching Status -->
-                    <div class="text-center mb-6">
-                        <div class="matching-status text-blue-100 text-sm">
-                            Select your preferred matches to continue
-                        </div>
-                    </div>
-
-                    <!-- Success Actions -->
-                    <div class="text-center space-y-4">
-                        <button class="btn-primary px-8 py-4 rounded-2xl text-white font-semibold text-lg w-full md:w-auto flex items-center justify-center space-x-2">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
-                            </svg>
-                            <span>Start Chatting with Matches</span>
-                        </button>
-                        <div class="flex flex-col md:flex-row gap-4 justify-center">
-                            <button class="btn-secondary px-6 py-3 rounded-xl text-white font-medium">
-                                View More Matches
-                            </button>
-                            <button class="btn-secondary px-6 py-3 rounded-xl text-white font-medium">
-                                Invite Friends
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobileMenu">
+        <div class="p-4 border-b flex justify-between items-center">
+            <span class="font-bold text-gray-900">Menu</span>
+            <button onclick="toggleMobileMenu()" class="p-2">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+        <div class="p-4 space-y-2">
+            <a href="index.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg">Home</a>
+            <a href="listings.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg">Listings</a>
+            <a href="#" class="block py-3 px-4 text-indigo-600 bg-indigo-50 rounded-lg font-medium">RoomPal</a>
+            <hr class="my-4">
+            <a href="login.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg">Login / Register</a>
         </div>
     </div>
 
-    <!-- Create Profile Modal -->
-    <div id="createProfileModal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center p-4">
-        <div class="glass-card rounded-3xl p-8 w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-slide-up">
-            <!-- Modal Header -->
+    <!-- Main Content -->
+    <main class="max-w-6xl mx-auto px-4 py-8">
+
+        <!-- Section Selector (Landing View) -->
+        <div id="sectionSelector" class="section-view active">
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Find Roommates Fast</h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
+                    No hassle. Post a room or find roommates. Direct contact, get connected quickly.
+                </p>
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
+                <!-- I Have a Room -->
+                <button class="section-btn" onclick="showSection('hasRoom')">
+                    <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">I Have a Room</h2>
+                    <p class="text-gray-600">Post your available room and receive messages from interested roommates</p>
+                </button>
+
+                <!-- Looking for Roommates -->
+                <button class="section-btn" onclick="showSection('seeking')">
+                    <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Looking for Roommates</h2>
+                    <p class="text-gray-600">Create a profile, connect with others, and form a roommate group</p>
+                </button>
+            </div>
+
+            <!-- Browse Available Rooms Preview -->
+            <div class="mb-12">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">Recently Posted Rooms</h2>
+                    <button onclick="showSection('browseRooms')" class="text-indigo-600 font-medium hover:underline">View All</button>
+                </div>
+                <div class="grid md:grid-cols-3 gap-6" id="previewRoomsGrid">
+                    <!-- Preview cards loaded by JS -->
+                </div>
+            </div>
+
+            <!-- Browse Seekers Preview -->
+            <div>
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-900">People Looking for Rooms</h2>
+                    <button onclick="showSection('browseSeekers')" class="text-indigo-600 font-medium hover:underline">View All</button>
+                </div>
+                <div class="grid md:grid-cols-3 gap-6" id="previewSeekersGrid">
+                    <!-- Preview cards loaded by JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Has Room Section -->
+        <div id="hasRoomSection" class="section-view">
+            <!-- Sub-navigation -->
+            <div class="flex items-center gap-4 mb-8">
+                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900">Post Your Room</h1>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b mb-8">
+                <button class="tab-btn active" data-tab="postRoom">Post a Room</button>
+                <button class="tab-btn" data-tab="myRooms">My Listings</button>
+            </div>
+
+            <!-- Post Room Form -->
+            <div id="postRoomTab" class="card p-8 max-w-2xl fade-in">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Room Posting</h2>
+                <form id="roomForm" class="space-y-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent *</label>
+                        <div class="relative">
+                            <span class="absolute left-4 top-3 text-gray-500">$</span>
+                            <input type="number" name="room_rent" class="form-input pl-8" placeholder="1200" required>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Location / Area *</label>
+                        <input type="text" name="room_location" class="form-input" placeholder="Downtown Seattle, WA" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Room Type *</label>
+                        <select name="room_type" class="form-input" required>
+                            <option value="">Select type...</option>
+                            <option value="private">Private Room</option>
+                            <option value="shared">Shared Room</option>
+                            <option value="studio">Studio</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Available Date *</label>
+                        <input type="date" name="room_available_date" class="form-input" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                        <textarea name="room_description" class="form-input" rows="4" placeholder="Describe your room, amenities, house rules..."></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
+                        <div class="photo-upload" onclick="document.getElementById('roomPhotos').click()">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <p class="text-gray-600">Click to upload photos</p>
+                            <p class="text-sm text-gray-400">PNG, JPG up to 10MB</p>
+                        </div>
+                        <input type="file" id="roomPhotos" name="room_photos" multiple accept="image/*" class="hidden">
+                        <div id="photoPreview" class="flex gap-2 mt-4 flex-wrap"></div>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full py-4 text-lg">Post Room</button>
+                </form>
+            </div>
+
+            <!-- My Rooms Tab (hidden by default) -->
+            <div id="myRoomsTab" class="hidden">
+                <div class="card p-8 text-center text-gray-500">
+                    <p>You haven't posted any rooms yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Seeking Section -->
+        <div id="seekingSection" class="section-view">
+            <!-- Sub-navigation -->
+            <div class="flex items-center gap-4 mb-8">
+                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900">Find Roommates</h1>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b mb-8">
+                <button class="tab-btn active" data-tab="createProfile">Create Profile</button>
+                <button class="tab-btn" data-tab="browsePeople">Browse Seekers</button>
+                <button class="tab-btn" data-tab="myGroup">My Group</button>
+            </div>
+
+            <!-- Create Profile Form -->
+            <div id="createProfileTab" class="card p-8 max-w-2xl fade-in">
+                <h2 class="text-xl font-bold text-gray-900 mb-6">Your Roommate Profile</h2>
+                <form id="seekerForm" class="space-y-6">
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Budget Min *</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-3 text-gray-500">$</span>
+                                <input type="number" name="budget_min" class="form-input pl-8" placeholder="800" required>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Budget Max *</label>
+                            <div class="relative">
+                                <span class="absolute left-4 top-3 text-gray-500">$</span>
+                                <input type="number" name="budget_max" class="form-input pl-8" placeholder="1500" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Preferred Areas *</label>
+                        <input type="text" name="preferred_areas" class="form-input" placeholder="Downtown, Capitol Hill, University District" required>
+                        <p class="text-sm text-gray-500 mt-1">Separate multiple areas with commas</p>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Move-in Date *</label>
+                        <input type="date" name="move_in_date" class="form-input" required>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">About You *</label>
+                        <textarea name="bio" class="form-input" rows="4" placeholder="Tell potential roommates about yourself..." required></textarea>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Profile Photo</label>
+                        <div class="photo-upload" onclick="document.getElementById('profilePhoto').click()">
+                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                            <p class="text-gray-600">Click to upload photo</p>
+                        </div>
+                        <input type="file" id="profilePhoto" name="avatar" accept="image/*" class="hidden">
+                        <div id="avatarPreview" class="mt-4"></div>
+                    </div>
+
+                    <button type="submit" class="btn-primary w-full py-4 text-lg">Create Profile</button>
+                </form>
+
+                <!-- Optional Compatibility Banner -->
+                <div class="mt-8 p-4 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <div class="flex items-start gap-4">
+                        <div class="w-10 h-10 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <h3 class="font-medium text-gray-900">Want better matches?</h3>
+                            <p class="text-sm text-gray-600 mb-2">Answer 5 quick questions to see compatibility scores with other users.</p>
+                            <button onclick="showCompatibilityQuestions()" class="text-indigo-600 text-sm font-medium hover:underline">Take quick assessment</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browse People Tab (hidden by default) -->
+            <div id="browsePeopleTab" class="hidden">
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-2 mb-6">
+                    <button class="filter-pill active">All</button>
+                    <button class="filter-pill">$500-$1000</button>
+                    <button class="filter-pill">$1000-$1500</button>
+                    <button class="filter-pill">$1500+</button>
+                    <button class="filter-pill">Moving Soon</button>
+                </div>
+
+                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="seekersGrid">
+                    <!-- Seeker cards loaded by JS -->
+                </div>
+            </div>
+
+            <!-- My Group Tab (hidden by default) -->
+            <div id="myGroupTab" class="hidden">
+                <div id="noGroupView" class="card p-8 text-center">
+                    <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No Group Yet</h3>
+                    <p class="text-gray-500 mb-6">Create a group or get invited by other seekers to find rooms together.</p>
+                    <button onclick="createGroup()" class="btn-primary">Create a Group</button>
+                </div>
+
+                <div id="groupDashboard" class="hidden">
+                    <div class="card p-6 mb-6">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h2 class="text-xl font-bold text-gray-900" id="groupName">Our Roommate Group</h2>
+                                <p class="text-gray-500">Status: <span class="text-emerald-600 font-medium">Forming</span></p>
+                            </div>
+                            <button class="btn-secondary text-sm">Invite Members</button>
+                        </div>
+
+                        <!-- Group Members -->
+                        <div class="space-y-3 mb-6" id="groupMembersList">
+                            <!-- Members loaded by JS -->
+                        </div>
+
+                        <!-- Combined Budget -->
+                        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+                            <h3 class="font-medium text-gray-900 mb-2">Combined Budget</h3>
+                            <div class="flex items-center gap-2">
+                                <span class="text-2xl font-bold text-indigo-600" id="combinedBudget">$2,400 - $4,500</span>
+                                <span class="text-gray-500">/month total</span>
+                            </div>
+                        </div>
+
+                        <button onclick="showSection('browseRooms')" class="btn-primary w-full">
+                            <span class="flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                                Find Listings for Group
+                            </span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Browse Rooms Section -->
+        <div id="browseRoomsSection" class="section-view">
+            <div class="flex items-center gap-4 mb-8">
+                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900">Available Rooms</h1>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="filter-pill active">All</button>
+                <button class="filter-pill">Under $1000</button>
+                <button class="filter-pill">$1000-$1500</button>
+                <button class="filter-pill">$1500+</button>
+                <button class="filter-pill">Private Room</button>
+                <button class="filter-pill">Available Now</button>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="roomsGrid">
+                <!-- Room cards loaded by JS -->
+            </div>
+        </div>
+
+        <!-- Browse Seekers Section -->
+        <div id="browseSeekersSection" class="section-view">
+            <div class="flex items-center gap-4 mb-8">
+                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900">People Looking for Rooms</h1>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-2 mb-6">
+                <button class="filter-pill active">All</button>
+                <button class="filter-pill">$500-$1000</button>
+                <button class="filter-pill">$1000-$1500</button>
+                <button class="filter-pill">$1500+</button>
+                <button class="filter-pill">Moving Soon</button>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="allSeekersGrid">
+                <!-- Seeker cards loaded by JS -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Compatibility Questions Modal -->
+    <div id="compatibilityModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-2xl max-w-lg w-full mx-4 p-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-6">
-                <h2 class="text-3xl font-bold text-white font-display">Join the Community</h2>
-                <button onclick="closeCreateProfileModal()" class="text-white hover:text-gray-300 transition-colors">
-                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                <h2 class="text-xl font-bold text-gray-900">Quick Compatibility Check</h2>
+                <button onclick="closeCompatibilityModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                     </svg>
                 </button>
             </div>
 
-            <!-- Profile Creation Form -->
-            <form id="createProfileForm" class="space-y-6">
-                <!-- Basic Info -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Full Name *</label>
-                        <input type="text" id="profileName" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-blue-200" placeholder="Enter your name">
-                    </div>
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Age *</label>
-                        <input type="number" id="profileAge" min="18" max="50" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-blue-200" placeholder="25">
-                    </div>
-                </div>
-
-                <!-- Occupation and Location -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Occupation *</label>
-                        <input type="text" id="profileOccupation" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400 placeholder-blue-200" placeholder="Software Engineer">
-                    </div>
-                    <div>
-                        <label class="block text-white text-sm font-medium mb-2">Location *</label>
-                        <select id="profileLocation" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                            <option value="">Select Location</option>
-                            <option value="Downtown Seattle">Downtown Seattle</option>
-                            <option value="Capitol Hill, Seattle">Capitol Hill, Seattle</option>
-                            <option value="Fremont, Seattle">Fremont, Seattle</option>
-                            <option value="Ballard, Seattle">Ballard, Seattle</option>
-                            <option value="University District">University District</option>
-                            <option value="Belltown, Seattle">Belltown, Seattle</option>
-                            <option value="Queen Anne, Seattle">Queen Anne, Seattle</option>
-                            <option value="West Seattle">West Seattle</option>
-                            <option value="South Lake Union">South Lake Union</option>
-                            <option value="Magnolia, Seattle">Magnolia, Seattle</option>
-                            <option value="Georgetown, Seattle">Georgetown, Seattle</option>
-                            <option value="First Hill, Seattle">First Hill, Seattle</option>
-                            <option value="Bellevue, WA">Bellevue, WA</option>
-                            <option value="Redmond, WA">Redmond, WA</option>
-                            <option value="Kirkland, WA">Kirkland, WA</option>
-                            <option value="Bothell, WA">Bothell, WA</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Budget Range -->
+            <form id="compatibilityForm" class="space-y-6">
                 <div>
-                    <label class="block text-white text-sm font-medium mb-2">Budget Range *</label>
-                    <select id="profileBudget" required class="w-full px-4 py-3 rounded-xl bg-white bg-opacity-20 text-white border border-white border-opacity-30 focus:outline-none focus:ring-2 focus:ring-blue-400">
-                        <option value="">Select Budget Range</option>
-                        <option value="$500-700">$500 - $700</option>
-                        <option value="$700-900">$700 - $900</option>
-                        <option value="$900-1200">$900 - $1,200</option>
-                        <option value="$1200-1500">$1,200 - $1,500</option>
-                        <option value="$1500-1800">$1,500 - $1,800</option>
-                        <option value="$1800+">$1,800+</option>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Sleep Schedule</label>
+                    <select name="sleepSchedule" class="form-input">
+                        <option value="early">Early Bird (Before 10 PM)</option>
+                        <option value="moderate">Moderate (10 PM - Midnight)</option>
+                        <option value="night-owl">Night Owl (After Midnight)</option>
                     </select>
                 </div>
 
-                <!-- Photo Selection -->
                 <div>
-                    <label class="block text-white text-sm font-medium mb-4">Choose Your Profile Photo</label>
-                    <div class="grid grid-cols-4 md:grid-cols-6 gap-3">
-                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face">
-                            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
-                        </div>
-                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face">
-                            <img src="https://images.unsplash.com/photo-1494790108755-2616b612b786?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
-                        </div>
-                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face">
-                            <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
-                        </div>
-                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face">
-                            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
-                        </div>
-                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face">
-                            <img src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
-                        </div>
-                        <div class="avatar-option cursor-pointer" data-photo="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop&crop=face">
-                            <img src="https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=100&h=100&fit=crop&crop=face" class="w-full h-16 rounded-xl object-cover border-2 border-transparent hover:border-blue-400 transition-all">
-                        </div>
-                    </div>
-                    <input type="hidden" id="selectedPhoto" value="">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Cleanliness Level</label>
+                    <select name="cleanliness" class="form-input">
+                        <option value="very-clean">Very Clean - Everything spotless</option>
+                        <option value="clean">Clean - Regular tidying</option>
+                        <option value="relaxed">Relaxed - Occasional mess is fine</option>
+                    </select>
                 </div>
 
-                <!-- Key Highlights -->
                 <div>
-                    <label class="block text-white text-sm font-medium mb-4">Select Your Key Highlights (Choose 3)</label>
-                    <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Clean & Organized" class="mr-2 rounded">
-                            <span>Clean & Organized</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Night Owl" class="mr-2 rounded">
-                            <span>Night Owl</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Early Bird" class="mr-2 rounded">
-                            <span>Early Bird</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Fitness Enthusiast" class="mr-2 rounded">
-                            <span>Fitness Enthusiast</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Social" class="mr-2 rounded">
-                            <span>Social</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Quiet" class="mr-2 rounded">
-                            <span>Quiet</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Creative" class="mr-2 rounded">
-                            <span>Creative</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Pet Lover" class="mr-2 rounded">
-                            <span>Pet Lover</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Tech Enthusiast" class="mr-2 rounded">
-                            <span>Tech Enthusiast</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Studious" class="mr-2 rounded">
-                            <span>Studious</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Coffee Lover" class="mr-2 rounded">
-                            <span>Coffee Lover</span>
-                        </label>
-                        <label class="highlight-option flex items-center text-white text-sm cursor-pointer">
-                            <input type="checkbox" name="highlights" value="Outdoorsy" class="mr-2 rounded">
-                            <span>Outdoorsy</span>
-                        </label>
-                    </div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Social Level</label>
+                    <select name="socialLevel" class="form-input">
+                        <option value="social">Social - Love having friends over</option>
+                        <option value="balanced">Balanced - Occasional gatherings</option>
+                        <option value="quiet">Quiet - Prefer minimal guests</option>
+                    </select>
                 </div>
 
-                <!-- Submit Button -->
-                <div class="flex gap-4 pt-6">
-                    <button type="button" onclick="closeCreateProfileModal()" class="flex-1 btn-secondary px-6 py-3 rounded-xl text-white font-medium">
-                        Cancel
-                    </button>
-                    <button type="submit" class="flex-1 btn-primary px-6 py-3 rounded-xl text-white font-medium">
-                        Create My Profile
-                    </button>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Smoking Policy</label>
+                    <select name="smoking" class="form-input">
+                        <option value="no">No smoking anywhere</option>
+                        <option value="outside">Outside only is fine</option>
+                        <option value="ok">Smoking is fine</option>
+                    </select>
                 </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Pet Policy</label>
+                    <select name="pets" class="form-input">
+                        <option value="love">Love pets</option>
+                        <option value="ok">Pets are okay</option>
+                        <option value="allergic">Allergic / No pets</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-primary w-full">Save Preferences</button>
             </form>
         </div>
     </div>
 
-    <!-- Professional Footer -->
-    <footer class="mt-20 py-12 border-t border-white border-opacity-10">
-        <div class="max-w-4xl mx-auto px-4 text-center">
-            <div class="mb-8">
-                <div class="flex items-center justify-center space-x-3 mb-4">
-                    <div class="w-6 h-6 bg-gradient-to-r from-blue-500 to-purple-600 rounded-md flex items-center justify-center">
-                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="font-display text-xl font-bold text-white">RoomPal</h3>
-                </div>
-                <p class="text-blue-200 text-sm max-w-md mx-auto">
-                    Professional AI-powered roommate matching platform. Find your perfect living companion with confidence.
-                </p>
+    <!-- Message Modal -->
+    <div id="messageModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
+        <div class="bg-white rounded-2xl max-w-lg w-full mx-4 p-8">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold text-gray-900">Send Message</h2>
+                <button onclick="closeMessageModal()" class="text-gray-400 hover:text-gray-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
             </div>
 
-            <div class="flex flex-wrap justify-center space-x-8 mb-8 text-sm">
-                <a href="/index.html" class="text-blue-200 hover:text-white transition-colors">Home</a>
-                <a href="#" class="text-blue-200 hover:text-white transition-colors">Privacy Policy</a>
-                <a href="#" class="text-blue-200 hover:text-white transition-colors">Terms of Service</a>
-                <a href="#" class="text-blue-200 hover:text-white transition-colors">Contact Us</a>
-                <a href="#" class="text-blue-200 hover:text-white transition-colors">Help</a>
+            <div id="messageRecipient" class="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
+                <!-- Recipient info loaded by JS -->
             </div>
 
-            <div class="border-t border-white border-opacity-10 pt-8">
-                <p class="text-blue-300 text-xs">
-                    &copy; 2024 RoomPal. All rights reserved. Secure, friendly roommate matching.
-                </p>
-                <div class="flex justify-center space-x-4 mt-4">
-                    <div class="flex items-center space-x-2 text-xs text-blue-300">
-                        <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
-                        </svg>
-                        <span>Verified & Secure</span>
-                    </div>
-                    <div class="flex items-center space-x-2 text-xs text-blue-300">
-                        <svg class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                        </svg>
-                        <span>AI-Powered Matching</span>
-                    </div>
-                </div>
-            </div>
+            <form id="messageForm">
+                <textarea name="message" class="form-input mb-4" rows="4" placeholder="Write your message..." required></textarea>
+                <button type="submit" class="btn-primary w-full">Send Message</button>
+            </form>
         </div>
-    </footer>
+    </div>
 
-    <!-- Navigation JavaScript -->
-    <script>
-        // Navigation Functions
-        function toggleDropdown(dropdownId) {
-            // Close all other dropdowns first
-            const allDropdowns = document.querySelectorAll('.dropdown-menu');
-            allDropdowns.forEach(dropdown => {
-                if (dropdown.id !== dropdownId + '-dropdown') {
-                    dropdown.style.opacity = '0';
-                    dropdown.style.visibility = 'hidden';
-                    dropdown.style.transform = 'translateY(-10px)';
-                }
-            });
-        }
-
-        function toggleMobileMenu() {
-            const btn = document.querySelector('.mobile-menu-btn');
-            const menu = document.getElementById('mobile-menu');
-            btn.classList.toggle('active');
-            menu.classList.toggle('active');
-            document.body.classList.toggle('mobile-menu-open');
-        }
-
-        function closeMobileMenu() {
-            const btn = document.querySelector('.mobile-menu-btn');
-            const menu = document.getElementById('mobile-menu');
-            btn.classList.remove('active');
-            menu.classList.remove('active');
-            document.body.classList.remove('mobile-menu-open');
-        }
-
-        // Header scroll effect
-        window.addEventListener('scroll', () => {
-            const header = document.getElementById('header');
-            if (window.scrollY > 50) {
-                header.classList.add('scrolled');
-            } else {
-                header.classList.remove('scrolled');
-            }
-        });
-
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', (e) => {
-            const mobileMenu = document.getElementById('mobile-menu');
-            const mobileMenuBtn = document.querySelector('.mobile-menu-btn');
-
-            if (!mobileMenu.contains(e.target) && !mobileMenuBtn.contains(e.target)) {
-                closeMobileMenu();
-            }
-        });
-    </script>
-
-    <!-- Profile Creation Modal JavaScript -->
-    <script>
-        // Modal Management Functions
-        function openCreateProfileModal() {
-            const modal = document.getElementById('createProfileModal');
-            modal.classList.remove('hidden');
-            document.body.style.overflow = 'hidden'; // Prevent background scrolling
-        }
-
-        function closeCreateProfileModal() {
-            const modal = document.getElementById('createProfileModal');
-            modal.classList.add('hidden');
-            document.body.style.overflow = 'auto'; // Restore scrolling
-
-            // Reset form
-            document.getElementById('createProfileForm').reset();
-
-            // Reset photo selection
-            document.querySelectorAll('.photo-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-        }
-
-        // Photo Selection Handler
-        function selectPhoto(photoUrl, element) {
-            // Remove selected class from all photo options
-            document.querySelectorAll('.photo-option').forEach(option => {
-                option.classList.remove('selected');
-            });
-
-            // Add selected class to clicked option
-            element.classList.add('selected');
-
-            // Set hidden input value
-            document.getElementById('selectedPhoto').value = photoUrl;
-        }
-
-        // Form Validation and Submission
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('createProfileForm');
-
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-
-                // Get form data
-                const formData = new FormData(form);
-                const profileData = {
-                    name: formData.get('name'),
-                    age: parseInt(formData.get('age')),
-                    occupation: formData.get('occupation'),
-                    location: formData.get('location'),
-                    budget: formData.get('budget'),
-                    photo: formData.get('selectedPhoto'),
-                    highlights: formData.getAll('highlights')
-                };
-
-                // Validation
-                if (!validateProfile(profileData)) {
-                    return;
-                }
-
-                // Add to profiles array and update display
-                addNewProfile(profileData);
-
-                // Show success message
-                showSuccessMessage();
-
-                // Close modal
-                closeCreateProfileModal();
-            });
-        });
-
-        function validateProfile(profile) {
-            // Check required fields
-            if (!profile.name || profile.name.trim().length < 2) {
-                showErrorMessage('Please enter a valid name (at least 2 characters)');
-                return false;
-            }
-
-            if (!profile.age || profile.age < 18 || profile.age > 100) {
-                showErrorMessage('Please enter a valid age (18-100)');
-                return false;
-            }
-
-            if (!profile.occupation || profile.occupation.trim().length < 2) {
-                showErrorMessage('Please enter a valid occupation');
-                return false;
-            }
-
-            if (!profile.location || profile.location.trim().length < 2) {
-                showErrorMessage('Please enter a valid location');
-                return false;
-            }
-
-            if (!profile.budget) {
-                showErrorMessage('Please select a budget range');
-                return false;
-            }
-
-            if (!profile.photo) {
-                showErrorMessage('Please select a profile photo');
-                return false;
-            }
-
-            if (profile.highlights.length === 0) {
-                showErrorMessage('Please select at least one highlight');
-                return false;
-            }
-
-            return true;
-        }
-
-        function addNewProfile(profileData) {
-            // Generate new ID
-            const newId = roommateProfiles.length + 1;
-
-            // Create new profile object
-            const newProfile = {
-                id: newId,
-                name: profileData.name,
-                age: profileData.age,
-                occupation: profileData.occupation,
-                location: profileData.location,
-                photo: profileData.photo,
-                compatibility: Math.floor(Math.random() * 20) + 80, // Random 80-99%
-                highlights: profileData.highlights,
-                budget: profileData.budget,
-                verified: false, // New profiles start unverified
-                badge: "New"
-            };
-
-            // Add to profiles array
-            roommateProfiles.unshift(newProfile); // Add at beginning
-
-            // Refresh the face cards display
-            populateFaceCards();
-        }
-
-        function showSuccessMessage() {
-            // Create and show success notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in';
-            notification.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                    </svg>
-                    <span>Profile created successfully! Welcome to RoomPal!</span>
-                </div>
-            `;
-
-            document.body.appendChild(notification);
-
-            // Remove notification after 4 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 4000);
-        }
-
-        function showErrorMessage(message) {
-            // Create and show error notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 z-50 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg animate-slide-in';
-            notification.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                    </svg>
-                    <span>${message}</span>
-                </div>
-            `;
-
-            document.body.appendChild(notification);
-
-            // Remove notification after 4 seconds
-            setTimeout(() => {
-                notification.style.opacity = '0';
-                setTimeout(() => {
-                    document.body.removeChild(notification);
-                }, 300);
-            }, 4000);
-        }
-
-        // Close modal when clicking outside
-        document.addEventListener('click', function(e) {
-            const modal = document.getElementById('createProfileModal');
-            if (e.target === modal) {
-                closeCreateProfileModal();
-            }
-        });
-
-        // Close modal with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                const modal = document.getElementById('createProfileModal');
-                if (!modal.classList.contains('hidden')) {
-                    closeCreateProfileModal();
-                }
-            }
-        });
-    </script>
-
-    <!-- RoomPal API Service -->
-    <script src="js/roommate-api.js"></script>
-
-    <!-- Enhanced JavaScript -->
+    <!-- JavaScript -->
     <script src="js/roommate-matching.js"></script>
-
-    <!-- Face Cards Population Script -->
+    <script src="js/roommate-api.js"></script>
     <script>
-        // Sample roommate profiles data - Expanded to 20 profiles
-        const roommateProfiles = [
-            {
-                id: 1,
-                name: "Sarah Chen",
-                age: 24,
-                occupation: "Software Engineer",
-                location: "Downtown Seattle",
-                photo: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face",
-                compatibility: 95,
-                highlights: ["Clean & Organized", "Night Owl", "Loves Cooking"],
-                budget: "$800-1200",
-                verified: true,
-                badge: "New"
-            },
-            {
-                id: 2,
-                name: "Marcus Johnson",
-                age: 26,
-                occupation: "Marketing Manager",
-                location: "Capitol Hill, Seattle",
-                photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=400&h=400&fit=crop&crop=face",
-                compatibility: 88,
-                highlights: ["Fitness Enthusiast", "Early Bird", "Social"],
-                budget: "$1000-1500",
-                verified: true,
-                badge: "Popular"
-            },
-            {
-                id: 3,
-                name: "Emma Rodriguez",
-                age: 23,
-                occupation: "UX Designer",
-                location: "Fremont, Seattle",
-                photo: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop&crop=face",
-                compatibility: 92,
-                highlights: ["Creative", "Pet Lover", "Quiet"],
-                budget: "$700-1000",
-                verified: true,
-                badge: "Featured"
-            },
-            {
-                id: 4,
-                name: "Alex Thompson",
-                age: 25,
-                occupation: "Data Scientist",
-                location: "Ballard, Seattle",
-                photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop&crop=face",
-                compatibility: 90,
-                highlights: ["Tech Enthusiast", "Board Games", "Minimalist"],
-                budget: "$900-1300",
-                verified: true,
-                badge: "Online"
-            },
-            {
-                id: 5,
-                name: "Zoe Park",
-                age: 22,
-                occupation: "Graduate Student",
-                location: "University District",
-                photo: "https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=400&h=400&fit=crop&crop=face",
-                compatibility: 87,
-                highlights: ["Studious", "Coffee Lover", "Eco-Friendly"],
-                budget: "$600-900",
-                verified: true,
-                badge: "Student"
-            },
-            {
-                id: 6,
-                name: "Ryan Kim",
-                age: 27,
-                occupation: "Graphic Designer",
-                location: "Belltown, Seattle",
-                photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop&crop=face",
-                compatibility: 85,
-                highlights: ["Artistic", "Music Lover", "Laid Back"],
-                budget: "$800-1200",
-                verified: false,
-                badge: "Creative"
-            },
-            {
-                id: 7,
-                name: "Jessica Martinez",
-                age: 24,
-                occupation: "Registered Nurse",
-                location: "Queen Anne, Seattle",
-                photo: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=400&h=400&fit=crop&crop=face",
-                compatibility: 93,
-                highlights: ["Caring", "Active Lifestyle", "Team Player"],
-                budget: "$900-1400",
-                verified: true,
-                badge: "Healthcare"
-            },
-            {
-                id: 8,
-                name: "David Chang",
-                age: 28,
-                occupation: "Chef",
-                location: "Pike Place, Seattle",
-                photo: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop&crop=face",
-                compatibility: 89,
-                highlights: ["Foodie", "Social", "Creative Cook"],
-                budget: "$800-1300",
-                verified: true,
-                badge: "Foodie"
-            },
-            {
-                id: 9,
-                name: "Mia Foster",
-                age: 25,
-                occupation: "Elementary Teacher",
-                location: "Greenwood, Seattle",
-                photo: "https://images.unsplash.com/photo-1534751516642-a1af1ef26a56?w=400&h=400&fit=crop&crop=face",
-                compatibility: 91,
-                highlights: ["Patient", "Organized", "Book Lover"],
-                budget: "$700-1100",
-                verified: true,
-                badge: "Educator"
-            },
-            {
-                id: 10,
-                name: "Jordan Blake",
-                age: 26,
-                occupation: "Personal Trainer",
-                location: "West Seattle",
-                photo: "https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=400&h=400&fit=crop&crop=face",
-                compatibility: 86,
-                highlights: ["Fitness Focused", "Motivational", "Outdoor Activities"],
-                budget: "$800-1200",
-                verified: true,
-                badge: "Fitness"
-            },
-            {
-                id: 11,
-                name: "Sophia Williams",
-                age: 23,
-                occupation: "Photographer",
-                location: "Capitol Hill, Seattle",
-                photo: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=400&h=400&fit=crop&crop=face",
-                compatibility: 88,
-                highlights: ["Artistic", "Travel Lover", "Flexible Schedule"],
-                budget: "$650-1050",
-                verified: true,
-                badge: "Artist"
-            },
-            {
-                id: 12,
-                name: "Jake Morrison",
-                age: 27,
-                occupation: "DevOps Engineer",
-                location: "South Lake Union",
-                photo: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?w=400&h=400&fit=crop&crop=face",
-                compatibility: 94,
-                highlights: ["Tech Savvy", "Problem Solver", "Coffee Enthusiast"],
-                budget: "$1000-1600",
-                verified: true,
-                badge: "Tech"
-            },
-            {
-                id: 13,
-                name: "Isabella Santos",
-                age: 24,
-                occupation: "Physical Therapist",
-                location: "Magnolia, Seattle",
-                photo: "https://images.unsplash.com/photo-1531123897727-8f129e1688ce?w=400&h=400&fit=crop&crop=face",
-                compatibility: 90,
-                highlights: ["Health Conscious", "Empathetic", "Active"],
-                budget: "$900-1350",
-                verified: true,
-                badge: "Health"
-            },
-            {
-                id: 14,
-                name: "Ethan Cooper",
-                age: 25,
-                occupation: "Music Producer",
-                location: "Georgetown, Seattle",
-                photo: "https://images.unsplash.com/photo-1566492031773-4f4e44671d66?w=400&h=400&fit=crop&crop=face",
-                compatibility: 82,
-                highlights: ["Creative", "Night Owl", "Music Lover"],
-                budget: "$700-1200",
-                verified: true,
-                badge: "Music"
-            },
-            {
-                id: 15,
-                name: "Aria Patel",
-                age: 22,
-                occupation: "Medical Student",
-                location: "First Hill, Seattle",
-                photo: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face",
-                compatibility: 96,
-                highlights: ["Studious", "Ambitious", "Team Oriented"],
-                budget: "$600-1000",
-                verified: true,
-                badge: "Medical"
-            },
-            {
-                id: 16,
-                name: "Caleb Rodriguez",
-                age: 29,
-                occupation: "Financial Analyst",
-                location: "Bellevue, WA",
-                photo: "https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?w=400&h=400&fit=crop&crop=face",
-                compatibility: 87,
-                highlights: ["Analytical", "Detail Oriented", "Gym Regular"],
-                budget: "$1200-1800",
-                verified: true,
-                badge: "Finance"
-            },
-            {
-                id: 17,
-                name: "Luna Zhang",
-                age: 26,
-                occupation: "Content Creator",
-                location: "Redmond, WA",
-                photo: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop&crop=face",
-                compatibility: 84,
-                highlights: ["Social Media Savvy", "Creative", "Flexible"],
-                budget: "$800-1300",
-                verified: true,
-                badge: "Creator"
-            },
-            {
-                id: 18,
-                name: "Owen Mitchell",
-                age: 28,
-                occupation: "Lawyer",
-                location: "Downtown Seattle",
-                photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?w=400&h=400&fit=crop&crop=face",
-                compatibility: 91,
-                highlights: ["Professional", "Well Organized", "Debate Lover"],
-                budget: "$1300-2000",
-                verified: true,
-                badge: "Legal"
-            },
-            {
-                id: 19,
-                name: "Chloe Adams",
-                age: 23,
-                occupation: "Veterinary Student",
-                location: "Bothell, WA",
-                photo: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=400&h=400&fit=crop&crop=face",
-                compatibility: 89,
-                highlights: ["Animal Lover", "Compassionate", "Outdoorsy"],
-                budget: "$650-1100",
-                verified: true,
-                badge: "Animal Care"
-            },
-            {
-                id: 20,
-                name: "Mason Lee",
-                age: 27,
-                occupation: "Product Manager",
-                location: "Kirkland, WA",
-                photo: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop&crop=face",
-                compatibility: 93,
-                highlights: ["Strategic Thinker", "Team Leader", "Tech Enthusiast"],
-                budget: "$1100-1700",
-                verified: true,
-                badge: "Product"
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            document.getElementById('mobileMenu').classList.toggle('open');
+            document.getElementById('mobileOverlay').classList.toggle('open');
+        }
+
+        // Initialize app
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof RoomPalApp !== 'undefined') {
+                window.roomPalApp = new RoomPalApp();
             }
-        ];
-
-        // Function to create a face card
-        function createFaceCard(profile) {
-            const badgeColors = {
-                'New': 'bg-green-500',
-                'Popular': 'bg-red-500',
-                'Featured': 'bg-purple-500',
-                'Online': 'bg-blue-500',
-                'Student': 'bg-yellow-500',
-                'Creative': 'bg-pink-500',
-                'Healthcare': 'bg-emerald-500',
-                'Foodie': 'bg-orange-500',
-                'Educator': 'bg-indigo-500',
-                'Fitness': 'bg-lime-500',
-                'Artist': 'bg-violet-500',
-                'Tech': 'bg-cyan-500',
-                'Health': 'bg-teal-500',
-                'Music': 'bg-fuchsia-500',
-                'Medical': 'bg-rose-500',
-                'Finance': 'bg-amber-500',
-                'Creator': 'bg-sky-500',
-                'Legal': 'bg-slate-500',
-                'Animal Care': 'bg-green-600',
-                'Product': 'bg-blue-600'
-            };
-
-            return `
-                <div class="roommate-card glass-card rounded-2xl overflow-hidden hover:scale-105 transition-transform duration-300 cursor-pointer" data-profile-id="${profile.id}">
-                    <!-- Profile Image Section -->
-                    <div class="relative">
-                        <img src="${profile.photo}" alt="${profile.name}" class="w-full h-48 object-cover">
-
-                        <!-- Badge -->
-                        <div class="absolute top-3 left-3 ${badgeColors[profile.badge] || 'bg-gray-500'} text-white text-xs px-2 py-1 rounded-full font-medium">
-                            ${profile.badge}
-                        </div>
-
-                        <!-- Save Button -->
-                        <button class="absolute top-3 right-3 w-8 h-8 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-white transition-colors duration-200" onclick="toggleSave(${profile.id}, event)">
-                            <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"></path>
-                            </svg>
-                        </button>
-
-                        <!-- Verification Badge -->
-                        ${profile.verified ? `
-                            <div class="absolute bottom-3 left-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center space-x-1">
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <span>Verified</span>
-                            </div>
-                        ` : ''}
-                    </div>
-
-                    <!-- Profile Info Section -->
-                    <div class="p-5 text-white">
-                        <!-- Name and Age -->
-                        <div class="flex justify-between items-start mb-3">
-                            <div>
-                                <h3 class="text-lg font-semibold">${profile.name}, ${profile.age}</h3>
-                                <p class="text-blue-200 text-sm">${profile.occupation}</p>
-                            </div>
-                            <div class="text-right">
-                                <div class="text-green-300 font-bold text-lg">${profile.compatibility}%</div>
-                                <div class="text-xs text-blue-200">Match</div>
-                            </div>
-                        </div>
-
-                        <!-- Location -->
-                        <div class="flex items-center space-x-2 mb-3 text-blue-100 text-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                            </svg>
-                            <span>${profile.location}</span>
-                        </div>
-
-                        <!-- Budget -->
-                        <div class="flex items-center space-x-2 mb-4 text-blue-100 text-sm">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                            <span>${profile.budget}/month</span>
-                        </div>
-
-                        <!-- Highlights -->
-                        <div class="mb-4">
-                            <div class="flex flex-wrap gap-1">
-                                ${profile.highlights.slice(0, 3).map(highlight => `
-                                    <span class="bg-white bg-opacity-20 text-xs px-2 py-1 rounded-full text-blue-100">${highlight}</span>
-                                `).join('')}
-                            </div>
-                        </div>
-
-                        <!-- Compatibility Bar -->
-                        <div class="mb-4">
-                            <div class="flex justify-between items-center mb-1">
-                                <span class="text-xs text-blue-200">Compatibility</span>
-                                <span class="text-xs text-green-300">${profile.compatibility}%</span>
-                            </div>
-                            <div class="w-full bg-white bg-opacity-20 rounded-full h-2">
-                                <div class="bg-gradient-to-r from-green-400 to-blue-400 h-2 rounded-full transition-all duration-500" style="width: ${profile.compatibility}%"></div>
-                            </div>
-                        </div>
-
-                        <!-- Action Buttons -->
-                        <div class="grid grid-cols-2 gap-2">
-                            <button onclick="connectWithRoommate(${profile.id}, event)" class="btn-primary px-3 py-2 rounded-lg text-white font-medium text-sm hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8z"></path>
-                                </svg>
-                                <span>Connect</span>
-                            </button>
-                            <button onclick="viewProfile(${profile.id}, event)" class="btn-secondary px-3 py-2 rounded-lg text-white font-medium text-sm hover:scale-105 transition-transform duration-200 flex items-center justify-center space-x-1">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                </svg>
-                                <span>View Profile</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // Function to populate face cards
-        function populateFaceCards() {
-            const container = document.getElementById('roommateCardsContainer');
-            if (container) {
-                container.innerHTML = roommateProfiles.map(profile => createFaceCard(profile)).join('');
-            }
-        }
-
-        // Event handlers for buttons
-        function toggleSave(profileId, event) {
-            event.stopPropagation();
-            const button = event.currentTarget;
-            const icon = button.querySelector('svg');
-
-            // Toggle save state
-            if (icon.getAttribute('fill') === 'currentColor') {
-                icon.setAttribute('fill', 'none');
-                button.classList.remove('text-red-500');
-                button.classList.add('text-gray-600');
-                console.log('Removed from favorites:', profileId);
-            } else {
-                icon.setAttribute('fill', 'currentColor');
-                button.classList.remove('text-gray-600');
-                button.classList.add('text-red-500');
-                console.log('Added to favorites:', profileId);
-            }
-        }
-
-        function connectWithRoommate(profileId, event) {
-            event.stopPropagation();
-            const profile = roommateProfiles.find(p => p.id === profileId);
-            alert(`Connecting with ${profile.name}! This would open a chat or send a connection request.`);
-            console.log('Connect with roommate:', profileId);
-        }
-
-        function viewProfile(profileId, event) {
-            event.stopPropagation();
-            const profile = roommateProfiles.find(p => p.id === profileId);
-            alert(`Viewing ${profile.name}'s full profile! This would open a detailed profile modal or page.`);
-            console.log('View profile:', profileId);
-        }
-
-        // Initialize face cards when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            populateFaceCards();
-            setupStepNavigation();
-            console.log('Face cards populated successfully');
         });
-
-        // Assessment Flow JavaScript
-        function startAssessment() {
-            console.log('Starting compatibility assessment...');
-
-            // Hide the face cards section and CTA using reliable selectors
-            const faceCardsSection = document.getElementById('faceCardsSection');
-            const assessmentCTA = document.getElementById('assessmentCTA');
-
-            if (faceCardsSection) {
-                faceCardsSection.style.display = 'none';
-                console.log('Face cards section hidden');
-            } else {
-                console.error('Face cards section not found');
-            }
-
-            if (assessmentCTA) {
-                assessmentCTA.style.display = 'none';
-                console.log('Assessment CTA hidden');
-            } else {
-                console.error('Assessment CTA not found');
-            }
-
-            // Show progress indicator and step 1
-            const progressSection = document.getElementById('progressSection');
-            if (progressSection) {
-                progressSection.classList.remove('hidden');
-                console.log('Progress section shown');
-            } else {
-                console.error('Progress section not found');
-            }
-
-            showStep(1);
-        }
-
-        function goBackToFaceCards() {
-            console.log('Going back to face cards...');
-
-            // Show face cards and CTA
-            const faceCardsSection = document.getElementById('faceCardsSection');
-            const assessmentCTA = document.getElementById('assessmentCTA');
-
-            if (faceCardsSection) {
-                faceCardsSection.style.display = 'block';
-                console.log('Face cards section shown');
-            }
-
-            if (assessmentCTA) {
-                assessmentCTA.style.display = 'block';
-                console.log('Assessment CTA shown');
-            }
-
-            // Hide assessment flow
-            const progressSection = document.getElementById('progressSection');
-            if (progressSection) {
-                progressSection.classList.add('hidden');
-                console.log('Progress section hidden');
-            }
-
-            // Hide all steps
-            document.querySelectorAll('.step-content').forEach(step => {
-                step.classList.remove('active');
-                step.style.display = 'none';
-            });
-
-            console.log('Back to face cards complete');
-        }
-
-        function showStep(stepNumber) {
-            console.log(`Showing step ${stepNumber}`);
-
-            // Hide all steps
-            document.querySelectorAll('.step-content').forEach(step => {
-                step.classList.remove('active');
-                step.style.display = 'none';
-            });
-
-            // Show current step
-            const currentStep = document.getElementById(`step${stepNumber}`);
-            if (currentStep) {
-                currentStep.style.display = 'block';
-                currentStep.classList.add('active');
-                console.log(`Step ${stepNumber} displayed successfully`);
-            } else {
-                console.error(`Step ${stepNumber} element not found`);
-            }
-
-            // Update progress indicator
-            updateProgressIndicator(stepNumber);
-        }
-
-        function nextStep(stepNumber) {
-            if (stepNumber === 2) {
-                // Validate step 1 before proceeding
-                if (!validateStep1()) {
-                    return;
-                }
-            }
-            showStep(stepNumber);
-
-            // Initialize step 3 with Tinder cards if reached
-            if (stepNumber === 3) {
-                initializeTinderCards();
-            }
-        }
-
-        function updateProgressIndicator(activeStep) {
-            document.querySelectorAll('.step-indicator').forEach((indicator, index) => {
-                const stepNum = index + 1;
-                indicator.classList.remove('active', 'completed');
-
-                if (stepNum === activeStep) {
-                    indicator.classList.add('active');
-                } else if (stepNum < activeStep) {
-                    indicator.classList.add('completed');
-                }
-            });
-        }
-
-        function validateStep1() {
-            const budget = document.getElementById('budget').value;
-            const location = document.getElementById('location').value;
-            const roomType = document.getElementById('roomType').value;
-
-            const isValid = budget && location && roomType;
-
-            const continueBtn = document.getElementById('step1-continue');
-            const validationMessage = document.querySelector('.validation-message');
-
-            if (isValid) {
-                continueBtn.disabled = false;
-                continueBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                validationMessage.textContent = 'Great! All fields completed.';
-
-                // Update validation dots
-                updateValidationDot('budget', budget);
-                updateValidationDot('location', location);
-                updateValidationDot('roomType', roomType);
-
-                return true;
-            } else {
-                continueBtn.disabled = true;
-                continueBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                validationMessage.textContent = 'Please complete all fields above to continue';
-                return false;
-            }
-        }
-
-        function updateValidationDot(field, value) {
-            const dot = document.querySelector(`[data-field="${field}"]`);
-            if (dot) {
-                if (value) {
-                    dot.classList.remove('bg-gray-400');
-                    dot.classList.add('bg-green-400');
-                } else {
-                    dot.classList.remove('bg-green-400');
-                    dot.classList.add('bg-gray-400');
-                }
-            }
-        }
-
-        function setupStepNavigation() {
-            // Add event listeners for step 1 validation
-            ['budget', 'location', 'roomType'].forEach(fieldId => {
-                const field = document.getElementById(fieldId);
-                if (field) {
-                    field.addEventListener('change', validateStep1);
-                }
-            });
-
-            // Setup cleanliness slider
-            const cleanlinessSlider = document.querySelector('[name="cleanlinessLevel"]');
-            if (cleanlinessSlider) {
-                cleanlinessSlider.addEventListener('input', function() {
-                    document.querySelector('.cleanliness-value').textContent = this.value;
-                });
-            }
-        }
-
-        function initializeTinderCards() {
-            const cardStack = document.getElementById('card-stack');
-            if (!cardStack) return;
-
-            // Use the same roommate profiles from face cards but format for Tinder cards
-            const tinderMatches = roommateProfiles.slice(0, 3); // Take first 3 for Tinder matching
-
-            cardStack.innerHTML = '';
-
-            tinderMatches.forEach((profile, index) => {
-                const card = createTinderCard(profile, index);
-                cardStack.appendChild(card);
-            });
-
-            setupTinderButtons();
-        }
-
-        function createTinderCard(profile, index) {
-            const card = document.createElement('div');
-            card.className = `tinder-card absolute inset-0 bg-white rounded-2xl shadow-2xl overflow-hidden cursor-pointer`;
-            card.style.zIndex = 10 - index;
-            card.style.transform = `scale(${1 - index * 0.02}) translateY(${index * 4}px)`;
-
-            card.innerHTML = `
-                <div class="relative h-full">
-                    <img src="${profile.photo}" alt="${profile.name}" class="w-full h-64 object-cover">
-                    <div class="absolute top-4 right-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                        ${profile.compatibility}% Match
-                    </div>
-                    <div class="p-6 text-gray-800">
-                        <h3 class="text-2xl font-bold mb-2">${profile.name}, ${profile.age}</h3>
-                        <p class="text-lg text-gray-600 mb-3">${profile.occupation}</p>
-                        <p class="text-gray-500 mb-4">${profile.location}</p>
-                        <div class="flex flex-wrap gap-2 mb-4">
-                            ${profile.highlights.map(highlight => `
-                                <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm">${highlight}</span>
-                            `).join('')}
-                        </div>
-                        <div class="text-gray-600">
-                            <p class="text-sm">💰 ${profile.budget}/month</p>
-                        </div>
-                    </div>
-                </div>
-            `;
-
-            return card;
-        }
-
-        function setupTinderButtons() {
-            const passBtn = document.getElementById('pass-btn');
-            const likeBtn = document.getElementById('like-btn');
-            const infoBtn = document.getElementById('info-btn');
-
-            if (passBtn) passBtn.onclick = () => swipeCard('pass');
-            if (likeBtn) likeBtn.onclick = () => swipeCard('like');
-            if (infoBtn) infoBtn.onclick = () => showMoreInfo();
-        }
-
-        function swipeCard(action) {
-            const cards = document.querySelectorAll('.tinder-card');
-            if (cards.length === 0) return;
-
-            const topCard = cards[0];
-            const direction = action === 'like' ? 'right' : 'left';
-
-            // Animate card out
-            topCard.style.transform = `translateX(${direction === 'right' ? '100%' : '-100%'}) rotate(${direction === 'right' ? '20deg' : '-20deg'})`;
-            topCard.style.opacity = '0';
-
-            // Remove card after animation
-            setTimeout(() => {
-                topCard.remove();
-                updateCardCounter();
-
-                // Check if all cards are done
-                if (document.querySelectorAll('.tinder-card').length === 0) {
-                    showMatchingComplete();
-                }
-            }, 300);
-
-            console.log(`${action === 'like' ? 'Liked' : 'Passed'} on profile`);
-        }
-
-        function showMoreInfo() {
-            alert('More detailed profile information would be shown here!');
-        }
-
-        function updateCardCounter() {
-            const remaining = document.querySelectorAll('.tinder-card').length;
-            const counter = document.getElementById('card-counter');
-            if (counter) {
-                counter.textContent = `${4 - remaining} of 3`;
-            }
-        }
-
-        function showMatchingComplete() {
-            const matchingStatus = document.querySelector('.matching-status');
-            if (matchingStatus) {
-                matchingStatus.innerHTML = '<span class="text-green-300 font-semibold">🎉 Matching Complete! Your selections have been saved.</span>';
-            }
-        }
     </script>
 </body>
 </html>
