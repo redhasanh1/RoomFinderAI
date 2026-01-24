@@ -39,22 +39,42 @@
             if (!document.hidden) {
                 console.log('🔄 Tab visible - resetting UI state');
 
+                // Reset ALL dropdown menus to CSS default (hidden)
+                document.querySelectorAll('.dropdown-menu').forEach(el => {
+                    el.style.opacity = '';
+                    el.style.visibility = '';
+                    el.style.transform = '';
+                });
+
                 // Reset navigation visibility (fix nav items disappearing)
-                document.querySelectorAll('.dropdown-menu, [class*="dropdown"]').forEach(el => {
+                document.querySelectorAll('[class*="dropdown"]').forEach(el => {
                     el.style.visibility = '';
                     el.style.opacity = '';
                 });
+
+                // Ensure desktop nav is visible
                 const desktopNav = document.querySelector('.desktop-nav');
-                if (desktopNav) desktopNav.style.visibility = '';
+                if (desktopNav) {
+                    desktopNav.style.visibility = '';
+                    desktopNav.style.display = '';
+                }
+
+                // Ensure header is visible
+                const header = document.getElementById('header');
+                if (header) {
+                    header.style.display = '';
+                    header.style.visibility = '';
+                }
+
+                // Reset message panel state
+                const messagePanel = document.getElementById('messagePanel');
+                if (messagePanel && !messagePanel.classList.contains('hidden')) {
+                    // Panel was open, ensure it stays visible
+                    messagePanel.style.display = 'block';
+                }
 
                 // Reset initialization flag to allow re-init if needed
                 initializationInProgress = false;
-
-                // Re-init photo wizard if modal got lost
-                if (window.photoListingWizard && !window.photoListingWizard.modal) {
-                    console.log('🔄 Re-initializing photo wizard...');
-                    window.photoListingWizard.init();
-                }
 
                 // Re-init messages panel if button lost its handler
                 if (typeof setupMessagingPanel === 'function') {
@@ -63,6 +83,12 @@
                         console.log('🔄 Re-initializing messaging panel...');
                         setupMessagingPanel();
                     }
+                }
+
+                // Re-init photo wizard if modal got lost
+                if (window.photoListingWizard && !window.photoListingWizard.modal) {
+                    console.log('🔄 Re-initializing photo wizard...');
+                    window.photoListingWizard.init();
                 }
             }
         });
@@ -4398,11 +4424,20 @@
         let globalUnreadCount = 0;
         let locallyReadConversations = new Set(); // Track conversations marked as read locally
 
-        // Setup Messaging Panel
+        // Setup Messaging Panel - with retry counter for robustness
+        let messagingPanelRetries = 0;
+        const MAX_MESSAGING_RETRIES = 5;
+
         function setupMessagingPanel() {
             if (!supabase || typeof supabase.channel !== 'function') {
                 console.warn('🔧 Supabase client not ready, deferring messaging panel setup.');
-                setTimeout(setupMessagingPanel, 1000);
+                if (messagingPanelRetries < MAX_MESSAGING_RETRIES) {
+                    messagingPanelRetries++;
+                    console.log(`🔄 Messaging panel retry ${messagingPanelRetries}/${MAX_MESSAGING_RETRIES} (Supabase)`);
+                    setTimeout(setupMessagingPanel, 1000);
+                } else {
+                    console.error('❌ Max retries reached for messaging panel setup (Supabase not ready)');
+                }
                 return;
             }
             const messageToggleBtn = document.getElementById('messageToggleBtn');
@@ -4413,7 +4448,13 @@
             // Add null checks
             if (!messageToggleBtn || !messagePanel) {
                 console.error('❌ Message panel elements not found, retrying...');
-                setTimeout(setupMessagingPanel, 500);
+                if (messagingPanelRetries < MAX_MESSAGING_RETRIES) {
+                    messagingPanelRetries++;
+                    console.log(`🔄 Messaging panel retry ${messagingPanelRetries}/${MAX_MESSAGING_RETRIES} (DOM elements)`);
+                    setTimeout(setupMessagingPanel, 500);
+                } else {
+                    console.error('❌ Max retries reached for messaging panel setup (DOM elements not found)');
+                }
                 return;
             }
 
@@ -5604,7 +5645,7 @@
             const mobileMenu = document.getElementById('mobile-menu');
             const hamburgerBtn = document.querySelector('.mobile-menu-btn');
             const body = document.body;
-            
+
             if (mobileMenu) {
                 mobileMenu.classList.remove('active');
             }
@@ -5615,7 +5656,32 @@
                 body.classList.remove('mobile-menu-open');
             }
         }
-        
+
+        // Toggle profile dropdown (for onclick handlers)
+        function toggleProfileDropdown() {
+            const profileDropdown = document.getElementById('profile-dropdown');
+            if (!profileDropdown) return;
+
+            const allDropdowns = document.querySelectorAll('.dropdown-menu');
+            allDropdowns.forEach(menu => {
+                if (menu.id !== 'profile-dropdown') {
+                    menu.style.opacity = '0';
+                    menu.style.visibility = 'hidden';
+                    menu.style.transform = 'translateY(-10px)';
+                }
+            });
+
+            if (profileDropdown.style.opacity === '1') {
+                profileDropdown.style.opacity = '0';
+                profileDropdown.style.visibility = 'hidden';
+                profileDropdown.style.transform = 'translateY(-10px)';
+            } else {
+                profileDropdown.style.opacity = '1';
+                profileDropdown.style.visibility = 'visible';
+                profileDropdown.style.transform = 'translateY(0)';
+            }
+        }
+
         function toggleMobileSection(sectionId) {
             const section = document.getElementById(sectionId + '-section');
             const arrow = document.getElementById(sectionId + '-arrow');
