@@ -61,6 +61,21 @@ CREATE TABLE IF NOT EXISTS roommate_profiles (
         "dealBreakers": []
     }',
 
+    -- User Type (has_spot = has a room, seeking = looking for roommates)
+    user_type VARCHAR(20) CHECK (user_type IN ('has_spot', 'seeking')),
+
+    -- Room fields (for has_spot users)
+    room_rent INTEGER,
+    room_location VARCHAR(300),
+    room_type VARCHAR(50) CHECK (room_type IN ('private', 'shared', 'studio', 'other')),
+    room_available_date DATE,
+    room_description TEXT,
+    room_photos JSONB DEFAULT '[]',
+
+    -- Seeker fields
+    preferred_areas JSONB DEFAULT '[]',
+    move_in_date DATE,
+
     -- Profile Status
     is_active BOOLEAN DEFAULT true,
     is_verified BOOLEAN DEFAULT false,
@@ -131,6 +146,48 @@ CREATE TABLE IF NOT EXISTS roommate_messages (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- Create roommate groups table (for seekers to form groups)
+CREATE TABLE IF NOT EXISTS roommate_groups (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    name VARCHAR(100),
+    description TEXT,
+    creator_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+
+    -- Group settings
+    target_budget_min INTEGER,
+    target_budget_max INTEGER,
+    target_move_in_date DATE,
+    preferred_areas JSONB DEFAULT '[]',
+    max_members INTEGER DEFAULT 4,
+
+    -- Status
+    status VARCHAR(20) DEFAULT 'forming' CHECK (status IN ('forming', 'searching', 'found', 'closed')),
+
+    -- Timestamps
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create group members table
+CREATE TABLE IF NOT EXISTS roommate_group_members (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    group_id UUID REFERENCES roommate_groups(id) ON DELETE CASCADE,
+    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+    profile_id UUID REFERENCES roommate_profiles(id) ON DELETE CASCADE,
+
+    -- Member role
+    role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('creator', 'admin', 'member')),
+
+    -- Invitation status
+    status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'declined')),
+
+    -- Timestamps
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+
+    -- Ensure one membership per user per group
+    UNIQUE(group_id, user_id)
+);
+
 -- Indexes for better performance
 CREATE INDEX IF NOT EXISTS idx_roommate_profiles_user_id ON roommate_profiles(user_id);
 CREATE INDEX IF NOT EXISTS idx_roommate_profiles_active ON roommate_profiles(is_active) WHERE is_active = true;
@@ -139,6 +196,11 @@ CREATE INDEX IF NOT EXISTS idx_roommate_profiles_age ON roommate_profiles(age);
 CREATE INDEX IF NOT EXISTS idx_roommate_matches_user_id ON roommate_matches(user_id);
 CREATE INDEX IF NOT EXISTS idx_roommate_matches_target ON roommate_matches(target_profile_id);
 CREATE INDEX IF NOT EXISTS idx_roommate_matches_mutual ON roommate_matches(is_mutual) WHERE is_mutual = true;
+CREATE INDEX IF NOT EXISTS idx_roommate_profiles_user_type ON roommate_profiles(user_type);
+CREATE INDEX IF NOT EXISTS idx_roommate_profiles_room_rent ON roommate_profiles(room_rent) WHERE user_type = 'has_spot';
+CREATE INDEX IF NOT EXISTS idx_roommate_groups_status ON roommate_groups(status);
+CREATE INDEX IF NOT EXISTS idx_roommate_group_members_group ON roommate_group_members(group_id);
+CREATE INDEX IF NOT EXISTS idx_roommate_group_members_user ON roommate_group_members(user_id);
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE roommate_profiles ENABLE ROW LEVEL SECURITY;
@@ -171,6 +233,40 @@ CREATE POLICY "Users can access messages in their conversations" ON roommate_mes
         )
     );
 
+-- RLS Policies for roommate_groups
+ALTER TABLE roommate_groups ENABLE ROW LEVEL SECURITY;
+ALTER TABLE roommate_group_members ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view groups they are members of" ON roommate_groups
+    FOR SELECT USING (
+        creator_id = auth.uid() OR
+        EXISTS (
+            SELECT 1 FROM roommate_group_members
+            WHERE group_id = id AND user_id = auth.uid() AND status = 'accepted'
+        )
+    );
+
+CREATE POLICY "Users can create groups" ON roommate_groups
+    FOR INSERT WITH CHECK (creator_id = auth.uid());
+
+CREATE POLICY "Creators can update their groups" ON roommate_groups
+    FOR UPDATE USING (creator_id = auth.uid());
+
+CREATE POLICY "Creators can delete their groups" ON roommate_groups
+    FOR DELETE USING (creator_id = auth.uid());
+
+CREATE POLICY "Users can view group memberships" ON roommate_group_members
+    FOR SELECT USING (
+        user_id = auth.uid() OR
+        EXISTS (
+            SELECT 1 FROM roommate_groups
+            WHERE id = group_id AND creator_id = auth.uid()
+        )
+    );
+
+CREATE POLICY "Users can manage their own membership" ON roommate_group_members
+    FOR ALL USING (user_id = auth.uid());
+
 -- Function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -187,6 +283,10 @@ CREATE TRIGGER update_roommate_profiles_updated_at
 
 CREATE TRIGGER update_roommate_conversations_updated_at
     BEFORE UPDATE ON roommate_conversations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_roommate_groups_updated_at
+    BEFORE UPDATE ON roommate_groups
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Function to calculate compatibility score

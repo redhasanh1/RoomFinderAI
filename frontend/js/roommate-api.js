@@ -218,6 +218,461 @@ class RoommateAPIService {
         }
     }
 
+    // ==================== ROOM POSTS (has_spot users) ====================
+
+    /**
+     * Get all room posts
+     * @param {Object} filters - Filtering options
+     * @returns {Array} Array of room posts
+     */
+    async getRoomPosts(filters = {}) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Using mock room data');
+                return [];
+            }
+
+            let query = this.supabase
+                .from('roommate_profiles')
+                .select('*')
+                .eq('user_type', 'has_spot')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false });
+
+            // Apply filters
+            if (filters.maxRent) {
+                query = query.lte('room_rent', filters.maxRent);
+            }
+            if (filters.minRent) {
+                query = query.gte('room_rent', filters.minRent);
+            }
+            if (filters.roomType) {
+                query = query.eq('room_type', filters.roomType);
+            }
+            if (filters.location) {
+                query = query.ilike('room_location', `%${filters.location}%`);
+            }
+
+            const limit = filters.limit || 20;
+            const { data, error } = await query.limit(limit);
+
+            if (error) {
+                console.error('❌ Error fetching room posts:', error);
+                return [];
+            }
+
+            console.log(`✅ Fetched ${data.length} room posts`);
+            return data;
+
+        } catch (error) {
+            console.error('❌ Error in getRoomPosts:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Save a room post
+     * @param {Object} roomData - Room information
+     * @returns {Object} Created/updated room post
+     */
+    async saveRoomPost(roomData) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Mock save room post');
+                return { success: true, data: roomData };
+            }
+
+            const { data: { user } } = await this.supabase.auth.getUser();
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            const payload = {
+                user_id: user.id,
+                user_type: 'has_spot',
+                name: roomData.name || 'Host',
+                room_rent: roomData.room_rent,
+                room_location: roomData.room_location,
+                room_type: roomData.room_type,
+                room_available_date: roomData.room_available_date,
+                room_description: roomData.room_description,
+                room_photos: roomData.room_photos || [],
+                is_active: true,
+                updated_at: new Date().toISOString()
+            };
+
+            // Check for existing room post
+            const { data: existing } = await this.supabase
+                .from('roommate_profiles')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('user_type', 'has_spot')
+                .single();
+
+            let result;
+            if (existing) {
+                result = await this.supabase
+                    .from('roommate_profiles')
+                    .update(payload)
+                    .eq('id', existing.id)
+                    .select()
+                    .single();
+            } else {
+                result = await this.supabase
+                    .from('roommate_profiles')
+                    .insert(payload)
+                    .select()
+                    .single();
+            }
+
+            if (result.error) throw result.error;
+
+            console.log('✅ Room post saved');
+            return { success: true, data: result.data };
+
+        } catch (error) {
+            console.error('❌ Error saving room post:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ==================== SEEKER PROFILES ====================
+
+    /**
+     * Get seeker profiles
+     * @param {Object} filters - Filtering options
+     * @returns {Array} Array of seeker profiles
+     */
+    async getSeekerProfiles(filters = {}) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Using mock seeker data');
+                return [];
+            }
+
+            let query = this.supabase
+                .from('roommate_profiles')
+                .select('*')
+                .eq('user_type', 'seeking')
+                .eq('is_active', true)
+                .order('last_active', { ascending: false });
+
+            // Apply filters
+            if (filters.maxBudget) {
+                query = query.lte('budget_max', filters.maxBudget);
+            }
+            if (filters.minBudget) {
+                query = query.gte('budget_min', filters.minBudget);
+            }
+
+            const limit = filters.limit || 20;
+            const { data, error } = await query.limit(limit);
+
+            if (error) {
+                console.error('❌ Error fetching seeker profiles:', error);
+                return [];
+            }
+
+            console.log(`✅ Fetched ${data.length} seeker profiles`);
+            return data;
+
+        } catch (error) {
+            console.error('❌ Error in getSeekerProfiles:', error);
+            return [];
+        }
+    }
+
+    /**
+     * Save a seeker profile
+     * @param {Object} profileData - Seeker profile information
+     * @returns {Object} Created/updated profile
+     */
+    async saveSeekerProfile(profileData) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Mock save seeker profile');
+                return { success: true, data: profileData };
+            }
+
+            const { data: { user } } = await this.supabase.auth.getUser();
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            const payload = {
+                user_id: user.id,
+                user_type: 'seeking',
+                name: profileData.name || 'Anonymous',
+                budget_min: profileData.budget_min,
+                budget_max: profileData.budget_max,
+                preferred_areas: profileData.preferred_areas || [],
+                move_in_date: profileData.move_in_date,
+                bio: profileData.bio,
+                avatar_url: profileData.avatar_url,
+                is_active: true,
+                last_active: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            // Check for existing seeker profile
+            const { data: existing } = await this.supabase
+                .from('roommate_profiles')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('user_type', 'seeking')
+                .single();
+
+            let result;
+            if (existing) {
+                result = await this.supabase
+                    .from('roommate_profiles')
+                    .update(payload)
+                    .eq('id', existing.id)
+                    .select()
+                    .single();
+            } else {
+                result = await this.supabase
+                    .from('roommate_profiles')
+                    .insert(payload)
+                    .select()
+                    .single();
+            }
+
+            if (result.error) throw result.error;
+
+            console.log('✅ Seeker profile saved');
+            return { success: true, data: result.data };
+
+        } catch (error) {
+            console.error('❌ Error saving seeker profile:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    // ==================== GROUP MANAGEMENT ====================
+
+    /**
+     * Create a roommate group
+     * @param {Object} groupData - Group information
+     * @returns {Object} Created group
+     */
+    async createGroup(groupData) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Mock create group');
+                return { success: true, data: { id: 'mock_group_' + Date.now(), ...groupData } };
+            }
+
+            const { data: { user } } = await this.supabase.auth.getUser();
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            // Create the group
+            const { data: group, error: groupError } = await this.supabase
+                .from('roommate_groups')
+                .insert({
+                    name: groupData.name || 'Roommate Group',
+                    description: groupData.description,
+                    creator_id: user.id,
+                    target_budget_min: groupData.budget_min,
+                    target_budget_max: groupData.budget_max,
+                    target_move_in_date: groupData.move_in_date,
+                    preferred_areas: groupData.preferred_areas || [],
+                    max_members: groupData.max_members || 4,
+                    status: 'forming'
+                })
+                .select()
+                .single();
+
+            if (groupError) throw groupError;
+
+            // Add creator as first member
+            const { error: memberError } = await this.supabase
+                .from('roommate_group_members')
+                .insert({
+                    group_id: group.id,
+                    user_id: user.id,
+                    role: 'creator',
+                    status: 'accepted'
+                });
+
+            if (memberError) throw memberError;
+
+            console.log('✅ Group created');
+            return { success: true, data: group };
+
+        } catch (error) {
+            console.error('❌ Error creating group:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Invite a user to a group
+     * @param {string} groupId - Group ID
+     * @param {string} userId - User to invite
+     * @returns {Object} Invitation result
+     */
+    async inviteToGroup(groupId, userId) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Mock invite to group');
+                return { success: true };
+            }
+
+            const { error } = await this.supabase
+                .from('roommate_group_members')
+                .insert({
+                    group_id: groupId,
+                    user_id: userId,
+                    role: 'member',
+                    status: 'pending'
+                });
+
+            if (error) throw error;
+
+            console.log('✅ Invitation sent');
+            return { success: true };
+
+        } catch (error) {
+            console.error('❌ Error inviting to group:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
+    /**
+     * Get user's group
+     * @returns {Object} Group data with members
+     */
+    async getMyGroup() {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                return null;
+            }
+
+            const { data: { user } } = await this.supabase.auth.getUser();
+            if (!user) return null;
+
+            // Find group where user is a member
+            const { data: membership } = await this.supabase
+                .from('roommate_group_members')
+                .select('group_id')
+                .eq('user_id', user.id)
+                .eq('status', 'accepted')
+                .single();
+
+            if (!membership) return null;
+
+            // Get group details with members
+            const { data: group, error } = await this.supabase
+                .from('roommate_groups')
+                .select(`
+                    *,
+                    roommate_group_members (
+                        user_id,
+                        role,
+                        status,
+                        joined_at
+                    )
+                `)
+                .eq('id', membership.group_id)
+                .single();
+
+            if (error) throw error;
+
+            return group;
+
+        } catch (error) {
+            console.error('❌ Error fetching group:', error);
+            return null;
+        }
+    }
+
+    // ==================== MESSAGING ====================
+
+    /**
+     * Send a message
+     * @param {string} recipientId - Recipient user ID
+     * @param {string} content - Message content
+     * @returns {Object} Message result
+     */
+    async sendMessage(recipientId, content) {
+        try {
+            await this.ensureInitialized();
+
+            if (!this.supabase) {
+                console.log('📝 Mock send message');
+                return { success: true };
+            }
+
+            const { data: { user } } = await this.supabase.auth.getUser();
+            if (!user) {
+                throw new Error('User not authenticated');
+            }
+
+            // Find or create conversation
+            let { data: conversation } = await this.supabase
+                .from('roommate_conversations')
+                .select('id')
+                .or(`and(user1_id.eq.${user.id},user2_id.eq.${recipientId}),and(user1_id.eq.${recipientId},user2_id.eq.${user.id})`)
+                .single();
+
+            if (!conversation) {
+                const { data: newConv, error: convError } = await this.supabase
+                    .from('roommate_conversations')
+                    .insert({
+                        user1_id: user.id,
+                        user2_id: recipientId
+                    })
+                    .select()
+                    .single();
+
+                if (convError) throw convError;
+                conversation = newConv;
+            }
+
+            // Send message
+            const { error: msgError } = await this.supabase
+                .from('roommate_messages')
+                .insert({
+                    conversation_id: conversation.id,
+                    sender_id: user.id,
+                    content: content,
+                    message_type: 'text'
+                });
+
+            if (msgError) throw msgError;
+
+            // Update conversation last message time
+            await this.supabase
+                .from('roommate_conversations')
+                .update({ last_message_at: new Date().toISOString() })
+                .eq('id', conversation.id);
+
+            console.log('✅ Message sent');
+            return { success: true };
+
+        } catch (error) {
+            console.error('❌ Error sending message:', error);
+            return { success: false, error: error.message };
+        }
+    }
+
     // ==================== MATCHING SYSTEM ====================
 
     /**
