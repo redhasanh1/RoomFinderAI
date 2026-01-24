@@ -906,6 +906,171 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
     }
 
     // ========================================
+    // ADVANCED CONTEXTUAL INTELLIGENCE
+    // ========================================
+
+    // Extract specific points landlord makes for intelligent acknowledgment
+    extractLandlordKeyPoints(landlordMessage) {
+        const message = landlordMessage.toLowerCase();
+        const keyPoints = {
+            propertyFeatures: [],
+            concerns: [],
+            justifications: [],
+            flexibilitySignals: []
+        };
+
+        // Property features mentioned
+        const featurePatterns = {
+            'big house': /big house|large house|spacious|huge place/i,
+            'renovated': /renovated|updated|new|modern/i,
+            'location': /great location|prime location|good area|nice neighborhood/i,
+            'amenities': /amenities|pool|gym|parking|utilities included/i,
+            'yard': /yard|garden|outdoor space|patio/i,
+            'bedrooms': /\d+ bedrooms?|bedroom/i
+        };
+
+        for (const [feature, pattern] of Object.entries(featurePatterns)) {
+            if (pattern.test(message)) {
+                keyPoints.propertyFeatures.push(feature);
+            }
+        }
+
+        // Landlord concerns
+        const concernPatterns = {
+            'vacancy cost': /vacant|empty|sitting empty|need to fill/i,
+            'quality tenant': /reliable|good tenant|responsible|references/i,
+            'market rate': /market rate|what others pay|going rate/i,
+            'expenses': /mortgage|taxes|expenses|costs/i
+        };
+
+        for (const [concern, pattern] of Object.entries(concernPatterns)) {
+            if (pattern.test(message)) {
+                keyPoints.concerns.push(concern);
+            }
+        }
+
+        // Justifications for price
+        const justificationPatterns = {
+            'minimum needed': /minimum|lowest|cant go lower|need at least/i,
+            'other offers': /other offers?|someone else|another person/i,
+            'worth more': /worth more|valued at|priced fairly/i
+        };
+
+        for (const [justification, pattern] of Object.entries(justificationPatterns)) {
+            if (pattern.test(message)) {
+                keyPoints.justifications.push(justification);
+            }
+        }
+
+        // Flexibility signals
+        const flexibilityPatterns = {
+            'maybe': /maybe|might|could consider|let me think/i,
+            'depends': /depends|if you|as long as/i,
+            'counter-offer': /how about|what about|could you do/i
+        };
+
+        for (const [signal, pattern] of Object.entries(flexibilityPatterns)) {
+            if (pattern.test(message)) {
+                keyPoints.flexibilitySignals.push(signal);
+            }
+        }
+
+        return keyPoints;
+    }
+
+    // Detect positive/negative signals in negotiation
+    detectNegotiationSignals(currentMessage, previousMessages, negotiation) {
+        const signals = {
+            priceMovement: 'none', // 'dropped', 'raised', 'held_firm', 'none'
+            tone: 'neutral', // 'warming', 'cooling', 'neutral'
+            urgency: 'none', // 'high', 'medium', 'low', 'none'
+            willingness: 'uncertain' // 'high', 'medium', 'low', 'uncertain'
+        };
+
+        const message = currentMessage.toLowerCase();
+        const state = negotiation.negotiationState || {};
+
+        // Detect price movement (CRITICAL for strategy)
+        if (state.landlordCounters && state.landlordCounters.length >= 2) {
+            const lastCounter = state.landlordCounters[state.landlordCounters.length - 1];
+            const prevCounter = state.landlordCounters[state.landlordCounters.length - 2];
+
+            if (lastCounter < prevCounter) {
+                signals.priceMovement = 'dropped'; // LANDLORD IS NEGOTIATING - VERY POSITIVE!
+            } else if (lastCounter > prevCounter) {
+                signals.priceMovement = 'raised'; // Getting worse
+            } else {
+                signals.priceMovement = 'held_firm';
+            }
+        }
+
+        // Detect tone
+        const warmPhrases = /appreciate|understand|fair|reasonable|let me think|maybe|consider/i;
+        const coolPhrases = /no way|impossible|not interested|too low|waste of time/i;
+
+        if (warmPhrases.test(message)) {
+            signals.tone = 'warming';
+        } else if (coolPhrases.test(message)) {
+            signals.tone = 'cooling';
+        }
+
+        // Detect urgency
+        const urgentPhrases = /need to fill|vacant|asap|immediately|this week|running out/i;
+        if (urgentPhrases.test(message)) {
+            signals.urgency = 'high';
+        }
+
+        // Detect willingness to negotiate
+        const willingPhrases = /how about|what if|could you|maybe|let me think|depends/i;
+        const unwillingPhrases = /final|take it or leave it|not negotiable|firm on/i;
+
+        if (willingPhrases.test(message)) {
+            signals.willingness = 'high';
+        } else if (unwillingPhrases.test(message)) {
+            signals.willingness = 'low';
+        }
+
+        return signals;
+    }
+
+    // Craft contextual response that acknowledges landlord's specific points
+    craftContextualAcknowledgment(keyPoints, signals, listing) {
+        const acknowledgments = [];
+
+        // Acknowledge property features mentioned
+        if (keyPoints.propertyFeatures.length > 0) {
+            const feature = keyPoints.propertyFeatures[0];
+            const featureResponses = {
+                'big house': "I totally get that it's a big house - that's exactly what I need",
+                'renovated': "I appreciate that it's been renovated, that definitely adds value",
+                'location': "The location is definitely a plus, I agree",
+                'amenities': "The amenities are great, I see the value",
+                'yard': "The outdoor space is a big draw for me"
+            };
+            acknowledgments.push(featureResponses[feature] || "I appreciate that point");
+        }
+
+        // Respond to flexibility signals
+        if (signals.priceMovement === 'dropped') {
+            acknowledgments.push("I appreciate you working with me on this");
+        }
+
+        // Respond to urgency
+        if (signals.urgency === 'high') {
+            acknowledgments.push("I can move fast - ready to sign this week if we align");
+        }
+
+        // Respond to tone
+        if (signals.tone === 'warming') {
+            acknowledgments.push("I feel like we're getting close here");
+        }
+
+        return acknowledgments.length > 0
+            ? acknowledgments[Math.floor(Math.random() * acknowledgments.length)]
+            : null;
+    }
+
+    // ========================================
     // PHASE 10: PROPERTY PERSONALIZATION
     // ========================================
 
@@ -2705,6 +2870,14 @@ Generate ONLY the message. No greetings, no signatures.
             negotiation.landlordProfile = landlordProfile;
             console.log('👤 Landlord profile:', landlordProfile);
 
+            // ADVANCED: Extract landlord's specific points for intelligent acknowledgment
+            const keyPoints = this.extractLandlordKeyPoints(landlordMessage);
+            console.log('🔍 Landlord key points:', keyPoints);
+
+            // ADVANCED: Detect negotiation signals (price movement, tone, willingness)
+            const signals = this.detectNegotiationSignals(landlordMessage, negotiation.messages, negotiation);
+            console.log('🚦 Negotiation signals:', signals);
+
             // PHASE 7: Update conversation memory
             this.updateConversationMemory(negotiation, landlordMessage, null, analysis);
             const memory = negotiation.memory || {};
@@ -2799,8 +2972,11 @@ Generate ONLY the message. No greetings, no signatures.
             // PHASE 10: Get property personalization
             const propertyContext = negotiation.propertyPersonalization || this.getPropertyPersonalization(listing);
 
+            // Craft contextual acknowledgment based on key points and signals
+            const contextualAck = this.craftContextualAcknowledgment(keyPoints, signals, listing);
+
             const prompt = `
-You are an ELITE NEGOTIATOR with tactical empathy. Your goal is to secure the property at the target price.
+You are an ELITE NEGOTIATOR with tactical empathy. You sound like a REAL PERSON having a genuine conversation, not a robot.
 
 ===== VOICE FOR THIS MESSAGE: ${voice.name.toUpperCase()} =====
 ${voiceInstructions}
@@ -2819,6 +2995,20 @@ ${voiceInstructions}
 
 ===== LANDLORD'S MESSAGE =====
 "${landlordMessage}"
+
+===== INTELLIGENT CONTEXT ANALYSIS =====
+**Property Features They Mentioned:** ${keyPoints.propertyFeatures.length > 0 ? keyPoints.propertyFeatures.join(', ') : 'none'}
+**Their Concerns:** ${keyPoints.concerns.length > 0 ? keyPoints.concerns.join(', ') : 'none'}
+**Their Justifications:** ${keyPoints.justifications.length > 0 ? keyPoints.justifications.join(', ') : 'none'}
+**Flexibility Signals:** ${keyPoints.flexibilitySignals.length > 0 ? keyPoints.flexibilitySignals.join(', ') : 'none'}
+
+**CRITICAL SIGNALS DETECTED:**
+- Price Movement: ${signals.priceMovement} ${signals.priceMovement === 'dropped' ? '⚠️ THEY ARE NEGOTIATING DOWN - VERY POSITIVE!' : ''}
+- Tone: ${signals.tone}
+- Urgency: ${signals.urgency}
+- Willingness to Negotiate: ${signals.willingness}
+
+${contextualAck ? `**SUGGESTED ACKNOWLEDGMENT:** "${contextualAck}" (weave this in naturally if it fits)` : ''}
 
 ===== CONVERSATION HISTORY =====
 ${fullHistory || 'First exchange'}
@@ -2854,18 +3044,21 @@ Reference if natural: "${propertyContext}"
 - Use sparingly: "Every week vacant costs you $${weeklyVacancyCost}."
 
 ===== CRITICAL RULES =====
-1. MAX 2 sentences - Long text = desperation
-2. Use ${voice.name} voice tone throughout
-3. Apply ${intelligentTactic} tactic naturally
-4. Weave in ${principleInfo.name} principle subtly (don't force it)
-5. Reference property detail if it fits naturally
-6. State offer as CONSTRAINT not REQUEST
-7. End with offer or question, then STOP (strategic silence)
-8. NEVER exceed $${maxOffer}
-9. ${hasUsefulMarketData ? `USE market data: Average is $${marketData.average}` : 'NO market data - pivot to reliability and ready-to-sign'}
-10. NEVER repeat an offer already in: ${state.offersMade.join(', ') || 'none'}
+1. **ACKNOWLEDGE THEIR SPECIFIC POINTS FIRST** - If they mentioned "big house" or other features, acknowledge it naturally before pivoting to price
+2. **READ THE SIGNALS** - If price movement is "dropped", they're negotiating! Say something like "I appreciate you working with me"
+3. **VARY YOUR LANGUAGE** - Don't repeat phrases like "my budget is capped" or "I'm a reliable tenant" - be creative and natural
+4. **MAX 2-3 sentences** - Be concise but human-sounding. Long text = desperation
+5. Use ${voice.name} voice tone throughout
+6. Apply ${intelligentTactic} tactic naturally (don't announce it, just DO it)
+7. Weave in ${principleInfo.name} principle subtly
+8. State offer as CONSTRAINT not REQUEST ("I'm at $X" not "Can you do $X?")
+9. End with strategic question or offer, then STOP
+10. NEVER exceed $${maxOffer}
+11. ${hasUsefulMarketData ? `USE market data strategically: Average is $${marketData.average}` : 'NO market data - pivot to tenant quality and certainty'}
+12. NEVER repeat an offer already made: ${state.offersMade.join(', ') || 'none'}
+13. **SOUND HUMAN** - Use conversational language, contractions, natural flow. You're a person, not a chatbot!
 
-Generate ONLY the response. No fluff. No signatures.
+Generate ONLY the response message. No explanations. No "As an AI". Just the human-sounding negotiation message.
 `;
 
             const response = await fetch('https://api.openai.com/v1/chat/completions', {
