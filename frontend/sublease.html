@@ -107,426 +107,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/tesseract.js@4.0.2/dist/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <link rel="stylesheet" href="css/global-styles.css">
-    <style>
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        }
-        
-        /* CSS Variables */
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --transition-smooth: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-        }
+    
 
-        /* Brand Logo */
-        .brand-logo {
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 800;
-            transition: var(--transition-smooth);
-        }
-        
-        .brand-logo:hover {
-            transform: scale(1.05);
-            filter: brightness(1.1);
-        }
-
-        /* Gradient text */
-        .gradient-text {
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        /* Premium Header */
-        .premium-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: 0 8px 32px rgba(31, 38, 135, 0.37);
-            transition: all 0.4s cubic-bezier(0.23, 1, 0.320, 1);
-        }
-        
-        .premium-header.scrolled {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(25px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Navigation Items */
-        .nav-item {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 0.95rem;
-        }
-        
-        .nav-item:hover {
-            color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-        
-        .auth-link {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1.5rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        
-        .auth-link:hover {
-            color: #667eea;
-            border-color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-        
-        /* Dropdown Styles */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .dropdown-arrow {
-            font-size: 0.7rem;
-            transition: transform 0.2s ease;
-        }
-        
-        .dropdown:hover .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            padding: 0.5rem 0;
-            min-width: 12rem;
-            z-index: 50;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-        }
-        
-        .dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .dropdown-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8fafc;
-            color: #667eea;
-        }
-        
-        /* Mobile Menu Styles */
-        .mobile-menu-btn {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 24px;
-            height: 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-        }
-        
-        .hamburger-line {
-            width: 100%;
-            height: 2px;
-            background-color: #374151;
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-        
-        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
-            opacity: 0;
-        }
-        
-        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -6px);
-        }
-
-        /* Hide hamburger when menu is open to avoid double X */
-        body.mobile-menu-open .mobile-menu-btn {
-            display: none !important;
-        }
-
-        .mobile-menu {
-            position: fixed;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            transition: left 0.3s ease;
-        }
-        
-        .mobile-menu.active {
-            left: 0;
-        }
-        
-        .mobile-menu-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-        }
-        
-        .mobile-menu-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 280px;
-            height: 100%;
-            background: white;
-            overflow-y: auto;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-menu.active .mobile-menu-content {
-            transform: translateX(0);
-        }
-        
-        .mobile-menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .mobile-menu-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #374151;
-        }
-        
-        .mobile-menu-items {
-            padding: 1rem 0;
-        }
-        
-        .mobile-menu-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .mobile-menu-item:hover {
-            background-color: #f8fafc;
-            color: #667eea;
-        }
-        
-        .mobile-section {
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .mobile-section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: none;
-            border: none;
-            text-align: left;
-            color: #374151;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .mobile-section-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        
-        .mobile-section-content.expanded {
-            max-height: 200px;
-        }
-        
-        .mobile-arrow {
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-arrow.rotated {
-            transform: rotate(180deg);
-        }
-        
-        body.mobile-menu-open {
-            overflow: hidden;
-        }
-        
-        /* Modern container */
-        .modern-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Modern button */
-        .modern-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 1rem 2rem;
-            color: white;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .modern-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
-        }
-        
-        /* Hero section with gradient background */
-        .hero-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .hero-gradient::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.05"><circle cx="30" cy="30" r="2"/></g></g></svg>');
-        }
-        
-        /* Feature cards */
-        .feature-card {
-            background: white;
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease;
-            border: 1px solid #f1f5f9;
-        }
-        
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            border-color: #3b82f6;
-        }
-        
-        /* CTA Button styles */
-        .cta-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 50px;
-            padding: 1rem 2.5rem;
-            color: white;
-            font-weight: 600;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-        
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
-        }
-        
-        /* Modern input styling */
-        .modern-input {
-            background: white;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1rem 1.5rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-        
-        .modern-input:focus {
-            border-color: #667eea;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
-            outline: none;
-        }
-        .profile-logo {
-            transition: transform 0.2s ease-in-out;
-        }
-        .profile-logo:hover {
-            transform: scale(1.1);
-        }
-        .login-link {
-            transition: color 0.2s ease-in-out;
-        }
-        .login-link:hover {
-            color: #2563eb;
-        }
-        #aiButton {
-            transition: transform 0.3s ease-in-out, box-shadow 0.2s ease-in-out;
-        }
-        #aiButton:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-        .listing-card {
-            background: white;
-            border-radius: 20px;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid #f1f5f9;
-        }
-        .listing-card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-            border-color: #667eea;
-        }
-    </style>
+    <!-- Unified CSS System - No Inline Styles -->
+    <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
 </head>
 <body class="bg-gray-50 flex flex-col min-h-screen">
     <!-- Premium Header -->
@@ -852,19 +436,19 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
-                                <input type="number" id="originalRent" class="modern-input w-full" placeholder="1500">
+                                <input type="number" id="originalRent" class="form-input w-full" placeholder="1500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Lease Months</label>
-                                <input type="number" id="remainingMonths" class="modern-input w-full" placeholder="8">
+                                <input type="number" id="remainingMonths" class="form-input w-full" placeholder="8">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Security Deposit (Original)</label>
-                                <input type="number" id="originalDeposit" class="modern-input w-full" placeholder="1500">
+                                <input type="number" id="originalDeposit" class="form-input w-full" placeholder="1500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Utilities (Monthly)</label>
-                                <input type="number" id="monthlyUtilities" class="modern-input w-full" placeholder="150">
+                                <input type="number" id="monthlyUtilities" class="form-input w-full" placeholder="150">
                             </div>
                         </div>
                         
@@ -900,19 +484,19 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Electricity (Monthly)</label>
-                                <input type="number" id="electricityCost" class="modern-input w-full" placeholder="80">
+                                <input type="number" id="electricityCost" class="form-input w-full" placeholder="80">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Gas/Heating (Monthly)</label>
-                                <input type="number" id="gasCost" class="modern-input w-full" placeholder="45">
+                                <input type="number" id="gasCost" class="form-input w-full" placeholder="45">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Internet (Monthly)</label>
-                                <input type="number" id="internetCost" class="modern-input w-full" placeholder="60">
+                                <input type="number" id="internetCost" class="form-input w-full" placeholder="60">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Water (Monthly)</label>
-                                <input type="number" id="waterCost" class="modern-input w-full" placeholder="25">
+                                <input type="number" id="waterCost" class="form-input w-full" placeholder="25">
                             </div>
                         </div>
                         <div class="mt-4 p-4 bg-white rounded-lg">
@@ -930,15 +514,15 @@
                         <div class="grid md:grid-cols-3 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
-                                <input type="number" id="proratedMonthlyRent" class="modern-input w-full" placeholder="1200">
+                                <input type="number" id="proratedMonthlyRent" class="form-input w-full" placeholder="1200">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Move-in Date</label>
-                                <input type="date" id="proratedMoveIn" class="modern-input w-full">
+                                <input type="date" id="proratedMoveIn" class="form-input w-full">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Days in Month</label>
-                                <input type="number" id="daysInMonth" class="modern-input w-full" placeholder="30">
+                                <input type="number" id="daysInMonth" class="form-input w-full" placeholder="30">
                             </div>
                         </div>
                         <div class="mt-4 p-4 bg-white rounded-lg">
@@ -1044,19 +628,19 @@
                         <div class="grid md:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Landlord/Property Manager</label>
-                                <input type="tel" id="landlordContact" class="modern-input w-full" placeholder="(555) 123-4567">
+                                <input type="tel" id="landlordContact" class="form-input w-full" placeholder="(555) 123-4567">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Building Maintenance</label>
-                                <input type="tel" id="maintenanceContact" class="modern-input w-full" placeholder="(555) 123-4567">
+                                <input type="tel" id="maintenanceContact" class="form-input w-full" placeholder="(555) 123-4567">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Utility Companies</label>
-                                <input type="text" id="utilityContacts" class="modern-input w-full" placeholder="Electric: (555) 123-4567">
+                                <input type="text" id="utilityContacts" class="form-input w-full" placeholder="Electric: (555) 123-4567">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Your Emergency Contact</label>
-                                <input type="tel" id="yourEmergencyContact" class="modern-input w-full" placeholder="(555) 123-4567">
+                                <input type="tel" id="yourEmergencyContact" class="form-input w-full" placeholder="(555) 123-4567">
                             </div>
                         </div>
                     </div>
@@ -1174,12 +758,12 @@
                                 <div class="space-y-3">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Minimum Monthly Income</label>
-                                        <input type="number" id="minIncome" class="modern-input w-full" placeholder="3600">
+                                        <input type="number" id="minIncome" class="form-input w-full" placeholder="3600">
                                         <p class="text-xs text-gray-500 mt-1">Usually 3x the rent amount</p>
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Credit Score Minimum</label>
-                                        <input type="number" id="minCreditScore" class="modern-input w-full" placeholder="650">
+                                        <input type="number" id="minCreditScore" class="form-input w-full" placeholder="650">
                                     </div>
                                 </div>
                             </div>
@@ -1219,11 +803,11 @@
                                 <div class="space-y-3">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Available From</label>
-                                        <input type="date" id="flexibleStartDate" class="modern-input w-full">
+                                        <input type="date" id="flexibleStartDate" class="form-input w-full">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-1">Available Until</label>
-                                        <input type="date" id="flexibleEndDate" class="modern-input w-full">
+                                        <input type="date" id="flexibleEndDate" class="form-input w-full">
                                     </div>
                                     <div>
                                         <label class="flex items-center">
@@ -1283,7 +867,7 @@
                                     </label>
                                     <div class="ml-6">
                                         <label class="block text-sm text-gray-600 mb-1">Notice Period (days)</label>
-                                        <input type="number" id="noticePeriod" class="modern-input w-full" placeholder="30">
+                                        <input type="number" id="noticePeriod" class="form-input w-full" placeholder="30">
                                     </div>
                                 </div>
                             </div>
@@ -1300,25 +884,25 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label for="transferAddress" class="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
-                                <input type="text" id="transferAddress" class="modern-input w-full" placeholder="123 Main St, City, State">
+                                <input type="text" id="transferAddress" class="form-input w-full" placeholder="123 Main St, City, State">
                             </div>
                             <div>
                                 <label for="transferRent" class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
-                                <input type="number" id="transferRent" class="modern-input w-full" placeholder="1200">
+                                <input type="number" id="transferRent" class="form-input w-full" placeholder="1200">
                             </div>
                             <div>
                                 <label for="transferAvailableFrom" class="block text-sm font-medium text-gray-700 mb-2">📅 Available From</label>
-                                <input type="date" id="transferAvailableFrom" class="modern-input w-full">
+                                <input type="date" id="transferAvailableFrom" class="form-input w-full">
                             </div>
                             <div>
                                 <label for="transferAvailableUntil" class="block text-sm font-medium text-gray-700 mb-2">📅 Lease Ends</label>
-                                <input type="date" id="transferAvailableUntil" class="modern-input w-full">
+                                <input type="date" id="transferAvailableUntil" class="form-input w-full">
                             </div>
                         </div>
                         
                         <div class="mt-6">
                             <label for="transferReason" class="block text-sm font-medium text-gray-700 mb-2">Reason for Transfer</label>
-                            <select id="transferReason" class="modern-input w-full">
+                            <select id="transferReason" class="form-input w-full">
                                 <option value="">Select a reason...</option>
                                 <option value="job_relocation">Job Relocation</option>
                                 <option value="financial_hardship">Financial Hardship</option>
@@ -1358,15 +942,15 @@
                         <div class="grid md:grid-cols-3 gap-6 mt-6">
                             <div>
                                 <label for="transferBedrooms" class="block text-sm font-medium text-gray-700 mb-2">🛏️ Bedrooms</label>
-                                <input type="number" id="transferBedrooms" class="modern-input w-full" min="0" max="10">
+                                <input type="number" id="transferBedrooms" class="form-input w-full" min="0" max="10">
                             </div>
                             <div>
                                 <label for="transferBathrooms" class="block text-sm font-medium text-gray-700 mb-2">🚿 Bathrooms</label>
-                                <input type="number" id="transferBathrooms" class="modern-input w-full" min="0" max="10" step="0.5">
+                                <input type="number" id="transferBathrooms" class="form-input w-full" min="0" max="10" step="0.5">
                             </div>
                             <div>
                                 <label for="transferUrgency" class="block text-sm font-medium text-gray-700 mb-2">⚡ Urgency Level</label>
-                                <select id="transferUrgency" class="modern-input w-full">
+                                <select id="transferUrgency" class="form-input w-full">
                                     <option value="1">1 - No Rush</option>
                                     <option value="2">2 - Flexible</option>
                                     <option value="3" selected>3 - Moderate</option>
@@ -1378,7 +962,7 @@
                         
                         <div class="mt-6">
                             <label for="transferDescription" class="block text-sm font-medium text-gray-700 mb-2">Property Description</label>
-                            <textarea id="transferDescription" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..."></textarea>
+                            <textarea id="transferDescription" rows="4" class="form-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..."></textarea>
                         </div>
                         
                         <div class="mt-6">
@@ -1422,7 +1006,7 @@
                         <div class="mt-6 grid md:grid-cols-3 gap-6">
                             <div>
                                 <label for="transferCleanliness" class="block text-sm font-medium text-gray-700 mb-2">🧹 Cleanliness Level</label>
-                                <select id="transferCleanliness" class="modern-input w-full">
+                                <select id="transferCleanliness" class="form-input w-full">
                                     <option value="1">1 - Very Relaxed</option>
                                     <option value="2">2 - Relaxed</option>
                                     <option value="3" selected>3 - Moderate</option>
@@ -1432,7 +1016,7 @@
                             </div>
                             <div>
                                 <label for="transferNoise" class="block text-sm font-medium text-gray-700 mb-2">🔊 Noise Tolerance</label>
-                                <select id="transferNoise" class="modern-input w-full">
+                                <select id="transferNoise" class="form-input w-full">
                                     <option value="1">1 - Very Quiet</option>
                                     <option value="2">2 - Quiet</option>
                                     <option value="3" selected>3 - Moderate</option>
@@ -1442,7 +1026,7 @@
                             </div>
                             <div>
                                 <label for="transferSchedule" class="block text-sm font-medium text-gray-700 mb-2">⏰ Schedule Type</label>
-                                <select id="transferSchedule" class="modern-input w-full">
+                                <select id="transferSchedule" class="form-input w-full">
                                     <option value="early_bird">Early Bird</option>
                                     <option value="regular" selected>Regular Hours</option>
                                     <option value="night_owl">Night Owl</option>
@@ -1473,27 +1057,27 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label for="seekingCity" class="block text-sm font-medium text-gray-700 mb-2">🏙️ Preferred City</label>
-                                <input type="text" id="seekingCity" class="modern-input w-full" placeholder="Enter city name">
+                                <input type="text" id="seekingCity" class="form-input w-full" placeholder="Enter city name">
                             </div>
                             <div>
                                 <label for="seekingState" class="block text-sm font-medium text-gray-700 mb-2">State/Province</label>
-                                <input type="text" id="seekingState" class="modern-input w-full" placeholder="Enter state or province">
+                                <input type="text" id="seekingState" class="form-input w-full" placeholder="Enter state or province">
                             </div>
                             <div>
                                 <label for="seekingMinBudget" class="block text-sm font-medium text-gray-700 mb-2">Min Budget</label>
-                                <input type="number" id="seekingMinBudget" class="modern-input w-full" placeholder="800">
+                                <input type="number" id="seekingMinBudget" class="form-input w-full" placeholder="800">
                             </div>
                             <div>
                                 <label for="seekingMaxBudget" class="block text-sm font-medium text-gray-700 mb-2">Max Budget</label>
-                                <input type="number" id="seekingMaxBudget" class="modern-input w-full" placeholder="1500">
+                                <input type="number" id="seekingMaxBudget" class="form-input w-full" placeholder="1500">
                             </div>
                             <div>
                                 <label for="seekingMoveIn" class="block text-sm font-medium text-gray-700 mb-2">📅 Preferred Move-in</label>
-                                <input type="date" id="seekingMoveIn" class="modern-input w-full">
+                                <input type="date" id="seekingMoveIn" class="form-input w-full">
                             </div>
                             <div>
                                 <label for="seekingMoveOut" class="block text-sm font-medium text-gray-700 mb-2">📅 Preferred Move-out</label>
-                                <input type="date" id="seekingMoveOut" class="modern-input w-full">
+                                <input type="date" id="seekingMoveOut" class="form-input w-full">
                             </div>
                         </div>
                         
@@ -1526,7 +1110,7 @@
                         <div class="grid md:grid-cols-3 gap-6 mt-6">
                             <div>
                                 <label for="seekingBedrooms" class="block text-sm font-medium text-gray-700 mb-2">🛏️ Bedrooms</label>
-                                <select id="seekingBedrooms" class="modern-input w-full">
+                                <select id="seekingBedrooms" class="form-input w-full">
                                     <option value="">Any</option>
                                     <option value="0">Studio</option>
                                     <option value="1">1 Bedroom</option>
@@ -1537,7 +1121,7 @@
                             </div>
                             <div>
                                 <label for="seekingBathrooms" class="block text-sm font-medium text-gray-700 mb-2">🚿 Bathrooms</label>
-                                <select id="seekingBathrooms" class="modern-input w-full">
+                                <select id="seekingBathrooms" class="form-input w-full">
                                     <option value="">Any</option>
                                     <option value="1">1 Bathroom</option>
                                     <option value="1.5">1.5 Bathrooms</option>
@@ -1547,7 +1131,7 @@
                             </div>
                             <div>
                                 <label for="seekingDuration" class="block text-sm font-medium text-gray-700 mb-2">📅 Duration Needed</label>
-                                <select id="seekingDuration" class="modern-input w-full">
+                                <select id="seekingDuration" class="form-input w-full">
                                     <option value="1">1-2 Months</option>
                                     <option value="3">3-4 Months</option>
                                     <option value="6" selected>6 Months</option>
@@ -1558,7 +1142,7 @@
                         
                         <div class="mt-6">
                             <label for="seekingDescription" class="block text-sm font-medium text-gray-700 mb-2">What You're Looking For</label>
-                            <textarea id="seekingDescription" rows="4" class="modern-input w-full" placeholder="Describe your ideal living situation, preferences, and any specific requirements..."></textarea>
+                            <textarea id="seekingDescription" rows="4" class="form-input w-full" placeholder="Describe your ideal living situation, preferences, and any specific requirements..."></textarea>
                         </div>
                         
                         <div class="mt-6">
@@ -1602,7 +1186,7 @@
                         <div class="mt-6 grid md:grid-cols-3 gap-6">
                             <div>
                                 <label for="seekingCleanliness" class="block text-sm font-medium text-gray-700 mb-2">🧹 Cleanliness Level</label>
-                                <select id="seekingCleanliness" class="modern-input w-full">
+                                <select id="seekingCleanliness" class="form-input w-full">
                                     <option value="1">1 - Very Relaxed</option>
                                     <option value="2">2 - Relaxed</option>
                                     <option value="3" selected>3 - Moderate</option>
@@ -1612,7 +1196,7 @@
                             </div>
                             <div>
                                 <label for="seekingNoise" class="block text-sm font-medium text-gray-700 mb-2">Noise Tolerance</label>
-                                <select id="seekingNoise" class="modern-input w-full">
+                                <select id="seekingNoise" class="form-input w-full">
                                     <option value="1">1 - Very Quiet</option>
                                     <option value="2">2 - Quiet</option>
                                     <option value="3" selected>3 - Moderate</option>
@@ -1622,7 +1206,7 @@
                             </div>
                             <div>
                                 <label for="seekingSchedule" class="block text-sm font-medium text-gray-700 mb-2">Schedule Type</label>
-                                <select id="seekingSchedule" class="modern-input w-full">
+                                <select id="seekingSchedule" class="form-input w-full">
                                     <option value="early_bird">Early Bird</option>
                                     <option value="regular" selected>Regular Hours</option>
                                     <option value="night_owl">Night Owl</option>
@@ -1658,12 +1242,12 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
-                        <input type="text" id="address" name="address" class="modern-input w-full" placeholder="123 Main St, Toronto, ON" required aria-required="true">
+                        <input type="text" id="address" name="address" class="form-input w-full" placeholder="123 Main St, Toronto, ON" required aria-required="true">
                     </div>
                     <div>
                         <label for="rent" class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
                         <div class="relative">
-                            <input type="number" id="rent" name="rent" class="modern-input w-full" placeholder="1200" required aria-required="true">
+                            <input type="number" id="rent" name="rent" class="form-input w-full" placeholder="1200" required aria-required="true">
                             <button type="button" id="calculateRentBtn" class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-700 text-sm font-medium">
                                 Calculate
                             </button>
@@ -1677,19 +1261,19 @@
                     <div class="grid md:grid-cols-2 gap-6">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Original Monthly Rent</label>
-                            <input type="number" id="originalRent" class="modern-input w-full" placeholder="1500">
+                            <input type="number" id="originalRent" class="form-input w-full" placeholder="1500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Remaining Lease Months</label>
-                            <input type="number" id="remainingMonths" class="modern-input w-full" placeholder="8">
+                            <input type="number" id="remainingMonths" class="form-input w-full" placeholder="8">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Security Deposit (Original)</label>
-                            <input type="number" id="originalDeposit" class="modern-input w-full" placeholder="1500">
+                            <input type="number" id="originalDeposit" class="form-input w-full" placeholder="1500">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Utilities (Monthly)</label>
-                            <input type="number" id="monthlyUtilities" class="modern-input w-full" placeholder="150">
+                            <input type="number" id="monthlyUtilities" class="form-input w-full" placeholder="150">
                         </div>
                     </div>
                     
@@ -1722,16 +1306,16 @@
                 <div class="grid md:grid-cols-2 gap-6">
                     <div>
                         <label for="startDate" class="block text-sm font-medium text-gray-700 mb-2">Available From</label>
-                        <input type="date" id="startDate" name="startDate" class="modern-input w-full" required aria-required="true">
+                        <input type="date" id="startDate" name="startDate" class="form-input w-full" required aria-required="true">
                     </div>
                     <div>
                         <label for="endDate" class="block text-sm font-medium text-gray-700 mb-2">Available Until</label>
-                        <input type="date" id="endDate" name="endDate" class="modern-input w-full" required aria-required="true">
+                        <input type="date" id="endDate" name="endDate" class="form-input w-full" required aria-required="true">
                     </div>
                 </div>
                 <div>
                     <label for="description" class="block text-sm font-medium text-gray-700 mb-2">Property Description</label>
-                    <textarea id="description" name="description" rows="4" class="modern-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..." required aria-required="true"></textarea>
+                    <textarea id="description" name="description" rows="4" class="form-input w-full" placeholder="Describe your space, neighborhood, and what makes it special..." required aria-required="true"></textarea>
                     <p class="text-sm text-gray-500 mt-2">Tip: Our AI can help optimize your description for better visibility</p>
                 </div>
                 <div>

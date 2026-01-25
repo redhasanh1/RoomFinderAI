@@ -13,472 +13,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            --success-gradient: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
-            --warning-gradient: linear-gradient(135deg, #fc4a1a 0%, #f7b733 100%);
-            --neutral-gradient: linear-gradient(135deg, #667db6 0%, #0082c8 100%);
-            
-            --border-radius-sm: 12px;
-            --border-radius-md: 20px;
-            --border-radius-lg: 28px;
-            
-            --shadow-sm: 0 8px 25px rgba(0, 0, 0, 0.06);
-            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 25px 50px rgba(0, 0, 0, 0.15);
-            
-            --glass-bg: rgba(255, 255, 255, 0.95);
-            --glass-border: rgba(255, 255, 255, 0.2);
-            
-            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
 
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-            min-height: 100vh;
-        }
-        
-        .font-display {
-            font-family: 'Space Grotesk', sans-serif;
-        }
-        
-        /* Gradient backgrounds */
-        .gradient-bg {
-            background: var(--primary-gradient);
-        }
-        
-        .gradient-bg-success {
-            background: var(--success-gradient);
-        }
-        
-        /* Gradient text */
-        .gradient-text {
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        /* Glass cards */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: var(--border-radius-lg);
-            box-shadow: var(--shadow-md);
-            transition: var(--transition);
-        }
-        
-        .glass-card:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--shadow-lg);
-        }
-        
-        /* Premium Header */
-        .premium-header {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-            box-shadow: var(--shadow-soft);
-            transition: var(--transition);
-        }
-        
-        .premium-header.scrolled {
-            background: rgba(255, 255, 255, 0.98);
-            backdrop-filter: blur(25px);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-        }
-        
-        /* Navigation Items */
-        .nav-item {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            cursor: pointer;
-            border: none;
-            background: none;
-            font-size: 0.95rem;
-        }
-        
-        .nav-item:hover {
-            color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-        
-        .auth-link {
-            color: #374151;
-            font-weight: 500;
-            padding: 0.5rem 1.5rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 0.5rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        
-        .auth-link:hover {
-            color: #667eea;
-            border-color: #667eea;
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-        
-        /* Dropdown Styles */
-        .dropdown {
-            position: relative;
-            display: inline-block;
-        }
-        
-        .dropdown-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        
-        .dropdown-arrow {
-            font-size: 0.7rem;
-            transition: transform 0.2s ease;
-        }
-        
-        .dropdown:hover .dropdown-arrow {
-            transform: rotate(180deg);
-        }
-        
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            left: 0;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 0.75rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
-            padding: 0.5rem 0;
-            min-width: 12rem;
-            z-index: 50;
-            opacity: 0;
-            visibility: hidden;
-            transform: translateY(-10px);
-            transition: all 0.2s ease;
-        }
-        
-        .dropdown:hover .dropdown-menu {
-            opacity: 1;
-            visibility: visible;
-            transform: translateY(0);
-        }
-        
-        .dropdown-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            font-size: 0.9rem;
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8fafc;
-            color: #667eea;
-        }
-        
-        /* Mobile Menu Styles */
-        .mobile-menu-btn {
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            width: 24px;
-            height: 20px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            padding: 0;
-        }
-        
-        .hamburger-line {
-            width: 100%;
-            height: 2px;
-            background-color: #374151;
-            transition: all 0.3s ease;
-        }
-        
-        .mobile-menu-btn.active .hamburger-line:nth-child(1) {
-            transform: rotate(45deg) translate(5px, 5px);
-        }
-        
-        .mobile-menu-btn.active .hamburger-line:nth-child(2) {
-            opacity: 0;
-        }
-        
-        .mobile-menu-btn.active .hamburger-line:nth-child(3) {
-            transform: rotate(-45deg) translate(7px, -6px);
-        }
-
-        /* Hide hamburger when menu is open to avoid double X */
-        body.mobile-menu-open .mobile-menu-btn {
-            display: none !important;
-        }
-
-        .mobile-menu {
-            position: fixed;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 999;
-            transition: left 0.3s ease;
-        }
-        
-        .mobile-menu.active {
-            left: 0;
-        }
-        
-        .mobile-menu-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-        }
-        
-        .mobile-menu-content {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 280px;
-            height: 100%;
-            background: white;
-            overflow-y: auto;
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-menu.active .mobile-menu-content {
-            transform: translateX(0);
-        }
-        
-        .mobile-menu-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-        
-        .mobile-menu-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #374151;
-        }
-        
-        .mobile-menu-items {
-            padding: 1rem 0;
-        }
-        
-        .mobile-menu-item {
-            display: block;
-            padding: 0.75rem 1rem;
-            color: #374151;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .mobile-menu-item:hover {
-            background-color: #f8fafc;
-            color: #667eea;
-        }
-        
-        .mobile-section {
-            border-bottom: 1px solid #f3f4f6;
-        }
-        
-        .mobile-section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            padding: 0.75rem 1rem;
-            background: none;
-            border: none;
-            text-align: left;
-            color: #374151;
-            font-weight: 500;
-            cursor: pointer;
-        }
-        
-        .mobile-section-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease;
-        }
-        
-        .mobile-section-content.expanded {
-            max-height: 200px;
-        }
-        
-        .mobile-arrow {
-            transition: transform 0.3s ease;
-        }
-        
-        .mobile-arrow.rotated {
-            transform: rotate(180deg);
-        }
-        
-        body.mobile-menu-open {
-            overflow: hidden;
-        }
-        
-        /* Animated elements */
-        .float-animation {
-            animation: float 6s ease-in-out infinite;
-        }
-        
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-20px); }
-        }
-        
-        /* Accessibility improvements */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
-        }
-        
-        /* Focus styles for better accessibility */
-        .modern-input:focus,
-        .range-slider:focus,
-        button:focus,
-        select:focus {
-            outline: 2px solid #667eea;
-            outline-offset: 2px;
-        }
-        
-        /* High contrast mode support */
-        @media (prefers-contrast: high) {
-            .glass-card {
-                background: white;
-                border: 2px solid black;
-            }
-            
-            .gradient-text {
-                background: none;
-                color: black;
-                -webkit-text-fill-color: initial;
-            }
-        }
-        
-        /* Reduced motion support */
-        @media (prefers-reduced-motion: reduce) {
-            * {
-                animation-duration: 0.01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: 0.01ms !important;
-            }
-        }
-
-        /* Range sliders */
-        .range-slider {
-            -webkit-appearance: none;
-            appearance: none;
-            background: linear-gradient(to right, #667eea 0%, #667eea 50%, #e5e7eb 50%, #e5e7eb 100%);
-            outline: none;
-            border-radius: 5px;
-        }
-        
-        .range-slider::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #667eea;
-            cursor: pointer;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-        }
-        
-        .range-slider::-moz-range-thumb {
-            width: 20px;
-            height: 20px;
-            background: #667eea;
-            cursor: pointer;
-            border-radius: 50%;
-            border: 2px solid white;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-        }
-
-        /* Tabs */
-        .tab-button {
-            padding: 1rem 2rem;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: var(--transition);
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .tab-button.active {
-            background: var(--primary-gradient);
-            color: white;
-        }
-        
-        .tab-button:not(.active):hover {
-            background: rgba(102, 126, 234, 0.1);
-        }
-        
-        /* Input styles */
-        .modern-input {
-            width: 100%;
-            padding: 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            font-size: 1rem;
-            transition: var(--transition);
-            background: white;
-        }
-        
-        .modern-input:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
-        }
-        
-        /* Charts container */
-        .chart-container {
-            position: relative;
-            height: 300px;
-            width: 100%;
-        }
-        
-        /* Reveal animations */
-        .reveal {
-            opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.8s ease;
-        }
-        
-        .reveal.active {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    </style>
+    <!-- Unified CSS System - No Inline Styles -->
+    <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
+    
 </head>
 <body class="bg-gray-50">
     <!-- Premium Header -->
@@ -749,7 +287,7 @@
                                 <label for="homePrice" class="block text-sm font-medium text-gray-700 mb-2">💰 How much does the home cost?</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" aria-hidden="true">$</span>
-                                    <input type="text" id="homePrice" class="modern-input pl-8" placeholder="650,000" value="650,000" data-min="50000" data-max="5000000" aria-describedby="homePrice-help homePrice-error" aria-required="true">
+                                    <input type="text" id="homePrice" class="form-input pl-8" placeholder="650,000" value="650,000" data-min="50000" data-max="5000000" aria-describedby="homePrice-help homePrice-error" aria-required="true">
                                 </div>
                                 <div class="mt-3">
                                     <label for="homePriceSlider" class="sr-only">Home Price Slider</label>
@@ -768,10 +306,10 @@
                                 <div class="grid grid-cols-2 gap-4">
                                     <div class="relative">
                                         <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" id="downPaymentSymbol" aria-hidden="true">$</span>
-                                        <input type="text" id="downPayment" class="modern-input pl-8" placeholder="130,000" value="130,000" aria-describedby="downPayment-help downPayment-error" aria-required="true">
+                                        <input type="text" id="downPayment" class="form-input pl-8" placeholder="130,000" value="130,000" aria-describedby="downPayment-help downPayment-error" aria-required="true">
                                     </div>
                                     <label for="downPaymentType" class="sr-only">Down Payment Type</label>
-                                    <select id="downPaymentType" class="modern-input" aria-describedby="downPayment-help">
+                                    <select id="downPaymentType" class="form-input" aria-describedby="downPayment-help">
                                         <option value="amount">Amount ($)</option>
                                         <option value="percent">Percent (%)</option>
                                     </select>
@@ -782,7 +320,7 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">📅 How long to pay it off?</label>
-                                <select id="amortization" class="modern-input">
+                                <select id="amortization" class="form-input">
                                     <option value="15">15 years (higher payments, less interest)</option>
                                     <option value="20">20 years</option>
                                     <option value="25" selected>25 years (most common)</option>
@@ -794,7 +332,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">📊 What interest rate can you get?</label>
                                 <div class="relative">
-                                    <input type="number" id="interestRate" class="modern-input pr-8" placeholder="5.89" value="5.89" step="0.01" min="0.1" max="20">
+                                    <input type="number" id="interestRate" class="form-input pr-8" placeholder="5.89" value="5.89" step="0.01" min="0.1" max="20">
                                     <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
                                 </div>
                                 <div class="mt-3">
@@ -813,7 +351,7 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">💸 How often will you pay?</label>
-                                <select id="paymentFrequency" class="modern-input">
+                                <select id="paymentFrequency" class="form-input">
                                     <option value="monthly" selected>Monthly (most common)</option>
                                     <option value="biweekly">Bi-Weekly (save interest)</option>
                                     <option value="weekly">Weekly</option>
@@ -1105,7 +643,7 @@
                     <div class="grid md:grid-cols-4 gap-4 mb-4">
                         <div>
                             <label for="productTypeFilter" class="block text-sm font-medium text-gray-700 mb-2">Product Type</label>
-                            <select id="productTypeFilter" class="modern-input" onchange="filterRatesByProduct()">
+                            <select id="productTypeFilter" class="form-input" onchange="filterRatesByProduct()">
                                 <option value="all">All Products</option>
                                 <option value="conventional">Conventional</option>
                                 <option value="fha">FHA</option>
@@ -1114,7 +652,7 @@
                         </div>
                         <div>
                             <label for="termFilter" class="block text-sm font-medium text-gray-700 mb-2">Term Length</label>
-                            <select id="termFilter" class="modern-input" onchange="filterRatesByTerm()">
+                            <select id="termFilter" class="form-input" onchange="filterRatesByTerm()">
                                 <option value="all">All Terms</option>
                                 <option value="15">15-Year Fixed</option>
                                 <option value="30">30-Year Fixed</option>
@@ -1124,7 +662,7 @@
                         </div>
                         <div>
                             <label for="lenderFilter" class="block text-sm font-medium text-gray-700 mb-2">Lender Type</label>
-                            <select id="lenderFilter" class="modern-input" onchange="filterRatesByLender()">
+                            <select id="lenderFilter" class="form-input" onchange="filterRatesByLender()">
                                 <option value="all">All Lenders</option>
                                 <option value="bank">Major Banks</option>
                                 <option value="credit_union">Credit Unions</option>
@@ -1133,7 +671,7 @@
                         </div>
                         <div>
                             <label for="sortBy" class="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                            <select id="sortBy" class="modern-input" onchange="sortRates()">
+                            <select id="sortBy" class="form-input" onchange="sortRates()">
                                 <option value="rate_asc">Rate (Low to High)</option>
                                 <option value="rate_desc">Rate (High to Low)</option>
                                 <option value="payment_asc">Payment (Low to High)</option>
@@ -1181,13 +719,13 @@
                 <!-- Old Filters (keeping for compatibility) -->
                 <div class="hidden">
                     <div class="grid md:grid-cols-4 gap-4">
-                        <select class="modern-input">
+                        <select class="form-input">
                             <option>All Mortgage Types</option>
                             <option>Fixed Rate</option>
                             <option>Variable Rate</option>
                             <option>Hybrid</option>
                         </select>
-                        <select class="modern-input">
+                        <select class="form-input">
                             <option>All Terms</option>
                             <option>1 Year</option>
                             <option>2 Years</option>
@@ -1195,7 +733,7 @@
                             <option>5 Years</option>
                             <option>10 Years</option>
                         </select>
-                        <select class="modern-input">
+                        <select class="form-input">
                             <option>All Lenders</option>
                             <option>Big 5 Banks</option>
                             <option>Credit Unions</option>
@@ -1233,7 +771,7 @@
                             <div class="grid md:grid-cols-3 gap-4">
                                 <div class="md:col-span-2">
                                     <label for="fredAPIKeyInput" class="block text-sm font-medium text-gray-700 mb-1">API Key</label>
-                                    <input type="password" id="fredAPIKeyInput" class="w-full modern-input" placeholder="Enter your FRED API key" autocomplete="off">
+                                    <input type="password" id="fredAPIKeyInput" class="w-full form-input" placeholder="Enter your FRED API key" autocomplete="off">
                                 </div>
                                 <div class="flex items-end space-x-2">
                                     <button onclick="saveFREDAPIKey()" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
@@ -1340,7 +878,7 @@
                         <h3 class="text-2xl font-bold">Historical Rate Trends</h3>
                         <div class="flex items-center space-x-4">
                             <!-- Date Range Selector -->
-                            <select id="chartDateRange" class="modern-input text-sm" onchange="updateHistoricalChart()">
+                            <select id="chartDateRange" class="form-input text-sm" onchange="updateHistoricalChart()">
                                 <option value="1M">1 Month</option>
                                 <option value="3M">3 Months</option>
                                 <option value="6M">6 Months</option>
@@ -1350,7 +888,7 @@
                             
                             <!-- Series Selector -->
                             <div class="relative">
-                                <button onclick="toggleSeriesSelector()" class="modern-input text-sm flex items-center">
+                                <button onclick="toggleSeriesSelector()" class="form-input text-sm flex items-center">
                                     <span id="selectedSeries">Multiple Series</span>
                                     <svg class="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
@@ -1409,7 +947,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">💰 What's your yearly household income?</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                                    <input type="number" id="annualIncome" class="modern-input pl-8" placeholder="120,000">
+                                    <input type="number" id="annualIncome" class="form-input pl-8" placeholder="120,000">
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">💡 Include all income sources (salary, bonuses, overtime, etc.)</div>
                             </div>
@@ -1418,7 +956,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">💳 What are your monthly debt payments?</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                                    <input type="number" id="monthlyDebt" class="modern-input pl-8" placeholder="500">
+                                    <input type="number" id="monthlyDebt" class="form-input pl-8" placeholder="500">
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">💡 Car loans, credit cards, student loans, etc. (excluding rent)</div>
                             </div>
@@ -1427,7 +965,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">🏦 How much do you have for a down payment?</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                                    <input type="number" id="availableDownPayment" class="modern-input pl-8" placeholder="100,000">
+                                    <input type="number" id="availableDownPayment" class="form-input pl-8" placeholder="100,000">
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">💡 Include savings, gifts, and other funds available</div>
                             </div>
@@ -1435,7 +973,7 @@
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">🏠 What's the property tax rate in your area?</label>
                                 <div class="relative">
-                                    <input type="number" id="propertyTaxRate" class="modern-input pr-8" placeholder="1.2" step="0.1" value="1.2">
+                                    <input type="number" id="propertyTaxRate" class="form-input pr-8" placeholder="1.2" step="0.1" value="1.2">
                                     <span class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500">%</span>
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">💡 Check your city's website or ask your realtor</div>
@@ -1445,7 +983,7 @@
                                 <label class="block text-sm font-medium text-gray-700 mb-2">⚡ Monthly utilities, insurance & maintenance?</label>
                                 <div class="relative">
                                     <span class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                                    <input type="number" id="monthlyUtilities" class="modern-input pl-8" placeholder="400" value="400">
+                                    <input type="number" id="monthlyUtilities" class="form-input pl-8" placeholder="400" value="400">
                                 </div>
                                 <div class="text-xs text-gray-500 mt-1">💡 Estimate: $300-600/month depending on home size</div>
                             </div>
@@ -1563,23 +1101,23 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
-                                <input type="text" class="modern-input" placeholder="John">
+                                <input type="text" class="form-input" placeholder="John">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
-                                <input type="text" class="modern-input" placeholder="Doe">
+                                <input type="text" class="form-input" placeholder="Doe">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input type="email" class="modern-input" placeholder="john@example.com">
+                                <input type="email" class="form-input" placeholder="john@example.com">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                                <input type="tel" class="modern-input" placeholder="(555) 123-4567">
+                                <input type="tel" class="form-input" placeholder="(555) 123-4567">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Employment Status</label>
-                                <select class="modern-input">
+                                <select class="form-input">
                                     <option>Full-Time Employee</option>
                                     <option>Part-Time Employee</option>
                                     <option>Self-Employed</option>
@@ -1589,7 +1127,7 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Credit Score Range</label>
-                                <select class="modern-input">
+                                <select class="form-input">
                                     <option>800+</option>
                                     <option>740-799</option>
                                     <option>670-739</option>
@@ -1653,42 +1191,42 @@
                         <div class="space-y-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Original Mortgage Amount</label>
-                                <input type="number" class="modern-input" placeholder="500000">
+                                <input type="number" class="form-input" placeholder="500000">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Current Balance</label>
-                                <input type="number" id="currentBalance" class="modern-input" placeholder="425000" value="425000">
+                                <input type="number" id="currentBalance" class="form-input" placeholder="425000" value="425000">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Current Interest Rate (%)</label>
-                                <input type="number" id="currentRate" class="modern-input" placeholder="6.5" step="0.01" value="6.5">
+                                <input type="number" id="currentRate" class="form-input" placeholder="6.5" step="0.01" value="6.5">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">New Interest Rate (%)</label>
-                                <input type="number" id="newRate" class="modern-input" placeholder="5.2" step="0.01" value="5.2">
+                                <input type="number" id="newRate" class="form-input" placeholder="5.2" step="0.01" value="5.2">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Years Remaining</label>
-                                <input type="number" id="remainingYears" class="modern-input" placeholder="22" value="22">
+                                <input type="number" id="remainingYears" class="form-input" placeholder="22" value="22">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Closing Costs</label>
-                                <input type="number" id="closingCosts" class="modern-input" placeholder="3000" value="3000">
+                                <input type="number" id="closingCosts" class="form-input" placeholder="3000" value="3000">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Current Monthly Payment</label>
-                                <input type="number" class="modern-input" placeholder="3200">
+                                <input type="number" class="form-input" placeholder="3200">
                             </div>
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Penalty for Breaking Mortgage</label>
-                                <input type="number" class="modern-input" placeholder="12000">
+                                <input type="number" class="form-input" placeholder="12000">
                             </div>
                             
                             <button onclick="analyzeRefinance()" class="w-full gradient-bg text-white py-4 rounded-xl font-semibold hover:shadow-lg transition-all duration-300">
@@ -1812,27 +1350,27 @@
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Purchase Price</label>
-                                <input type="number" id="stressHomePrice" class="modern-input" placeholder="650000" value="650000">
+                                <input type="number" id="stressHomePrice" class="form-input" placeholder="650000" value="650000">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Down Payment</label>
-                                <input type="number" id="stressDownPayment" class="modern-input" placeholder="130000" value="130000">
+                                <input type="number" id="stressDownPayment" class="form-input" placeholder="130000" value="130000">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Contract Interest Rate (%)</label>
-                                <input type="number" id="stressContractRate" class="modern-input" placeholder="4.79" step="0.01" value="4.79">
+                                <input type="number" id="stressContractRate" class="form-input" placeholder="4.79" step="0.01" value="4.79">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Annual Income</label>
-                                <input type="number" id="stressIncome" class="modern-input" placeholder="120000" value="120000">
+                                <input type="number" id="stressIncome" class="form-input" placeholder="120000" value="120000">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Debts</label>
-                                <input type="number" id="stressDebt" class="modern-input" placeholder="500" value="500">
+                                <input type="number" id="stressDebt" class="form-input" placeholder="500" value="500">
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Property Tax (Annual)</label>
-                                <input type="number" id="stressPropertyTax" class="modern-input" placeholder="7800" value="7800">
+                                <input type="number" id="stressPropertyTax" class="form-input" placeholder="7800" value="7800">
                             </div>
                         </div>
                         
@@ -1915,39 +1453,39 @@
                             <div class="space-y-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Property Address</label>
-                                    <input type="text" id="propertyAddress" class="modern-input" placeholder="123 Main St, Toronto, ON">
+                                    <input type="text" id="propertyAddress" class="form-input" placeholder="123 Main St, Toronto, ON">
                                 </div>
                                 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Original Purchase Price</label>
-                                        <input type="number" id="originalPrice" class="modern-input" placeholder="650000" value="650000">
+                                        <input type="number" id="originalPrice" class="form-input" placeholder="650000" value="650000">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Purchase Date</label>
-                                        <input type="date" id="purchaseDate" class="modern-input" value="2020-06-15">
+                                        <input type="date" id="purchaseDate" class="form-input" value="2020-06-15">
                                     </div>
                                 </div>
                                 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Current Mortgage Balance</label>
-                                        <input type="number" id="mortgageBalance" class="modern-input" placeholder="420000" value="420000">
+                                        <input type="number" id="mortgageBalance" class="form-input" placeholder="420000" value="420000">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Payment</label>
-                                        <input type="number" id="monthlyPayment" class="modern-input" placeholder="3089" value="3089">
+                                        <input type="number" id="monthlyPayment" class="form-input" placeholder="3089" value="3089">
                                     </div>
                                 </div>
                                 
                                 <div class="grid grid-cols-2 gap-4">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Property Improvements ($)</label>
-                                        <input type="number" id="improvements" class="modern-input" placeholder="25000" value="0">
+                                        <input type="number" id="improvements" class="form-input" placeholder="25000" value="0">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Property Type</label>
-                                        <select id="propertyType" class="modern-input">
+                                        <select id="propertyType" class="form-input">
                                             <option value="detached">Detached House</option>
                                             <option value="semi">Semi-Detached</option>
                                             <option value="townhouse">Townhouse</option>
