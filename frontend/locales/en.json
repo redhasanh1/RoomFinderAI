@@ -1,0 +1,348 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "continue": "Continue",
+    "back": "Back",
+    "next": "Next",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "success": "Success!",
+    "error": "Error",
+    "yes": "Yes",
+    "no": "No",
+    "ok": "OK",
+    "skip": "Skip",
+    "optional": "Optional",
+    "required": "Required",
+    "submit": "Submit",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "view_all": "View All",
+    "see_more": "See More",
+    "show_less": "Show Less"
+  },
+
+  "nav": {
+    "home": "Home",
+    "listings": "Listings",
+    "roompal": "RoomPal",
+    "profile": "Profile",
+    "messages": "Messages",
+    "favorites": "Favorites",
+    "login": "Login",
+    "signup": "Sign Up",
+    "logout": "Logout"
+  },
+
+  "roompal": {
+    "title": "Find Roommates Fast",
+    "subtitle": "No hassle. Post a room or find roommates. Direct contact, get connected quickly.",
+    "choose_path": "What brings you here?",
+
+    "has_room": "I Have a Room",
+    "has_room_desc": "Post your available room and connect with potential roommates",
+    "has_room_detail": "List your available space, set your preferences, and get matched with compatible roommates looking for housing.",
+
+    "seeking": "Looking for Roommates",
+    "seeking_desc": "Find compatible roommates or form a group to search together",
+    "seeking_detail": "Create your profile, answer compatibility questions, and get matched with roommates or join forces with others to find a place.",
+
+    "get_started": "Get Started",
+    "learn_more": "Learn More",
+
+    "tab_post": "Post a Room",
+    "tab_my_listings": "My Listings",
+    "tab_create_profile": "Create Profile",
+    "tab_browse": "Browse Seekers",
+    "tab_my_group": "My Group",
+    "tab_rooms": "Available Rooms",
+    "tab_seekers": "People Looking",
+
+    "stats_matches": "Successful Matches",
+    "stats_satisfaction": "Satisfaction Rate",
+    "stats_avg_time": "Average Match Time",
+    "stats_days": "days"
+  },
+
+  "onboarding": {
+    "welcome_title": "Welcome to RoomPal!",
+    "welcome_subtitle": "Find your perfect roommate in 5-7 minutes",
+    "welcome_message": "We'll ask you about your lifestyle, preferences, and what you're looking for. This helps us find the most compatible matches for you.",
+    "lets_begin": "Let's Begin",
+
+    "progress_step": "Step {current} of {total}",
+    "progress_percent": "{percent}% Complete",
+
+    "encouragement_start": "You're off to a great start!",
+    "encouragement_quarter": "Great progress! Keep going!",
+    "encouragement_half": "Halfway there! You're doing amazing!",
+    "encouragement_three_quarter": "Almost done! Hang in there!",
+    "encouragement_complete": "Congratulations! Profile complete!"
+  },
+
+  "profile": {
+    "basic_info": "Basic Information",
+    "name": "Name",
+    "age": "Age",
+    "occupation": "Occupation",
+    "location": "Location",
+    "bio": "Bio",
+    "bio_placeholder": "Tell us a bit about yourself...",
+
+    "photo_upload": "Profile Photo",
+    "photo_tip": "Profiles with photos get 10x more matches",
+    "upload_photo": "Upload Photo",
+    "change_photo": "Change Photo",
+    "remove_photo": "Remove Photo",
+
+    "completion": "Profile Completion",
+    "completion_message": "{percent}% complete - Add more to get better matches!"
+  },
+
+  "compatibility": {
+    "title": "Compatibility Questions",
+    "subtitle": "Help us find your perfect match",
+    "answer_all": "Answer all questions for best results",
+
+    "category_living": "Living Habits",
+    "category_social": "Social & Lifestyle",
+    "category_food": "Food & Kitchen",
+    "category_health": "Health & Habits",
+    "category_financial": "Financial",
+    "category_cultural": "Cultural & Values",
+    "category_dealbreakers": "Deal Breakers",
+
+    "cleanliness_label": "How clean do you keep shared spaces?",
+    "cleanliness_relaxed": "Relaxed",
+    "cleanliness_moderate": "Moderate",
+    "cleanliness_spotless": "Spotless",
+
+    "sleep_schedule_label": "What's your typical sleep schedule?",
+    "sleep_bedtime": "Bedtime",
+    "sleep_wakeup": "Wake-up time",
+    "sleep_early": "Early Bird (Before 10 PM)",
+    "sleep_moderate": "Moderate (10 PM - 11 PM)",
+    "sleep_late": "Night Owl (After 11 PM)",
+
+    "noise_level_label": "How quiet do you need your living space?",
+    "noise_lively": "Lively",
+    "noise_moderate": "Moderate",
+    "noise_quiet": "Library Quiet",
+
+    "social_level_label": "How social are you at home?",
+    "social_private": "Prefer Privacy",
+    "social_balanced": "Balanced",
+    "social_very": "Very Social",
+
+    "guest_policy_label": "How often do you have guests over?",
+    "guest_rarely": "Rarely (1-2 times/month)",
+    "guest_occasionally": "Occasionally (1-2 times/week)",
+    "guest_frequently": "Frequently (3+ times/week)",
+
+    "guest_overnight_label": "Overnight guest policy?",
+    "guest_never": "Never okay",
+    "guest_ask": "Ask first",
+    "guest_welcome": "Always welcome",
+
+    "cooking_label": "How often do you cook at home?",
+    "cooking_days": "{count} days/week",
+
+    "cuisine_label": "What cuisines do you enjoy?",
+    "cuisine_italian": "Italian",
+    "cuisine_chinese": "Chinese",
+    "cuisine_mexican": "Mexican",
+    "cuisine_indian": "Indian",
+    "cuisine_mediterranean": "Mediterranean",
+    "cuisine_japanese": "Japanese",
+    "cuisine_thai": "Thai",
+    "cuisine_american": "American",
+    "cuisine_middle_eastern": "Middle Eastern",
+    "cuisine_other": "Other",
+
+    "dietary_label": "Dietary preferences?",
+    "dietary_none": "None",
+    "dietary_vegetarian": "Vegetarian",
+    "dietary_vegan": "Vegan",
+    "dietary_halal": "Halal",
+    "dietary_kosher": "Kosher",
+    "dietary_gluten_free": "Gluten-Free",
+    "dietary_lactose_free": "Lactose-Free",
+    "dietary_pescatarian": "Pescatarian",
+
+    "smoking_label": "Smoking preference?",
+    "smoking_no": "No smoking anywhere",
+    "smoking_outside": "Outside only is fine",
+    "smoking_yes": "Smoking is fine",
+
+    "pets_label": "How do you feel about pets?",
+    "pets_love": "Love pets",
+    "pets_ok": "Pets are okay",
+    "pets_allergic": "Allergic / No pets",
+
+    "rent_split_label": "How should rent be split?",
+    "rent_equal": "Equal split",
+    "rent_proportional": "By room size",
+    "rent_flexible": "Flexible/Negotiable",
+
+    "dealbreakers_label": "What are your non-negotiables?",
+    "dealbreaker_smoking": "Smoking",
+    "dealbreaker_pets": "Pets",
+    "dealbreaker_guests": "Overnight Guests",
+    "dealbreaker_late_payment": "Late Rent Payments",
+    "dealbreaker_noise": "Excessive Noise",
+    "dealbreaker_cleanliness": "Poor Cleanliness",
+    "dealbreaker_substances": "Substance Use",
+    "dealbreaker_political": "Different Political Views",
+    "dealbreaker_religious": "Different Religion"
+  },
+
+  "matching": {
+    "compatibility_score": "Compatibility Score",
+    "compatibility_excellent": "Excellent Match",
+    "compatibility_very_good": "Very Good Match",
+    "compatibility_good": "Good Match",
+    "compatibility_fair": "Fair Match",
+    "compatibility_poor": "Low Compatibility",
+
+    "why_match": "Why you match:",
+    "view_all_factors": "View all compatibility factors",
+    "hide_factors": "Hide details",
+
+    "factor_cleanliness": "Cleanliness",
+    "factor_sleep": "Sleep Schedule",
+    "factor_social": "Social Level",
+    "factor_smoking": "Smoking Policy",
+    "factor_pets": "Pet Policy",
+    "factor_noise": "Noise Level",
+    "factor_kitchen": "Kitchen Usage",
+
+    "explanation_good": "You both share similar lifestyle preferences and habits!",
+    "explanation_excellent": "This is an exceptional match across all major factors!",
+
+    "no_matches_yet": "No matches yet",
+    "no_matches_message": "Complete your profile to see compatible roommates!",
+    "keep_browsing": "Keep browsing - perfect matches take time"
+  },
+
+  "messages": {
+    "send_message": "Send Message",
+    "connect": "Connect",
+    "invite": "Invite",
+    "view_profile": "View Profile",
+    "message_placeholder": "Type your message...",
+    "conversation_with": "Conversation with {name}",
+    "no_messages": "No messages yet",
+    "start_conversation": "Start a conversation!"
+  },
+
+  "rooms": {
+    "post_room": "Post a Room",
+    "monthly_rent": "Monthly Rent",
+    "location": "Location",
+    "room_type": "Room Type",
+    "available_date": "Available Date",
+    "description": "Description",
+    "photos": "Photos",
+    "add_photos": "Add Photos",
+
+    "type_private": "Private Room",
+    "type_shared": "Shared Room",
+    "type_studio": "Studio",
+    "type_other": "Other",
+
+    "filter_all": "All",
+    "filter_price_1000": "$1000",
+    "filter_price_1500": "$1500+",
+    "filter_private": "Private Room",
+    "filter_available": "Available Now",
+
+    "verified_badge": "Verified",
+    "available_this_week": "This Week",
+    "available_now": "Available Now",
+    "available_on": "Available {date}"
+  },
+
+  "groups": {
+    "create_group": "Create a Group",
+    "group_name": "Group Name",
+    "group_description": "Description",
+    "invite_members": "Invite Members",
+    "my_group": "My Group",
+    "members": "Members",
+    "combined_budget": "Combined Budget",
+    "search_for_rooms": "Search for Rooms",
+    "leave_group": "Leave Group",
+    "delete_group": "Delete Group"
+  },
+
+  "success_stories": {
+    "title": "Success Stories",
+    "subtitle": "Real people, real matches",
+    "quote_1": "Found my perfect roommate in 3 days! We both love quiet evenings and cooking together.",
+    "author_1": "Jessica, 24, San Francisco",
+    "quote_2": "The compatibility questions really work - we never have conflicts about cleanliness!",
+    "author_2": "Michael, 28, New York"
+  },
+
+  "aria": {
+    "close_modal": "Close dialog",
+    "open_menu": "Open navigation menu",
+    "close_menu": "Close navigation menu",
+    "compatibility_score": "{score} percent compatibility",
+    "language_selector": "Select language",
+    "profile_photo": "{name}'s profile photo",
+    "slider_value": "Value: {value}",
+    "loading_content": "Loading content, please wait",
+    "error_message": "Error: {message}",
+    "success_message": "Success: {message}"
+  },
+
+  "errors": {
+    "required_field": "This field is required",
+    "invalid_email": "Please enter a valid email address",
+    "invalid_age": "Age must be between 18 and 100",
+    "invalid_rent": "Please enter a valid rent amount",
+    "invalid_date": "Please enter a valid date",
+    "network_error": "Network error. Please check your connection.",
+    "server_error": "Server error. Please try again later.",
+    "not_found": "Not found",
+    "unauthorized": "You must be logged in to do this",
+    "upload_failed": "Upload failed. Please try again."
+  },
+
+  "validation": {
+    "min_length": "Must be at least {min} characters",
+    "max_length": "Must be no more than {max} characters",
+    "min_value": "Must be at least {min}",
+    "max_value": "Must be no more than {max}",
+    "pattern_mismatch": "Invalid format",
+    "required": "Required field"
+  },
+
+  "time": {
+    "just_now": "Just now",
+    "minutes_ago": "{count} minutes ago",
+    "hours_ago": "{count} hours ago",
+    "days_ago": "{count} days ago",
+    "weeks_ago": "{count} weeks ago",
+    "months_ago": "{count} months ago",
+    "years_ago": "{count} years ago",
+    "in_minutes": "In {count} minutes",
+    "in_hours": "In {count} hours",
+    "in_days": "In {count} days",
+    "in_weeks": "In {count} weeks",
+    "in_months": "In {count} months"
+  },
+
+  "translation_quality": {
+    "machine_translated": "Machine Translated - Help us improve!",
+    "community_verified": "Community Verified",
+    "suggest_better": "Suggest better translation",
+    "thank_you": "Thank you for your suggestion!"
+  }
+}

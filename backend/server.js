@@ -8400,6 +8400,62 @@ app.get('/api/sublease/search', async (req, res) => {
     }
 });
 
+// ========================================
+// TRUE COST CALCULATOR API
+// ========================================
+
+// API: Calculate distance and commute cost using Google Maps Distance Matrix API
+app.post('/api/distance-matrix', async (req, res) => {
+    try {
+        const { origin, destination, mode = 'driving' } = req.body;
+
+        if (!origin || !destination) {
+            return res.status(400).json({
+                error: 'Missing required parameters: origin and destination'
+            });
+        }
+
+        // Check if Google API key is configured
+        if (!config.GOOGLE_API_KEY) {
+            console.error('❌ Google API key not configured');
+            return res.status(500).json({
+                error: 'Distance calculation service not configured'
+            });
+        }
+
+        console.log('🗺️ Distance Matrix API request:', { origin, destination, mode });
+
+        // Call Google Maps Distance Matrix API
+        const apiUrl = 'https://maps.googleapis.com/maps/api/distancematrix/json';
+        const params = new URLSearchParams({
+            origins: origin,
+            destinations: destination,
+            mode: mode,
+            key: config.GOOGLE_API_KEY
+        });
+
+        const response = await axios.get(`${apiUrl}?${params.toString()}`);
+
+        if (response.data.status !== 'OK') {
+            console.error('❌ Distance Matrix API error:', response.data.status);
+            return res.status(500).json({
+                error: 'Failed to calculate distance',
+                details: response.data.status
+            });
+        }
+
+        // Return the distance matrix data
+        res.json(response.data);
+
+    } catch (error) {
+        console.error('❌ Error in distance-matrix API:', error);
+        res.status(500).json({
+            error: 'Internal server error',
+            message: error.message
+        });
+    }
+});
+
 // Declare server variable in global scope
 let server;
 
