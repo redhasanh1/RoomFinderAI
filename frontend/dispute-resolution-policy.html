@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>Dispute Resolution Policy - RoomFinderAI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --legal-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #8b5cf6 100%);
+            --border-radius-lg: 28px;
+            --shadow-md: 0 20px 40px rgba(0, 0, 0, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            min-height: 100vh;
+        }
+        .font-display { font-family: 'Space Grotesk', sans-serif; }
+        .gradient-bg-legal { background: var(--legal-gradient); }
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-md);
+        }
+        h2 { scroll-margin-top: 80px; }
+        .timeline-step {
+            position: relative;
+            padding-left: 3rem;
+        }
+        .timeline-step::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: -2rem;
+            width: 2px;
+            background: linear-gradient(to bottom, #667eea, #764ba2);
+        }
+        .timeline-step:last-child::before {
+            display: none;
+        }
+        .timeline-number {
+            position: absolute;
+            left: -0.75rem;
+            top: 0;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="sticky top-0 z-50 bg-white bg-opacity-95 backdrop-blur-lg border-b border-gray-200 shadow-sm">
+        <div class="max-w-7xl mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="index.html" class="flex items-center space-x-3">
+                    <div class="gradient-bg-legal w-12 h-12 rounded-xl flex items-center justify-center text-white font-bold text-xl">R</div>
+                    <span class="font-display font-bold text-2xl text-gray-900">RoomFinderAI</span>
+                </a>
+                <div class="flex items-center space-x-4">
+                    <a href="legal.html" class="text-gray-600 hover:text-gray-900 font-medium">Legal Center</a>
+                    <a href="support.html" class="text-gray-600 hover:text-gray-900 font-medium">Support</a>
+                    <a href="file-dispute.html" class="px-6 py-2 gradient-bg-legal text-white rounded-xl font-semibold hover:opacity-90 transition">File a Dispute</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="gradient-bg-legal text-white py-20">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <div class="text-5xl mb-4">⚖️</div>
+            <h1 class="font-display text-5xl md:text-6xl font-bold mb-6">Dispute Resolution Policy</h1>
+            <p class="text-xl text-white/90 mb-4">Last Updated: January 24, 2026 | Version 1.0</p>
+            <p class="text-lg text-white/80 max-w-2xl mx-auto">
+                Fair, transparent process for resolving conflicts between landlords, tenants, and roommates
+            </p>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="max-w-4xl mx-auto px-6 py-16">
+        <div class="glass-card p-8 md:p-12 space-y-8">
+
+            <!-- Introduction -->
+            <section>
+                <h2 class="font-display text-3xl font-bold mb-4 text-gray-900">Introduction</h2>
+                <div class="prose prose-lg max-w-none text-gray-700 space-y-4">
+                    <p>
+                        RoomFinderAI provides a structured dispute resolution process to address conflicts between users. This policy outlines how disputes are filed, reviewed, mediated, and resolved.
+                    </p>
+                    <div class="bg-indigo-50 border-l-4 border-indigo-500 p-4 my-4">
+                        <p class="text-sm text-indigo-800">
+                            <strong>Important:</strong> This policy applies to disputes between Users (landlord-tenant, roommate, sublease conflicts). For disputes with RoomFinderAI itself, see our <a href="terms-of-service.html#disputes" class="text-indigo-600 hover:underline font-semibold">Terms of Service - Section 10</a>.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 3-Step Process -->
+            <section id="process">
+                <h2 class="font-display text-3xl font-bold mb-6 text-gray-900">3-Step Resolution Process</h2>
+
+                <div class="space-y-8">
+                    <!-- Step 1 -->
+                    <div class="timeline-step">
+                        <div class="timeline-number">1</div>
+                        <div class="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6">
+                            <h3 class="font-display text-2xl font-bold text-gray-900 mb-3">Informal Resolution (7 Days)</h3>
+                            <p class="text-gray-700 mb-4">
+                                <strong>Goal:</strong> Resolve the issue directly between parties before escalating
+                            </p>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-bold">✓</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Communicate through Platform messaging</p>
+                                        <p class="text-sm text-gray-600">Attempt to resolve directly with the other party (documented communication)</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-bold">✓</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Clearly state your concern</p>
+                                        <p class="text-sm text-gray-600">Explain the issue, what went wrong, and what you'd like to happen</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-indigo-500 text-white flex items-center justify-center text-sm font-bold">✓</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Allow 7 days for response</p>
+                                        <p class="text-sm text-gray-600">Give the other party reasonable time to address your concern</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-4 bg-white/50 rounded-lg">
+                                <p class="text-sm text-gray-700">
+                                    <strong>Success Rate:</strong> ~60% of disputes resolve during this phase when parties communicate in good faith.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="timeline-step">
+                        <div class="timeline-number">2</div>
+                        <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6">
+                            <h3 class="font-display text-2xl font-bold text-gray-900 mb-3">Formal Dispute Filing (3-5 Business Days)</h3>
+                            <p class="text-gray-700 mb-4">
+                                <strong>If informal resolution fails:</strong> File an official dispute through our platform
+                            </p>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">1</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Submit dispute form</p>
+                                        <p class="text-sm text-gray-600"><a href="file-dispute.html" class="text-indigo-600 hover:underline font-semibold">File your dispute</a> with details, evidence, and desired outcome</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">2</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Receive case number</p>
+                                        <p class="text-sm text-gray-600">Unique identifier (DSP-2026-XXXXX) for tracking your case</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">3</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Initial review</p>
+                                        <p class="text-sm text-gray-600">RoomFinderAI team reviews within 3-5 business days</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-purple-500 text-white flex items-center justify-center text-sm font-bold">4</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Notify respondent</p>
+                                        <p class="text-sm text-gray-600">Other party notified and given chance to respond with their evidence</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-4 bg-white/50 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-900 mb-2">Required Information:</p>
+                                <ul class="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                                    <li>Dispute type (scam, security deposit, harassment, etc.)</li>
+                                    <li>Detailed description of what happened</li>
+                                    <li>Evidence (screenshots, photos, documents, messages)</li>
+                                    <li>Desired resolution outcome</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="timeline-step">
+                        <div class="timeline-number">3</div>
+                        <div class="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6">
+                            <h3 class="font-display text-2xl font-bold text-gray-900 mb-3">Mediation & Resolution (10-15 Business Days)</h3>
+                            <p class="text-gray-700 mb-4">
+                                <strong>Platform mediator facilitates resolution:</strong> Neutral third party helps both sides reach agreement
+                            </p>
+                            <div class="space-y-3">
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">M</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Mediator assignment</p>
+                                        <p class="text-sm text-gray-600">Trained RoomFinderAI mediator assigned to your case</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">📊</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Evidence review</p>
+                                        <p class="text-sm text-gray-600">Mediator reviews all submitted evidence from both parties</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">💬</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Facilitated communication</p>
+                                        <p class="text-sm text-gray-600">Mediator helps parties communicate through dispute messaging system</p>
+                                    </div>
+                                </div>
+                                <div class="flex items-start space-x-3">
+                                    <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">✅</div>
+                                    <div>
+                                        <p class="font-semibold text-gray-900">Resolution proposal</p>
+                                        <p class="text-sm text-gray-600">Mediator proposes fair resolution based on evidence and platform policies</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mt-4 p-4 bg-white/50 rounded-lg">
+                                <p class="text-sm font-semibold text-gray-900 mb-2">Possible Outcomes:</p>
+                                <ul class="text-sm text-gray-700 space-y-1 list-disc list-inside">
+                                    <li><strong>Mutual Agreement:</strong> Both parties agree to resolution terms</li>
+                                    <li><strong>Refund/Compensation:</strong> Financial remedy ordered</li>
+                                    <li><strong>Warning Issued:</strong> Violating party receives warning</li>
+                                    <li><strong>Account Suspension:</strong> Temporary or permanent ban for severe violations</li>
+                                    <li><strong>Listing Removal:</strong> Fraudulent/violating listings taken down</li>
+                                    <li><strong>No Action:</strong> Insufficient evidence or no policy violation</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Dispute Types -->
+            <section id="types" class="mt-12">
+                <h2 class="font-display text-3xl font-bold mb-6 text-gray-900">Common Dispute Types</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-gradient-to-br from-red-50 to-orange-50 rounded-xl p-6 border border-red-100">
+                        <div class="text-3xl mb-3">🚨</div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">Scams & Fraud</h3>
+                        <p class="text-sm text-gray-700">Fake listings, phishing, payment fraud, identity theft</p>
+                        <p class="text-xs text-red-600 mt-2 font-semibold">⚡ Immediate priority</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl p-6 border border-blue-100">
+                        <div class="text-3xl mb-3">💰</div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">Security Deposits</h3>
+                        <p class="text-sm text-gray-700">Unfair deductions, non-return, missing itemization</p>
+                        <p class="text-xs text-blue-600 mt-2 font-semibold">Most common dispute type</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-yellow-50 to-amber-50 rounded-xl p-6 border border-yellow-100">
+                        <div class="text-3xl mb-3">🏠</div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">Listing Misrepresentation</h3>
+                        <p class="text-sm text-gray-700">Inaccurate photos, hidden fees, false amenities</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6 border border-purple-100">
+                        <div class="text-3xl mb-3">⚠️</div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">Harassment & Discrimination</h3>
+                        <p class="text-sm text-gray-700">Unwanted contact, threats, discriminatory practices</p>
+                        <p class="text-xs text-purple-600 mt-2 font-semibold">⚡ Immediate priority</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-green-50 to-teal-50 rounded-xl p-6 border border-green-100">
+                        <div class="text-3xl mb-3">🔧</div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">Property Condition</h3>
+                        <p class="text-sm text-gray-700">Unaddressed repairs, habitability issues</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-indigo-50 to-violet-50 rounded-xl p-6 border border-indigo-100">
+                        <div class="text-3xl mb-3">📄</div>
+                        <h3 class="font-bold text-lg text-gray-900 mb-2">Lease Violations</h3>
+                        <p class="text-sm text-gray-700">Contract breaches, unauthorized changes, illegal evictions</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- User Rights -->
+            <section id="rights" class="mt-12">
+                <h2 class="font-display text-3xl font-bold mb-4 text-gray-900">Your Rights During Disputes</h2>
+                <div class="prose prose-lg max-w-none text-gray-700 space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-indigo-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-2">✅ You Have the Right To:</h4>
+                            <ul class="text-sm space-y-1 list-disc list-inside">
+                                <li>Submit evidence and documentation</li>
+                                <li>Respond to accusations with your side of the story</li>
+                                <li>Upload additional evidence during mediation</li>
+                                <li>Request updates on case status</li>
+                                <li>Appeal decisions you believe are unfair</li>
+                                <li>Withdraw your dispute at any time</li>
+                                <li>Confidentiality of dispute details</li>
+                                <li>Representation (you can have someone help you)</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-amber-50 rounded-lg p-4">
+                            <h4 class="font-semibold text-gray-900 mb-2">❌ You Do NOT Have the Right To:</h4>
+                            <ul class="text-sm space-y-1 list-disc list-inside">
+                                <li>Directly contact the mediator outside the platform</li>
+                                <li>Demand specific punishments for the other party</li>
+                                <li>Publicly share dispute details or evidence</li>
+                                <li>File frivolous or harassing disputes</li>
+                                <li>Retaliate against the other party</li>
+                                <li>Guarantee of your preferred outcome</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Evidence Guidelines -->
+            <section id="evidence" class="mt-12">
+                <h2 class="font-display text-3xl font-bold mb-4 text-gray-900">Evidence Guidelines</h2>
+                <div class="prose prose-lg max-w-none text-gray-700 space-y-4">
+                    <h3 class="font-display text-xl font-semibold text-gray-900">Strong Evidence Includes:</h3>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li><strong>Screenshots:</strong> Messages, emails, text conversations (with timestamps)</li>
+                        <li><strong>Photos/Videos:</strong> Property condition, damages, repairs needed</li>
+                        <li><strong>Documents:</strong> Lease agreements, receipts, itemized statements, notices</li>
+                        <li><strong>Communication logs:</strong> Platform messages, call records</li>
+                        <li><strong>Financial records:</strong> Payment confirmations, bank statements, Venmo/Zelle transactions</li>
+                        <li><strong>Third-party reports:</strong> Inspection reports, police reports, code violation notices</li>
+                    </ul>
+
+                    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 my-4">
+                        <p class="text-sm text-blue-800">
+                            <strong>Pro Tip:</strong> Document everything in real-time. Take photos when you move in, save all messages, and keep receipts. Evidence collected during the dispute is often less credible than contemporaneous documentation.
+                        </p>
+                    </div>
+
+                    <h3 class="font-display text-xl font-semibold text-gray-900 mt-6">File Upload Limits:</h3>
+                    <ul class="list-disc pl-6 space-y-2">
+                        <li>Maximum 10 files per dispute</li>
+                        <li>5MB per file</li>
+                        <li>Accepted formats: JPG, PNG, PDF, DOCX</li>
+                        <li>Files are stored securely and only visible to dispute parties and mediator</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Timeline Expectations -->
+            <section id="timeline" class="mt-12">
+                <h2 class="font-display text-3xl font-bold mb-4 text-gray-900">Timeline Expectations</h2>
+                <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-6">
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-gray-900">Dispute Filed</p>
+                                <p class="text-sm text-gray-600">You submit your dispute</p>
+                            </div>
+                            <span class="text-xs font-semibold text-indigo-600 bg-white px-3 py-1 rounded-full">Day 0</span>
+                        </div>
+                        <div class="h-px bg-gray-300"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-gray-900">Initial Review</p>
+                                <p class="text-sm text-gray-600">RoomFinderAI reviews and contacts respondent</p>
+                            </div>
+                            <span class="text-xs font-semibold text-purple-600 bg-white px-3 py-1 rounded-full">Days 1-5</span>
+                        </div>
+                        <div class="h-px bg-gray-300"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-gray-900">Response Period</p>
+                                <p class="text-sm text-gray-600">Other party submits their evidence</p>
+                            </div>
+                            <span class="text-xs font-semibold text-pink-600 bg-white px-3 py-1 rounded-full">Days 5-10</span>
+                        </div>
+                        <div class="h-px bg-gray-300"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-gray-900">Mediation</p>
+                                <p class="text-sm text-gray-600">Mediator facilitates resolution</p>
+                            </div>
+                            <span class="text-xs font-semibold text-green-600 bg-white px-3 py-1 rounded-full">Days 10-20</span>
+                        </div>
+                        <div class="h-px bg-gray-300"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="font-semibold text-gray-900">Resolution</p>
+                                <p class="text-sm text-gray-600">Final decision communicated</p>
+                            </div>
+                            <span class="text-xs font-semibold text-emerald-600 bg-white px-3 py-1 rounded-full">Day 20-25</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-6">
+                        <strong>Note:</strong> Timelines are estimates. Complex cases may take longer. Urgent safety issues are expedited.
+                    </p>
+                </div>
+            </section>
+
+            <!-- Appeals -->
+            <section id="appeals" class="mt-12">
+                <h2 class="font-display text-3xl font-bold mb-4 text-gray-900">Appeals Process</h2>
+                <div class="prose prose-lg max-w-none text-gray-700 space-y-4">
+                    <p>
+                        If you believe the resolution was unfair or based on incorrect information, you may appeal:
+                    </p>
+                    <ol class="list-decimal pl-6 space-y-2">
+                        <li><strong>Submit appeal within 14 days</strong> of resolution notification</li>
+                        <li><strong>Provide new evidence</strong> or explain why the decision was incorrect</li>
+                        <li><strong>Appeals reviewed by senior mediator</strong> (different from original mediator)</li>
+                        <li><strong>Decision final</strong> after appeal (no further appeals)</li>
+                    </ol>
+
+                    <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 my-4">
+                        <p class="text-sm text-yellow-800">
+                            <strong>Important:</strong> Appeals are rarely overturned unless significant new evidence emerges or procedural errors occurred. The appeals process is not a "second chance" to argue the same points.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- CTA -->
+            <section id="file" class="mt-12">
+                <div class="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl p-8 text-center text-white">
+                    <h2 class="font-display text-3xl font-bold mb-4">Need to File a Dispute?</h2>
+                    <p class="text-lg mb-6 text-white/90">
+                        If you've attempted informal resolution and the issue persists, file a formal dispute through our platform.
+                    </p>
+                    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                        <a href="file-dispute.html" class="px-8 py-4 bg-white text-indigo-600 rounded-xl font-bold hover:bg-gray-100 transition shadow-lg">
+                            File a Dispute →
+                        </a>
+                        <a href="my-disputes.html" class="px-8 py-4 bg-indigo-700 text-white rounded-xl font-bold hover:bg-indigo-800 transition">
+                            View My Disputes
+                        </a>
+                    </div>
+                    <p class="text-sm text-white/70 mt-4">
+                        Questions? <a href="support.html" class="underline hover:text-white">Contact Support</a>
+                    </p>
+                </div>
+            </section>
+
+            <!-- Footer -->
+            <div class="mt-12 pt-8 border-t border-gray-200">
+                <p class="text-sm text-gray-600 text-center">
+                    Questions about dispute resolution? Email <a href="mailto:disputes@roomfinderai.com" class="text-indigo-600 hover:underline">disputes@roomfinderai.com</a>
+                </p>
+                <p class="text-xs text-gray-500 text-center mt-4">
+                    <a href="terms-of-service.html" class="hover:text-indigo-600">Terms of Service</a> ·
+                    <a href="acceptable-use-policy.html" class="hover:text-indigo-600">Acceptable Use</a> ·
+                    <a href="privacy-policy.html" class="hover:text-indigo-600">Privacy Policy</a>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white py-12 mt-20">
+        <div class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
+                <div>
+                    <h3 class="font-display font-bold text-xl mb-4">RoomFinderAI</h3>
+                    <p class="text-gray-400 text-sm">Fair dispute resolution for housing conflicts</p>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Legal</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="terms-of-service.html" class="hover:text-white">Terms of Service</a></li>
+                        <li><a href="acceptable-use-policy.html" class="hover:text-white">Acceptable Use</a></li>
+                        <li><a href="dispute-resolution-policy.html" class="hover:text-white">Dispute Resolution</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Get Help</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="file-dispute.html" class="hover:text-white">File a Dispute</a></li>
+                        <li><a href="my-disputes.html" class="hover:text-white">My Disputes</a></li>
+                        <li><a href="support.html" class="hover:text-white">Support</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-4">Resources</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="legal.html" class="hover:text-white">Legal Center</a></li>
+                        <li><a href="index.html" class="hover:text-white">Home</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-800 text-center text-sm text-gray-400">
+                <p>&copy; 2026 RoomFinderAI. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+</body>
+</html>
