@@ -22,7 +22,14 @@
       "Bash(gemini -p \"@server_production.py\n\nAnalyze the distributed video processing flow:\n\n1. Trace what happens after prepare_video_task completes\n2. Show how launch_segments_task creates the chord\n3. Explain how process_segment_task gets distributed across workers\n4. Show the complete flow from prepare -> segments -> finalize\n5. Identify if there''s any code that would prevent BOTH workers from processing segments in parallel\n\nFocus on lines 691-1450 (the distributed tasks) and explain if segments truly run in parallel across multiple workers or if something blocks it.\")",
       "Bash(dir:*)",
       "Bash(powershell -Command:*)",
-      "Bash(python runproject.py:*)"
+      "Bash(python runproject.py:*)",
+      "Bash(gemini:*)",
+      "Bash(wc:*)",
+      "Bash(ls:*)",
+      "Bash(git -C /Users/Arsalan Amir Ali/Developer/GitHub/RoomFinderAI log --oneline -20)",
+      "Bash(/tmp/migrate_html.sh:*)",
+      "Bash(/tmp/add_css.sh:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": [],
