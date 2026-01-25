@@ -1,0 +1,234 @@
+/**
+ * Utility Classes
+ * Common utility classes extracted from inline styles across pages
+ */
+
+/* Gradient Text Effect */
+.gradient-text {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Brand Logo Styling */
+.brand-logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+}
+
+/* Gradient Backgrounds */
+.gradient-bg {
+    background: var(--primary-gradient);
+}
+
+.gradient-bg-secondary {
+    background: var(--secondary-gradient);
+}
+
+.gradient-bg-accent {
+    background: var(--accent-gradient);
+}
+
+/* Full-screen Background Pattern (for auth pages) */
+.grand-bg {
+    position: fixed;
+    inset: 0;
+    background: var(--primary-gradient);
+    z-index: -2;
+}
+
+.bg-pattern {
+    position: fixed;
+    inset: 0;
+    background-image:
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 40% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+    z-index: -1;
+}
+
+/* Floating Orbs (for auth pages) */
+.orb-container {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(40px);
+    opacity: 0.5;
+    animation: float-orb 20s infinite ease-in-out;
+    pointer-events: none;
+    will-change: transform;
+}
+
+.orb-1 {
+    width: 400px;
+    height: 400px;
+    background: rgba(102, 126, 234, 0.3);
+    top: -200px;
+    right: -200px;
+    transform: translate(50%, -50%);
+}
+
+.orb-2 {
+    width: 300px;
+    height: 300px;
+    background: rgba(118, 75, 162, 0.3);
+    bottom: -150px;
+    left: -150px;
+    transform: translate(-50%, 50%);
+    animation-delay: -5s;
+}
+
+@keyframes float-orb {
+    0%, 100% {
+        transform: scale(1);
+    }
+    33% {
+        transform: scale(1.1);
+    }
+    66% {
+        transform: scale(0.9);
+    }
+}
+
+@media (max-width: 420px) {
+    .orb {
+        filter: blur(24px);
+        opacity: 0.4;
+    }
+}
+
+/* Hardware Acceleration for Animations */
+.gpu-accelerate {
+    will-change: transform, opacity;
+    transform: translateZ(0);
+    backface-visibility: hidden;
+}
+
+/* Shimmer Animation (for loading states) */
+@keyframes shimmer {
+    0% {
+        opacity: 0.4;
+    }
+    50% {
+        opacity: 1;
+    }
+    100% {
+        opacity: 0.4;
+    }
+}
+
+.shimmer {
+    animation: shimmer 3s infinite;
+}
+
+/* Success Animation */
+@keyframes success-pulse {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.success-icon {
+    animation: success-pulse 0.5s ease-out;
+}
+
+/* Screen Reader Only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Container Max Widths */
+.container-sm {
+    max-width: var(--container-sm);
+}
+
+.container-md {
+    max-width: var(--container-md);
+}
+
+.container-lg {
+    max-width: var(--container-lg);
+}
+
+.container-xl {
+    max-width: var(--container-xl);
+}
+
+.container-2xl {
+    max-width: var(--container-2xl);
+}
+
+/* Social OAuth Buttons */
+.social-btn {
+    background: #fff;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 9999px;
+    font-weight: 600;
+    width: 100%;
+    aspect-ratio: 6/2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-decoration: none;
+    line-height: 1;
+    transition: background-color 0.15s, box-shadow 0.15s, transform 0.15s;
+    will-change: transform;
+}
+
+.social-btn:hover {
+    border-color: #7c83ff;
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.2);
+    transform: translateY(-2px);
+}
+
+.social-btn:active {
+    transform: translateY(0);
+}
+
+.social-btn .icon {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    display: inline-block;
+    line-height: 0;
+    pointer-events: none;
+}
+
+.social-btn .icon svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.social-btn.google {
+    background: #fff;
+}
+
+.social-btn.apple {
+    background: #fff;
+}

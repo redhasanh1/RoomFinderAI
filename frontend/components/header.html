@@ -1,10 +1,9 @@
-<!-- Premium Header -->
 <header id="header" class="fixed top-0 w-full premium-header z-50">
     <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
         <!-- Mobile Layout -->
         <div class="flex items-center justify-between w-full md:w-auto">
-            <a href="index.html" class="text-xl md:text-2xl font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
-            
+            <a href="/frontend/index.html" class="text-xl md:text-2xl font-bold brand-logo font-display" style="text-decoration: none; color: inherit;">RoomFinderAI</a>
+
             <!-- Mobile Menu Button -->
             <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
                 <span class="hamburger-line"></span>
@@ -12,11 +11,14 @@
                 <span class="hamburger-line"></span>
             </button>
         </div>
-        
+
         <!-- Desktop Navigation -->
         <div class="desktop-nav hidden md:flex items-center space-x-8">
             <!-- Home - Standalone -->
-            <a href="index.html" class="nav-item">Home</a>
+            <a href="/frontend/index.html" class="nav-item">Home</a>
+
+            <!-- RoomPal - Standalone -->
+            <a href="/frontend/roommate-matching.html" class="nav-item">RoomPal</a>
             
             <!-- Browse Dropdown -->
             <div class="dropdown">
@@ -24,9 +26,10 @@
                     Browse <span class="dropdown-arrow">▼</span>
                 </button>
                 <div class="dropdown-menu" id="browse-dropdown">
-                    <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                    <a href="sublease.html" class="dropdown-item">Sublease Property</a>
-                    <a href="https://www.roomfinderai.com/student-housing.html" class="dropdown-item">Student Housing</a>
+                    <a href="/frontend/listings.html" class="dropdown-item">Browse Listings</a>
+                    <!-- HIDDEN FOR DEVELOPMENT -->
+                    <a href="/frontend/sublease.html" class="dropdown-item" style="display: none !important;">Sublease Property</a>
+                    <a href="https://www.roomfinderai.com/student-housing.html" class="dropdown-item" style="display: none !important;">Student Housing</a>
                 </div>
             </div>
             
@@ -36,9 +39,10 @@
                     Tools <span class="dropdown-arrow">▼</span>
                 </button>
                 <div class="dropdown-menu" id="tools-dropdown">
-                    <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                    <a href="/frontend/ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
                     <a href="https://www.roomfinderai.com/legal.html" class="dropdown-item">Legal Help</a>
-                    <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
+                    <!-- HIDDEN FOR DEVELOPMENT -->
+                    <a href="/frontend/mortgage.html" class="dropdown-item" style="display: none !important;">Mortgage Tools</a>
                 </div>
             </div>
             
@@ -48,10 +52,10 @@
                     More <span class="dropdown-arrow">▼</span>
                 </button>
                 <div class="dropdown-menu" id="about-dropdown">
-                    <a href="index.html#about" class="dropdown-item">About Us</a>
-                    <a href="pricing.html" class="dropdown-item">Pricing</a>
-                    <a href="index.html#contact" class="dropdown-item">Contact</a>
-                    <a href="support.html" class="dropdown-item">Support</a>
+                    <a href="/frontend/coming-soon.html" class="dropdown-item">About Us</a>
+                    <a href="/frontend/pricing.html" class="dropdown-item">Pricing</a>
+                    <a href="/frontend/index.html#contact" class="dropdown-item">Contact</a>
+                    <a href="/frontend/support.html" class="dropdown-item">Support</a>
                 </div>
             </div>
         </div>
@@ -60,7 +64,7 @@
         <div class="desktop-auth hidden md:block">
             <div id="authSection">
                 <!-- Default content before JS loads -->
-                <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
+                <a href="/frontend/login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
                     Login/Register
                 </a>
             </div>
@@ -77,17 +81,31 @@
             </div>
             
             <div class="mobile-menu-items">
-                <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
-                
+                <a href="/frontend/index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                <a href="/frontend/roommate-matching.html" class="mobile-menu-item" onclick="closeMobileMenu()">👥 RoomPal</a>
+
+                <!-- Profile Section -->
+                <div class="mobile-section">
+                    <button class="mobile-section-header" onclick="toggleMobileSection('profile')">
+                        👤 Profile <span class="mobile-arrow" id="profile-arrow">▼</span>
+                    </button>
+                    <div class="mobile-section-content" id="profile-section">
+                        <a href="/frontend/profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">My Profile</a>
+                        <a href="/frontend/profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()">My Listings</a>
+                        <a href="/frontend/favorites.html" class="mobile-menu-item" onclick="closeMobileMenu()">❤️ Favorites</a>
+                    </div>
+                </div>
+
                 <!-- Browse Section -->
                 <div class="mobile-section">
                     <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
                         🔍 Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
                     </button>
                     <div class="mobile-section-content" id="browse-section">
-                        <a href="listings.html" class="mobile-menu-item">Browse Listings</a>
-                        <a href="sublease.html" class="mobile-menu-item">Sublease Property</a>
-                        <a href="https://www.roomfinderai.com/student-housing.html" class="mobile-menu-item">Student Housing</a>
+                        <a href="/frontend/listings.html" class="mobile-menu-item">Browse Listings</a>
+                        <!-- HIDDEN FOR DEVELOPMENT -->
+                        <a href="/frontend/sublease.html" class="mobile-menu-item" style="display: none !important;">Sublease Property</a>
+                        <a href="https://www.roomfinderai.com/student-housing.html" class="mobile-menu-item" style="display: none !important;">Student Housing</a>
                     </div>
                 </div>
                 
@@ -97,9 +115,10 @@
                         🛠️ Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
                     </button>
                     <div class="mobile-section-content" id="tools-section">
-                        <a href="ai-negotiator.html" class="mobile-menu-item">AI Negotiator</a>
+                        <a href="/frontend/ai-negotiator.html" class="mobile-menu-item">AI Negotiator</a>
                         <a href="https://www.roomfinderai.com/legal.html" class="mobile-menu-item">Legal Help</a>
-                        <a href="mortgage.html" class="mobile-menu-item">Mortgage Tools</a>
+                        <!-- HIDDEN FOR DEVELOPMENT -->
+                        <a href="/frontend/mortgage.html" class="mobile-menu-item" style="display: none !important;">Mortgage Tools</a>
                     </div>
                 </div>
                 
@@ -109,17 +128,17 @@
                         ℹ️ More <span class="mobile-arrow" id="about-arrow">▼</span>
                     </button>
                     <div class="mobile-section-content" id="about-section">
-                        <a href="index.html#about" class="mobile-menu-item">About Us</a>
-                        <a href="pricing.html" class="mobile-menu-item">Pricing</a>
-                        <a href="index.html#contact" class="mobile-menu-item">Contact</a>
-                        <a href="support.html" class="mobile-menu-item">Support</a>
+                        <a href="/frontend/coming-soon.html" class="mobile-menu-item">About Us</a>
+                        <a href="/frontend/pricing.html" class="mobile-menu-item">Pricing</a>
+                        <a href="/frontend/index.html#contact" class="mobile-menu-item">Contact</a>
+                        <a href="/frontend/support.html" class="mobile-menu-item">Support</a>
                     </div>
                 </div>
                 
                 <!-- Mobile Auth -->
                 <div id="mobileAuthSection">
                     <!-- Default content before JS loads -->
-                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
+                    <a href="/frontend/login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
                 </div>
             </div>
         </div>
