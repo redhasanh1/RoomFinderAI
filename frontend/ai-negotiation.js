@@ -8,6 +8,8 @@ class AINegotiator {
         this.activeNegotiations = new Map(); // Track ongoing negotiations
         this.marketData = new Map(); // Cache market data
         this.aiUserInitialized = false;
+        this.rentcastApiKey = '90680b91c3984ae095227bf9e4b02c78'; // RentCast API key for real market data
+        this.rentcastCache = new Map(); // Cache RentCast results per negotiation
         this.init();
     }
 
@@ -1137,6 +1139,234 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
         return shuffled.slice(0, Math.min(2, shuffled.length)).join('. ');
     }
 
+    // ========================================
+    // PROPERTY JUSTIFICATION SYSTEM
+    // ========================================
+
+    // Analyze property to build negotiation justifications with data-backed reasoning
+    analyzePropertyJustifications(listing, marketData, userBudget) {
+        const justifications = {
+            trueCostFactors: [],
+            marketComparisons: [],
+            propertyFactors: [],
+            valuePropositions: []
+        };
+
+        // 1. TRUE COST ANALYSIS - Calculate all additional costs
+        let additionalCosts = 0;
+
+        if (listing.utilities_cost && listing.utilities_cost > 0) {
+            additionalCosts += listing.utilities_cost;
+            justifications.trueCostFactors.push({
+                type: 'utilities',
+                amount: listing.utilities_cost,
+                description: `Utilities add $${listing.utilities_cost}/month (not included in base rent)`
+            });
+        }
+
+        if (listing.parking_fee && listing.parking_fee > 0) {
+            additionalCosts += listing.parking_fee;
+            justifications.trueCostFactors.push({
+                type: 'parking',
+                amount: listing.parking_fee,
+                description: `Parking is $${listing.parking_fee}/month extra`
+            });
+        }
+
+        if (listing.internet_cost && listing.internet_cost > 0) {
+            additionalCosts += listing.internet_cost;
+            justifications.trueCostFactors.push({
+                type: 'internet',
+                amount: listing.internet_cost,
+                description: `Internet adds $${listing.internet_cost}/month`
+            });
+        }
+
+        if (listing.pet_fee && listing.pet_fee > 0) {
+            additionalCosts += listing.pet_fee;
+            justifications.trueCostFactors.push({
+                type: 'pet_fee',
+                amount: listing.pet_fee,
+                description: `Pet fee adds $${listing.pet_fee}/month`
+            });
+        }
+
+        if (listing.amenity_fees && listing.amenity_fees > 0) {
+            additionalCosts += listing.amenity_fees;
+            justifications.trueCostFactors.push({
+                type: 'amenity_fees',
+                amount: listing.amenity_fees,
+                description: `Amenity fees add $${listing.amenity_fees}/month`
+            });
+        }
+
+        // Calculate true total cost
+        if (additionalCosts > 0) {
+            const trueCost = listing.price + additionalCosts;
+            justifications.trueCostFactors.push({
+                type: 'total',
+                amount: trueCost,
+                description: `True monthly cost is $${trueCost} (${listing.price} + $${additionalCosts} in fees)`,
+                savings: trueCost - userBudget,
+                additionalCosts: additionalCosts
+            });
+        }
+
+        // 2. MARKET COMPARISON - Compare to similar properties
+        if (marketData && marketData.average) {
+            const difference = listing.price - marketData.average;
+            if (difference > 100) {
+                justifications.marketComparisons.push({
+                    type: 'above_market',
+                    marketAvg: marketData.average,
+                    difference: difference,
+                    description: `Similar ${listing.bedrooms}BR ${listing.house_type}s in ${listing.city} average $${marketData.average}/month`,
+                    percentage: Math.round((difference / marketData.average) * 100)
+                });
+            }
+        }
+
+        // 3. PROPERTY-SPECIFIC FACTORS
+
+        // Time on market (if listing is old)
+        if (listing.created_at) {
+            const daysOnMarket = Math.floor((Date.now() - new Date(listing.created_at).getTime()) / (1000 * 60 * 60 * 24));
+            if (daysOnMarket > 30) {
+                justifications.propertyFactors.push({
+                    type: 'time_on_market',
+                    days: daysOnMarket,
+                    weeks: Math.floor(daysOnMarket / 7),
+                    description: `Property has been listed for ${Math.floor(daysOnMarket / 7)} weeks - demand may be softer`
+                });
+            }
+        }
+
+        // Utilities not included
+        if (listing.utilities === 'Not included' || (!listing.utilities && additionalCosts > 0)) {
+            justifications.propertyFactors.push({
+                type: 'no_utilities',
+                description: 'Utilities not included means higher total cost for tenant'
+            });
+        }
+
+        // Extract property issues from description
+        const description = (listing.description || '').toLowerCase();
+
+        if (description.includes('ground floor') || description.includes('first floor') || description.includes('1st floor')) {
+            justifications.propertyFactors.push({
+                type: 'ground_floor',
+                description: 'Ground floor units typically rent for 5-10% less than upper floors'
+            });
+        }
+
+        if (description.includes('corner unit')) {
+            justifications.propertyFactors.push({
+                type: 'corner_unit',
+                description: 'Corner units often have less privacy and more exterior walls (higher heating/cooling costs)'
+            });
+        }
+
+        if (description.includes('basement') || description.includes('lower level')) {
+            justifications.propertyFactors.push({
+                type: 'basement',
+                description: 'Basement units typically rent for 10-15% less than above-ground units'
+            });
+        }
+
+        // 4. VALUE PROPOSITIONS (what tenant offers)
+        justifications.valuePropositions = [
+            'do immediate signing with no delays',
+            'commit to a long-term lease (12-18 months available)',
+            'provide excellent credit and rental history',
+            'offer strong references from previous landlords',
+            'be flexible on move-in date to fit your schedule',
+            'handle all utilities and maintenance responsibly',
+            'provide first and last month\'s rent upfront'
+        ];
+
+        return justifications;
+    }
+
+    // Craft persuasive message with specific justifications and data
+    craftJustifiedOffer(offer, listing, marketData, justifications, keyPoints) {
+        const messages = [];
+
+        // 1. ACKNOWLEDGE landlord's specific point first (builds rapport)
+        if (keyPoints && keyPoints.propertyFeatures && keyPoints.propertyFeatures.length > 0) {
+            const feature = keyPoints.propertyFeatures[0];
+            const acknowledgments = {
+                'big house': "I get that it's a big house - that's exactly what I'm looking for",
+                'renovated': "The renovations definitely add value, I appreciate that",
+                'location': "The location is great, I agree",
+                'amenities': "The amenities are nice",
+                'spacious': "I love the spacious layout",
+                'yard': "The outdoor space is a huge plus"
+            };
+            if (acknowledgments[feature]) {
+                messages.push(acknowledgments[feature]);
+            }
+        }
+
+        // 2. BUILD THE JUSTIFICATION (pick strongest 1-2 points)
+        const justificationParts = [];
+
+        // True cost justification (STRONGEST - concrete numbers)
+        const trueCostTotal = justifications.trueCostFactors.find(j => j.type === 'total');
+        if (trueCostTotal && trueCostTotal.additionalCosts > 150) {
+            justificationParts.push(
+                `when I factor in the additional costs (utilities, parking, etc. = $${trueCostTotal.additionalCosts}/month), the true monthly cost becomes $${trueCostTotal.amount}`
+            );
+        } else if (trueCostTotal && trueCostTotal.additionalCosts > 0) {
+            justificationParts.push(
+                `with $${trueCostTotal.additionalCosts}/month in additional fees, the total comes to $${trueCostTotal.amount}`
+            );
+        }
+
+        // Market comparison (STRONG - social proof)
+        const marketComp = justifications.marketComparisons[0];
+        if (marketComp && marketComp.difference > 300) {
+            justificationParts.push(
+                `similar ${listing.bedrooms}BR ${listing.house_type}s in ${listing.city} are averaging $${marketComp.marketAvg}/month`
+            );
+        }
+
+        // Property factor (SUPPORTING - logical reasoning)
+        const propertyFactor = justifications.propertyFactors[0];
+        if (propertyFactor && justificationParts.length < 2) {
+            const factorPhrases = {
+                'time_on_market': `I noticed it's been on the market for ${propertyFactor.weeks} weeks`,
+                'no_utilities': 'utilities being separate adds significantly to monthly costs',
+                'ground_floor': 'ground floor units typically go for a bit less due to noise and privacy',
+                'corner_unit': 'corner units usually rent for 5-10% below interior units',
+                'basement': 'basement units typically rent below above-ground units'
+            };
+            if (factorPhrases[propertyFactor.type]) {
+                justificationParts.push(factorPhrases[propertyFactor.type]);
+            }
+        }
+
+        // 3. CONSTRUCT THE MESSAGE
+        let message = '';
+
+        // Start with acknowledgment if we have one
+        if (messages.length > 0) {
+            message = messages[0] + '. ';
+        }
+
+        // Add justifications
+        if (justificationParts.length > 0) {
+            message += 'But ' + justificationParts.join(', and ') + '. ';
+        }
+
+        // 4. STATE THE OFFER with VALUE-ADD
+        const valueAddIndex = Math.floor(Math.random() * Math.min(3, justifications.valuePropositions.length));
+        const valueAdd = justifications.valuePropositions[valueAddIndex];
+
+        message += `I'm genuinely at $${offer}, and I can ${valueAdd}. Can we make this work?`;
+
+        return message;
+    }
+
     // Initialize the negotiation engine
     async init() {
         try {
@@ -1238,10 +1468,79 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
         }
     }
 
+    // Get RentCast API market data (real-time market data)
+    async getRentCastMarketData(listing) {
+        try {
+            console.log('🏠 Fetching RentCast market data for:', listing.city);
+
+            // Prepare request parameters
+            const params = new URLSearchParams({
+                city: listing.city || '',
+                state: listing.state || listing.province || 'ON', // Default to Ontario if not specified
+                bedrooms: listing.bedrooms || '',
+                propertyType: this.mapHouseTypeToRentCast(listing.house_type)
+            });
+
+            // Add postal code if available
+            if (listing.postal_code) {
+                params.append('zipCode', listing.postal_code);
+            }
+
+            const response = await fetch(`https://api.rentcast.io/v1/avm/rent/long-term?${params}`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Api-Key': this.rentcastApiKey
+                }
+            });
+
+            if (!response.ok) {
+                console.log('⚠️ RentCast API error:', response.status);
+                return null;
+            }
+
+            const data = await response.json();
+            console.log('✅ RentCast data received:', data);
+
+            // Format RentCast response to match our structure
+            const stats = {
+                average: Math.round(data.rent || data.rentEstimate || 0),
+                median: Math.round(data.rent || data.rentEstimate || 0),
+                min: Math.round((data.rent || data.rentEstimate || 0) * 0.85), // Estimate -15%
+                max: Math.round((data.rent || data.rentEstimate || 0) * 1.15), // Estimate +15%
+                count: 1,
+                confidence: data.confidence || 'medium',
+                priceRange: data.priceRange || null,
+                source: 'rentcast'
+            };
+
+            return stats;
+
+        } catch (error) {
+            console.error('❌ Error fetching RentCast data:', error);
+            return null;
+        }
+    }
+
+    // Map our house types to RentCast property types
+    mapHouseTypeToRentCast(houseType) {
+        const mapping = {
+            'Apartment': 'Apartment',
+            'House': 'Single Family',
+            'Condo': 'Condo',
+            'Townhouse': 'Townhouse',
+            'Duplex': 'Multi Family',
+            'Studio': 'Apartment',
+            'Loft': 'Apartment',
+            'Basement': 'Single Family'
+        };
+        return mapping[houseType] || 'Apartment';
+    }
+
     // Get real market data for pricing analysis
-    async getMarketData(location, houseType, bedrooms) {
+    async getMarketData(location, houseType, bedrooms, listing = null) {
         const cacheKey = `${location}-${houseType}-${bedrooms}`;
-        
+
         // Check cache first
         if (this.marketData.has(cacheKey)) {
             console.log('📊 Using cached market data for:', cacheKey);
@@ -1251,9 +1550,31 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
         try {
             console.log('🔍 Gathering market data for:', { location, houseType, bedrooms });
 
-            // Query database for similar properties
+            // PRIORITY 1: Try RentCast API if we have listing details (limited to 1 call per negotiation)
+            if (listing && this.rentcastApiKey) {
+                const negotiationId = listing.id;
+
+                // Check if we already used RentCast for this negotiation
+                if (!this.rentcastCache.has(negotiationId)) {
+                    console.log('🎯 Using RentCast API (1st call for this negotiation)');
+                    const rentcastData = await this.getRentCastMarketData(listing);
+
+                    if (rentcastData) {
+                        // Cache for this specific negotiation
+                        this.rentcastCache.set(negotiationId, rentcastData);
+                        this.marketData.set(cacheKey, rentcastData);
+                        console.log('📊 RentCast market data:', rentcastData);
+                        return rentcastData;
+                    }
+                } else {
+                    console.log('♻️ Using cached RentCast data for this negotiation');
+                    return this.rentcastCache.get(negotiationId);
+                }
+            }
+
+            // PRIORITY 2: Query database for similar properties
             let query = this.supabase.from('listings').select('price, title, city, bedrooms, house_type');
-            
+
             if (location) {
                 const cleanLocation = location.trim();
                 query = query.or(`city.ilike.%${cleanLocation}%,title.ilike.%${cleanLocation}%`);
@@ -1266,7 +1587,7 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
             }
 
             const { data: listings, error } = await query.limit(50);
-            
+
             if (error || !listings?.length) {
                 console.log('⚠️ No market data found in database');
                 return this.getAIMarketData(location, houseType, bedrooms);
@@ -1287,7 +1608,7 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
             // Cache the result
             this.marketData.set(cacheKey, stats);
             console.log('📊 Market data calculated:', stats);
-            
+
             return stats;
 
         } catch (error) {
@@ -2412,7 +2733,7 @@ Generate ONLY the message. No greetings, no signatures.
     // Generate market-based response for rejections
     async generateMarketBasedResponse(negotiation, listing) {
         const marketData = negotiation.marketData || await this.getMarketData(
-            listing.city, listing.house_type, listing.bedrooms
+            listing.city, listing.house_type, listing.bedrooms, listing
         );
 
         // Get negotiation state
@@ -2753,7 +3074,7 @@ Generate ONLY the message. No greetings, no signatures.
             }
 
             // Get market data
-            const marketData = await this.getMarketData(cleanCity, listing.house_type, listing.bedrooms);
+            const marketData = await this.getMarketData(cleanCity, listing.house_type, listing.bedrooms, listing);
 
             // Generate negotiation message
             const message = await this.generateNegotiationMessage(listing, userBudget, marketData);
@@ -2851,7 +3172,7 @@ Generate ONLY the message. No greetings, no signatures.
     async generateMarketBasedNegotiation(negotiation, listing, landlordMessage, analysis) {
         try {
             const marketData = negotiation.marketData || await this.getMarketData(
-                listing.city, listing.house_type, listing.bedrooms
+                listing.city, listing.house_type, listing.bedrooms, listing
             );
 
             console.log('🏠 Using market data for negotiation:', marketData);
@@ -2877,6 +3198,10 @@ Generate ONLY the message. No greetings, no signatures.
             // ADVANCED: Detect negotiation signals (price movement, tone, willingness)
             const signals = this.detectNegotiationSignals(landlordMessage, negotiation.messages, negotiation);
             console.log('🚦 Negotiation signals:', signals);
+
+            // JUSTIFICATION SYSTEM: Analyze property to build data-backed reasoning
+            const justifications = this.analyzePropertyJustifications(listing, marketData, negotiation.userBudget);
+            console.log('📊 Property justifications:', justifications);
 
             // PHASE 7: Update conversation memory
             this.updateConversationMemory(negotiation, landlordMessage, null, analysis);
@@ -3026,6 +3351,25 @@ ${tacticInstructions}
 ${principleInfo.description}
 Examples: ${principleInfo.examples.slice(0, 2).join('; ')}
 
+===== PROPERTY JUSTIFICATIONS (USE THESE TO BUILD YOUR CASE!) =====
+${justifications.trueCostFactors.length > 0 ? `
+**TRUE COST ANALYSIS:**
+${justifications.trueCostFactors.map(j => `- ${j.description}`).join('\n')}
+${justifications.trueCostFactors.find(j => j.type === 'total') ? `\n⚠️ CRITICAL: Show landlord the math! Base rent + fees = TRUE COST` : ''}
+` : ''}
+${justifications.marketComparisons.length > 0 ? `
+**MARKET DATA:**
+${justifications.marketComparisons.map(j => `- ${j.description} (${j.percentage}% above market)`).join('\n')}
+` : ''}
+${justifications.propertyFactors.length > 0 ? `
+**PROPERTY FACTORS:**
+${justifications.propertyFactors.map(j => `- ${j.description}`).join('\n')}
+` : ''}
+
+**SUGGESTED JUSTIFIED RESPONSE:**
+"${this.craftJustifiedOffer(ackermanOffer, listing, marketData, justifications, keyPoints)}"
+(Use this as inspiration - make it YOUR OWN with natural language)
+
 ===== PROPERTY PERSONALIZATION =====
 Reference if natural: "${propertyContext}"
 
@@ -3044,19 +3388,24 @@ Reference if natural: "${propertyContext}"
 - Use sparingly: "Every week vacant costs you $${weeklyVacancyCost}."
 
 ===== CRITICAL RULES =====
-1. **ACKNOWLEDGE THEIR SPECIFIC POINTS FIRST** - If they mentioned "big house" or other features, acknowledge it naturally before pivoting to price
-2. **READ THE SIGNALS** - If price movement is "dropped", they're negotiating! Say something like "I appreciate you working with me"
-3. **VARY YOUR LANGUAGE** - Don't repeat phrases like "my budget is capped" or "I'm a reliable tenant" - be creative and natural
-4. **MAX 2-3 sentences** - Be concise but human-sounding. Long text = desperation
-5. Use ${voice.name} voice tone throughout
-6. Apply ${intelligentTactic} tactic naturally (don't announce it, just DO it)
-7. Weave in ${principleInfo.name} principle subtly
-8. State offer as CONSTRAINT not REQUEST ("I'm at $X" not "Can you do $X?")
-9. End with strategic question or offer, then STOP
-10. NEVER exceed $${maxOffer}
-11. ${hasUsefulMarketData ? `USE market data strategically: Average is $${marketData.average}` : 'NO market data - pivot to tenant quality and certainty'}
-12. NEVER repeat an offer already made: ${state.offersMade.join(', ') || 'none'}
-13. **SOUND HUMAN** - Use conversational language, contractions, natural flow. You're a person, not a chatbot!
+1. **JUSTIFY YOUR OFFER WITH DATA** - Don't just state a price! Use the justifications above:
+   - If utilities/fees aren't included → Show the TRUE COST math
+   - If above market average → Reference comparable properties
+   - If property has been on market long → Mention it tactfully
+   Example: "I get it's a big house. But with $250/month in utilities, the true cost is $6,625, and similar 4BR houses here average $6,200..."
+2. **ACKNOWLEDGE THEIR SPECIFIC POINTS FIRST** - If they mentioned "big house" or other features, acknowledge it naturally before pivoting to price
+3. **READ THE SIGNALS** - If price movement is "dropped", they're negotiating! Say something like "I appreciate you working with me"
+4. **VARY YOUR LANGUAGE** - Don't repeat phrases like "my budget is capped" or "I'm a reliable tenant" - be creative and natural
+5. **MAX 2-3 sentences** - Be concise but human-sounding. Long text = desperation
+6. Use ${voice.name} voice tone throughout
+7. Apply ${intelligentTactic} tactic naturally (don't announce it, just DO it)
+8. Weave in ${principleInfo.name} principle subtly
+9. State offer as CONSTRAINT not REQUEST ("I'm at $X" not "Can you do $X?")
+10. End with strategic question or offer, then STOP
+11. NEVER exceed $${maxOffer}
+12. ${hasUsefulMarketData ? `USE market data strategically: Average is $${marketData.average}` : 'NO market data - pivot to tenant quality and certainty'}
+13. NEVER repeat an offer already made: ${state.offersMade.join(', ') || 'none'}
+14. **SOUND HUMAN** - Use conversational language, contractions, natural flow. You're a person, not a chatbot!
 
 Generate ONLY the response message. No explanations. No "As an AI". Just the human-sounding negotiation message.
 `;
