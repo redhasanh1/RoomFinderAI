@@ -45,6 +45,22 @@
                     <a href="/frontend/mortgage.html" class="dropdown-item" style="display: none !important;">Mortgage Tools</a>
                 </div>
             </div>
+
+            <!-- Legal Center Dropdown -->
+            <div class="dropdown">
+                <button class="nav-item dropdown-trigger" onclick="toggleDropdown('legal')">
+                    Legal <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="dropdown-menu" id="legal-dropdown">
+                    <a href="/frontend/legal.html" class="dropdown-item">For Tenants</a>
+                    <a href="/frontend/my-disputes.html" class="dropdown-item">My Disputes</a>
+                    <a href="/frontend/file-dispute.html" class="dropdown-item">Report an Issue</a>
+                    <div style="border-top: 1px solid #e5e7eb; margin: 0.5rem 0;"></div>
+                    <a href="/frontend/terms-of-service.html" class="dropdown-item">Terms of Service</a>
+                    <a href="/frontend/dispute-resolution-policy.html" class="dropdown-item">Dispute Policy</a>
+                    <a href="/frontend/acceptable-use-policy.html" class="dropdown-item">Acceptable Use</a>
+                </div>
+            </div>
             
             <!-- About Dropdown -->
             <div class="dropdown">
@@ -119,6 +135,20 @@
                         <a href="https://www.roomfinderai.com/legal.html" class="mobile-menu-item">Legal Help</a>
                         <!-- HIDDEN FOR DEVELOPMENT -->
                         <a href="/frontend/mortgage.html" class="mobile-menu-item" style="display: none !important;">Mortgage Tools</a>
+                    </div>
+                </div>
+
+                <!-- Legal Section -->
+                <div class="mobile-section">
+                    <button class="mobile-section-header" onclick="toggleMobileSection('legal')">
+                        ⚖️ Legal <span class="mobile-arrow" id="legal-arrow">▼</span>
+                    </button>
+                    <div class="mobile-section-content" id="legal-section">
+                        <a href="/frontend/legal.html" class="mobile-menu-item">For Tenants</a>
+                        <a href="/frontend/my-disputes.html" class="mobile-menu-item">My Disputes</a>
+                        <a href="/frontend/file-dispute.html" class="mobile-menu-item">Report an Issue</a>
+                        <a href="/frontend/terms-of-service.html" class="mobile-menu-item">Terms of Service</a>
+                        <a href="/frontend/dispute-resolution-policy.html" class="mobile-menu-item">Dispute Policy</a>
                     </div>
                 </div>
                 
