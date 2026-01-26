@@ -55,16 +55,36 @@
                 // Ensure desktop nav is visible
                 const desktopNav = document.querySelector('.desktop-nav');
                 if (desktopNav) {
-                    desktopNav.style.visibility = '';
-                    desktopNav.style.display = '';
+                    desktopNav.style.cssText = '';
                 }
 
-                // Ensure header is visible - reset ALL styles
+                // Ensure header is visible - reset ALL styles and force visibility
                 const header = document.getElementById('header');
                 if (header) {
+                    // Clear all inline styles
                     header.style.cssText = '';
+                    // Explicitly ensure visibility
+                    header.style.display = 'block';
+                    header.style.visibility = 'visible';
+                    header.style.opacity = '1';
+                    header.style.transform = 'translateY(0)';
+                    header.style.pointerEvents = 'auto';
                     // Force layout reflow to ensure browser re-renders
                     void header.offsetHeight;
+
+                    // Also reset all direct children of header
+                    header.querySelectorAll('*').forEach(child => {
+                        if (child.style.display === 'none' || child.style.visibility === 'hidden') {
+                            child.style.display = '';
+                            child.style.visibility = '';
+                        }
+                    });
+                }
+
+                // Ensure nav element inside header is visible
+                const headerNav = document.querySelector('#header nav');
+                if (headerNav) {
+                    headerNav.style.cssText = '';
                 }
 
                 // Reset message panel state
