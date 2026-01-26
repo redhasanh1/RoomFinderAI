@@ -777,6 +777,355 @@ select.form-input {
     }
 }
 
+/* ==================== MODERN SEEKER CARDS ==================== */
+
+.seeker-card-modern {
+    display: flex;
+    gap: var(--space-5);
+    background: #fff;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--gray-200);
+    padding: var(--space-5);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    animation: cardEntrance 0.4s ease-out both;
+}
+
+.seeker-card-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), #a855f7);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.seeker-card-modern:hover {
+    box-shadow: var(--shadow-xl);
+    transform: translateY(-4px);
+}
+
+.seeker-card-modern:hover::before {
+    transform: scaleX(1);
+}
+
+@keyframes cardEntrance {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Avatar Section with Match Ring */
+.seeker-avatar-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.match-ring-container {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.match-ring-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+}
+
+.match-ring-bg {
+    fill: none;
+    stroke: var(--gray-200);
+    stroke-width: 4;
+}
+
+.match-ring-progress {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s ease;
+}
+
+.match-ring-progress.high {
+    stroke: var(--success-color);
+}
+
+.match-ring-progress.medium {
+    stroke: var(--warning-color);
+}
+
+.match-ring-progress.low {
+    stroke: var(--gray-400);
+}
+
+.seeker-avatar-modern {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 84px;
+    height: 84px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: var(--shadow-md);
+}
+
+.online-indicator {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 14px;
+    height: 14px;
+    background: var(--success-color);
+    border: 3px solid #fff;
+    border-radius: 50%;
+    animation: pulse-online 2s infinite;
+}
+
+@keyframes pulse-online {
+    0%, 100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+    }
+    50% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+}
+
+.match-score-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: var(--space-2);
+}
+
+.match-score-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.match-score-value.high { color: var(--success-color); }
+.match-score-value.medium { color: var(--warning-color); }
+.match-score-value.low { color: var(--gray-500); }
+
+.match-score-text {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Content Section */
+.seeker-content-section {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.seeker-header {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-2);
+}
+
+.seeker-name-modern {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: var(--gray-900);
+}
+
+.verified-badge-modern {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    background: #dbeafe;
+    color: #1d4ed8;
+    padding: 2px 6px;
+    border-radius: var(--radius-full);
+    font-size: 0.7rem;
+    font-weight: 500;
+}
+
+.activity-status {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    margin-left: auto;
+}
+
+.activity-status.active {
+    color: var(--success-color);
+}
+
+/* Quick Stats Row */
+.seeker-quick-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4);
+    margin-bottom: var(--space-3);
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    font-size: 0.875rem;
+    color: var(--gray-600);
+}
+
+.stat-item svg {
+    width: 16px;
+    height: 16px;
+    color: var(--gray-400);
+    flex-shrink: 0;
+}
+
+.stat-item .stat-value {
+    font-weight: 500;
+    color: var(--gray-900);
+}
+
+/* Lifestyle Tags */
+.seeker-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    margin-bottom: var(--space-3);
+}
+
+.lifestyle-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    font-size: 0.75rem;
+    font-weight: 500;
+    transition: transform 0.15s ease;
+}
+
+.lifestyle-tag:hover {
+    transform: scale(1.05);
+}
+
+.lifestyle-tag.blue {
+    background: #dbeafe;
+    color: #1d4ed8;
+}
+
+.lifestyle-tag.yellow {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.lifestyle-tag.pink {
+    background: #fce7f3;
+    color: #be185d;
+}
+
+.lifestyle-tag.green {
+    background: #d1fae5;
+    color: #047857;
+}
+
+.lifestyle-tag.gray {
+    background: var(--gray-100);
+    color: var(--gray-600);
+}
+
+.lifestyle-tag.purple {
+    background: #ede9fe;
+    color: #6d28d9;
+}
+
+/* Bio Preview */
+.seeker-bio-preview {
+    font-size: 0.875rem;
+    color: var(--gray-600);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    margin-bottom: var(--space-4);
+    flex-grow: 1;
+}
+
+/* Modern Connect Button */
+.btn-connect-modern {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    background: linear-gradient(135deg, var(--primary-color) 0%, #7c3aed 100%);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    padding: var(--space-3) var(--space-5);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+    align-self: flex-start;
+}
+
+.btn-connect-modern::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-connect-modern:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+}
+
+.btn-connect-modern:hover::before {
+    left: 100%;
+}
+
+.btn-connect-modern .arrow-icon {
+    transition: transform 0.2s ease;
+}
+
+.btn-connect-modern:hover .arrow-icon {
+    transform: translateX(3px);
+}
+
+/* Animation delays for staggered entrance */
+.seeker-card-modern:nth-child(1) { animation-delay: 0ms; }
+.seeker-card-modern:nth-child(2) { animation-delay: 100ms; }
+.seeker-card-modern:nth-child(3) { animation-delay: 200ms; }
+.seeker-card-modern:nth-child(4) { animation-delay: 300ms; }
+.seeker-card-modern:nth-child(5) { animation-delay: 400ms; }
+.seeker-card-modern:nth-child(6) { animation-delay: 500ms; }
+
 /* ==================== RESPONSIVE ==================== */
 
 @media (max-width: 768px) {
@@ -801,5 +1150,51 @@ select.form-input {
     .filter-pill {
         padding: var(--space-2) var(--space-3);
         font-size: 0.8125rem;
+    }
+}
+
+/* Modern Seeker Card - Mobile Vertical Layout */
+@media (max-width: 640px) {
+    .seeker-card-modern {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        padding: var(--space-6);
+    }
+
+    .seeker-avatar-section {
+        margin-bottom: var(--space-2);
+    }
+
+    .seeker-content-section {
+        align-items: center;
+    }
+
+    .seeker-header {
+        justify-content: center;
+    }
+
+    .activity-status {
+        margin-left: 0;
+        width: 100%;
+        text-align: center;
+    }
+
+    .seeker-quick-stats {
+        justify-content: center;
+    }
+
+    .seeker-tags {
+        justify-content: center;
+    }
+
+    .seeker-bio-preview {
+        text-align: center;
+    }
+
+    .btn-connect-modern {
+        align-self: center;
+        width: 100%;
+        max-width: 200px;
     }
 }
