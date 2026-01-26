@@ -1655,12 +1655,18 @@
 
     <!-- Chat Modal -->
     <div id="chatModal" class="chat-modal">
-        <div class="chat-modal-content">
+        <div class="chat-modal-content" style="position: relative;">
             <div class="chat-header">
                 <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
                 <span class="close-button chat-close-button">×</span>
             </div>
             <div id="chatMessages" class="chat-messages"></div>
+            <!-- Scroll to bottom button -->
+            <button id="scrollToBottomBtn" onclick="document.getElementById('chatMessages').scrollTo({top: document.getElementById('chatMessages').scrollHeight, behavior: 'smooth'})" style="position: absolute; bottom: 90px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.9); color: white; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100;">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </button>
             <div class="chat-input-container">
                 <div class="flex items-end space-x-2">
                     <div class="flex-1">
