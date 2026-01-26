@@ -114,10 +114,14 @@
 .chat-messages {
     flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
     padding: 1rem 1.5rem;
     background: #f9fafb;
-    max-height: 400px;
+    max-height: 450px;
     min-height: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
 /* Custom scrollbar for chat messages */
@@ -141,9 +145,11 @@
 
 /* Message containers */
 .message {
-    margin-bottom: 1rem;
-    max-width: 80%;
+    margin-bottom: 0.75rem;
+    max-width: 85%;
     animation: messageSlideIn 0.3s ease-out;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
 }
 
 @keyframes messageSlideIn {
@@ -170,6 +176,8 @@
     border-radius: 1rem 1rem 0.25rem 1rem;
     margin: 0;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
     box-shadow: 0 2px 4px rgba(102, 126, 234, 0.2);
 }
 
@@ -186,6 +194,8 @@
     border-radius: 1rem 1rem 1rem 0.25rem;
     margin: 0;
     word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
     border: 1px solid #e5e7eb;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
