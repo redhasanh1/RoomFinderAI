@@ -4435,9 +4435,9 @@
 
                 // Setup scroll-to-bottom button
                 const scrollBtn = document.getElementById('scrollToBottomBtn');
-                if (chatMessagesContainer && scrollBtn) {
-                    chatMessagesContainer.onscroll = () => {
-                        const distanceFromBottom = chatMessagesContainer.scrollHeight - chatMessagesContainer.scrollTop - chatMessagesContainer.clientHeight;
+                if (chatMessages && scrollBtn) {
+                    chatMessages.onscroll = () => {
+                        const distanceFromBottom = chatMessages.scrollHeight - chatMessages.scrollTop - chatMessages.clientHeight;
                         scrollBtn.style.display = distanceFromBottom > 100 ? 'flex' : 'none';
                     };
                     scrollBtn.style.display = 'none';
