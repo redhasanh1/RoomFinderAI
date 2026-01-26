@@ -127,11 +127,10 @@ class ChatController {
     setupRealtimeSubscription() {
         const supabase = window.configManager ? window.configManager.getSupabase() : null;
         if (!supabase) {
-            console.error('❌ Supabase client not available for real-time subscription');
+            console.error('Supabase client not available for real-time subscription');
             return;
         }
 
-        // SIMPLIFIED Real-time subscription with better debugging
         const messageChannel = supabase
             .channel('messages_realtime_' + Math.random())
             .on('postgres_changes', {
@@ -139,37 +138,29 @@ class ChatController {
                 schema: 'public',
                 table: 'messages'
             }, (payload) => {
-                console.log('🔔 REALTIME EVENT RECEIVED:', payload);
-                console.log('Current conversation ID:', this.currentConversationId);
-                console.log('Message conversation ID:', payload.new.conversation_id);
+                // Only handle messages for current conversation
+                if (!this.currentConversationId || this.currentConversationId !== payload.new.conversation_id) {
+                    return;
+                }
 
-                if (this.currentConversationId && this.currentConversationId === payload.new.conversation_id) {
-                    console.log('✅ Message is for current conversation!');
+                const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
+                if (!currentUser) return;
 
-                    // Reload messages to ensure we get the latest
-                    this.loadMessages(this.currentConversationId);
+                // Skip if this is our own message (already added instantly when sent)
+                if (payload.new.sender_email === currentUser.email) {
+                    return;
+                }
 
-                    // Also try instant append for better UX
-                    const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
-                    const chatMessagesContainer = document.getElementById('chatMessages');
-
-                    if (chatMessagesContainer && currentUser && payload.new.sender_email !== currentUser.email) {
-                        console.log('🚀 Adding message instantly to UI');
-                    }
-                } else {
-                    console.log('❌ Message not for current conversation');
+                // Append the new message from other user
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                if (chatMessagesContainer) {
+                    const messageElement = this.createMessageElement(payload.new, currentUser);
+                    chatMessagesContainer.appendChild(messageElement);
+                    // Scroll to bottom only if user wasn't reading history
+                    this.scrollToBottom(false);
                 }
             })
-            .subscribe((status) => {
-                console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
-                if (status === 'SUBSCRIBED') {
-                    console.log('✅ Successfully subscribed to messages!');
-                } else if (status === 'CHANNEL_ERROR') {
-                    console.error('❌ Channel error - real-time not working');
-                } else if (status === 'TIMED_OUT') {
-                    console.error('⏰ Subscription timed out');
-                }
-            });
+            .subscribe();
     }
 
     /**

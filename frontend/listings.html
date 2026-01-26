@@ -1929,12 +1929,18 @@
 
         <!-- Chat Modal -->
         <div id="chatModal" class="chat-modal">
-            <div class="chat-modal-content">
+            <div class="chat-modal-content" style="position: relative;">
                 <div class="chat-header">
                     <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
                     <span class="close-button chat-close-button">×</span>
                 </div>
                 <div id="chatMessages" class="chat-messages"></div>
+                <!-- Scroll to bottom button -->
+                <button id="scrollToBottomBtn" onclick="document.getElementById('chatMessages').scrollTo({top: document.getElementById('chatMessages').scrollHeight, behavior: 'smooth'})" style="position: absolute; bottom: 90px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.9); color: white; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100;">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                    </svg>
+                </button>
                 <div class="chat-input-container">
                     <div class="flex items-end gap-3">
                         <div class="flex-1 relative">
@@ -3800,25 +3806,46 @@
                     schema: 'public', 
                     table: 'messages' 
                 }, (payload) => {
-                    console.log('🔔 REALTIME EVENT RECEIVED:', payload);
-                    console.log('Current conversation ID:', currentConversationId);
-                    console.log('Message conversation ID:', payload.new.conversation_id);
-                    
-                    if (currentConversationId && currentConversationId === payload.new.conversation_id) {
-                        console.log('✅ Message is for current conversation!');
-                        
-                        // Reload messages to ensure we get the latest
-                        loadMessages(currentConversationId);
-                        
-                        // Also try instant append for better UX
-                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                        const chatMessagesContainer = document.getElementById('chatMessages');
-                        
-                        if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
-                            console.log('🚀 Adding message instantly to UI');
+                    // Only handle messages for current conversation
+                    if (!currentConversationId || currentConversationId !== payload.new.conversation_id) {
+                        return;
+                    }
+
+                    const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                    if (!currentUser) return;
+
+                    // Skip if this is our own message (already added instantly when sent)
+                    if (payload.new.sender_email === currentUser.email) {
+                        return;
+                    }
+
+                    // Append the new message from other user
+                    const chatMessagesContainer = document.getElementById('chatMessages');
+                    if (chatMessagesContainer) {
+                        const msg = payload.new;
+                        const messageElement = document.createElement('div');
+                        messageElement.className = 'message received';
+
+                        let content;
+                        if (msg.message_type === 'file' && msg.file_url) {
+                            content = `
+                                <div class="file-message bg-gray-50 p-3 rounded">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                        <div>
+                                            <p class="font-medium text-gray-900">${sanitizeInput(msg.file_name || 'File')}</p>
+                                            <a href="${msg.file_url}" target="_blank" class="text-gray-800 hover:text-gray-900 text-sm font-medium flex items-center gap-1">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>`;
+                        } else {
+                            content = `<p>${sanitizeInput(msg.content)}</p>`;
                         }
-                    } else {
-                        console.log('❌ Message not for current conversation');
+
+                        messageElement.innerHTML = `${content}<div class="message-timestamp">${new Date(msg.created_at).toLocaleTimeString()}</div>`;
+                        chatMessagesContainer.appendChild(messageElement);
                     }
                 })
                 .subscribe((status) => {
@@ -3835,13 +3862,23 @@
             // Mark chat system as successfully initialized
             chatSystemStatus.isInitialized = true;
             chatSystemStatus.lastHealthCheck = performChatHealthCheck();
-            
-            console.log('✅ Chat system setup completed successfully!', chatSystemStatus);
-            
+
+            console.log('Chat system setup completed successfully!', chatSystemStatus);
+
             // Remove any existing error messages since setup was successful
             const errorDiv = document.getElementById('chat-system-error');
             if (errorDiv) {
                 errorDiv.remove();
+            }
+
+            // Setup scroll tracking for scroll-to-bottom button
+            const chatMsgs = document.getElementById('chatMessages');
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            if (chatMsgs && scrollBtn) {
+                chatMsgs.addEventListener('scroll', () => {
+                    const distanceFromBottom = chatMsgs.scrollHeight - chatMsgs.scrollTop - chatMsgs.clientHeight;
+                    scrollBtn.style.display = distanceFromBottom > 100 ? 'flex' : 'none';
+                });
             }
         }
 
