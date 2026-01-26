@@ -9,14 +9,11 @@ class RoomPalApp {
         this.userGroup = null;
         this.api = null;
         this.currentSearchLocation = null;
-        this.allRooms = [];
         this.allSeekers = [];
-        this.filteredRooms = [];
         this.filteredSeekers = [];
         this.activeFilters = {
             budget: '',
             moveIn: '',
-            roomType: '',
             activeOnly: false
         };
 
@@ -127,12 +124,6 @@ class RoomPalApp {
             pill.addEventListener('click', (e) => this.handleFilterClick(e));
         });
 
-        // Room form submission
-        const roomForm = document.getElementById('roomForm');
-        if (roomForm) {
-            roomForm.addEventListener('submit', (e) => this.handleRoomFormSubmit(e));
-        }
-
         // Seeker form submission
         const seekerForm = document.getElementById('seekerForm');
         if (seekerForm) {
@@ -151,15 +142,10 @@ class RoomPalApp {
             messageForm.addEventListener('submit', (e) => this.handleMessageSubmit(e));
         }
 
-        // Photo upload handlers
-        const roomPhotos = document.getElementById('roomPhotos');
-        if (roomPhotos) {
-            roomPhotos.addEventListener('change', (e) => this.handlePhotoUpload(e, 'room'));
-        }
-
+        // Photo upload handler
         const profilePhoto = document.getElementById('profilePhoto');
         if (profilePhoto) {
-            profilePhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'profile'));
+            profilePhoto.addEventListener('change', (e) => this.handlePhotoUpload(e));
         }
     }
 
@@ -258,10 +244,7 @@ class RoomPalApp {
     }
 
     updateLocationLabels(location) {
-        const roomsLabel = document.getElementById('roomsLocationLabel');
         const seekersLabel = document.getElementById('seekersLocationLabel');
-
-        if (roomsLabel) roomsLabel.textContent = `in ${location}`;
         if (seekersLabel) seekersLabel.textContent = `in ${location}`;
     }
 
@@ -348,72 +331,6 @@ class RoomPalApp {
         }
     }
 
-    // ==================== AUTO-DETECT LOCATION ====================
-
-    autoDetectLocation() {
-        const input = document.getElementById('roomLocationInput');
-        if (!input) return;
-
-        if (!navigator.geolocation) {
-            this.showToast('Geolocation not supported', 'error');
-            return;
-        }
-
-        input.value = 'Detecting location...';
-        input.disabled = true;
-
-        navigator.geolocation.getCurrentPosition(
-            async (position) => {
-                try {
-                    // Use reverse geocoding (simplified - in production use a real API)
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-
-                    // Simulated reverse geocoding - in production, use Google/Mapbox API
-                    const location = await this.reverseGeocode(lat, lon);
-                    input.value = location;
-                    this.showToast('Location detected!', 'success');
-                } catch (e) {
-                    input.value = '';
-                    this.showToast('Could not detect location', 'error');
-                }
-                input.disabled = false;
-            },
-            (error) => {
-                input.value = '';
-                input.disabled = false;
-                this.showToast('Location access denied', 'error');
-            }
-        );
-    }
-
-    async reverseGeocode(lat, lon) {
-        // Simplified location detection - returns general area
-        // In production, use a real geocoding service
-        const cities = [
-            { lat: 47.6, lon: -122.3, name: 'Seattle, WA' },
-            { lat: 37.7, lon: -122.4, name: 'San Francisco, CA' },
-            { lat: 34.0, lon: -118.2, name: 'Los Angeles, CA' },
-            { lat: 40.7, lon: -74.0, name: 'New York, NY' },
-            { lat: 51.5, lon: -0.1, name: 'London, UK' },
-            { lat: 35.6, lon: 139.6, name: 'Tokyo, Japan' }
-        ];
-
-        // Find nearest city
-        let nearest = cities[0];
-        let minDist = Infinity;
-
-        for (const city of cities) {
-            const dist = Math.sqrt(Math.pow(lat - city.lat, 2) + Math.pow(lon - city.lon, 2));
-            if (dist < minDist) {
-                minDist = dist;
-                nearest = city;
-            }
-        }
-
-        return nearest.name;
-    }
-
     // ==================== QUICK INTEREST BUTTON ====================
 
     async sendQuickInterest(type, id, name) {
@@ -466,34 +383,19 @@ class RoomPalApp {
 
     // ==================== FILTER FUNCTIONS ====================
 
-    applyBudgetFilter(value) {
-        this.activeFilters.budget = value;
-        this.applyAllFilters('rooms');
-    }
-
-    applyMoveInFilter(value) {
-        this.activeFilters.moveIn = value;
-        this.applyAllFilters('rooms');
-    }
-
-    applyRoomTypeFilter(value) {
-        this.activeFilters.roomType = value;
-        this.applyAllFilters('rooms');
-    }
-
     applySeekerBudgetFilter(value) {
         this.activeFilters.budget = value;
-        this.applyAllFilters('seekers');
+        this.applyAllFilters();
     }
 
     applySeekerMoveInFilter(value) {
         this.activeFilters.moveIn = value;
-        this.applyAllFilters('seekers');
+        this.applyAllFilters();
     }
 
     toggleActiveOnly() {
         this.activeFilters.activeOnly = !this.activeFilters.activeOnly;
-        this.applyAllFilters('seekers');
+        this.applyAllFilters();
 
         // Update button state
         const btn = event?.target?.closest('.filter-pill');
@@ -502,73 +404,29 @@ class RoomPalApp {
         }
     }
 
-    applyAllFilters(type) {
-        if (type === 'rooms') {
-            this.filteredRooms = this.allRooms.filter(room => {
-                // Budget filter
-                if (this.activeFilters.budget) {
-                    const [min, max] = this.activeFilters.budget.split('-').map(v => v.replace('+', ''));
-                    const rent = room.room_rent;
-                    if (max) {
-                        if (rent < parseInt(min) || rent > parseInt(max)) return false;
-                    } else {
-                        if (rent < parseInt(min)) return false;
-                    }
+    applyAllFilters() {
+        this.filteredSeekers = this.allSeekers.filter(seeker => {
+            // Budget filter
+            if (this.activeFilters.budget) {
+                const [min, max] = this.activeFilters.budget.split('-').map(v => v.replace('+', ''));
+                const seekerMax = seeker.budget_max;
+                if (max) {
+                    if (seekerMax < parseInt(min) || seekerMax > parseInt(max)) return false;
+                } else {
+                    if (seekerMax < parseInt(min)) return false;
                 }
+            }
 
-                // Move-in filter
-                if (this.activeFilters.moveIn) {
-                    const availDate = new Date(room.room_available_date);
-                    const now = new Date();
-                    const diffDays = Math.ceil((availDate - now) / (1000 * 60 * 60 * 24));
+            // Active only filter
+            if (this.activeFilters.activeOnly && !seeker.is_active) {
+                return false;
+            }
 
-                    switch (this.activeFilters.moveIn) {
-                        case 'now': if (diffDays > 0) return false; break;
-                        case 'week': if (diffDays > 7) return false; break;
-                        case 'month': if (diffDays > 30) return false; break;
-                    }
-                }
+            return true;
+        });
 
-                // Room type filter
-                if (this.activeFilters.roomType && room.room_type !== this.activeFilters.roomType) {
-                    return false;
-                }
-
-                return true;
-            });
-
-            this.renderFilteredRooms('roomsGrid');
-            this.updateResultsCount('roomsResultsCount', this.filteredRooms.length, this.allRooms.length);
-        } else {
-            this.filteredSeekers = this.allSeekers.filter(seeker => {
-                // Budget filter
-                if (this.activeFilters.budget) {
-                    const [min, max] = this.activeFilters.budget.split('-').map(v => v.replace('+', ''));
-                    const seekerMax = seeker.budget_max;
-                    if (max) {
-                        if (seekerMax < parseInt(min) || seekerMax > parseInt(max)) return false;
-                    } else {
-                        if (seekerMax < parseInt(min)) return false;
-                    }
-                }
-
-                // Active only filter
-                if (this.activeFilters.activeOnly && !seeker.is_active) {
-                    return false;
-                }
-
-                return true;
-            });
-
-            this.renderFilteredSeekers('allSeekersGrid');
-            this.updateResultsCount('seekersResultsCount', this.filteredSeekers.length, this.allSeekers.length);
-        }
-    }
-
-    renderFilteredRooms(containerId) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-        container.innerHTML = this.filteredRooms.map(room => this.createRoomCard(room)).join('');
+        this.renderFilteredSeekers('allSeekersGrid');
+        this.updateResultsCount('seekersResultsCount', this.filteredSeekers.length, this.allSeekers.length);
     }
 
     renderFilteredSeekers(containerId) {
@@ -592,9 +450,7 @@ class RoomPalApp {
         // Map section names to element IDs
         const sectionMap = {
             'selector': 'sectionSelector',
-            'hasRoom': 'hasRoomSection',
             'seeking': 'seekingSection',
-            'browseRooms': 'browseRoomsSection',
             'browseSeekers': 'browseSeekersSection'
         };
 
@@ -622,9 +478,6 @@ class RoomPalApp {
 
     async loadSectionData(section) {
         switch (section) {
-            case 'browseRooms':
-                await this.loadRoomsGrid('roomsGrid');
-                break;
             case 'browseSeekers':
                 await this.loadSeekersGrid('allSeekersGrid');
                 break;
@@ -649,19 +502,8 @@ class RoomPalApp {
         tabBtn.classList.add('active');
 
         // Show/hide tab content based on section
-        if (tabContainer.id === 'hasRoomSection') {
-            this.showHasRoomTab(tabName);
-        } else if (tabContainer.id === 'seekingSection') {
+        if (tabContainer.id === 'seekingSection') {
             this.showSeekingTab(tabName);
-        }
-    }
-
-    showHasRoomTab(tabName) {
-        document.getElementById('postRoomTab').classList.toggle('hidden', tabName !== 'postRoom');
-        document.getElementById('myRoomsTab').classList.toggle('hidden', tabName !== 'myRooms');
-
-        if (tabName === 'myRooms') {
-            this.loadMyRooms();
         }
     }
 
@@ -702,27 +544,7 @@ class RoomPalApp {
     // ==================== DATA LOADING ====================
 
     async loadPreviewData() {
-        await Promise.all([
-            this.loadRoomsGrid('previewRoomsGrid', 3),
-            this.loadSeekersGrid('previewSeekersGrid', 3)
-        ]);
-    }
-
-    async loadRoomsGrid(containerId, limit = 12) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        // Get rooms from API or use mock data
-        const rooms = await this.getRooms(limit);
-
-        // Store for filtering
-        if (containerId === 'roomsGrid') {
-            this.allRooms = rooms;
-            this.filteredRooms = rooms;
-            this.updateResultsCount('roomsResultsCount', rooms.length, rooms.length);
-        }
-
-        container.innerHTML = rooms.map(room => this.createRoomCard(room)).join('');
+        await this.loadSeekersGrid('previewSeekersGrid', 3);
     }
 
     async loadSeekersGrid(containerId, limit = 12) {
@@ -742,21 +564,6 @@ class RoomPalApp {
         container.innerHTML = seekers.map(seeker => this.createSeekerCard(seeker)).join('');
     }
 
-    async getRooms(limit = 12) {
-        // Try to get from API
-        if (this.api) {
-            try {
-                const rooms = await this.api.getRoomPosts({ limit });
-                if (rooms && rooms.length > 0) return rooms;
-            } catch (e) {
-                console.log('Using mock room data');
-            }
-        }
-
-        // Return mock data
-        return this.getMockRooms().slice(0, limit);
-    }
-
     async getSeekers(limit = 12) {
         // Try to get from API
         if (this.api) {
@@ -773,53 +580,6 @@ class RoomPalApp {
     }
 
     // ==================== CARD TEMPLATES ====================
-
-    createRoomCard(room) {
-        const photoUrl = room.room_photos?.[0]?.url || room.photos?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop';
-        const verified = room.is_verified ? '<span class="verified-badge">Verified</span>' : '';
-        const formattedDate = room.room_available_date ? this.formatDate(room.room_available_date) : 'Available Now';
-        const roomTypeLabel = this.formatRoomType(room.room_type);
-
-        // Active indicator
-        const isActive = room.last_active && (Date.now() - new Date(room.last_active).getTime()) < 24 * 60 * 60 * 1000;
-        const activeLabel = isActive
-            ? '<span class="active-label">Active today</span>'
-            : (room.last_active ? '<span class="active-label inactive">Active this week</span>' : '');
-
-        return `
-            <div class="card overflow-hidden cursor-pointer" onclick="roomPalApp.viewRoom('${room.id}')">
-                <div class="relative">
-                    <img src="${photoUrl}" alt="Room" class="room-image">
-                    ${isActive ? '<div class="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</div>' : ''}
-                </div>
-                <div class="p-4">
-                    <div class="flex justify-between items-start mb-2">
-                        <span class="text-xl font-bold text-indigo-600">$${room.room_rent}/mo</span>
-                        ${verified}
-                    </div>
-                    <p class="text-gray-900 font-medium mb-1">${room.room_location || 'Location'}</p>
-                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
-                        <span>${roomTypeLabel}</span>
-                        <span>-</span>
-                        <span>${formattedDate}</span>
-                    </div>
-                    ${activeLabel}
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-4 mt-2">${room.room_description || 'Great room available!'}</p>
-                    <div class="flex gap-2">
-                        <button onclick="event.stopPropagation(); roomPalApp.sendQuickInterest('room', '${room.id}', '${room.name || 'Host'}')" class="btn-interested flex-1">
-                            <svg class="w-4 h-4 heart-icon" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
-                            </svg>
-                            Interested
-                        </button>
-                        <button onclick="event.stopPropagation(); roomPalApp.openMessage('room', '${room.id}', '${room.name || 'Host'}')" class="btn-message flex-1">
-                            Message
-                        </button>
-                    </div>
-                </div>
-            </div>
-        `;
-    }
 
     createSeekerCard(seeker) {
         const avatarUrl = seeker.avatar_url || seeker.avatar?.photos?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(seeker.name || 'User')}&background=6366f1&color=fff&size=160`;
@@ -908,56 +668,6 @@ class RoomPalApp {
     }
 
     // ==================== FORM HANDLERS ====================
-
-    async handleRoomFormSubmit(e) {
-        e.preventDefault();
-
-        const form = e.target;
-        const formData = new FormData(form);
-
-        const roomData = {
-            user_type: 'has_spot',
-            room_rent: parseInt(formData.get('room_rent')),
-            room_location: formData.get('room_location'),
-            room_type: formData.get('room_type'),
-            room_available_date: formData.get('room_available_date'),
-            room_description: formData.get('room_description'),
-            room_photos: this.uploadedPhotos || []
-        };
-
-        // Show loading state
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Posting...';
-        submitBtn.disabled = true;
-
-        try {
-            // Save to API or localStorage
-            if (this.api && this.api.initialized) {
-                await this.api.saveRoomPost(roomData);
-            } else {
-                // Save locally
-                const rooms = JSON.parse(localStorage.getItem('myRooms') || '[]');
-                roomData.id = 'room_' + Date.now();
-                roomData.created_at = new Date().toISOString();
-                rooms.push(roomData);
-                localStorage.setItem('myRooms', JSON.stringify(rooms));
-            }
-
-            // Show success
-            this.showToast('Room posted successfully!', 'success');
-            form.reset();
-            this.uploadedPhotos = [];
-            document.getElementById('photoPreview').innerHTML = '';
-
-        } catch (error) {
-            console.error('Error posting room:', error);
-            this.showToast('Failed to post room. Please try again.', 'error');
-        } finally {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-        }
-    }
 
     async handleSeekerFormSubmit(e) {
         e.preventDefault();
@@ -1071,52 +781,19 @@ class RoomPalApp {
         }
     }
 
-    handlePhotoUpload(e, type) {
+    handlePhotoUpload(e) {
         const files = e.target.files;
         if (!files.length) return;
 
-        if (type === 'room') {
-            this.uploadedPhotos = this.uploadedPhotos || [];
-            const previewContainer = document.getElementById('photoPreview');
-
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    this.uploadedPhotos.push({ url: event.target.result, name: file.name });
-                    previewContainer.innerHTML += `
-                        <div class="relative">
-                            <img src="${event.target.result}" class="w-20 h-20 object-cover rounded-lg">
-                            <button type="button" onclick="roomPalApp.removePhoto(${this.uploadedPhotos.length - 1})"
-                                class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs">x</button>
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
-            });
-        } else if (type === 'profile') {
-            const file = files[0];
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                this.uploadedAvatar = event.target.result;
-                document.getElementById('avatarPreview').innerHTML = `
-                    <img src="${event.target.result}" class="w-24 h-24 rounded-full object-cover mx-auto">
-                `;
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    removePhoto(index) {
-        this.uploadedPhotos.splice(index, 1);
-        // Re-render preview
-        const previewContainer = document.getElementById('photoPreview');
-        previewContainer.innerHTML = this.uploadedPhotos.map((photo, i) => `
-            <div class="relative">
-                <img src="${photo.url}" class="w-20 h-20 object-cover rounded-lg">
-                <button type="button" onclick="roomPalApp.removePhoto(${i})"
-                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs">x</button>
-            </div>
-        `).join('');
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            this.uploadedAvatar = event.target.result;
+            document.getElementById('avatarPreview').innerHTML = `
+                <img src="${event.target.result}" class="w-24 h-24 rounded-full object-cover mx-auto">
+            `;
+        };
+        reader.readAsDataURL(file);
     }
 
     // ==================== GROUP MANAGEMENT ====================
@@ -1201,29 +878,6 @@ class RoomPalApp {
         }
     }
 
-    // ==================== MY ROOMS ====================
-
-    loadMyRooms() {
-        const container = document.getElementById('myRoomsTab');
-        if (!container) return;
-
-        const myRooms = JSON.parse(localStorage.getItem('myRooms') || '[]');
-
-        if (myRooms.length === 0) {
-            container.innerHTML = `
-                <div class="card p-8 text-center text-gray-500">
-                    <p>You haven't posted any rooms yet.</p>
-                </div>
-            `;
-        } else {
-            container.innerHTML = `
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${myRooms.map(room => this.createRoomCard(room)).join('')}
-                </div>
-            `;
-        }
-    }
-
     // ==================== MODALS ====================
 
     openMessage(type, id, name) {
@@ -1243,7 +897,7 @@ class RoomPalApp {
             </div>
             <div>
                 <p class="font-medium text-gray-900">${name}</p>
-                <p class="text-sm text-gray-500">${type === 'room' ? 'Room host' : 'Room seeker'}</p>
+                <p class="text-sm text-gray-500">Roommate seeker</p>
             </div>
         `;
 
@@ -1268,11 +922,6 @@ class RoomPalApp {
         const modal = document.getElementById('compatibilityModal');
         modal.classList.add('hidden');
         modal.classList.remove('flex');
-    }
-
-    viewRoom(roomId) {
-        console.log('Viewing room:', roomId);
-        // In a real app, this would open a detailed room view
     }
 
     viewSeeker(seekerId) {
@@ -1310,16 +959,6 @@ class RoomPalApp {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    formatRoomType(type) {
-        const types = {
-            'private': 'Private Room',
-            'shared': 'Shared Room',
-            'studio': 'Studio',
-            'other': 'Other'
-        };
-        return types[type] || type || 'Room';
-    }
-
     showToast(message, type = 'info') {
         // Create toast element
         const toast = document.createElement('div');
@@ -1339,83 +978,6 @@ class RoomPalApp {
     }
 
     // ==================== MOCK DATA ====================
-
-    getMockRooms() {
-        return [
-            {
-                id: 'room_1',
-                room_rent: 1200,
-                room_location: 'Downtown Seattle, WA',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Bright, spacious private room in a modern apartment. Great natural light, in-unit laundry, and close to public transit.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Alex',
-                last_active: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
-            },
-            {
-                id: 'room_2',
-                room_rent: 950,
-                room_location: 'Capitol Hill, Seattle',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Cozy room in a friendly household. Walking distance to restaurants and bars. Pet-friendly!',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Jordan',
-                last_active: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() // 5 hours ago
-            },
-            {
-                id: 'room_3',
-                room_rent: 800,
-                room_location: 'University District, Seattle',
-                room_type: 'shared',
-                room_available_date: new Date().toISOString(),
-                room_description: 'Affordable shared room near UW campus. Great for students! Utilities included.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=300&fit=crop' }],
-                is_verified: false,
-                name: 'Taylor',
-                last_active: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() // 2 days ago
-            },
-            {
-                id: 'room_4',
-                room_rent: 1500,
-                room_location: 'Ballard, Seattle',
-                room_type: 'studio',
-                room_available_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Beautiful studio apartment with modern amenities. Quiet neighborhood with great cafes nearby.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Morgan',
-                last_active: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString() // 12 hours ago
-            },
-            {
-                id: 'room_5',
-                room_rent: 1100,
-                room_location: 'Fremont, Seattle',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Charming room in a vintage home. Creative neighborhood with art galleries and unique shops.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=300&fit=crop' }],
-                is_verified: false,
-                name: 'Casey',
-                last_active: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() // 3 days ago
-            },
-            {
-                id: 'room_6',
-                room_rent: 1350,
-                room_location: 'South Lake Union, Seattle',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Modern high-rise apartment with amazing city views. Gym and rooftop access included.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Jamie',
-                last_active: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString() // 1 hour ago
-            }
-        ];
-    }
 
     getMockSeekers() {
         return [
