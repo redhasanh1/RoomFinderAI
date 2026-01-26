@@ -2704,7 +2704,7 @@ Generate ONLY the message. No greetings, no signatures.
         negotiation.negotiationState.concessionCount++;
 
         console.log('📊 Counter-offer strategy: Their offer $', counterPrice, '-> Our counter $', newOffer);
-        console.log('📊 Concession #', negotiation.negotiationState.concessionCount, ', increments left:', increments.length - state.concessionCount);
+        console.log('📊 Concession #', negotiation.negotiationState.concessionCount);
 
         // Use different tactics based on concession count
         if (state.concessionCount === 0) {
@@ -3451,13 +3451,48 @@ Generate ONLY the response message. No explanations. No "As an AI". Just the hum
             negotiation.negotiationState.offersRejected++;
 
             // If response contains a new price offer, track it
-            const priceMatch = negotiationResponse.match(/\$(\d+)/);
-            if (priceMatch) {
-                const offeredPrice = parseInt(priceMatch[1]);
-                negotiation.negotiationState.offersMade.push(offeredPrice);
-                negotiation.negotiationState.lastOffer = offeredPrice;
-                negotiation.negotiationState.concessionCount++;
-                console.log('📊 Tracked new offer:', offeredPrice, 'Concession count:', negotiation.negotiationState.concessionCount);
+            // Smarter price extraction - look for offer context first, then fall back to LAST price
+            let extractedPrice = null;
+
+            // Method 1: Look for offer-context patterns (most reliable)
+            const offerPatterns = [
+                /(?:I can do|I offer|my offer is|how about|I'll go|let's do|I'm at|stretch to|cap at|best I can do is)\s*\$(\d+)/i,
+                /\$(\d+)\s*(?:is my|is where I|that's my|that's where|works for me)/i
+            ];
+
+            for (const pattern of offerPatterns) {
+                const match = negotiationResponse.match(pattern);
+                if (match) {
+                    extractedPrice = parseInt(match[1]);
+                    console.log('📊 Found offer via context pattern:', extractedPrice);
+                    break;
+                }
+            }
+
+            // Method 2: Fall back to LAST price mentioned (not first) - offers typically come at end
+            if (!extractedPrice) {
+                const allPrices = negotiationResponse.match(/\$(\d+)/g);
+                if (allPrices && allPrices.length > 0) {
+                    const lastPrice = allPrices[allPrices.length - 1];
+                    extractedPrice = parseInt(lastPrice.replace('$', ''));
+                    console.log('📊 Using last price mentioned:', extractedPrice, 'from', allPrices.length, 'prices found');
+                }
+            }
+
+            // Method 3: Validate price is within expected bounds before tracking
+            if (extractedPrice) {
+                const minExpected = (negotiation.userBudget || startingPoint) * 0.8; // 80% of user budget
+                const maxExpected = maxOffer + 10; // Slightly above max offer for tolerance
+
+                if (extractedPrice >= minExpected && extractedPrice <= maxExpected) {
+                    negotiation.negotiationState.offersMade.push(extractedPrice);
+                    negotiation.negotiationState.lastOffer = extractedPrice;
+                    negotiation.negotiationState.concessionCount++;
+                    console.log('📊 Tracked new offer:', extractedPrice, 'Concession count:', negotiation.negotiationState.concessionCount);
+                } else {
+                    console.warn('⚠️ Extracted price out of bounds:', extractedPrice,
+                        'Expected range:', minExpected, '-', maxExpected, '- NOT tracking this price');
+                }
             }
 
             console.log('✅ Generated market-based negotiation response using tactic:', tacticToUse);
