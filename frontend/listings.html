@@ -4619,7 +4619,16 @@
                 }
 
                 if (globalUserConversations.length === 0) {
-                    conversationTabs.innerHTML = '<div id="noConversations" class="p-4 text-gray-500 text-center">No conversations yet</div>';
+                    conversationTabs.innerHTML = `
+                        <div class="conversations-empty">
+                            <div class="conversations-empty-icon">
+                                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                            </div>
+                            <h4>No conversations yet</h4>
+                            <p>Start chatting with listing owners!</p>
+                        </div>`;
                     return;
                 }
 
@@ -4627,33 +4636,57 @@
                     const userEmailLower = currentUser.email?.toLowerCase();
                     const otherUserEmail = conv.sender_email?.toLowerCase() === userEmailLower ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
-                    
+
                     // Extract username from email (part before @)
                     const otherUserName = otherUserEmail.split('@')[0];
-                    
+
+                    // Generate initials for avatar (first 2 characters, capitalized)
+                    const initials = otherUserName.substring(0, 2).toUpperCase();
+
+                    // Format timestamp
+                    const timestamp = formatConversationTime(conv.created_at);
+
                     // Check if conversation has unread messages
                     const hasUnread = conv.unread_count > 0;
-                    const unreadBadge = hasUnread ? `<span class="bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center ml-2">${conv.unread_count}</span>` : '';
-                    
+                    const unreadBadge = hasUnread
+                        ? `<span class="conversation-badge">${conv.unread_count}</span>`
+                        : '';
+
+                    // Escape single quotes in listing title for onclick
+                    const escapedTitle = listingTitle.replace(/'/g, "\\'");
+
                     return `
-                        <div class="border-b hover:bg-gray-50 cursor-pointer ${hasUnread ? 'bg-blue-50' : ''}" onclick="openConversationInModal('${conv.id}', '${listingTitle}', '${conv.listing_id}', '${otherUserEmail}')">
-                            <div class="p-3">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
-                                        <div class="font-medium text-sm text-gray-900 flex items-center">
-                                            ${otherUserName}
-                                            ${unreadBadge}
-                                        </div>
-                                        <div class="text-xs text-gray-600">${listingTitle}</div>
-                                        <div class="text-xs text-gray-400 mt-1">
-                                            ${new Date(conv.created_at).toLocaleDateString()}
-                                        </div>
-                                    </div>
+                        <div class="conversation-item ${hasUnread ? 'has-unread' : ''}"
+                             onclick="openConversationInModal('${conv.id}', '${escapedTitle}', '${conv.listing_id}', '${otherUserEmail}')">
+                            <div class="conversation-avatar">${initials}</div>
+                            <div class="conversation-content">
+                                <div class="conversation-header">
+                                    <span class="conversation-name">${otherUserName}</span>
+                                    <span class="conversation-time">${timestamp}</span>
                                 </div>
+                                <span class="conversation-listing">${listingTitle}</span>
                             </div>
+                            ${unreadBadge}
                         </div>
                     `;
                 }).join('');
+            }
+
+            // Helper function to format conversation timestamps
+            function formatConversationTime(dateString) {
+                const date = new Date(dateString);
+                const now = new Date();
+                const diffMs = now - date;
+                const diffMins = Math.floor(diffMs / 60000);
+                const diffHours = Math.floor(diffMs / 3600000);
+                const diffDays = Math.floor(diffMs / 86400000);
+
+                if (diffMins < 1) return 'Just now';
+                if (diffMins < 60) return `${diffMins}m ago`;
+                if (diffHours < 24) return `${diffHours}h ago`;
+                if (diffDays < 7) return `${diffDays}d ago`;
+
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             }
 
             // Update unread message count (now accessible globally)
