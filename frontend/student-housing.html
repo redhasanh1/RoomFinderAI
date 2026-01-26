@@ -2415,7 +2415,15 @@
         // Open housing platform link
         function openHousingLink(url, platformName) {
             if (url === '#') {
-                alert(`${platformName} integration coming soon! Search directly on their website for now.`);
+                // Redirect to platform's main search page
+                const platformUrls = {
+                    'Student.com': 'https://www.student.com',
+                    'Unilodgers': 'https://www.unilodgers.com',
+                    'HousingAnywhere': 'https://housinganywhere.com',
+                    'Places4Students': 'https://www.places4students.com',
+                    'AmberStudent': 'https://www.amberstudent.com'
+                };
+                window.open(platformUrls[platformName] || 'https://www.google.com/search?q=' + encodeURIComponent(platformName + ' student housing'), '_blank');
                 return;
             }
             
