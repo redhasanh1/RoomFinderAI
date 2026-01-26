@@ -456,7 +456,7 @@ class PerformanceManager {
         // Remove hidden elements that are no longer needed
         // IMPORTANT: Never remove critical elements like header, nav, footer, or auth sections
         const hiddenElements = document.querySelectorAll('[style*="display: none"], .hidden');
-        const criticalSelectors = ['header', 'nav', 'footer', '#header', '#authSection', '.premium-header', '.desktop-nav', '.mobile-menu'];
+        const criticalSelectors = ['header', 'nav', 'footer', '#header', '#authSection', '.premium-header', '.desktop-nav', '.mobile-menu', '#messagePanel', '#messagingPanel', '#messageToggleBtn', '.chat-modal', '#chatModal'];
 
         hiddenElements.forEach(element => {
             // Skip critical elements
