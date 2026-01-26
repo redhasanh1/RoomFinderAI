@@ -583,72 +583,147 @@ class RoomPalApp {
 
     createSeekerCard(seeker) {
         const avatarUrl = seeker.avatar_url || seeker.avatar?.photos?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(seeker.name || 'User')}&background=6366f1&color=fff&size=160`;
-        const verified = seeker.is_verified ? '<span class="verified-badge ml-1">Verified</span>' : '';
-        const budgetRange = seeker.budget_min && seeker.budget_max ? `$${seeker.budget_min} - $${seeker.budget_max}` : 'Budget flexible';
+        const budgetRange = seeker.budget_min && seeker.budget_max ? `$${seeker.budget_min}-$${seeker.budget_max}` : 'Flexible';
         const moveDate = seeker.move_in_date ? this.formatDate(seeker.move_in_date) : 'Flexible';
-        const areas = Array.isArray(seeker.preferred_areas) ? seeker.preferred_areas.slice(0, 2).join(', ') : (seeker.preferred_areas || 'Any area');
+        const areas = Array.isArray(seeker.preferred_areas) ? seeker.preferred_areas.slice(0, 1).join(', ') : (seeker.preferred_areas || 'Any area');
 
-        // Prominent match score with color coding
-        let matchScoreHtml = '';
-        if (seeker.compatibility_score) {
-            const score = seeker.compatibility_score;
-            let scoreClass = 'low';
-            if (score >= 80) scoreClass = 'high';
-            else if (score >= 60) scoreClass = 'medium';
+        // Match score with ring
+        const score = seeker.compatibility_score || 0;
+        let scoreClass = 'low';
+        if (score >= 80) scoreClass = 'high';
+        else if (score >= 60) scoreClass = 'medium';
 
-            matchScoreHtml = `
-                <div class="match-score ${scoreClass} mb-2">
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
-                    </svg>
-                    ${score}% match
-                </div>
-            `;
-        }
+        // SVG ring calculation (circumference = 2 * PI * radius, radius = 46)
+        const circumference = 2 * Math.PI * 46;
+        const dashOffset = circumference - (score / 100) * circumference;
 
-        // Match reasons
-        const matchReasons = this.getMatchReasons(seeker);
-        const matchReasonsHtml = matchReasons.length > 0
-            ? `<p class="match-reasons">You both prefer: ${matchReasons.join(', ')}</p>`
-            : '';
-
-        // Active indicator - check if logged in within 24 hours
+        // Active indicator
         const isActive = seeker.is_active || (seeker.last_active && (Date.now() - new Date(seeker.last_active).getTime()) < 24 * 60 * 60 * 1000);
-        const activeIndicator = isActive ? '<div class="active-indicator"></div>' : '';
-        const activeLabel = isActive
-            ? '<span class="active-label">Active today</span>'
-            : (seeker.last_active ? '<span class="active-label inactive">Active this week</span>' : '');
+        const onlineIndicator = isActive ? '<div class="online-indicator"></div>' : '';
+        const activityText = isActive ? 'Active today' : (seeker.last_active ? 'Active this week' : '');
+        const activityClass = isActive ? 'active' : '';
+
+        // Verified badge
+        const verifiedBadge = seeker.is_verified ? `
+            <span class="verified-badge-modern">
+                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                Verified
+            </span>
+        ` : '';
+
+        // Generate lifestyle tags
+        const lifestyleTags = this.generateLifestyleTags(seeker);
 
         return `
-            <div class="card p-6 text-center cursor-pointer" onclick="roomPalApp.viewSeeker('${seeker.id}')">
-                <div class="avatar-wrapper mx-auto mb-4">
-                    <img src="${avatarUrl}" alt="${seeker.name}" class="seeker-avatar">
-                    ${activeIndicator}
-                </div>
-                <div class="flex items-center justify-center gap-1 mb-1">
-                    <h3 class="font-bold text-gray-900">${seeker.name || 'Anonymous'}</h3>
-                    ${verified}
-                </div>
-                ${activeLabel}
-                ${matchScoreHtml}
-                ${matchReasonsHtml}
-                <p class="text-indigo-600 font-medium mb-1">${budgetRange}</p>
-                <p class="text-sm text-gray-500 mb-1">${areas}</p>
-                <p class="text-sm text-gray-400 mb-3">Moving: ${moveDate}</p>
-                <p class="text-sm text-gray-600 line-clamp-2 mb-4">${seeker.bio || 'Looking for roommates!'}</p>
-                <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); roomPalApp.sendQuickInterest('seeker', '${seeker.id}', '${seeker.name || 'User'}')" class="btn-interested flex-1">
-                        <svg class="w-4 h-4 heart-icon" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+            <div class="seeker-card-modern" onclick="roomPalApp.viewSeeker('${seeker.id}')">
+                <div class="seeker-avatar-section">
+                    <div class="match-ring-container">
+                        <svg class="match-ring-svg" viewBox="0 0 100 100">
+                            <circle class="match-ring-bg" cx="50" cy="50" r="46"/>
+                            <circle class="match-ring-progress ${scoreClass}" cx="50" cy="50" r="46"
+                                stroke-dasharray="${circumference}"
+                                stroke-dashoffset="${dashOffset}"/>
                         </svg>
-                        Interested
-                    </button>
-                    <button onclick="event.stopPropagation(); roomPalApp.openMessage('seeker', '${seeker.id}', '${seeker.name || 'User'}')" class="btn-message flex-1">
+                        <img src="${avatarUrl}" alt="${seeker.name}" class="seeker-avatar-modern">
+                        ${onlineIndicator}
+                    </div>
+                    ${score > 0 ? `
+                    <div class="match-score-label">
+                        <span class="match-score-value ${scoreClass}">${score}%</span>
+                        <span class="match-score-text">match</span>
+                    </div>
+                    ` : ''}
+                </div>
+
+                <div class="seeker-content-section">
+                    <div class="seeker-header">
+                        <span class="seeker-name-modern">${seeker.name || 'Anonymous'}</span>
+                        ${verifiedBadge}
+                        ${activityText ? `<span class="activity-status ${activityClass}">${activityText}</span>` : ''}
+                    </div>
+
+                    <div class="seeker-quick-stats">
+                        <div class="stat-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            <span class="stat-value">${budgetRange}</span>
+                        </div>
+                        <div class="stat-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span>${areas}</span>
+                        </div>
+                        <div class="stat-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span>${moveDate}</span>
+                        </div>
+                    </div>
+
+                    ${lifestyleTags.length > 0 ? `
+                    <div class="seeker-tags">
+                        ${lifestyleTags.join('')}
+                    </div>
+                    ` : ''}
+
+                    <p class="seeker-bio-preview">${seeker.bio || 'Looking for roommates!'}</p>
+
+                    <button onclick="event.stopPropagation(); roomPalApp.openMessage('seeker', '${seeker.id}', '${seeker.name || 'User'}')" class="btn-connect-modern">
                         Connect
+                        <svg class="w-4 h-4 arrow-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"/>
+                        </svg>
                     </button>
                 </div>
             </div>
         `;
+    }
+
+    generateLifestyleTags(seeker) {
+        const tags = [];
+        const prefs = seeker.compatibility_scores || {};
+
+        // Cleanliness
+        if (prefs.cleanliness === 'very-clean' || prefs.cleanliness === 'clean') {
+            tags.push('<span class="lifestyle-tag blue">Clean</span>');
+        }
+
+        // Sleep schedule
+        if (prefs.sleepSchedule === 'early') {
+            tags.push('<span class="lifestyle-tag yellow">Early bird</span>');
+        } else if (prefs.sleepSchedule === 'night-owl') {
+            tags.push('<span class="lifestyle-tag pink">Night owl</span>');
+        }
+
+        // Social level
+        if (prefs.socialLevel === 'quiet' || prefs.socialLevel === 'introvert') {
+            tags.push('<span class="lifestyle-tag yellow">Quiet</span>');
+        } else if (prefs.socialLevel === 'social' || prefs.socialLevel === 'extrovert') {
+            tags.push('<span class="lifestyle-tag pink">Social</span>');
+        }
+
+        // Pets
+        if (prefs.pets === 'yes' || prefs.pets === 'have-pets' || prefs.pets === 'love-pets') {
+            tags.push('<span class="lifestyle-tag green">Pet friendly</span>');
+        }
+
+        // Smoking
+        if (prefs.smoking === 'no' || prefs.smoking === 'non-smoker') {
+            tags.push('<span class="lifestyle-tag gray">No smoking</span>');
+        }
+
+        // Work from home
+        if (prefs.workFromHome === 'yes' || prefs.workFromHome === 'full-time') {
+            tags.push('<span class="lifestyle-tag purple">WFH</span>');
+        }
+
+        return tags.slice(0, 4); // Limit to 4 tags
     }
 
     getMatchReasons(seeker) {
