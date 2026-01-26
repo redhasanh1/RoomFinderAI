@@ -992,15 +992,15 @@ select.form-input {
 }
 
 .lifestyle-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+    display: inline-block;
     padding: 6px 12px;
     border-radius: 20px;
     font-size: 0.75rem;
     font-weight: 600;
     transition: all 0.2s ease;
     border: 1px solid transparent;
+    margin-right: 4px;
+    margin-bottom: 4px;
 }
 
 .lifestyle-tag:hover {
