@@ -621,8 +621,9 @@ class RoomPalApp {
                 <div class="seeker-avatar-section">
                     <div class="match-ring-container">
                         <svg class="match-ring-svg" viewBox="0 0 100 100">
-                            <circle class="match-ring-bg" cx="50" cy="50" r="46"/>
-                            <circle class="match-ring-progress ${scoreClass}" cx="50" cy="50" r="46"
+                            <circle class="match-ring-bg" cx="50" cy="50" r="46" fill="none" stroke="#e5e7eb" stroke-width="4"/>
+                            <circle class="match-ring-progress ${scoreClass}" cx="50" cy="50" r="46" fill="none" stroke-width="4" stroke-linecap="round"
+                                stroke="${scoreClass === 'high' ? '#10b981' : scoreClass === 'medium' ? '#f59e0b' : '#9ca3af'}"
                                 stroke-dasharray="${circumference}"
                                 stroke-dashoffset="${dashOffset}"/>
                         </svg>
