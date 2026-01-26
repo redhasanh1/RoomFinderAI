@@ -230,9 +230,9 @@ class ChatController {
 
             this.currentConversationId = conversation.id;
 
-            // Setup file upload permissions
+            // Setup file upload - enabled for all users
             this.isCurrentUserLandlord = currentUser.email === listing.user_email;
-            this.updateFileUploadVisibility();
+            this.showFileUploadButton();
 
             // Load messages and show modal
             await this.loadAndShowChat(conversation.id);
@@ -425,20 +425,15 @@ class ChatController {
     }
 
     /**
-     * Update file upload button visibility
+     * Show file upload button - enabled for all users
      */
-    updateFileUploadVisibility() {
+    showFileUploadButton() {
         const fileUploadBtn = document.getElementById('fileUploadBtn');
         if (fileUploadBtn) {
-            if (this.isCurrentUserLandlord) {
-                fileUploadBtn.classList.remove('hidden');
-                console.log('📎 File upload enabled for listing owner (landlord)');
-            } else {
-                fileUploadBtn.classList.add('hidden');
-                console.log('📎 File upload disabled for non-owner (tenant)');
-            }
+            fileUploadBtn.classList.remove('hidden');
+            console.log('File upload enabled for user');
         }
-        console.log('🏠 User role:', this.isCurrentUserLandlord ? 'Landlord' : 'Tenant');
+        console.log('User role:', this.isCurrentUserLandlord ? 'Landlord' : 'Tenant');
     }
 
     /**
@@ -512,11 +507,11 @@ class ChatController {
             messageContent = `
                 <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                     <div class="flex items-center space-x-2">
-                        <span class="text-lg">📎</span>
+                        <svg class="w-5 h-5 ${isOwner ? 'text-blue-600' : 'text-gray-600'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <div>
                             <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${this.sanitizeInput(message.file_name || 'File')}</p>
                             <p class="text-sm ${isOwner ? 'text-blue-600' : 'text-gray-600'}">${message.file_size ? this.formatFileSize(message.file_size) : ''}</p>
-                            <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium">📥 Download</a>
+                            <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download</a>
                         </div>
                     </div>
                 </div>
@@ -568,8 +563,8 @@ class ChatController {
                 }
             }
 
-            // Send files if any are selected and user is landlord
-            if (this.selectedFiles && this.selectedFiles.length > 0 && this.isCurrentUserLandlord) {
+            // Send files if any are selected - enabled for all users
+            if (this.selectedFiles && this.selectedFiles.length > 0) {
                 for (const file of this.selectedFiles) {
                     await this.sendFileMessage(file, currentUser, timestamp);
                 }
@@ -648,7 +643,7 @@ class ChatController {
         messageElement.innerHTML = `
             <div class="file-message bg-blue-50 p-3 rounded">
                 <div class="flex items-center space-x-2">
-                    <span class="text-lg">📎</span>
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <div>
                         <p class="font-medium text-blue-900">${file.name}</p>
                         <p class="text-sm text-blue-600">Uploading... (${this.formatFileSize(file.size)})</p>
@@ -704,11 +699,11 @@ class ChatController {
             messageElement.innerHTML = `
                 <div class="file-message bg-blue-50 p-3 rounded">
                     <div class="flex items-center space-x-2">
-                        <span class="text-lg">📎</span>
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <div>
                             <p class="font-medium text-blue-900">${file.name}</p>
                             <p class="text-sm text-blue-600">${this.formatFileSize(file.size)}</p>
-                            <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium">📥 Download</a>
+                            <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download</a>
                         </div>
                     </div>
                 </div>
@@ -764,11 +759,11 @@ class ChatController {
         selectedFilesContainer.innerHTML = files.map((file, index) => `
             <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
                 <div class="flex items-center space-x-2">
-                    <span class="text-sm">📎</span>
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <span class="text-sm text-gray-700">${file.name}</span>
                     <span class="text-xs text-gray-500">(${this.formatFileSize(file.size)})</span>
                 </div>
-                <button onclick="chatController.removeFileFromChat(${index})" class="text-red-500 hover:text-red-700 text-sm">×</button>
+                <button onclick="chatController.removeFileFromChat(${index})" class="text-red-500 hover:text-red-700 text-sm">x</button>
             </div>
         `).join('');
     }
