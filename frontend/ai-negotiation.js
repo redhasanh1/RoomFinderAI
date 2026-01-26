@@ -1697,17 +1697,21 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
         try {
             console.log('🤖 Generating elite negotiation message for:', listing.title);
 
-            // STRATEGIC PRICING: Start at 65-70% of listing price
-            // This gives room to negotiate UP while staying credible
-            // NOTE: Do NOT use marketData.min as a floor - it may include the current listing
-            // and would defeat the purpose of negotiating below asking price
-            const strategicStart = Math.max(
-                Math.round(listing.price * 0.65),  // 65% of asking - strong anchor
-                Math.round(userBudget * 0.7)  // Start below user's max to have room
+            // STRATEGIC PRICING: Start at 65-75% of listing price
+            // CRITICAL: Never offer MORE than the listing price - that's absurd
+            // Cap at listing price, then apply discount
+            const maxOffer = listing.price; // Never go above asking price
+            const budgetBasedStart = Math.round(Math.min(userBudget, maxOffer) * 0.75);
+            const priceBasedStart = Math.round(listing.price * 0.70);
+
+            // Use the lower of the two, but cap at listing price
+            const strategicStart = Math.min(
+                Math.max(budgetBasedStart, priceBasedStart),
+                maxOffer
             );
 
             // Apply Ackerman pricing - precise number feels calculated
-            const initialOffer = this.getAckermanPrice(strategicStart);
+            const initialOffer = Math.min(this.getAckermanPrice(strategicStart), maxOffer);
 
             // Check if market data supports our position
             const marketSupportsUs = marketData.average && marketData.average < listing.price;
@@ -1791,11 +1795,13 @@ Generate ONLY the message. No greetings, no signatures.
             console.warn('⚠️ OpenAI unavailable, using elite fallback');
 
             // Strategic fallback - still uses elite style
-            const strategicStart = Math.max(
-                Math.round(listing.price * 0.65),
-                Math.round(userBudget * 0.7)
+            // CRITICAL: Never offer more than the listing price
+            const maxOffer = listing.price;
+            const strategicStart = Math.min(
+                Math.round(listing.price * 0.70),
+                maxOffer
             );
-            const initialOffer = this.getAckermanPrice(strategicStart);
+            const initialOffer = Math.min(this.getAckermanPrice(strategicStart), maxOffer);
 
             return `Interested in ${listing.title}. My budget allows $${initialOffer}/month - I'm a reliable tenant ready to sign today.`;
         }
