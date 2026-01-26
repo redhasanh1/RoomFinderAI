@@ -59,11 +59,12 @@
                     desktopNav.style.display = '';
                 }
 
-                // Ensure header is visible
+                // Ensure header is visible - reset ALL styles
                 const header = document.getElementById('header');
                 if (header) {
-                    header.style.display = '';
-                    header.style.visibility = '';
+                    header.style.cssText = '';
+                    // Force layout reflow to ensure browser re-renders
+                    void header.offsetHeight;
                 }
 
                 // Reset message panel state

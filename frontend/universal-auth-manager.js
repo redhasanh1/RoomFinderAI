@@ -248,15 +248,8 @@ async function updateAuthSection() {
             currentUser.profileImage = profileImage;
             // localStorage removed - using Supabase);
             
-            // Also update users array
-            try {
-                let users = JSON.parse(null) || [];
-                users = users.map(u => u && u.email === currentUser.email ? { ...u, profileImage: profileImage } : u);
-                // localStorage removed - using Supabase);
-                console.log('✅ Profile image synchronized');
-            } catch (e) {
-                console.error('Error updating users array:', e);
-            }
+            // Profile image synchronized via Supabase
+            console.log('✅ Profile image synchronized');
             
             // Profile images are now stored in Supabase Storage, no local persistence needed
         }
