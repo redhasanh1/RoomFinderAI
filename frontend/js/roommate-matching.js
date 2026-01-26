@@ -650,7 +650,7 @@ class RoomPalApp {
 
                     ${lifestyleTags.length > 0 ? `
                     <div class="seeker-tags">
-                        ${lifestyleTags.join('')}
+                        ${lifestyleTags.join(' ')}
                     </div>
                     ` : ''}
 
