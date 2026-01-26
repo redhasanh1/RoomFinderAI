@@ -850,29 +850,33 @@ select.form-input {
     transform: rotate(-90deg);
 }
 
+.match-ring-svg circle {
+    fill: none !important;
+}
+
 .match-ring-bg {
-    fill: none;
-    stroke: var(--gray-200);
-    stroke-width: 4;
+    fill: none !important;
+    stroke: #e5e7eb !important;
+    stroke-width: 4px;
 }
 
 .match-ring-progress {
-    fill: none;
-    stroke-width: 4;
+    fill: none !important;
+    stroke-width: 4px;
     stroke-linecap: round;
     transition: stroke-dashoffset 0.6s ease;
 }
 
 .match-ring-progress.high {
-    stroke: var(--success-color);
+    stroke: #10b981 !important;
 }
 
 .match-ring-progress.medium {
-    stroke: var(--warning-color);
+    stroke: #f59e0b !important;
 }
 
 .match-ring-progress.low {
-    stroke: var(--gray-400);
+    stroke: #9ca3af !important;
 }
 
 .seeker-avatar-modern {
