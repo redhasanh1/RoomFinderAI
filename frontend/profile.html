@@ -1837,8 +1837,11 @@
             currentEditingListing = null;
         }
         
-        // Handle form submission
-        document.getElementById('editListingForm').addEventListener('submit', async function(e) {
+        // Handle form submission - wait for DOM to be ready
+        document.addEventListener('DOMContentLoaded', function() {
+            const editForm = document.getElementById('editListingForm');
+            if (editForm) {
+                editForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
             if (!currentEditingListing) {
@@ -1994,6 +1997,8 @@
                 submitButton.textContent = originalText;
                 submitButton.disabled = false;
             }
+                });
+            }
         });
 
         async function deleteListing(id) {
@@ -2016,9 +2021,18 @@
                             'user-email': currentUser.email
                         }
                     });
-                    
-                    const result = await response.json();
-                    
+
+                    // Parse JSON only if response might have a body, handle 404 gracefully
+                    let result = {};
+                    try {
+                        const text = await response.text();
+                        if (text) {
+                            result = JSON.parse(text);
+                        }
+                    } catch (parseError) {
+                        console.warn('Could not parse response as JSON:', parseError);
+                    }
+
                     // Helper function to clean up ALL localStorage locations
                     const cleanupLocalStorage = () => {
                         try {
