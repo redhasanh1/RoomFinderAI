@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <title>RoomPal - Find Roommates Fast | RoomFinderAI</title>
-    <meta name="description" content="Find roommates quickly. Post your room or find roommate groups. No hassle, direct contact.">
+    <title>RoomPal - Find Your Perfect Roommate | RoomFinderAI</title>
+    <meta name="description" content="Find compatible roommates quickly. Create a profile, browse seekers, and form roommate groups. No hassle, direct contact.">
 
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -568,51 +568,29 @@
         <!-- Section Selector (Landing View) -->
         <div id="sectionSelector" class="section-view active">
             <div class="text-center mb-12">
-                <h1 class="text-4xl font-bold text-gray-900 mb-4">Find Roommates Fast</h1>
+                <h1 class="text-4xl font-bold text-gray-900 mb-4">Find Your Perfect Roommate</h1>
                 <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    No hassle. Post a room or find roommates. Direct contact, get connected quickly.
+                    Connect with people looking for roommates. Create a profile, browse seekers, and form groups.
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
-                <!-- I Have a Room -->
-                <button class="section-btn" onclick="showSection('hasRoom')">
-                    <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                        <svg class="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                        </svg>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">I Have a Room</h2>
-                    <p class="text-gray-600">Post your available room and receive messages from interested roommates</p>
-                </button>
-
-                <!-- Looking for Roommates -->
-                <button class="section-btn" onclick="showSection('seeking')">
+            <div class="max-w-xl mx-auto mb-12">
+                <!-- Get Started Button -->
+                <button class="section-btn w-full" onclick="showSection('seeking')">
                     <div class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                         <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
                         </svg>
                     </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Looking for Roommates</h2>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Find Roommates</h2>
                     <p class="text-gray-600">Create a profile, connect with others, and form a roommate group</p>
                 </button>
-            </div>
-
-            <!-- Browse Available Rooms Preview -->
-            <div class="mb-12">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">Recently Posted Rooms</h2>
-                    <button onclick="showSection('browseRooms')" class="text-indigo-600 font-medium hover:underline">View All</button>
-                </div>
-                <div class="grid md:grid-cols-3 gap-6" id="previewRoomsGrid">
-                    <!-- Preview cards loaded by JS -->
-                </div>
             </div>
 
             <!-- Browse Seekers Preview -->
             <div>
                 <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-900">People Looking for Rooms</h2>
+                    <h2 class="text-2xl font-bold text-gray-900">People Looking for Roommates</h2>
                     <button onclick="showSection('browseSeekers')" class="text-indigo-600 font-medium hover:underline">View All</button>
                 </div>
                 <div class="grid md:grid-cols-3 gap-6" id="previewSeekersGrid">
@@ -621,113 +599,12 @@
             </div>
         </div>
 
-        <!-- Has Room Section -->
-        <div id="hasRoomSection" class="section-view">
-            <!-- Sub-navigation -->
-            <div class="flex items-center gap-4 mb-8">
-                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </button>
-                <h1 class="text-2xl font-bold text-gray-900">Post Your Room</h1>
-            </div>
-
-            <!-- Tabs -->
-            <div class="flex border-b mb-8">
-                <button class="tab-btn active" data-tab="postRoom">Post a Room</button>
-                <button class="tab-btn" data-tab="myRooms">My Listings</button>
-            </div>
-
-            <!-- Post Room Form -->
-            <div id="postRoomTab" class="card p-8 max-w-2xl fade-in">
-                <div class="quick-post-timer">
-                    <svg class="w-5 h-5 timer-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    <span>60-second quick post - only 4 required fields!</span>
-                </div>
-                <h2 class="text-xl font-bold text-gray-900 mb-6">Quick Room Posting</h2>
-                <form id="roomForm" class="space-y-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent *</label>
-                        <div class="relative">
-                            <span class="absolute left-4 top-3 text-gray-500">$</span>
-                            <input type="number" name="room_rent" class="form-input pl-8" placeholder="1200" required>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Location / Area *</label>
-                        <div class="relative">
-                            <input type="text" name="room_location" id="roomLocationInput" class="form-input pr-32" placeholder="Downtown Seattle, WA" required>
-                            <button type="button" onclick="roomPalApp.autoDetectLocation()" class="absolute right-2 top-1/2 -translate-y-1/2 text-xs bg-indigo-100 text-indigo-600 px-3 py-1.5 rounded-lg hover:bg-indigo-200 transition-colors">
-                                Auto-detect
-                            </button>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Room Type *</label>
-                        <select name="room_type" class="form-input" required>
-                            <option value="">Select type...</option>
-                            <option value="private">Private Room</option>
-                            <option value="shared">Shared Room</option>
-                            <option value="studio">Studio</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Available Date *</label>
-                        <input type="date" name="room_available_date" class="form-input" required>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
-                        <textarea name="room_description" class="form-input" rows="4" placeholder="Describe your room, amenities, house rules..."></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Photos</label>
-                        <div class="photo-upload" onclick="document.getElementById('roomPhotos').click()">
-                            <svg class="w-12 h-12 text-gray-400 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                            </svg>
-                            <p class="text-gray-600">Click to upload photos</p>
-                            <p class="text-sm text-gray-400">PNG, JPG up to 10MB</p>
-                        </div>
-                        <input type="file" id="roomPhotos" name="room_photos" multiple accept="image/*" class="hidden">
-                        <div id="photoPreview" class="flex gap-2 mt-4 flex-wrap"></div>
-                    </div>
-
-                    <button type="submit" class="btn-primary w-full py-4 text-lg flex items-center justify-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
-                        </svg>
-                        Post Room - It's Free!
-                    </button>
-                </form>
-            </div>
-
-            <!-- My Rooms Tab (hidden by default) -->
-            <div id="myRoomsTab" class="hidden">
-                <div class="card p-8 text-center text-gray-500">
-                    <p>You haven't posted any rooms yet.</p>
-                </div>
-            </div>
-        </div>
-
         <!-- Seeking Section -->
         <div id="seekingSection" class="section-view">
-            <!-- Sub-navigation -->
-            <div class="flex items-center gap-4 mb-8">
-                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </button>
+            <!-- Section Header -->
+            <div class="mb-8">
                 <h1 class="text-2xl font-bold text-gray-900">Find Roommates</h1>
+                <p class="text-gray-600 mt-1">Create your profile, browse other seekers, or form a group</p>
             </div>
 
             <!-- Tabs -->
@@ -876,73 +753,23 @@
                             </div>
                         </div>
 
-                        <button onclick="showSection('browseRooms')" class="btn-primary w-full">
+                        <a href="listings.html" class="btn-primary w-full block text-center">
                             <span class="flex items-center justify-center gap-2">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                                 </svg>
                                 Find Listings for Group
                             </span>
-                        </button>
+                        </a>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Browse Rooms Section -->
-        <div id="browseRoomsSection" class="section-view">
-            <div class="flex items-center gap-4 mb-4">
-                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </button>
-                <h1 class="text-2xl font-bold text-gray-900">Available Rooms</h1>
-                <span class="text-gray-500" id="roomsLocationLabel"></span>
-            </div>
-
-            <!-- Sticky Filters Bar -->
-            <div class="filters-bar" id="roomsFiltersBar">
-                <div class="flex flex-wrap gap-2">
-                    <button class="filter-pill active" data-filter="all">All</button>
-                    <select class="filter-pill" id="budgetFilter" onchange="roomPalApp.applyBudgetFilter(this.value)">
-                        <option value="">Budget Range</option>
-                        <option value="0-1000">Under $1000</option>
-                        <option value="1000-1500">$1000-$1500</option>
-                        <option value="1500-2000">$1500-$2000</option>
-                        <option value="2000+">$2000+</option>
-                    </select>
-                    <select class="filter-pill" id="moveInFilter" onchange="roomPalApp.applyMoveInFilter(this.value)">
-                        <option value="">Move-in Date</option>
-                        <option value="now">Available Now</option>
-                        <option value="week">This Week</option>
-                        <option value="month">This Month</option>
-                        <option value="flexible">Flexible</option>
-                    </select>
-                    <select class="filter-pill" id="roomTypeFilter" onchange="roomPalApp.applyRoomTypeFilter(this.value)">
-                        <option value="">Room Type</option>
-                        <option value="private">Private Room</option>
-                        <option value="shared">Shared Room</option>
-                        <option value="studio">Studio</option>
-                    </select>
-                </div>
-                <p class="results-count" id="roomsResultsCount">Showing all results</p>
-            </div>
-
-            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="roomsGrid">
-                <!-- Room cards loaded by JS -->
             </div>
         </div>
 
         <!-- Browse Seekers Section -->
         <div id="browseSeekersSection" class="section-view">
             <div class="flex items-center gap-4 mb-4">
-                <button onclick="showSection('selector')" class="text-gray-500 hover:text-gray-700">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                </button>
-                <h1 class="text-2xl font-bold text-gray-900">People Looking for Rooms</h1>
+                <h1 class="text-2xl font-bold text-gray-900">People Looking for Roommates</h1>
                 <span class="text-gray-500" id="seekersLocationLabel"></span>
             </div>
 
@@ -1061,14 +888,14 @@
             <!-- Quick Message Templates -->
             <div class="message-templates">
                 <p class="text-sm font-medium text-gray-700 mb-3">Quick replies (click to use):</p>
-                <button type="button" class="template-btn" onclick="roomPalApp.useMessageTemplate('Hi! Your room looks great, is it still available?')">
-                    "Hi! Your room looks great, is it still available?"
+                <button type="button" class="template-btn" onclick="roomPalApp.useMessageTemplate('Hey! I\\'m also looking for a roommate. Want to connect?')">
+                    "Hey! I'm also looking for a roommate. Want to connect?"
                 </button>
-                <button type="button" class="template-btn" onclick="roomPalApp.useMessageTemplate('Hey! I\\'m looking for a roommate too, want to connect?')">
-                    "Hey! I'm looking for a roommate too, want to connect?"
+                <button type="button" class="template-btn" onclick="roomPalApp.useMessageTemplate('Hi! Your profile looks great. Would you be interested in forming a roommate group?')">
+                    "Hi! Your profile looks great. Would you be interested in forming a roommate group?"
                 </button>
-                <button type="button" class="template-btn" onclick="roomPalApp.useMessageTemplate('Hi! I\\'d love to learn more about the space. When would be a good time to chat?')">
-                    "Hi! I'd love to learn more about the space. When would be a good time to chat?"
+                <button type="button" class="template-btn" onclick="roomPalApp.useMessageTemplate('Hi! I noticed we have similar budgets and areas. Let\\'s chat about finding a place together!')">
+                    "Hi! I noticed we have similar budgets and areas. Let's chat about finding a place together!"
                 </button>
             </div>
 
