@@ -4431,7 +4431,17 @@
                 console.log('🏠 User role:', isCurrentUserLandlord ? 'Landlord' : 'Tenant');
                 
                 chatModal.classList.add('active');
-                console.log('✅ Chat modal opened for conversation:', conversation.id);
+                console.log('Chat modal opened for conversation:', conversation.id);
+
+                // Setup scroll-to-bottom button
+                const scrollBtn = document.getElementById('scrollToBottomBtn');
+                if (chatMessagesContainer && scrollBtn) {
+                    chatMessagesContainer.onscroll = () => {
+                        const distanceFromBottom = chatMessagesContainer.scrollHeight - chatMessagesContainer.scrollTop - chatMessagesContainer.clientHeight;
+                        scrollBtn.style.display = distanceFromBottom > 100 ? 'flex' : 'none';
+                    };
+                    scrollBtn.style.display = 'none';
+                }
             } catch (loadError) {
                 console.error('❌ Error loading messages:', loadError);
                 alert('Failed to load chat messages. Please try again.');
@@ -4973,7 +4983,20 @@
             
             await loadMessages(conversationId);
             document.getElementById('chatModal').classList.add('active');
-            
+
+            // Setup scroll-to-bottom button visibility
+            const chatMsgs = document.getElementById('chatMessages');
+            const scrollBtn = document.getElementById('scrollToBottomBtn');
+            if (chatMsgs && scrollBtn) {
+                // Remove old listener if exists, add new one
+                chatMsgs.onscroll = () => {
+                    const distanceFromBottom = chatMsgs.scrollHeight - chatMsgs.scrollTop - chatMsgs.clientHeight;
+                    scrollBtn.style.display = distanceFromBottom > 100 ? 'flex' : 'none';
+                };
+                // Hide button initially
+                scrollBtn.style.display = 'none';
+            }
+
             // Update database in background (don't wait)
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             supabase
