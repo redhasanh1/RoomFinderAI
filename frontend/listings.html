@@ -4937,24 +4937,7 @@
             // Update global reference when conversations are loaded
             window.globalUserConversations = globalUserConversations;
 
-            // FALLBACK: Polling for updates if real-time fails
-            let pollingInterval;
-            function startPolling() {
-                console.log('🔄 Starting polling fallback (every 3 seconds)');
-                pollingInterval = setInterval(() => {
-                    if (currentConversationId) {
-                        loadMessages(currentConversationId);
-                    }
-                    loadUserConversations();
-                }, 3000);
-            }
-
-            // Start polling if real-time doesn't work after 10 seconds
-            // Note: messageChannel is not in scope here, so we'll just start polling as fallback
-            setTimeout(() => {
-                console.log('⚠️ Starting fallback polling for messages');
-                startPolling();
-            }, 10000);
+            // Polling removed - realtime subscription handles updates
         }
 
         // Global function to open conversation in modal
