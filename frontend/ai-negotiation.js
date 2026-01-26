@@ -2005,7 +2005,7 @@ Generate ONLY the message. No greetings, no signatures.
             // Also directly update the AI chat if it's available
             try {
                 if (typeof window !== 'undefined' && window.aiNegotiator) {
-                    window.aiNegotiator.appendMessage('AI', `💬 **Landlord Reply**: "${message.content}" - Processing response...`, 'left');
+                    window.aiNegotiator.appendMessage('Landlord', `💬 "${message.content}"`, 'left');
                 }
             } catch (error) {
                 console.log('Could not directly update AI chat:', error.message);
@@ -2057,9 +2057,9 @@ Generate ONLY the message. No greetings, no signatures.
                             try {
                                 if (typeof window !== 'undefined' && window.aiNegotiator) {
                                     console.log('🎯 DIRECTLY updating AI chat interface with success');
-                                    window.aiNegotiator.appendMessage('AI', `💬 **Landlord:** "${message.content}"`, 'left');
-                                    window.aiNegotiator.appendMessage('AI', `🤖 **AI Response:** "${response}"`, 'left');
-                                    window.aiNegotiator.appendMessage('AI', successMessage, 'left');
+                                    window.aiNegotiator.appendMessage('Landlord', `💬 "${message.content}"`, 'left');
+                                    window.aiNegotiator.appendMessage('AI Negotiator', `🤖 "${response}"`, 'right');
+                                    window.aiNegotiator.appendMessage('System', successMessage, 'left');
                                     window.aiNegotiator.celebrateSuccess();
                                     console.log('✅ Direct UI update successful!');
                                 } else {
@@ -2117,7 +2117,7 @@ Generate ONLY the message. No greetings, no signatures.
                             // Show AI response in chat for ongoing negotiation
                             try {
                                 if (typeof window !== 'undefined' && window.aiNegotiator) {
-                                    window.aiNegotiator.appendMessage('AI', `🤖 **My Response**: "${response}"`, 'left');
+                                    window.aiNegotiator.appendMessage('AI Negotiator', `🤖 "${response}"`, 'right');
                                 }
                             } catch (error) {
                                 console.log('Could not directly update AI chat with response:', error.message);
@@ -2166,7 +2166,8 @@ Generate ONLY the message. No greetings, no signatures.
                     // Show in AI chat immediately
                     try {
                         if (typeof window !== 'undefined' && window.aiNegotiator) {
-                            window.aiNegotiator.appendMessage('AI', `❌ **Landlord Rejected**: "${message.content}" - Sent market-based counter-offer: "${marketResponse}"`, 'left');
+                            window.aiNegotiator.appendMessage('Landlord', `❌ "${message.content}"`, 'left');
+                            window.aiNegotiator.appendMessage('AI Negotiator', `🤖 Counter-offer sent: "${marketResponse}"`, 'right');
                         }
                     } catch (error) {
                         console.log('Could not directly update AI chat with rejection response:', error.message);
