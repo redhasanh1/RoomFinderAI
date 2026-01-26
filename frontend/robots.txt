@@ -6,18 +6,38 @@ Allow: /index.html
 Allow: /login.html
 Allow: /signup.html
 Allow: /pricing.html
+Allow: /listings.html
+Allow: /student-housing.html
+Allow: /roommate.html
 
-# Disallow sensitive pages
+# Allow legal pages
+Allow: /terms-of-service.html
+Allow: /privacy-policy.html
+Allow: /cookie-policy.html
+Allow: /accessibility.html
+Allow: /dmca-policy.html
+
+# Disallow user-specific pages
 Disallow: /profile.html
-Disallow: /test-complete.html
-Disallow: /test-website.html
+Disallow: /listing_details.html
+
+# Disallow any backup or test files
+Disallow: /*-backup*
+Disallow: /*-test*
+Disallow: /*.backup
+Disallow: /*-example*
+Disallow: /*-modular*
+Disallow: /*.old/
+Disallow: /*coming-soon*
 
 # Disallow backend and admin areas
 Disallow: /backend/
 Disallow: /admin/
+Disallow: /api/
 
-# Allow CSS and JS
+# Allow CSS and JS for rendering
 Allow: /css/
 Allow: /js/
 
-Sitemap: https://yourdomain.com/sitemap.xml
+# Sitemap
+Sitemap: https://roompal.space/sitemap.xml
