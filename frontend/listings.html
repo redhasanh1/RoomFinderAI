@@ -1981,12 +1981,17 @@
         </button>
 
         <!-- Message Panel -->
-        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-[calc(100vw-3rem)]">
-            <div class="p-4 border-b text-white rounded-t-2xl flex justify-between items-center" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
-                <h3 class="font-semibold text-sm tracking-wide">Messages</h3>
-                <button id="forceHideNotifications" class="text-xs text-blue-100 hover:text-white transition-colors" title="Mark all as read">Mark all read</button>
+        <div id="messagePanel" class="hidden">
+            <div class="message-panel-header flex justify-between items-center" style="border-radius: 1.25rem 1.25rem 0 0;">
+                <div class="flex items-center gap-2">
+                    <svg class="w-5 h-5 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    <h3 class="font-semibold text-base">Messages</h3>
+                </div>
+                <button id="forceHideNotifications" class="text-xs bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-all font-medium" title="Mark all as read">Mark all read</button>
             </div>
-            <div id="conversationTabs" class="max-h-96 overflow-y-auto">
+            <div id="conversationTabs" style="background: #f8fafc;">
                 <div id="noConversations" class="p-4 text-gray-500 text-center">
                     No conversations yet
                 </div>
