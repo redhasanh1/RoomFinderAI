@@ -8,6 +8,41 @@ class RoomPalApp {
         this.userProfile = null;
         this.userGroup = null;
         this.api = null;
+        this.currentSearchLocation = null;
+        this.allRooms = [];
+        this.allSeekers = [];
+        this.filteredRooms = [];
+        this.filteredSeekers = [];
+        this.activeFilters = {
+            budget: '',
+            moveIn: '',
+            roomType: '',
+            activeOnly: false
+        };
+
+        // Popular cities for autocomplete
+        this.popularCities = [
+            { name: 'New York, USA', count: 234 },
+            { name: 'London, UK', count: 189 },
+            { name: 'Los Angeles, USA', count: 156 },
+            { name: 'Tokyo, Japan', count: 142 },
+            { name: 'San Francisco, USA', count: 128 },
+            { name: 'Seattle, USA', count: 115 },
+            { name: 'Paris, France', count: 98 },
+            { name: 'Sydney, Australia', count: 87 },
+            { name: 'Toronto, Canada', count: 76 },
+            { name: 'Berlin, Germany', count: 65 },
+            { name: 'Singapore', count: 54 },
+            { name: 'Dubai, UAE', count: 48 },
+            { name: 'Chicago, USA', count: 45 },
+            { name: 'Boston, USA', count: 42 },
+            { name: 'Amsterdam, Netherlands', count: 38 },
+            { name: 'Melbourne, Australia', count: 35 },
+            { name: 'Vancouver, Canada', count: 32 },
+            { name: 'Austin, USA', count: 29 },
+            { name: 'Denver, USA', count: 26 },
+            { name: 'Portland, USA', count: 23 }
+        ];
 
         this.init();
     }
@@ -26,6 +61,12 @@ class RoomPalApp {
 
         // Setup event listeners
         this.setupEventListeners();
+
+        // Setup worldwide search
+        this.setupWorldwideSearch();
+
+        // Setup profile completion tracking
+        this.setupProfileCompletion();
 
         // Load initial data
         await this.loadPreviewData();
@@ -119,6 +160,429 @@ class RoomPalApp {
         const profilePhoto = document.getElementById('profilePhoto');
         if (profilePhoto) {
             profilePhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'profile'));
+        }
+    }
+
+    // ==================== WORLDWIDE SEARCH ====================
+
+    setupWorldwideSearch() {
+        const searchInput = document.getElementById('locationSearch');
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+
+        if (!searchInput || !suggestionsContainer) return;
+
+        // Handle input for autocomplete
+        searchInput.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+
+            if (query.length < 2) {
+                suggestionsContainer.classList.remove('active');
+                return;
+            }
+
+            const filtered = this.popularCities.filter(city =>
+                city.name.toLowerCase().includes(query)
+            ).slice(0, 6);
+
+            if (filtered.length > 0) {
+                suggestionsContainer.innerHTML = filtered.map(city => `
+                    <div class="search-suggestion" onclick="roomPalApp.selectSearchLocation('${city.name}')">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            ${city.name}
+                        </span>
+                        <span class="search-count">${city.count} people</span>
+                    </div>
+                `).join('');
+                suggestionsContainer.classList.add('active');
+            } else {
+                // Show "search any city" option
+                suggestionsContainer.innerHTML = `
+                    <div class="search-suggestion" onclick="roomPalApp.selectSearchLocation('${e.target.value}')">
+                        <span class="flex items-center gap-2">
+                            <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                            </svg>
+                            Search for "${e.target.value}"
+                        </span>
+                    </div>
+                `;
+                suggestionsContainer.classList.add('active');
+            }
+        });
+
+        // Handle enter key
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                this.selectSearchLocation(searchInput.value);
+            }
+        });
+
+        // Close suggestions on click outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.search-input-wrapper')) {
+                suggestionsContainer.classList.remove('active');
+            }
+        });
+    }
+
+    selectSearchLocation(location) {
+        if (!location.trim()) return;
+
+        this.currentSearchLocation = location;
+        const searchInput = document.getElementById('locationSearch');
+        const suggestionsContainer = document.getElementById('searchSuggestions');
+
+        if (searchInput) searchInput.value = location;
+        if (suggestionsContainer) suggestionsContainer.classList.remove('active');
+
+        // Update stats display
+        const statsEl = document.getElementById('searchStats');
+        if (statsEl) {
+            const randomCount = Math.floor(Math.random() * 50) + 10;
+            statsEl.innerHTML = `<span class="text-white font-medium">${randomCount} people looking in ${location}</span>`;
+        }
+
+        // Show browse sections with location filter
+        this.showToast(`Searching in ${location}...`, 'info');
+
+        // Navigate to appropriate section
+        setTimeout(() => {
+            this.showSection('browseSeekers');
+            this.updateLocationLabels(location);
+        }, 500);
+    }
+
+    updateLocationLabels(location) {
+        const roomsLabel = document.getElementById('roomsLocationLabel');
+        const seekersLabel = document.getElementById('seekersLocationLabel');
+
+        if (roomsLabel) roomsLabel.textContent = `in ${location}`;
+        if (seekersLabel) seekersLabel.textContent = `in ${location}`;
+    }
+
+    // ==================== PROFILE COMPLETION ====================
+
+    setupProfileCompletion() {
+        const seekerForm = document.getElementById('seekerForm');
+        if (!seekerForm) return;
+
+        // Track form field changes
+        const fields = seekerForm.querySelectorAll('input, textarea, select');
+        fields.forEach(field => {
+            field.addEventListener('input', () => this.updateProfileCompletion());
+            field.addEventListener('change', () => this.updateProfileCompletion());
+        });
+
+        // Initial check
+        this.updateProfileCompletion();
+    }
+
+    updateProfileCompletion() {
+        const helper = document.getElementById('profileCompletionHelper');
+        const percentEl = document.getElementById('completionPercent');
+        const levelEl = document.getElementById('completionLevel');
+        const fillEl = document.getElementById('completionProgressFill');
+        const tipEl = document.getElementById('completionTip');
+
+        if (!helper) return;
+
+        // Calculate completion based on form fields
+        const form = document.getElementById('seekerForm');
+        if (!form) return;
+
+        const checks = {
+            budgetMin: !!form.querySelector('[name="budget_min"]')?.value,
+            budgetMax: !!form.querySelector('[name="budget_max"]')?.value,
+            areas: !!form.querySelector('[name="preferred_areas"]')?.value,
+            moveIn: !!form.querySelector('[name="move_in_date"]')?.value,
+            bio: (form.querySelector('[name="bio"]')?.value?.length || 0) > 20,
+            photo: !!this.uploadedAvatar,
+            compatibility: !!this.userProfile?.compatibility_scores
+        };
+
+        const completed = Object.values(checks).filter(Boolean).length;
+        const total = Object.keys(checks).length;
+        const percent = Math.round((completed / total) * 100);
+
+        // Update UI
+        helper.classList.remove('hidden');
+        if (percentEl) percentEl.textContent = percent;
+        if (fillEl) fillEl.style.width = `${percent}%`;
+
+        // Update level text
+        if (levelEl) {
+            if (percent < 30) levelEl.textContent = 'Just getting started';
+            else if (percent < 50) levelEl.textContent = 'Making progress';
+            else if (percent < 75) levelEl.textContent = 'Looking good!';
+            else if (percent < 100) levelEl.textContent = 'Almost there!';
+            else levelEl.textContent = 'Profile complete!';
+        }
+
+        // Update tip
+        if (tipEl) {
+            const tips = [];
+            if (!checks.photo) tips.push('Add a photo to get 3x more responses!');
+            if (!checks.bio) tips.push('Write a longer bio to stand out');
+            if (!checks.compatibility) tips.push('Take the compatibility quiz for better matches');
+
+            if (tips.length > 0) {
+                tipEl.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span>${tips[0]}</span>
+                `;
+            } else {
+                tipEl.innerHTML = `
+                    <svg class="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    <span class="text-green-700">Great job! Your profile is complete!</span>
+                `;
+            }
+        }
+    }
+
+    // ==================== AUTO-DETECT LOCATION ====================
+
+    autoDetectLocation() {
+        const input = document.getElementById('roomLocationInput');
+        if (!input) return;
+
+        if (!navigator.geolocation) {
+            this.showToast('Geolocation not supported', 'error');
+            return;
+        }
+
+        input.value = 'Detecting location...';
+        input.disabled = true;
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                try {
+                    // Use reverse geocoding (simplified - in production use a real API)
+                    const lat = position.coords.latitude;
+                    const lon = position.coords.longitude;
+
+                    // Simulated reverse geocoding - in production, use Google/Mapbox API
+                    const location = await this.reverseGeocode(lat, lon);
+                    input.value = location;
+                    this.showToast('Location detected!', 'success');
+                } catch (e) {
+                    input.value = '';
+                    this.showToast('Could not detect location', 'error');
+                }
+                input.disabled = false;
+            },
+            (error) => {
+                input.value = '';
+                input.disabled = false;
+                this.showToast('Location access denied', 'error');
+            }
+        );
+    }
+
+    async reverseGeocode(lat, lon) {
+        // Simplified location detection - returns general area
+        // In production, use a real geocoding service
+        const cities = [
+            { lat: 47.6, lon: -122.3, name: 'Seattle, WA' },
+            { lat: 37.7, lon: -122.4, name: 'San Francisco, CA' },
+            { lat: 34.0, lon: -118.2, name: 'Los Angeles, CA' },
+            { lat: 40.7, lon: -74.0, name: 'New York, NY' },
+            { lat: 51.5, lon: -0.1, name: 'London, UK' },
+            { lat: 35.6, lon: 139.6, name: 'Tokyo, Japan' }
+        ];
+
+        // Find nearest city
+        let nearest = cities[0];
+        let minDist = Infinity;
+
+        for (const city of cities) {
+            const dist = Math.sqrt(Math.pow(lat - city.lat, 2) + Math.pow(lon - city.lon, 2));
+            if (dist < minDist) {
+                minDist = dist;
+                nearest = city;
+            }
+        }
+
+        return nearest.name;
+    }
+
+    // ==================== QUICK INTEREST BUTTON ====================
+
+    async sendQuickInterest(type, id, name) {
+        // Require login
+        if (!this.requireAuth('express interest')) {
+            return;
+        }
+
+        const btn = event?.target?.closest('.btn-interested');
+        if (btn && btn.classList.contains('sent')) {
+            this.showToast('Interest already sent!', 'info');
+            return;
+        }
+
+        // Send automatic interest message
+        const message = "Hi! I'm interested, let's connect!";
+
+        try {
+            if (this.api && this.api.initialized) {
+                await this.api.sendMessage(id, message);
+            }
+
+            // Update button state
+            if (btn) {
+                btn.classList.add('sent');
+                btn.innerHTML = `
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                    </svg>
+                    Sent!
+                `;
+            }
+
+            this.showToast(`Interest sent to ${name}!`, 'success');
+        } catch (error) {
+            console.error('Error sending interest:', error);
+            this.showToast('Failed to send interest', 'error');
+        }
+    }
+
+    // ==================== MESSAGE TEMPLATES ====================
+
+    useMessageTemplate(template) {
+        const textarea = document.getElementById('messageTextarea');
+        if (textarea) {
+            textarea.value = template;
+            textarea.focus();
+        }
+    }
+
+    // ==================== FILTER FUNCTIONS ====================
+
+    applyBudgetFilter(value) {
+        this.activeFilters.budget = value;
+        this.applyAllFilters('rooms');
+    }
+
+    applyMoveInFilter(value) {
+        this.activeFilters.moveIn = value;
+        this.applyAllFilters('rooms');
+    }
+
+    applyRoomTypeFilter(value) {
+        this.activeFilters.roomType = value;
+        this.applyAllFilters('rooms');
+    }
+
+    applySeekerBudgetFilter(value) {
+        this.activeFilters.budget = value;
+        this.applyAllFilters('seekers');
+    }
+
+    applySeekerMoveInFilter(value) {
+        this.activeFilters.moveIn = value;
+        this.applyAllFilters('seekers');
+    }
+
+    toggleActiveOnly() {
+        this.activeFilters.activeOnly = !this.activeFilters.activeOnly;
+        this.applyAllFilters('seekers');
+
+        // Update button state
+        const btn = event?.target?.closest('.filter-pill');
+        if (btn) {
+            btn.classList.toggle('active', this.activeFilters.activeOnly);
+        }
+    }
+
+    applyAllFilters(type) {
+        if (type === 'rooms') {
+            this.filteredRooms = this.allRooms.filter(room => {
+                // Budget filter
+                if (this.activeFilters.budget) {
+                    const [min, max] = this.activeFilters.budget.split('-').map(v => v.replace('+', ''));
+                    const rent = room.room_rent;
+                    if (max) {
+                        if (rent < parseInt(min) || rent > parseInt(max)) return false;
+                    } else {
+                        if (rent < parseInt(min)) return false;
+                    }
+                }
+
+                // Move-in filter
+                if (this.activeFilters.moveIn) {
+                    const availDate = new Date(room.room_available_date);
+                    const now = new Date();
+                    const diffDays = Math.ceil((availDate - now) / (1000 * 60 * 60 * 24));
+
+                    switch (this.activeFilters.moveIn) {
+                        case 'now': if (diffDays > 0) return false; break;
+                        case 'week': if (diffDays > 7) return false; break;
+                        case 'month': if (diffDays > 30) return false; break;
+                    }
+                }
+
+                // Room type filter
+                if (this.activeFilters.roomType && room.room_type !== this.activeFilters.roomType) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            this.renderFilteredRooms('roomsGrid');
+            this.updateResultsCount('roomsResultsCount', this.filteredRooms.length, this.allRooms.length);
+        } else {
+            this.filteredSeekers = this.allSeekers.filter(seeker => {
+                // Budget filter
+                if (this.activeFilters.budget) {
+                    const [min, max] = this.activeFilters.budget.split('-').map(v => v.replace('+', ''));
+                    const seekerMax = seeker.budget_max;
+                    if (max) {
+                        if (seekerMax < parseInt(min) || seekerMax > parseInt(max)) return false;
+                    } else {
+                        if (seekerMax < parseInt(min)) return false;
+                    }
+                }
+
+                // Active only filter
+                if (this.activeFilters.activeOnly && !seeker.is_active) {
+                    return false;
+                }
+
+                return true;
+            });
+
+            this.renderFilteredSeekers('allSeekersGrid');
+            this.updateResultsCount('seekersResultsCount', this.filteredSeekers.length, this.allSeekers.length);
+        }
+    }
+
+    renderFilteredRooms(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = this.filteredRooms.map(room => this.createRoomCard(room)).join('');
+    }
+
+    renderFilteredSeekers(containerId) {
+        const container = document.getElementById(containerId);
+        if (!container) return;
+        container.innerHTML = this.filteredSeekers.map(seeker => this.createSeekerCard(seeker)).join('');
+    }
+
+    updateResultsCount(elementId, showing, total) {
+        const el = document.getElementById(elementId);
+        if (el) {
+            el.textContent = showing === total
+                ? `Showing all ${total} results`
+                : `Showing ${showing} of ${total} results`;
         }
     }
 
@@ -251,6 +715,13 @@ class RoomPalApp {
         // Get rooms from API or use mock data
         const rooms = await this.getRooms(limit);
 
+        // Store for filtering
+        if (containerId === 'roomsGrid') {
+            this.allRooms = rooms;
+            this.filteredRooms = rooms;
+            this.updateResultsCount('roomsResultsCount', rooms.length, rooms.length);
+        }
+
         container.innerHTML = rooms.map(room => this.createRoomCard(room)).join('');
     }
 
@@ -260,6 +731,13 @@ class RoomPalApp {
 
         // Get seekers from API or use mock data
         const seekers = await this.getSeekers(limit);
+
+        // Store for filtering
+        if (containerId === 'allSeekersGrid') {
+            this.allSeekers = seekers;
+            this.filteredSeekers = seekers;
+            this.updateResultsCount('seekersResultsCount', seekers.length, seekers.length);
+        }
 
         container.innerHTML = seekers.map(seeker => this.createSeekerCard(seeker)).join('');
     }
@@ -302,24 +780,42 @@ class RoomPalApp {
         const formattedDate = room.room_available_date ? this.formatDate(room.room_available_date) : 'Available Now';
         const roomTypeLabel = this.formatRoomType(room.room_type);
 
+        // Active indicator
+        const isActive = room.last_active && (Date.now() - new Date(room.last_active).getTime()) < 24 * 60 * 60 * 1000;
+        const activeLabel = isActive
+            ? '<span class="active-label">Active today</span>'
+            : (room.last_active ? '<span class="active-label inactive">Active this week</span>' : '');
+
         return `
             <div class="card overflow-hidden cursor-pointer" onclick="roomPalApp.viewRoom('${room.id}')">
-                <img src="${photoUrl}" alt="Room" class="room-image">
+                <div class="relative">
+                    <img src="${photoUrl}" alt="Room" class="room-image">
+                    ${isActive ? '<div class="absolute top-3 right-3 bg-green-500 text-white text-xs px-2 py-1 rounded-full">Active</div>' : ''}
+                </div>
                 <div class="p-4">
                     <div class="flex justify-between items-start mb-2">
                         <span class="text-xl font-bold text-indigo-600">$${room.room_rent}/mo</span>
                         ${verified}
                     </div>
                     <p class="text-gray-900 font-medium mb-1">${room.room_location || 'Location'}</p>
-                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
+                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-2">
                         <span>${roomTypeLabel}</span>
                         <span>-</span>
                         <span>${formattedDate}</span>
                     </div>
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-4">${room.room_description || 'Great room available!'}</p>
-                    <button onclick="event.stopPropagation(); roomPalApp.openMessage('room', '${room.id}', '${room.name || 'Host'}')" class="btn-message w-full">
-                        Message
-                    </button>
+                    ${activeLabel}
+                    <p class="text-sm text-gray-600 line-clamp-2 mb-4 mt-2">${room.room_description || 'Great room available!'}</p>
+                    <div class="flex gap-2">
+                        <button onclick="event.stopPropagation(); roomPalApp.sendQuickInterest('room', '${room.id}', '${room.name || 'Host'}')" class="btn-interested flex-1">
+                            <svg class="w-4 h-4 heart-icon" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                            </svg>
+                            Interested
+                        </button>
+                        <button onclick="event.stopPropagation(); roomPalApp.openMessage('room', '${room.id}', '${room.name || 'Host'}')" class="btn-message flex-1">
+                            Message
+                        </button>
+                    </div>
                 </div>
             </div>
         `;
@@ -327,27 +823,65 @@ class RoomPalApp {
 
     createSeekerCard(seeker) {
         const avatarUrl = seeker.avatar_url || seeker.avatar?.photos?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(seeker.name || 'User')}&background=6366f1&color=fff&size=160`;
-        const verified = seeker.is_verified ? '<span class="verified-badge">Verified</span>' : '';
+        const verified = seeker.is_verified ? '<span class="verified-badge ml-1">Verified</span>' : '';
         const budgetRange = seeker.budget_min && seeker.budget_max ? `$${seeker.budget_min} - $${seeker.budget_max}` : 'Budget flexible';
         const moveDate = seeker.move_in_date ? this.formatDate(seeker.move_in_date) : 'Flexible';
-        const areas = Array.isArray(seeker.preferred_areas) ? seeker.preferred_areas.join(', ') : (seeker.preferred_areas || 'Any area');
-        const compatibility = seeker.compatibility_score ? `<span class="text-emerald-600 font-medium">${seeker.compatibility_score}% match</span>` : '';
+        const areas = Array.isArray(seeker.preferred_areas) ? seeker.preferred_areas.slice(0, 2).join(', ') : (seeker.preferred_areas || 'Any area');
+
+        // Prominent match score with color coding
+        let matchScoreHtml = '';
+        if (seeker.compatibility_score) {
+            const score = seeker.compatibility_score;
+            let scoreClass = 'low';
+            if (score >= 80) scoreClass = 'high';
+            else if (score >= 60) scoreClass = 'medium';
+
+            matchScoreHtml = `
+                <div class="match-score ${scoreClass} mb-2">
+                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                    </svg>
+                    ${score}% match
+                </div>
+            `;
+        }
+
+        // Match reasons
+        const matchReasons = this.getMatchReasons(seeker);
+        const matchReasonsHtml = matchReasons.length > 0
+            ? `<p class="match-reasons">You both prefer: ${matchReasons.join(', ')}</p>`
+            : '';
+
+        // Active indicator - check if logged in within 24 hours
+        const isActive = seeker.is_active || (seeker.last_active && (Date.now() - new Date(seeker.last_active).getTime()) < 24 * 60 * 60 * 1000);
+        const activeIndicator = isActive ? '<div class="active-indicator"></div>' : '';
+        const activeLabel = isActive
+            ? '<span class="active-label">Active today</span>'
+            : (seeker.last_active ? '<span class="active-label inactive">Active this week</span>' : '');
 
         return `
             <div class="card p-6 text-center cursor-pointer" onclick="roomPalApp.viewSeeker('${seeker.id}')">
-                <img src="${avatarUrl}" alt="${seeker.name}" class="seeker-avatar mx-auto mb-4">
-                <div class="flex items-center justify-center gap-2 mb-2">
+                <div class="avatar-wrapper mx-auto mb-4">
+                    <img src="${avatarUrl}" alt="${seeker.name}" class="seeker-avatar">
+                    ${activeIndicator}
+                </div>
+                <div class="flex items-center justify-center gap-1 mb-1">
                     <h3 class="font-bold text-gray-900">${seeker.name || 'Anonymous'}</h3>
                     ${verified}
                 </div>
-                ${compatibility}
+                ${activeLabel}
+                ${matchScoreHtml}
+                ${matchReasonsHtml}
                 <p class="text-indigo-600 font-medium mb-1">${budgetRange}</p>
                 <p class="text-sm text-gray-500 mb-1">${areas}</p>
-                <p class="text-sm text-gray-400 mb-4">Moving: ${moveDate}</p>
+                <p class="text-sm text-gray-400 mb-3">Moving: ${moveDate}</p>
                 <p class="text-sm text-gray-600 line-clamp-2 mb-4">${seeker.bio || 'Looking for roommates!'}</p>
                 <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); roomPalApp.inviteToGroup('${seeker.id}')" class="btn-secondary flex-1 text-sm py-2">
-                        Invite
+                    <button onclick="event.stopPropagation(); roomPalApp.sendQuickInterest('seeker', '${seeker.id}', '${seeker.name || 'User'}')" class="btn-interested flex-1">
+                        <svg class="w-4 h-4 heart-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"/>
+                        </svg>
+                        Interested
                     </button>
                     <button onclick="event.stopPropagation(); roomPalApp.openMessage('seeker', '${seeker.id}', '${seeker.name || 'User'}')" class="btn-message flex-1">
                         Connect
@@ -355,6 +889,22 @@ class RoomPalApp {
                 </div>
             </div>
         `;
+    }
+
+    getMatchReasons(seeker) {
+        const reasons = [];
+        const userPrefs = this.userProfile?.compatibility_scores;
+        const seekerPrefs = seeker.compatibility_scores;
+
+        if (!userPrefs || !seekerPrefs) return reasons;
+
+        if (userPrefs.cleanliness === seekerPrefs.cleanliness) reasons.push('cleanliness');
+        if (userPrefs.sleepSchedule === seekerPrefs.sleepSchedule) reasons.push('sleep schedule');
+        if (userPrefs.smoking === seekerPrefs.smoking) reasons.push('no smoking');
+        if (userPrefs.pets === seekerPrefs.pets) reasons.push('pet-friendly');
+        if (userPrefs.socialLevel === seekerPrefs.socialLevel) reasons.push('social style');
+
+        return reasons.slice(0, 3);
     }
 
     // ==================== FORM HANDLERS ====================
@@ -801,7 +1351,8 @@ class RoomPalApp {
                 room_description: 'Bright, spacious private room in a modern apartment. Great natural light, in-unit laundry, and close to public transit.',
                 room_photos: [{ url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop' }],
                 is_verified: true,
-                name: 'Alex'
+                name: 'Alex',
+                last_active: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() // 2 hours ago
             },
             {
                 id: 'room_2',
@@ -812,7 +1363,8 @@ class RoomPalApp {
                 room_description: 'Cozy room in a friendly household. Walking distance to restaurants and bars. Pet-friendly!',
                 room_photos: [{ url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop' }],
                 is_verified: true,
-                name: 'Jordan'
+                name: 'Jordan',
+                last_active: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString() // 5 hours ago
             },
             {
                 id: 'room_3',
@@ -823,7 +1375,8 @@ class RoomPalApp {
                 room_description: 'Affordable shared room near UW campus. Great for students! Utilities included.',
                 room_photos: [{ url: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=300&fit=crop' }],
                 is_verified: false,
-                name: 'Taylor'
+                name: 'Taylor',
+                last_active: new Date(Date.now() - 48 * 60 * 60 * 1000).toISOString() // 2 days ago
             },
             {
                 id: 'room_4',
@@ -834,7 +1387,8 @@ class RoomPalApp {
                 room_description: 'Beautiful studio apartment with modern amenities. Quiet neighborhood with great cafes nearby.',
                 room_photos: [{ url: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=400&h=300&fit=crop' }],
                 is_verified: true,
-                name: 'Morgan'
+                name: 'Morgan',
+                last_active: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString() // 12 hours ago
             },
             {
                 id: 'room_5',
@@ -845,7 +1399,8 @@ class RoomPalApp {
                 room_description: 'Charming room in a vintage home. Creative neighborhood with art galleries and unique shops.',
                 room_photos: [{ url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=300&fit=crop' }],
                 is_verified: false,
-                name: 'Casey'
+                name: 'Casey',
+                last_active: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString() // 3 days ago
             },
             {
                 id: 'room_6',
@@ -856,7 +1411,8 @@ class RoomPalApp {
                 room_description: 'Modern high-rise apartment with amazing city views. Gym and rooftop access included.',
                 room_photos: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop' }],
                 is_verified: true,
-                name: 'Jamie'
+                name: 'Jamie',
+                last_active: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString() // 1 hour ago
             }
         ];
     }
@@ -873,7 +1429,10 @@ class RoomPalApp {
                 bio: 'Software developer looking for a quiet, clean household. Love cooking and weekend hikes!',
                 avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
                 is_verified: true,
-                compatibility_score: 92
+                is_active: true,
+                last_active: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 min ago
+                compatibility_score: 92,
+                compatibility_scores: { cleanliness: 'very-clean', sleepSchedule: 'early', smoking: 'no', pets: 'love', socialLevel: 'balanced' }
             },
             {
                 id: 'seeker_2',
@@ -885,7 +1444,10 @@ class RoomPalApp {
                 bio: 'Graduate student at UW. Quiet, respectful, and enjoy good conversations. Night owl but respectful of quiet hours.',
                 avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
                 is_verified: true,
-                compatibility_score: 87
+                is_active: true,
+                last_active: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+                compatibility_score: 87,
+                compatibility_scores: { cleanliness: 'clean', sleepSchedule: 'night-owl', smoking: 'no', pets: 'ok', socialLevel: 'quiet' }
             },
             {
                 id: 'seeker_3',
@@ -897,7 +1459,10 @@ class RoomPalApp {
                 bio: 'Medical student looking for roommates! Clean and organized. Usually studying but love movie nights.',
                 avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face',
                 is_verified: false,
-                compatibility_score: 78
+                is_active: false,
+                last_active: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+                compatibility_score: 78,
+                compatibility_scores: { cleanliness: 'very-clean', sleepSchedule: 'moderate', smoking: 'no', pets: 'allergic', socialLevel: 'quiet' }
             },
             {
                 id: 'seeker_4',
@@ -909,7 +1474,10 @@ class RoomPalApp {
                 bio: 'Remote worker in tech. Looking for a social household with professionals. Love board games and cooking!',
                 avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face',
                 is_verified: true,
-                compatibility_score: 85
+                is_active: true,
+                last_active: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 min ago
+                compatibility_score: 85,
+                compatibility_scores: { cleanliness: 'clean', sleepSchedule: 'moderate', smoking: 'no', pets: 'love', socialLevel: 'social' }
             },
             {
                 id: 'seeker_5',
@@ -921,7 +1489,10 @@ class RoomPalApp {
                 bio: 'Artist and part-time barista. Creative, easy-going, and love plants. Looking for a chill environment.',
                 avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face',
                 is_verified: false,
-                compatibility_score: 81
+                is_active: false,
+                last_active: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+                compatibility_score: 81,
+                compatibility_scores: { cleanliness: 'relaxed', sleepSchedule: 'night-owl', smoking: 'outside', pets: 'love', socialLevel: 'balanced' }
             },
             {
                 id: 'seeker_6',
@@ -933,7 +1504,10 @@ class RoomPalApp {
                 bio: 'Teacher at local high school. Active and social but respect quiet time. Love outdoor activities!',
                 avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face',
                 is_verified: true,
-                compatibility_score: 89
+                is_active: true,
+                last_active: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+                compatibility_score: 89,
+                compatibility_scores: { cleanliness: 'clean', sleepSchedule: 'early', smoking: 'no', pets: 'ok', socialLevel: 'social' }
             }
         ];
     }
@@ -967,6 +1541,19 @@ function closeMessageModal() {
 function createGroup() {
     if (window.roomPalApp) {
         window.roomPalApp.createGroup();
+    }
+}
+
+// Global functions for quick interest and templates
+function sendQuickInterest(type, id, name) {
+    if (window.roomPalApp) {
+        window.roomPalApp.sendQuickInterest(type, id, name);
+    }
+}
+
+function useMessageTemplate(template) {
+    if (window.roomPalApp) {
+        window.roomPalApp.useMessageTemplate(template);
     }
 }
 
