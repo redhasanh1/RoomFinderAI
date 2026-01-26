@@ -1878,8 +1878,9 @@
                         </div>
                         <div class="flex flex-col space-y-1">
                             <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
-                            <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm hidden" onclick="document.getElementById('fileInput').click()">
-                                📎 Files
+                            <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm flex items-center gap-1 hidden" onclick="document.getElementById('fileInput').click()">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                                Attach
                             </button>
                             <button id="chatSendBtn" class="chat-send-btn">Send</button>
                         </div>
@@ -4637,6 +4638,9 @@
                     const otherUserEmail = conv.sender_email?.toLowerCase() === userEmailLower ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
 
+                    // Check if current user owns this listing
+                    const isOwnListing = conv.listings?.user_email?.toLowerCase() === userEmailLower;
+
                     // Extract username from email (part before @)
                     const otherUserName = otherUserEmail.split('@')[0];
 
@@ -4655,6 +4659,11 @@
                     // Escape single quotes in listing title for onclick
                     const escapedTitle = listingTitle.replace(/'/g, "\\'");
 
+                    // Show "Your listing" tag if user owns this listing
+                    const listingDisplay = isOwnListing
+                        ? `<span class="conversation-listing"><span class="your-listing-tag">Your listing</span> ${listingTitle}</span>`
+                        : `<span class="conversation-listing">${listingTitle}</span>`;
+
                     return `
                         <div class="conversation-item ${hasUnread ? 'has-unread' : ''}"
                              onclick="openConversationInModal('${conv.id}', '${escapedTitle}', '${conv.listing_id}', '${otherUserEmail}')">
@@ -4664,7 +4673,7 @@
                                     <span class="conversation-name">${otherUserName}</span>
                                     <span class="conversation-time">${timestamp}</span>
                                 </div>
-                                <span class="conversation-listing">${listingTitle}</span>
+                                ${listingDisplay}
                             </div>
                             ${unreadBadge}
                         </div>
