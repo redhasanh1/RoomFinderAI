@@ -10,6 +10,7 @@ class ChatController {
         this.isInitialized = false;
         this.selectedFiles = [];
         this.isCurrentUserLandlord = false;
+        this.userScrolledUp = false; // Track if user manually scrolled up
         this.chatSystemStatus = {
             isInitialized: false,
             elementsReady: false,
@@ -59,6 +60,8 @@ class ChatController {
         this.setupEventListeners();
         this.setupRealtimeSubscription();
         this.initializeFileUpload();
+        this.setupScrollTracking();
+        this.createScrollToBottomButton();
 
         // Mark chat system as successfully initialized
         this.chatSystemStatus.isInitialized = true;
@@ -412,9 +415,13 @@ class ChatController {
         }
 
         try {
+            // Reset scroll state when opening chat
+            this.userScrolledUp = false;
             await this.loadMessages(conversationId);
             chatModal.classList.add('active');
-            console.log('✅ Chat modal opened for conversation:', conversationId);
+            // Force scroll to bottom when first opening
+            this.scrollToBottom(true);
+            console.log('Chat modal opened for conversation:', conversationId);
         } catch (loadError) {
             console.error('❌ Error loading messages:', loadError);
             alert('Failed to load chat messages. Please try again.');
@@ -484,8 +491,9 @@ class ChatController {
                 chatMessagesContainer.appendChild(messageElement);
             });
 
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-            console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
+            // Only auto-scroll if user hasn't scrolled up to read history
+            this.scrollToBottom(false);
+            console.log('Messages loaded successfully:', messages.length, 'messages displayed');
 
         } catch (error) {
             console.error('💥 Exception in loadMessages:', error);
@@ -598,7 +606,8 @@ class ChatController {
             <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
         `;
         chatMessagesContainer.appendChild(messageElement);
-        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        // Force scroll when user sends a message
+        this.scrollToBottom(true);
 
         // Send to database
         const { error } = await supabase
@@ -653,7 +662,8 @@ class ChatController {
             <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
         `;
         chatMessagesContainer.appendChild(messageElement);
-        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        // Force scroll when user sends a file
+        this.scrollToBottom(true);
 
         try {
             // Upload file to Supabase storage
@@ -793,6 +803,104 @@ class ChatController {
         if (fileInput) fileInput.value = '';
         const selectedFilesContainer = document.getElementById('selectedFiles');
         if (selectedFilesContainer) selectedFilesContainer.classList.add('hidden');
+    }
+
+    /**
+     * Setup scroll tracking to detect when user scrolls up
+     */
+    setupScrollTracking() {
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        if (!chatMessagesContainer) return;
+
+        chatMessagesContainer.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = chatMessagesContainer;
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+            // User is "at bottom" if within 100px of bottom
+            this.userScrolledUp = distanceFromBottom > 100;
+            this.updateScrollButtonVisibility();
+        });
+    }
+
+    /**
+     * Create scroll to bottom button
+     */
+    createScrollToBottomButton() {
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        if (!chatMessagesContainer) return;
+
+        // Check if button already exists
+        if (document.getElementById('scrollToBottomBtn')) return;
+
+        const scrollBtn = document.createElement('button');
+        scrollBtn.id = 'scrollToBottomBtn';
+        scrollBtn.className = 'scroll-to-bottom-btn';
+        scrollBtn.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        `;
+        scrollBtn.style.cssText = `
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+            z-index: 100;
+        `;
+        scrollBtn.addEventListener('mouseenter', () => {
+            scrollBtn.style.background = 'rgba(37, 99, 235, 1)';
+            scrollBtn.style.transform = 'scale(1.1)';
+        });
+        scrollBtn.addEventListener('mouseleave', () => {
+            scrollBtn.style.background = 'rgba(59, 130, 246, 0.9)';
+            scrollBtn.style.transform = 'scale(1)';
+        });
+        scrollBtn.addEventListener('click', () => this.scrollToBottom(true));
+
+        // Insert button into chat modal content area
+        const chatContent = chatMessagesContainer.parentElement;
+        if (chatContent) {
+            chatContent.style.position = 'relative';
+            chatContent.appendChild(scrollBtn);
+        }
+    }
+
+    /**
+     * Update scroll button visibility
+     */
+    updateScrollButtonVisibility() {
+        const scrollBtn = document.getElementById('scrollToBottomBtn');
+        if (scrollBtn) {
+            scrollBtn.style.display = this.userScrolledUp ? 'flex' : 'none';
+        }
+    }
+
+    /**
+     * Scroll to bottom of chat - only if user hasn't scrolled up or if forced
+     */
+    scrollToBottom(force = false) {
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        if (!chatMessagesContainer) return;
+
+        if (force || !this.userScrolledUp) {
+            chatMessagesContainer.scrollTo({
+                top: chatMessagesContainer.scrollHeight,
+                behavior: force ? 'smooth' : 'auto'
+            });
+            this.userScrolledUp = false;
+            this.updateScrollButtonVisibility();
+        }
     }
 
     /**
