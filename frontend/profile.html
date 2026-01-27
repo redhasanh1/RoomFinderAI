@@ -2002,8 +2002,7 @@
         });
 
         async function deleteListing(id) {
-            if (confirm('Are you sure you want to delete this listing? This action cannot be undone.')) {
-                const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+            const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
                 
                 try {
                     // Show loading state
@@ -2075,13 +2074,11 @@
                         currentUserListings = currentUserListings.filter(l => l.id !== id);
                         cleanupLocalStorage();
                         loadUserListings(currentUser);
-                        alert('Listing deleted successfully!');
                     } else if (response.status === 404) {
                         // Listing not in database - it's an orphan in localStorage only
                         console.warn('⚠️ Listing not found in database, cleaning up localStorage orphan');
                         currentUserListings = currentUserListings.filter(l => l.id !== id);
                         cleanupLocalStorage();
-                        alert('Listing removed (it was not saved to the database). Page will refresh.');
                         // Force page reload to ensure clean state
                         window.location.reload();
                     } else {
@@ -2089,7 +2086,6 @@
                     }
                 } catch (error) {
                     console.error('❌ Error deleting listing:', error);
-                    alert(`Failed to delete listing: ${error.message}`);
                     
                     // Restore the element state
                     const listingElement = document.querySelector(`[onclick*="${id}"]`);
@@ -2098,7 +2094,6 @@
                         listingElement.style.pointerEvents = 'auto';
                     }
                 }
-            }
         }
 
         function viewChat(id) {
