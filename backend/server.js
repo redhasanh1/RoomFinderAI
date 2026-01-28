@@ -1306,8 +1306,20 @@ app.delete('/api/listings/:id', async (req, res) => {
             return res.status(500).json({ error: 'Database not connected' });
         }
 
-        // Delete directly - RLS policy will handle permissions
-        // Note: .select() after .delete() can cause issues, so we just delete
+        // First, delete any favorites that reference this listing (FK constraint)
+        const { error: favError } = await supabase
+            .from('favorites')
+            .delete()
+            .eq('listing_id', listingId);
+
+        if (favError) {
+            console.log('Error deleting favorites (may not exist):', favError.message);
+            // Continue anyway - favorites table might not have FK constraint
+        } else {
+            console.log(`Deleted favorites for listing ${listingId}`);
+        }
+
+        // Now delete the listing
         const { error } = await supabase
             .from('listings')
             .delete()
