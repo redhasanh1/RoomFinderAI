@@ -1299,100 +1299,44 @@ app.delete('/api/listings/:id', async (req, res) => {
     try {
         const listingId = req.params.id;
         const userEmail = req.headers['user-email'] || req.query.userEmail;
-        
-        console.log(`🗑️ Attempting to delete listing ${listingId} for user ${userEmail}`);
-        
-        // First try to delete from Supabase if available
-        if (supabase) {
-            try {
-                // First verify the listing belongs to the user
-                console.log(`🔍 Looking up listing ${listingId} in Supabase...`);
-                const { data: listings, error: fetchError } = await supabase
-                    .from('listings')
-                    .select('*')
-                    .eq('id', listingId);
 
-                if (fetchError) {
-                    console.error('❌ Error fetching listing:', fetchError);
-                    console.error('   Listing ID:', listingId);
-                    console.error('   User email:', userEmail);
-                    return res.status(500).json({ error: 'Database error', details: fetchError.message });
-                }
+        console.log(`DELETE listing: id=${listingId}, user=${userEmail}, supabase=${!!supabase}`);
 
-                // Check if listing exists
-                if (!listings || listings.length === 0) {
-                    console.log(`❌ No listing found with ID: ${listingId}`);
-                    return res.status(404).json({
-                        error: 'Listing not found',
-                        details: `No listing exists with ID: ${listingId}`
-                    });
-                }
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
 
-                const listing = listings[0];
-                console.log(`✅ Found listing: ${listing.title}, owner: ${listing.user_email}`);
+        // Delete directly - RLS policy will handle permissions
+        const { data, error } = await supabase
+            .from('listings')
+            .delete()
+            .eq('id', listingId)
+            .eq('user_email', userEmail)
+            .select();
 
-                // Check if user owns the listing
-                if (listing.user_email !== userEmail) {
-                    console.log(`❌ Unauthorized: ${userEmail} tried to delete listing owned by ${listing.user_email}`);
-                    return res.status(403).json({ error: 'Unauthorized to delete this listing' });
-                }
+        console.log(`DELETE result: data=${JSON.stringify(data)}, error=${JSON.stringify(error)}`);
 
-                // Delete from Supabase
-                const { error: deleteError } = await supabase
-                    .from('listings')
-                    .delete()
-                    .eq('id', listingId);
-                
-                if (deleteError) {
-                    console.error('Error deleting from Supabase:', deleteError);
-                    throw deleteError;
-                }
-                
-                console.log(`✅ Successfully deleted listing ${listingId} from Supabase`);
-                
-                // Also remove from in-memory array if it exists
-                const listingIndex = listings.findIndex(l => l.id === listingId);
-                if (listingIndex !== -1) {
-                    listings.splice(listingIndex, 1);
-                }
-                
-                res.json({ 
-                    message: 'Listing deleted successfully', 
-                    listingId: listingId,
-                    source: 'supabase'
-                });
-            } catch (supabaseError) {
-                console.error('Supabase deletion failed:', supabaseError);
-                // Fall back to in-memory deletion
-                const listingIndex = listings.findIndex(l => l.id === listingId);
-                if (listingIndex === -1) {
-                    return res.status(404).json({ error: 'Listing not found' });
-                }
-                
-                const deletedListing = listings.splice(listingIndex, 1)[0];
-                res.json({ 
-                    message: 'Listing deleted from local storage', 
-                    listing: deletedListing,
-                    source: 'local'
-                });
-            }
-        } else {
-            // No Supabase, use in-memory storage
-            const listingIndex = listings.findIndex(l => l.id === listingId);
-            if (listingIndex === -1) {
-                return res.status(404).json({ error: 'Listing not found' });
-            }
-            
-            const deletedListing = listings.splice(listingIndex, 1)[0];
-            res.json({ 
-                message: 'Listing deleted from local storage', 
-                listing: deletedListing,
-                source: 'local'
+        if (error) {
+            console.error('Delete error:', error);
+            return res.status(500).json({ error: 'Database error', details: error.message });
+        }
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({
+                error: 'Listing not found or not owned by user',
+                listingId,
+                userEmail
             });
         }
+
+        res.json({
+            message: 'Listing deleted successfully',
+            listingId: listingId,
+            deleted: data[0]
+        });
     } catch (error) {
-        console.error('Error in DELETE /api/listings/:id:', error.message);
-        res.status(500).json({ error: 'Failed to delete listing' });
+        console.error('DELETE /api/listings/:id error:', error);
+        res.status(500).json({ error: 'Failed to delete listing', details: error.message });
     }
 });
 
