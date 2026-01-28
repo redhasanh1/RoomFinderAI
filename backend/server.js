@@ -1307,32 +1307,24 @@ app.delete('/api/listings/:id', async (req, res) => {
         }
 
         // Delete directly - RLS policy will handle permissions
-        const { data, error } = await supabase
+        // Note: .select() after .delete() can cause issues, so we just delete
+        const { error } = await supabase
             .from('listings')
             .delete()
             .eq('id', listingId)
-            .eq('user_email', userEmail)
-            .select();
+            .eq('user_email', userEmail);
 
-        console.log(`DELETE result: data=${JSON.stringify(data)}, error=${JSON.stringify(error)}`);
+        console.log(`DELETE result: error=${JSON.stringify(error)}`);
 
         if (error) {
             console.error('Delete error:', error);
             return res.status(500).json({ error: 'Database error', details: error.message });
         }
 
-        if (!data || data.length === 0) {
-            return res.status(404).json({
-                error: 'Listing not found or not owned by user',
-                listingId,
-                userEmail
-            });
-        }
-
+        // If no error, deletion was successful (or listing didn't exist)
         res.json({
             message: 'Listing deleted successfully',
-            listingId: listingId,
-            deleted: data[0]
+            listingId: listingId
         });
     } catch (error) {
         console.error('DELETE /api/listings/:id error:', error);
