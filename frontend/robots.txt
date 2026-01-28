@@ -9,6 +9,7 @@ Allow: /pricing.html
 Allow: /listings.html
 Allow: /student-housing.html
 Allow: /roommate.html
+Allow: /roommate-matching.html
 
 # Allow legal pages
 Allow: /terms-of-service.html
