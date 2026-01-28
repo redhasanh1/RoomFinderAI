@@ -1306,6 +1306,9 @@ app.delete('/api/listings/:id', async (req, res) => {
             return res.status(500).json({ error: 'Database not connected' });
         }
 
+        // Set user context for RLS policies
+        await setUserContext(userEmail);
+
         // First, delete any favorites that reference this listing (FK constraint)
         const { error: favError } = await supabase
             .from('favorites')
