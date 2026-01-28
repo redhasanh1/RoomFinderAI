@@ -2003,97 +2003,124 @@
 
         async function deleteListing(id) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                
-                try {
-                    // Show loading state
-                    const listingElement = document.querySelector(`[onclick*="${id}"]`);
-                    if (listingElement) {
-                        listingElement.style.opacity = '0.5';
-                        listingElement.style.pointerEvents = 'none';
-                    }
-                    
-                    // Call the API to delete from database
-                    const response = await fetch(`/api/listings/${id}?userEmail=${encodeURIComponent(currentUser.email)}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'user-email': currentUser.email
-                        }
-                    });
 
-                    // Parse JSON only if response might have a body, handle 404 gracefully
-                    let result = {};
-                    try {
-                        const text = await response.text();
-                        if (text) {
-                            result = JSON.parse(text);
-                        }
-                    } catch (parseError) {
-                        console.warn('Could not parse response as JSON:', parseError);
-                    }
+            // Find the listing card element (button's grandparent is the card)
+            const deleteButton = document.querySelector(`[onclick*="deleteListing('${id}')"]`);
+            const card = deleteButton ? deleteButton.closest('.rounded-lg') : null;
 
-                    // Helper function to clean up ALL localStorage locations
-                    const cleanupLocalStorage = () => {
-                        try {
-                            // Clean userListings_email
-                            const userListingsKey = `userListings_${currentUser.email}`;
-                            let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
-                            userListings = userListings.filter(l => l.id !== id);
-                            safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
-
-                            // Clean allListings
-                            let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
-                            allListings = allListings.filter(l => l.id !== id);
-                            safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
-
-                            // Clean currentUser.listings
-                            let storedUser = JSON.parse(localStorage.getItem('currentUser')) || {};
-                            if (storedUser.listings) {
-                                storedUser.listings = storedUser.listings.filter(l => l.id !== id);
-                                safeLocalStorageSetItem('currentUser', JSON.stringify(storedUser));
-                            }
-
-                            // Clean users array
-                            let users = JSON.parse(localStorage.getItem('users')) || [];
-                            users = users.map(u => {
-                                if (u.email === currentUser.email && u.listings) {
-                                    u.listings = u.listings.filter(l => l.id !== id);
-                                }
-                                return u;
-                            });
-                            safeLocalStorageSetItem('users', JSON.stringify(users));
-
-                            console.log('✅ Cleaned listing from all localStorage locations');
-                        } catch (storageError) {
-                            console.warn('⚠️ Could not update localStorage cache after delete:', storageError);
-                        }
-                    };
-
-                    if (response.ok) {
-                        console.log('✅ Listing deleted successfully:', result);
-                        currentUserListings = currentUserListings.filter(l => l.id !== id);
-                        cleanupLocalStorage();
-                        loadUserListings(currentUser);
-                    } else if (response.status === 404) {
-                        // Listing not in database - it's an orphan in localStorage only
-                        console.warn('⚠️ Listing not found in database, cleaning up localStorage orphan');
-                        currentUserListings = currentUserListings.filter(l => l.id !== id);
-                        cleanupLocalStorage();
-                        // Force page reload to ensure clean state
-                        window.location.reload();
-                    } else {
-                        throw new Error(result.error || 'Failed to delete listing');
-                    }
-                } catch (error) {
-                    console.error('❌ Error deleting listing:', error);
-                    
-                    // Restore the element state
-                    const listingElement = document.querySelector(`[onclick*="${id}"]`);
-                    if (listingElement) {
-                        listingElement.style.opacity = '1';
-                        listingElement.style.pointerEvents = 'auto';
-                    }
+            try {
+                // Show loading state with animation on the card
+                if (card) {
+                    card.style.transition = 'opacity 0.3s, transform 0.3s';
+                    card.style.opacity = '0.5';
+                    card.style.transform = 'scale(0.98)';
+                    card.style.pointerEvents = 'none';
                 }
+
+                // Call the API to delete from database
+                const response = await fetch(`/api/listings/${id}?userEmail=${encodeURIComponent(currentUser.email)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'user-email': currentUser.email
+                    }
+                });
+
+                // Parse JSON only if response might have a body, handle 404 gracefully
+                let result = {};
+                try {
+                    const text = await response.text();
+                    if (text) {
+                        result = JSON.parse(text);
+                    }
+                } catch (parseError) {
+                    console.warn('Could not parse response as JSON:', parseError);
+                }
+
+                // Helper function to clean up ALL localStorage locations
+                const cleanupLocalStorage = () => {
+                    try {
+                        // Clean userListings_email
+                        const userListingsKey = `userListings_${currentUser.email}`;
+                        let userListings = JSON.parse(localStorage.getItem(userListingsKey)) || [];
+                        userListings = userListings.filter(l => l.id !== id);
+                        safeLocalStorageSetItem(userListingsKey, JSON.stringify(userListings));
+
+                        // Clean allListings
+                        let allListings = JSON.parse(localStorage.getItem('allListings')) || [];
+                        allListings = allListings.filter(l => l.id !== id);
+                        safeLocalStorageSetItem('allListings', JSON.stringify(allListings));
+
+                        // Clean currentUser.listings
+                        let storedUser = JSON.parse(localStorage.getItem('currentUser')) || {};
+                        if (storedUser.listings) {
+                            storedUser.listings = storedUser.listings.filter(l => l.id !== id);
+                            safeLocalStorageSetItem('currentUser', JSON.stringify(storedUser));
+                        }
+
+                        // Clean users array
+                        let users = JSON.parse(localStorage.getItem('users')) || [];
+                        users = users.map(u => {
+                            if (u.email === currentUser.email && u.listings) {
+                                u.listings = u.listings.filter(l => l.id !== id);
+                            }
+                            return u;
+                        });
+                        safeLocalStorageSetItem('users', JSON.stringify(users));
+
+                        console.log('Cleaned listing from all localStorage locations');
+                    } catch (storageError) {
+                        console.warn('Could not update localStorage cache after delete:', storageError);
+                    }
+                };
+
+                if (response.ok) {
+                    console.log('Listing deleted successfully:', result);
+                    currentUserListings = currentUserListings.filter(l => l.id !== id);
+                    cleanupLocalStorage();
+
+                    // Animate card out and remove from DOM
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(() => card.remove(), 300);
+                    }
+
+                    // Show success notification
+                    showNotification('Listing deleted successfully', 'success');
+
+                    // Refresh the listings data in background
+                    loadUserListings(currentUser);
+                } else if (response.status === 404) {
+                    // Listing not in database - it's an orphan in localStorage only
+                    console.warn('Listing not found in database, cleaning up localStorage orphan');
+                    currentUserListings = currentUserListings.filter(l => l.id !== id);
+                    cleanupLocalStorage();
+
+                    // Animate card out and remove
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'scale(0.9)';
+                        setTimeout(() => card.remove(), 300);
+                    }
+
+                    showNotification('Listing removed', 'success');
+                } else {
+                    throw new Error(result.error || 'Failed to delete listing');
+                }
+            } catch (error) {
+                console.error('Error deleting listing:', error);
+
+                // Restore the card state
+                if (card) {
+                    card.style.opacity = '1';
+                    card.style.transform = 'scale(1)';
+                    card.style.pointerEvents = 'auto';
+                }
+
+                // Show error notification
+                showNotification('Failed to delete listing. Please try again.', 'error');
+            }
         }
 
         function viewChat(id) {
