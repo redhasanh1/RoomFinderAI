@@ -1307,32 +1307,36 @@ app.delete('/api/listings/:id', async (req, res) => {
             try {
                 // First verify the listing belongs to the user
                 console.log(`🔍 Looking up listing ${listingId} in Supabase...`);
-                const { data: listing, error: fetchError } = await supabase
+                const { data: listings, error: fetchError } = await supabase
                     .from('listings')
                     .select('*')
-                    .eq('id', listingId)
-                    .single();
+                    .eq('id', listingId);
 
                 if (fetchError) {
                     console.error('❌ Error fetching listing:', fetchError);
                     console.error('   Listing ID:', listingId);
                     console.error('   User email:', userEmail);
-
-                    // Check if this is a "no rows" error vs actual error
-                    if (fetchError.code === 'PGRST116') {
-                        return res.status(404).json({
-                            error: 'Listing not found',
-                            details: `No listing exists with ID: ${listingId}`
-                        });
-                    }
-                    return res.status(404).json({ error: 'Listing not found', details: fetchError.message });
+                    return res.status(500).json({ error: 'Database error', details: fetchError.message });
                 }
-                
+
+                // Check if listing exists
+                if (!listings || listings.length === 0) {
+                    console.log(`❌ No listing found with ID: ${listingId}`);
+                    return res.status(404).json({
+                        error: 'Listing not found',
+                        details: `No listing exists with ID: ${listingId}`
+                    });
+                }
+
+                const listing = listings[0];
+                console.log(`✅ Found listing: ${listing.title}, owner: ${listing.user_email}`);
+
                 // Check if user owns the listing
                 if (listing.user_email !== userEmail) {
+                    console.log(`❌ Unauthorized: ${userEmail} tried to delete listing owned by ${listing.user_email}`);
                     return res.status(403).json({ error: 'Unauthorized to delete this listing' });
                 }
-                
+
                 // Delete from Supabase
                 const { error: deleteError } = await supabase
                     .from('listings')
