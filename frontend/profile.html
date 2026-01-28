@@ -2004,6 +2004,8 @@
         async function deleteListing(id) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
 
+            console.log('DELETE REQUEST:', { listingId: id, userEmail: currentUser.email });
+
             // Find the listing card element (button's grandparent is the card)
             const deleteButton = document.querySelector(`[onclick*="deleteListing('${id}')"]`);
             const card = deleteButton ? deleteButton.closest('.rounded-lg') : null;
@@ -2036,6 +2038,8 @@
                 } catch (parseError) {
                     console.warn('Could not parse response as JSON:', parseError);
                 }
+
+                console.log('DELETE RESPONSE:', { status: response.status, result });
 
                 // Helper function to clean up ALL localStorage locations
                 const cleanupLocalStorage = () => {
@@ -2105,6 +2109,12 @@
                     }
 
                     showNotification('Listing removed', 'success');
+                } else if (response.status === 403) {
+                    // User doesn't own this listing
+                    throw new Error('You are not authorized to delete this listing');
+                } else if (response.status === 500) {
+                    // Database error
+                    throw new Error(result.details || 'Database error occurred');
                 } else {
                     throw new Error(result.error || 'Failed to delete listing');
                 }
