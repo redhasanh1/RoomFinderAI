@@ -1437,6 +1437,219 @@
             border: 1px solid #e5e7eb;
             box-shadow: 0 1px 4px rgba(0,0,0,0.05);
         }
+        /* Message wrapper for avatar layout */
+        .message-wrapper {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+        }
+        .message-wrapper.sent {
+            justify-content: flex-end;
+        }
+        .message-wrapper.received {
+            justify-content: flex-start;
+        }
+        .message-avatar-container {
+            flex-shrink: 0;
+        }
+        .message-avatar {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .message-avatar-fallback {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.625rem;
+            font-weight: 600;
+        }
+        .message-content-wrapper {
+            max-width: calc(100% - 36px);
+        }
+        /* Conversation list avatar styles */
+        .conversation-avatar-wrapper {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            position: relative;
+        }
+        .conversation-avatar-img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+        .conversation-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        .conversation-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.875rem 1rem;
+            cursor: pointer;
+            transition: background-color 0.15s;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .conversation-item:hover {
+            background-color: #f1f5f9;
+        }
+        .conversation-item.has-unread {
+            background-color: #f0f4ff;
+        }
+        .conversation-content {
+            flex-grow: 1;
+            min-width: 0;
+        }
+        .conversation-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.25rem;
+        }
+        .conversation-name {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.9375rem;
+        }
+        .conversation-time {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+        .conversation-listing {
+            font-size: 0.8125rem;
+            color: #6b7280;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            display: block;
+        }
+        .your-listing-tag {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            font-size: 0.625rem;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            margin-right: 0.375rem;
+            text-transform: uppercase;
+        }
+        .conversation-badge {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            font-size: 0.6875rem;
+            padding: 0.125rem 0.5rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            min-width: 1.25rem;
+            text-align: center;
+        }
+        .conversations-empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: #9ca3af;
+        }
+        .conversations-empty-icon {
+            width: 48px;
+            height: 48px;
+            margin: 0 auto 0.75rem;
+            color: #d1d5db;
+        }
+        .conversations-empty-icon svg {
+            width: 100%;
+            height: 100%;
+        }
+        .conversations-empty h4 {
+            font-weight: 600;
+            color: #6b7280;
+            margin-bottom: 0.25rem;
+        }
+        .conversations-empty p {
+            font-size: 0.875rem;
+        }
+        /* Toast notification styles */
+        .toast-container {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            pointer-events: none;
+        }
+        .new-message-toast {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            background: white;
+            border-radius: 0.75rem;
+            padding: 0.875rem 1rem;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15), 0 4px 10px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #667eea;
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+            pointer-events: auto;
+            max-width: 320px;
+        }
+        .new-message-toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        .toast-icon {
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .toast-content {
+            flex-grow: 1;
+            min-width: 0;
+        }
+        .toast-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 0.875rem;
+            margin-bottom: 0.125rem;
+        }
+        .toast-preview {
+            color: #6b7280;
+            font-size: 0.8125rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        @media (max-width: 640px) {
+            .toast-container {
+                left: 1rem;
+                right: 1rem;
+            }
+            .new-message-toast {
+                max-width: none;
+            }
+        }
         .message-timestamp {
             font-size: 0.6875rem;
             color: #9ca3af;
@@ -4480,7 +4693,7 @@
             console.log('🔄 Loading messages for conversation:', conversationId);
             console.log('📊 Supabase client status:', !!supabase);
             console.log('👤 Current user status:', !!localStorage.getItem('currentUser'));
-            
+
             try {
                 const { data: messages, error } = await supabase
                     .from('messages')
@@ -4496,14 +4709,26 @@
                     return;
                 }
 
+                // Fetch profile images for all unique senders
+                const senderEmails = [...new Set(messages.map(m => m.sender_email))];
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('email, first_name, last_name, profile_image')
+                    .in('email', senderEmails);
+
+                // Create profile lookup map
+                const profileMap = {};
+                (profiles || []).forEach(p => profileMap[p.email] = p);
+                console.log('👤 Loaded profiles for senders:', Object.keys(profileMap));
+
                 const chatMessagesContainer = document.getElementById('chatMessages');
                 console.log('📋 Chat container element:', !!chatMessagesContainer);
-                
+
                 if (!chatMessagesContainer) {
                     console.error('❌ Chat messages container not found!');
                     return;
                 }
-                
+
                 chatMessagesContainer.innerHTML = '';
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 console.log('👤 Current user for message display:', currentUser?.email);
@@ -4515,10 +4740,16 @@
                         type: message.message_type,
                         timestamp: message.created_at
                     });
-                    
+
+                    const isSent = message.sender_email === currentUser.email;
                     const messageElement = document.createElement('div');
-                    messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
-                    
+                    messageElement.className = `message ${isSent ? 'sent' : 'received'}`;
+
+                    // Get sender profile for avatar
+                    const senderProfile = profileMap[message.sender_email];
+                    const avatarUrl = senderProfile?.profile_image;
+                    const senderInitials = message.sender_email.split('@')[0].substring(0, 2).toUpperCase();
+
                     // Handle different message types
                     let messageContent;
                     if (message.message_type === 'file' && message.file_url) {
@@ -4538,17 +4769,28 @@
                     } else {
                         messageContent = sanitizeInput(message.content);
                     }
-                    
+
+                    // Build avatar HTML for received messages
+                    const avatarHtml = !isSent ? (avatarUrl
+                        ? `<img src="${avatarUrl}" class="message-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="Avatar" />
+                           <div class="message-avatar-fallback" style="display:none;">${senderInitials}</div>`
+                        : `<div class="message-avatar-fallback">${senderInitials}</div>`) : '';
+
                     messageElement.innerHTML = `
-                        ${messageContent}
-                        <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
+                        <div class="message-wrapper ${isSent ? 'sent' : 'received'}">
+                            ${!isSent ? `<div class="message-avatar-container">${avatarHtml}</div>` : ''}
+                            <div class="message-content-wrapper">
+                                ${messageContent}
+                                <div class="message-timestamp">${new Date(message.created_at).toLocaleTimeString()}</div>
+                            </div>
+                        </div>
                     `;
                     chatMessagesContainer.appendChild(messageElement);
                 });
 
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
-                
+
             } catch (error) {
                 console.error('💥 Exception in loadMessages:', error);
                 alert('Failed to load messages due to an error: ' + error.message);
@@ -4732,7 +4974,7 @@
             }
 
             // Display conversations in tabs
-            function displayConversations() {
+            async function displayConversations() {
                 const conversationTabs = document.getElementById('conversationTabs');
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
@@ -4756,8 +4998,24 @@
                     return;
                 }
 
+                // Collect all other user emails to fetch their profiles
+                const userEmailLower = currentUser.email?.toLowerCase();
+                const otherUserEmails = globalUserConversations.map(conv => {
+                    return conv.sender_email?.toLowerCase() === userEmailLower ? conv.receiver_email : conv.sender_email;
+                }).filter(Boolean);
+
+                // Fetch profile images for all other users in conversations
+                let profileMap = {};
+                if (otherUserEmails.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('email, first_name, last_name, profile_image')
+                        .in('email', otherUserEmails);
+                    (profiles || []).forEach(p => profileMap[p.email?.toLowerCase()] = p);
+                    console.log('👤 Loaded conversation profiles:', Object.keys(profileMap).length);
+                }
+
                 conversationTabs.innerHTML = globalUserConversations.map(conv => {
-                    const userEmailLower = currentUser.email?.toLowerCase();
                     const otherUserEmail = conv.sender_email?.toLowerCase() === userEmailLower ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
 
@@ -4769,6 +5027,16 @@
 
                     // Generate initials for avatar (first 2 characters, capitalized)
                     const initials = otherUserName.substring(0, 2).toUpperCase();
+
+                    // Get profile image for other user
+                    const otherProfile = profileMap[otherUserEmail?.toLowerCase()];
+                    const avatarUrl = otherProfile?.profile_image;
+
+                    // Avatar HTML: show image if available, fallback to initials
+                    const avatarHtml = avatarUrl
+                        ? `<img src="${avatarUrl}" class="conversation-avatar-img" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" alt="${otherUserName}" />
+                           <div class="conversation-avatar" style="display:none;">${initials}</div>`
+                        : `<div class="conversation-avatar">${initials}</div>`;
 
                     // Format timestamp
                     const timestamp = formatConversationTime(conv.created_at);
@@ -4790,7 +5058,7 @@
                     return `
                         <div class="conversation-item ${hasUnread ? 'has-unread' : ''}"
                              onclick="openConversationInModal('${conv.id}', '${escapedTitle}', '${conv.listing_id}', '${otherUserEmail}')">
-                            <div class="conversation-avatar">${initials}</div>
+                            <div class="conversation-avatar-wrapper">${avatarHtml}</div>
                             <div class="conversation-content">
                                 <div class="conversation-header">
                                     <span class="conversation-name">${otherUserName}</span>
@@ -4878,35 +5146,132 @@
                 globalUnreadCount = totalUnread;
             };
 
-            // SIMPLIFIED Messaging panel real-time updates
+            // Real-time connection status tracking
+            let realtimeConnected = false;
+
+            // Show toast notification for new messages
+            function showNewMessageToast(senderEmail, preview) {
+                const senderName = senderEmail.split('@')[0];
+                const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+
+                const toast = document.createElement('div');
+                toast.className = 'new-message-toast';
+                toast.innerHTML = `
+                    <div class="toast-icon">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" class="w-5 h-5">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                    </div>
+                    <div class="toast-content">
+                        <div class="toast-title">New message from ${senderName}</div>
+                        <div class="toast-preview">${preview ? preview.substring(0, 50) + (preview.length > 50 ? '...' : '') : 'New message'}</div>
+                    </div>
+                `;
+
+                toastContainer.appendChild(toast);
+
+                // Animate in
+                setTimeout(() => toast.classList.add('show'), 10);
+
+                // Auto-remove after 4 seconds
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                    setTimeout(() => toast.remove(), 300);
+                }, 4000);
+            }
+
+            // Create toast container if it doesn't exist
+            function createToastContainer() {
+                const container = document.createElement('div');
+                container.id = 'toastContainer';
+                container.className = 'toast-container';
+                document.body.appendChild(container);
+                return container;
+            }
+
+            // Play notification sound (subtle)
+            function playNotificationSound() {
+                try {
+                    // Create a subtle notification sound using Web Audio API
+                    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+
+                    oscillator.connect(gainNode);
+                    gainNode.connect(audioContext.destination);
+
+                    oscillator.frequency.value = 800;
+                    oscillator.type = 'sine';
+                    gainNode.gain.value = 0.1;
+
+                    oscillator.start();
+                    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                    oscillator.stop(audioContext.currentTime + 0.1);
+                } catch (e) {
+                    // Silently fail if audio not supported
+                    console.log('Audio notification not available');
+                }
+            }
+
+            // ENHANCED Messaging panel real-time updates
             console.log('DEBUG: Before panelChannel. Supabase:', supabase, 'typeof supabase.channel:', typeof supabase.channel);
             const panelChannel = supabase
                 .channel('panel_realtime_' + Math.random())
-                .on('postgres_changes', { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'messages' 
-                }, (payload) => {
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, async (payload) => {
                     console.log('🔔 PANEL: New message event:', payload);
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                    
+
                     // If message is for current user (not sent by them), instantly update UI
                     if (payload.new.sender_email !== currentUser.email && window.globalUserConversations) {
+                        // Check if this conversation belongs to the current user
                         const convIndex = window.globalUserConversations.findIndex(c => c.id === payload.new.conversation_id);
-                        if (convIndex !== -1) {
-                            // Only increment if this conversation hasn't been locally marked as read
-                            if (!locallyReadConversations.has(payload.new.conversation_id)) {
-                                console.log('⚡ INSTANTLY updating unread count for new message');
-                                window.globalUserConversations[convIndex].unread_count = (window.globalUserConversations[convIndex].unread_count || 0) + 1;
-                                if (window.updateUnreadCount) {
-                                    window.updateUnreadCount();
-                                }
-                            } else {
-                                console.log('🔒 Skipping increment - conversation locally marked as read');
+
+                        // If conversation not found in list, it might be a new conversation - check database
+                        if (convIndex === -1) {
+                            const { data: conversation } = await supabase
+                                .from('conversations')
+                                .select('sender_email, receiver_email')
+                                .eq('id', payload.new.conversation_id)
+                                .single();
+
+                            if (conversation &&
+                                (conversation.receiver_email === currentUser.email ||
+                                 conversation.sender_email === currentUser.email)) {
+                                console.log('🆕 New message for current user in new/unknown conversation');
+                                // Show notification and refresh conversations
+                                showNewMessageToast(payload.new.sender_email, payload.new.content);
+                                playNotificationSound();
+                                loadUserConversations();
                             }
+                            return;
+                        }
+
+                        // Only increment if this conversation hasn't been locally marked as read
+                        if (!locallyReadConversations.has(payload.new.conversation_id)) {
+                            console.log('⚡ INSTANTLY updating unread count for new message');
+                            window.globalUserConversations[convIndex].unread_count = (window.globalUserConversations[convIndex].unread_count || 0) + 1;
+
+                            // Show toast notification
+                            showNewMessageToast(payload.new.sender_email, payload.new.content);
+
+                            // Play notification sound
+                            playNotificationSound();
+
+                            if (window.updateUnreadCount) {
+                                window.updateUnreadCount();
+                            }
+
+                            // Also refresh conversation list UI to show the notification
+                            displayConversations();
+                        } else {
+                            console.log('🔒 Skipping increment - conversation locally marked as read');
                         }
                     }
-                    
+
                     // Reduce frequency of database refreshes to prevent overwrites
                     // Only refresh every 5 seconds maximum
                     if (!window.lastRefreshTime || Date.now() - window.lastRefreshTime > 5000) {
@@ -4914,27 +5279,27 @@
                         setTimeout(() => loadUserConversations(), 3000);
                     }
                 })
-                .on('postgres_changes', { 
-                    event: 'INSERT', 
-                    schema: 'public', 
-                    table: 'conversations' 
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'conversations'
                 }, (payload) => {
                     console.log('💬 PANEL: New conversation event:', payload);
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                    
+
                     if (payload.new.sender_email === currentUser.email || payload.new.receiver_email === currentUser.email) {
                         console.log('🔄 Refreshing conversations panel for new conversation');
                         loadUserConversations();
                     }
                 })
-                .on('postgres_changes', { 
-                    event: '*', 
-                    schema: 'public', 
-                    table: 'conversation_reads' 
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'conversation_reads'
                 }, (payload) => {
                     console.log('👀 READ STATUS UPDATE:', payload);
                     const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                    
+
                     // Only refresh if the read status is for current user and not locally initiated
                     if (payload.new?.user_email === currentUser.email) {
                         console.log('🔄 Refreshing conversations due to read status change');
@@ -4943,6 +5308,19 @@
                 })
                 .subscribe((status) => {
                     console.log('📱 PANEL SUBSCRIPTION STATUS:', status);
+                    realtimeConnected = (status === 'SUBSCRIBED');
+                    if (status === 'SUBSCRIBED') {
+                        console.log('✅ Real-time chat notifications connected');
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+                        console.warn('⚠️ Real-time connection issue, will retry...');
+                        // Retry connection after 5 seconds
+                        setTimeout(() => {
+                            if (!realtimeConnected) {
+                                console.log('🔄 Retrying real-time connection...');
+                                panelChannel.subscribe();
+                            }
+                        }, 5000);
+                    }
                 });
 
             // Initialize
