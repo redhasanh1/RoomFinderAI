@@ -1317,8 +1317,19 @@ app.delete('/api/listings/:id', async (req, res) => {
         console.log(`DELETE result: error=${JSON.stringify(error)}`);
 
         if (error) {
-            console.error('Delete error:', error);
-            return res.status(500).json({ error: 'Database error', details: error.message });
+            console.error('Delete error details:', {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                status: error.status
+            });
+            return res.status(500).json({
+                error: 'Database error',
+                details: error.message,
+                code: error.code,
+                hint: error.hint
+            });
         }
 
         // If no error, deletion was successful (or listing didn't exist)
