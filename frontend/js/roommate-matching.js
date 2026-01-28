@@ -8,6 +8,8 @@ class RoomPalApp {
         this.api = null;
         this.allRooms = [];
         this.filteredRooms = [];
+        this.allPeople = [];
+        this.filteredPeople = [];
         this.uploadedPhoto = null;
 
         this.init();
@@ -86,6 +88,7 @@ class RoomPalApp {
             'landing': 'landingSection',
             'hasRoom': 'hasRoomSection',
             'needRoom': 'needRoomSection',
+            'findPeople': 'findPeopleSection',
             'success': 'successSection'
         };
 
@@ -102,9 +105,11 @@ class RoomPalApp {
                 targetEl.classList.add('active');
                 this.currentSection = section;
 
-                // Load data for need room section
+                // Load data for sections
                 if (section === 'needRoom') {
                     this.loadRooms();
+                } else if (section === 'findPeople') {
+                    this.loadPeople();
                 }
             }
         }
@@ -218,6 +223,173 @@ class RoomPalApp {
         this.renderRooms();
     }
 
+    // ==================== LOAD PEOPLE ====================
+
+    async loadPeople() {
+        const grid = document.getElementById('peopleGrid');
+        const emptyState = document.getElementById('peopleEmptyState');
+        const resultsCount = document.getElementById('peopleResultsCount');
+
+        if (!grid) return;
+
+        // Show loading
+        grid.innerHTML = '<p class="col-span-full text-center text-gray-500 py-8">Loading people...</p>';
+
+        try {
+            // Get people from API
+            const people = await this.getPeople();
+            this.allPeople = people;
+            this.filteredPeople = people;
+
+            this.renderPeople();
+        } catch (error) {
+            console.error('Error loading people:', error);
+            grid.innerHTML = '<p class="col-span-full text-center text-red-500 py-8">Failed to load people</p>';
+        }
+    }
+
+    async getPeople() {
+        if (this.api && this.api.initialized) {
+            try {
+                const people = await this.api.getSeekerProfiles({ limit: 50 });
+                if (people && people.length > 0) {
+                    return people;
+                }
+            } catch (e) {
+                console.log('API error, returning empty:', e);
+            }
+        }
+        return [];
+    }
+
+    renderPeople() {
+        const grid = document.getElementById('peopleGrid');
+        const emptyState = document.getElementById('peopleEmptyState');
+        const resultsCount = document.getElementById('peopleResultsCount');
+
+        if (this.filteredPeople.length === 0) {
+            grid.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            resultsCount.textContent = 'No people found';
+            return;
+        }
+
+        grid.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        resultsCount.textContent = `${this.filteredPeople.length} ${this.filteredPeople.length === 1 ? 'person' : 'people'} looking`;
+
+        grid.innerHTML = this.filteredPeople.map(person => this.createPersonCard(person)).join('');
+    }
+
+    createPersonCard(person) {
+        const avatarUrl = person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name || 'User')}&background=6366f1&color=fff&size=160`;
+        const name = person.name || 'Anonymous';
+        const age = person.age ? `, ${person.age}` : '';
+        const location = person.preferred_areas?.[0] || person.location || 'Location flexible';
+        const budgetMin = person.budget_min || 0;
+        const budgetMax = person.budget_max || 0;
+        const budgetText = budgetMin && budgetMax ? `$${budgetMin} - $${budgetMax}/mo` : (budgetMax ? `Up to $${budgetMax}/mo` : 'Budget flexible');
+        const bio = person.bio || 'Looking for a great roommate situation!';
+        const truncatedBio = bio.length > 100 ? bio.substring(0, 100) + '...' : bio;
+        const moveInDate = person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible';
+
+        return `
+            <div class="person-card">
+                <div class="person-avatar-section">
+                    <img src="${avatarUrl}" alt="${name}" class="person-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=160'">
+                </div>
+                <div class="person-info">
+                    <h3 class="person-name">${name}${age}</h3>
+                    <div class="person-details">
+                        <span class="person-detail">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            ${location}
+                        </span>
+                        <span class="person-detail">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            ${budgetText}
+                        </span>
+                        <span class="person-detail">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            ${moveInDate}
+                        </span>
+                    </div>
+                    <p class="person-bio">${truncatedBio}</p>
+                    <button onclick="roomPalApp.openPersonContact('${person.id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">
+                        Connect
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    applyPeopleFilters() {
+        const budgetFilter = document.getElementById('peopleBudgetFilter')?.value;
+
+        this.filteredPeople = this.allPeople.filter(person => {
+            const budgetMax = person.budget_max || 0;
+
+            if (budgetFilter) {
+                if (budgetFilter === '0-800' && budgetMax > 800) return false;
+                if (budgetFilter === '800-1200' && (budgetMax < 800 || budgetMax > 1200)) return false;
+                if (budgetFilter === '1200-1600' && (budgetMax < 1200 || budgetMax > 1600)) return false;
+                if (budgetFilter === '1600+' && budgetMax < 1600) return false;
+            }
+
+            return true;
+        });
+
+        this.renderPeople();
+    }
+
+    openPersonContact(personId, personName) {
+        if (!this.currentUser) {
+            alert('Please log in to connect with people.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        this.contactRoomId = personId;
+        this.contactHostName = personName;
+
+        // Update modal title
+        const modalTitle = document.getElementById('contactModalTitle');
+        if (modalTitle) {
+            modalTitle.textContent = `Connect with ${personName}`;
+        }
+
+        // Update placeholder
+        const messageInput = document.getElementById('contactMessage');
+        if (messageInput) {
+            messageInput.placeholder = `Hi ${personName}! I have a room available that might interest you...`;
+        }
+
+        const recipientEl = document.getElementById('contactRecipient');
+        if (recipientEl) {
+            const person = this.allPeople.find(p => p.id === personId);
+            const avatarUrl = person?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(personName)}&background=6366f1&color=fff&size=80`;
+
+            recipientEl.innerHTML = `
+                <img src="${avatarUrl}" alt="${personName}" class="w-12 h-12 rounded-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(personName)}&background=6366f1&color=fff&size=80'">
+                <div>
+                    <p class="font-medium text-gray-900">${personName}</p>
+                    <p class="text-sm text-gray-500">Looking for a room</p>
+                </div>
+            `;
+        }
+
+        const modal = document.getElementById('contactModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
     // ==================== FORM HANDLERS ====================
 
     async handleRoomFormSubmit(e) {
@@ -307,6 +479,18 @@ class RoomPalApp {
 
         this.contactRoomId = roomId;
         this.contactHostName = hostName;
+
+        // Update modal title
+        const modalTitle = document.getElementById('contactModalTitle');
+        if (modalTitle) {
+            modalTitle.textContent = 'Contact Host';
+        }
+
+        // Update placeholder
+        const messageInput = document.getElementById('contactMessage');
+        if (messageInput) {
+            messageInput.placeholder = "Hi! I'm interested in your room...";
+        }
 
         const recipientEl = document.getElementById('contactRecipient');
         if (recipientEl) {

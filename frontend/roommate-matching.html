@@ -4,8 +4,54 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <title>RoomPal - Find Roommates | RoomFinderAI</title>
-    <meta name="description" content="Find roommates or post your available room. Simple, direct, no hassle.">
+
+    <!-- Primary Meta Tags -->
+    <title>Find Roommates & Rooms | RoomPal by RoomFinderAI</title>
+    <meta name="description" content="Find your perfect roommate or post your available room. Browse real people looking for housing. Simple, free, no hassle.">
+    <meta name="keywords" content="find roommates, roommate finder, shared housing, room for rent, roommate matching, find people to live with">
+    <meta name="author" content="RoomFinderAI">
+    <meta name="robots" content="index, follow">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://roompal.space/roommate-matching.html">
+    <meta property="og:title" content="Find Roommates & Rooms | RoomPal">
+    <meta property="og:description" content="Connect with real people looking for housing. Post rooms or find roommates instantly.">
+    <meta property="og:image" content="https://roompal.space/images/og-roompal.jpg">
+    <meta property="og:site_name" content="RoomPal by RoomFinderAI">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:url" content="https://roompal.space/roommate-matching.html">
+    <meta name="twitter:title" content="Find Roommates & Rooms | RoomPal">
+    <meta name="twitter:description" content="Connect with real people looking for housing. Post rooms or find roommates instantly.">
+    <meta name="twitter:image" content="https://roompal.space/images/og-roompal.jpg">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://roompal.space/roommate-matching.html">
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "RoomPal",
+        "description": "Find roommates and rooms for rent. Connect with real people looking for housing.",
+        "url": "https://roompal.space/roommate-matching.html",
+        "applicationCategory": "Housing",
+        "operatingSystem": "Web Browser",
+        "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+        },
+        "publisher": {
+            "@type": "Organization",
+            "name": "RoomFinderAI",
+            "url": "https://roompal.space"
+        }
+    }
+    </script>
 
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
@@ -61,20 +107,20 @@
         <!-- Landing View -->
         <section id="landingSection" class="section-view active">
             <div class="text-center mb-10">
-                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Find Your Roommate</h1>
-                <p class="text-xl text-gray-600 max-w-xl mx-auto">Post a room or find one. Simple, direct, no hassle.</p>
+                <h1 class="text-4xl md:text-5xl font-bold text-gray-900 mb-4">Find Your Perfect Match</h1>
+                <p class="text-xl text-gray-600 max-w-2xl mx-auto">Post a room, find a room, or discover people to live with. Simple, free, no hassle.</p>
             </div>
 
-            <!-- Two Path Buttons -->
-            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
+            <!-- Three Path Buttons -->
+            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
                 <button onclick="showSection('hasRoom')" class="section-btn has-room">
                     <div class="icon-wrapper bg-indigo-100 text-indigo-600">
                         <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
                         </svg>
                     </div>
-                    <h2>I Have a Room</h2>
-                    <p>Post your available room for others to find</p>
+                    <h2>Post Room</h2>
+                    <p>List your available space</p>
                 </button>
 
                 <button onclick="showSection('needRoom')" class="section-btn seeking">
@@ -83,8 +129,18 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                         </svg>
                     </div>
-                    <h2>I Need a Room</h2>
-                    <p>Browse available rooms from real people</p>
+                    <h2>Find Rooms</h2>
+                    <p>Browse available rooms</p>
+                </button>
+
+                <button onclick="showSection('findPeople')" class="section-btn find-people">
+                    <div class="icon-wrapper bg-purple-100 text-purple-600">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                        </svg>
+                    </div>
+                    <h2>Find People</h2>
+                    <p>See who's looking</p>
                 </button>
             </div>
         </section>
@@ -189,6 +245,51 @@
             </div>
         </section>
 
+        <!-- Find People Section -->
+        <section id="findPeopleSection" class="section-view">
+            <div class="mb-6">
+                <button onclick="showSection('landing')" class="text-gray-500 hover:text-gray-700 flex items-center gap-2 mb-4">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Back
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900">People Looking for Rooms</h1>
+                <p class="text-gray-600">Connect with real people seeking housing</p>
+            </div>
+
+            <!-- Filters -->
+            <div class="flex flex-wrap gap-3 mb-6">
+                <select id="peopleBudgetFilter" class="filter-pill" onchange="roomPalApp.applyPeopleFilters()">
+                    <option value="">Any Budget</option>
+                    <option value="0-800">Under $800</option>
+                    <option value="800-1200">$800 - $1,200</option>
+                    <option value="1200-1600">$1,200 - $1,600</option>
+                    <option value="1600+">$1,600+</option>
+                </select>
+            </div>
+
+            <!-- Results Count -->
+            <p class="text-gray-500 text-sm mb-4" id="peopleResultsCount">Loading...</p>
+
+            <!-- People Cards Grid -->
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="peopleGrid">
+                <!-- People cards loaded by JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="peopleEmptyState" class="hidden text-center py-16">
+                <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                    </svg>
+                </div>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No People Listed Yet</h3>
+                <p class="text-gray-500 mb-6">Be the first to create a seeker profile!</p>
+                <button onclick="showSection('landing')" class="btn-secondary">Back to Home</button>
+            </div>
+        </section>
+
         <!-- Success Message -->
         <section id="successSection" class="section-view">
             <div class="text-center py-16">
@@ -212,7 +313,7 @@
     <div id="contactModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center">
         <div class="bg-white rounded-2xl max-w-md w-full mx-4 p-6">
             <div class="flex justify-between items-center mb-4">
-                <h2 class="text-xl font-bold text-gray-900">Contact Host</h2>
+                <h2 id="contactModalTitle" class="text-xl font-bold text-gray-900">Contact</h2>
                 <button onclick="closeContactModal()" class="text-gray-400 hover:text-gray-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
@@ -225,7 +326,7 @@
             </div>
 
             <form id="contactForm">
-                <textarea name="message" class="form-input mb-4" rows="4" placeholder="Hi! I'm interested in your room..." required></textarea>
+                <textarea id="contactMessage" name="message" class="form-input mb-4" rows="4" placeholder="Hi! I'd love to connect..." required></textarea>
                 <button type="submit" class="btn-primary w-full">Send Message</button>
             </form>
         </div>
