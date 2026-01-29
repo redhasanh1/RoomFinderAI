@@ -2042,7 +2042,7 @@ Generate ONLY the message. No greetings, no signatures.
                         response,
                         negotiation.userEmail,
                         negotiation.landlordEmail,
-                        negotiation.listingId
+                        negotiation.listingTitle
                     );
                     
                     if (sentSuccessfully) {
@@ -2169,7 +2169,7 @@ Generate ONLY the message. No greetings, no signatures.
                         marketResponse,
                         negotiation.userEmail,
                         negotiation.landlordEmail,
-                        negotiation.listingId
+                        negotiation.listingTitle
                     );
                     
                     negotiation.messages.push({
@@ -2931,8 +2931,8 @@ Generate ONLY the message. No greetings, no signatures.
         return `How can we make this work? I'm a reliable tenant ready to sign immediately. What would it take to get to $${state.lastOffer}?`;
     }
 
-    // Send negotiation message with optional email notification to landlord
-    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingId = null, userName = null) {
+    // Send negotiation message and notify landlord
+    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null) {
         try {
             // Ensure AI user exists first
             await this.ensureAIUserExists();
@@ -2966,37 +2966,33 @@ Generate ONLY the message. No greetings, no signatures.
                 }
             }
 
-            console.log('✅ Sent negotiation message to database');
+            console.log('✅ Sent negotiation message');
 
-            // Send email notification to landlord if we have their info
-            if (landlordEmail && listingId) {
+            // Create notification for landlord in ai_chats table
+            if (landlordEmail) {
                 try {
-                    console.log('📧 Sending email notification to landlord:', landlordEmail);
-                    const emailResponse = await fetch('/api/message-landlord', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            listingId: listingId,
-                            landlordEmail: landlordEmail,
-                            message: message,
-                            userEmail: userEmail,
-                            userName: userName || 'Interested Tenant'
-                        })
-                    });
+                    console.log('🔔 Creating notification for landlord:', landlordEmail);
+                    const notificationContent = [{
+                        role: 'assistant',
+                        content: `📬 New inquiry from ${userEmail}:\n\n"${message.substring(0, 200)}${message.length > 200 ? '...' : ''}"`
+                    }];
 
-                    if (emailResponse.ok) {
-                        const result = await emailResponse.json();
-                        console.log('✅ Email notification sent to landlord:', result.message);
+                    const { error: notifError } = await this.supabase
+                        .from('ai_chats')
+                        .insert({
+                            user_email: landlordEmail,
+                            conversation_data: JSON.stringify(notificationContent),
+                            title: `New Inquiry: ${listingTitle || 'Your Property'}`
+                        });
+
+                    if (notifError) {
+                        console.error('⚠️ Failed to create landlord notification:', notifError);
                     } else {
-                        const errorText = await emailResponse.text();
-                        console.warn('⚠️ Failed to send email to landlord:', errorText);
+                        console.log('✅ Created notification for landlord');
                     }
-                } catch (emailError) {
-                    // Log but don't fail - message is already in DB
-                    console.error('❌ Error sending landlord email notification:', emailError);
+                } catch (notifError) {
+                    console.error('⚠️ Error creating landlord notification:', notifError);
                 }
-            } else {
-                console.log('ℹ️ Skipping email notification - missing landlord info');
             }
 
             return true;
