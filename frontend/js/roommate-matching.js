@@ -38,7 +38,34 @@ class RoomPalApp {
         // Setup event listeners
         this.setupEventListeners();
 
+        // Load preview data for landing page
+        this.loadPreviewData();
+
         console.log('RoomPal App initialized');
+    }
+
+    async loadPreviewData() {
+        try {
+            // Load preview rooms
+            const rooms = await this.getRooms();
+            const previewRoomsGrid = document.getElementById('previewRoomsGrid');
+            if (previewRoomsGrid && rooms.length > 0) {
+                previewRoomsGrid.innerHTML = rooms.slice(0, 3).map(room => this.createRoomCard(room)).join('');
+            } else if (previewRoomsGrid) {
+                previewRoomsGrid.innerHTML = '<p class="text-gray-500 col-span-3 text-center py-8">No rooms posted yet. Be the first!</p>';
+            }
+
+            // Load preview seekers
+            const people = await this.getPeople();
+            const previewSeekersGrid = document.getElementById('previewSeekersGrid');
+            if (previewSeekersGrid && people.length > 0) {
+                previewSeekersGrid.innerHTML = people.slice(0, 3).map(person => this.createPersonCard(person)).join('');
+            } else if (previewSeekersGrid) {
+                previewSeekersGrid.innerHTML = '<p class="text-gray-500 col-span-3 text-center py-8">No seekers yet. Create your profile!</p>';
+            }
+        } catch (error) {
+            console.log('Preview data loading skipped:', error.message);
+        }
     }
 
     loadCurrentUser() {
@@ -79,15 +106,15 @@ class RoomPalApp {
         }
 
         // Contact form submission
-        const contactForm = document.getElementById('contactForm');
-        if (contactForm) {
-            contactForm.addEventListener('submit', (e) => this.handleContactSubmit(e));
+        const messageForm = document.getElementById('messageForm');
+        if (messageForm) {
+            messageForm.addEventListener('submit', (e) => this.handleContactSubmit(e));
         }
 
         // Photo upload
-        const roomPhoto = document.getElementById('roomPhoto');
-        if (roomPhoto) {
-            roomPhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'roomPhotoPreview'));
+        const roomPhotos = document.getElementById('roomPhotos');
+        if (roomPhotos) {
+            roomPhotos.addEventListener('change', (e) => this.handlePhotoUpload(e, 'photoPreview'));
         }
 
         // Quick profile form submission
@@ -95,16 +122,24 @@ class RoomPalApp {
         if (quickProfileForm) {
             quickProfileForm.addEventListener('submit', (e) => this.handleQuickProfileSubmit(e));
         }
+
+        // Compatibility form submission
+        const compatibilityForm = document.getElementById('compatibilityForm');
+        if (compatibilityForm) {
+            compatibilityForm.addEventListener('submit', (e) => this.handleCompatibilitySubmit(e));
+        }
     }
 
     // ==================== SECTION NAVIGATION ====================
 
     showSection(section) {
         const sectionMap = {
-            'landing': 'landingSection',
+            'selector': 'sectionSelector',
+            'landing': 'sectionSelector',
             'hasRoom': 'hasRoomSection',
-            'needRoom': 'needRoomSection',
-            'findPeople': 'findPeopleSection',
+            'seeking': 'seekingSection',
+            'browseRooms': 'browseRoomsSection',
+            'browseSeekers': 'browseSeekersSection',
             'success': 'successSection'
         };
 
@@ -122,9 +157,9 @@ class RoomPalApp {
                 this.currentSection = section;
 
                 // Load data for sections
-                if (section === 'needRoom') {
+                if (section === 'browseRooms') {
                     this.loadRooms();
-                } else if (section === 'findPeople') {
+                } else if (section === 'browseSeekers' || section === 'seeking') {
                     this.loadPeople();
                 }
             }
@@ -475,12 +510,12 @@ class RoomPalApp {
         }
 
         // Update placeholder
-        const messageInput = document.getElementById('contactMessage');
+        const messageInput = document.querySelector('#messageForm textarea[name="message"]');
         if (messageInput) {
             messageInput.placeholder = `Hi ${personName}! I have a room available that might interest you...`;
         }
 
-        const recipientEl = document.getElementById('contactRecipient');
+        const recipientEl = document.getElementById('messageRecipient');
         if (recipientEl) {
             const person = this.allPeople.find(p => p.id === personId);
             const avatarUrl = person?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(personName)}&background=6366f1&color=fff&size=80`;
@@ -494,9 +529,11 @@ class RoomPalApp {
             `;
         }
 
-        const modal = document.getElementById('contactModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        const modal = document.getElementById('messageModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
     }
 
     // ==================== FORM HANDLERS ====================
@@ -515,10 +552,11 @@ class RoomPalApp {
         const formData = new FormData(form);
 
         const roomData = {
-            room_location: formData.get('location'),
-            room_rent: parseInt(formData.get('rent')),
-            room_available_date: formData.get('available_date'),
-            room_description: formData.get('description'),
+            room_location: formData.get('room_location'),
+            room_rent: parseInt(formData.get('room_rent')),
+            room_available_date: formData.get('room_available_date'),
+            room_description: formData.get('room_description'),
+            room_type: formData.get('room_type'),
             room_photos: this.uploadedPhoto ? [this.uploadedPhoto] : [],
             name: this.currentUser?.firstName || 'Host'
         };
@@ -547,7 +585,8 @@ class RoomPalApp {
             // Show success
             form.reset();
             this.uploadedPhoto = null;
-            document.getElementById('roomPhotoPreview').innerHTML = '';
+            const photoPreview = document.getElementById('photoPreview');
+            if (photoPreview) photoPreview.innerHTML = '';
             this.showSection('success');
 
         } catch (error) {
@@ -589,19 +628,13 @@ class RoomPalApp {
         this.contactRoomId = roomId;
         this.contactHostName = hostName;
 
-        // Update modal title
-        const modalTitle = document.getElementById('contactModalTitle');
-        if (modalTitle) {
-            modalTitle.textContent = 'Contact Host';
-        }
-
         // Update placeholder
-        const messageInput = document.getElementById('contactMessage');
+        const messageInput = document.querySelector('#messageForm textarea[name="message"]');
         if (messageInput) {
             messageInput.placeholder = "Hi! I'm interested in your room...";
         }
 
-        const recipientEl = document.getElementById('contactRecipient');
+        const recipientEl = document.getElementById('messageRecipient');
         if (recipientEl) {
             recipientEl.innerHTML = `
                 <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
@@ -616,15 +649,19 @@ class RoomPalApp {
             `;
         }
 
-        const modal = document.getElementById('contactModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+        const modal = document.getElementById('messageModal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
     }
 
     closeContactModal() {
-        const modal = document.getElementById('contactModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+        const modal = document.getElementById('messageModal') || document.getElementById('contactModal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
     }
 
     async handleContactSubmit(e) {
@@ -640,7 +677,10 @@ class RoomPalApp {
 
         try {
             if (this.api && this.api.initialized) {
-                await this.api.sendMessage(this.contactRoomId, message);
+                const result = await this.api.sendMessage(this.contactRoomId, message);
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to send message');
+                }
             }
 
             this.showToast('Message sent!', 'success');
@@ -648,7 +688,7 @@ class RoomPalApp {
             form.reset();
         } catch (error) {
             console.error('Error sending message:', error);
-            this.showToast('Failed to send message', 'error');
+            this.showToast(error.message || 'Failed to send message', 'error');
         } finally {
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
@@ -817,6 +857,24 @@ class RoomPalApp {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
+    handleCompatibilitySubmit(e) {
+        e.preventDefault();
+        const form = e.target;
+        const formData = new FormData(form);
+
+        this.profileFormData = {
+            ...this.profileFormData,
+            sleepSchedule: formData.get('sleepSchedule'),
+            cleanliness: formData.get('cleanliness'),
+            socialLevel: formData.get('socialLevel'),
+            smoking: formData.get('smoking'),
+            pets: formData.get('pets')
+        };
+
+        closeCompatibilityModal();
+        this.showToast('Preferences saved!', 'success');
+    }
+
     showToast(message, type = 'info') {
         const toast = document.createElement('div');
         toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
@@ -845,6 +903,34 @@ function showSection(section) {
 function closeContactModal() {
     if (window.roomPalApp) {
         window.roomPalApp.closeContactModal();
+    }
+}
+
+function closeMessageModal() {
+    if (window.roomPalApp) {
+        window.roomPalApp.closeContactModal();
+    }
+}
+
+function showCompatibilityQuestions() {
+    const modal = document.getElementById('compatibilityModal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeCompatibilityModal() {
+    const modal = document.getElementById('compatibilityModal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+}
+
+function createGroup() {
+    if (window.roomPalApp) {
+        window.roomPalApp.showToast('Group feature coming soon!', 'info');
     }
 }
 

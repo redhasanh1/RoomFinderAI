@@ -10,6 +10,15 @@ class RoommateAPIService {
 
     async init() {
         try {
+            // Use existing Supabase client if available
+            if (window.AppConfig && window.AppConfig.supabase) {
+                this.supabase = window.AppConfig.supabase;
+                this.initialized = true;
+                console.log('RoomPal API initialized (using existing client)');
+                return;
+            }
+
+            // Fallback: fetch config and create client
             const response = await fetch('/api/config');
             if (!response.ok) {
                 throw new Error(`Config fetch failed: ${response.status}`);
@@ -260,7 +269,7 @@ class RoommateAPIService {
 
             if (!this.supabase) {
                 console.log('Message not sent - database unavailable');
-                return { success: true }; // Silent success for UX
+                return { success: false, error: 'Database not available. Please try again later.' };
             }
 
             const { data: { user } } = await this.supabase.auth.getUser();
@@ -287,7 +296,7 @@ class RoommateAPIService {
 
                 if (convError) {
                     console.error('Error creating conversation:', convError);
-                    return { success: true }; // Silent success
+                    return { success: false, error: 'Failed to start conversation. Please try again.' };
                 }
                 conversation = newConv;
             }
@@ -304,6 +313,7 @@ class RoommateAPIService {
 
             if (msgError) {
                 console.error('Error sending message:', msgError);
+                return { success: false, error: 'Failed to send message. Please try again.' };
             }
 
             // Update last message time
@@ -316,7 +326,7 @@ class RoommateAPIService {
 
         } catch (error) {
             console.error('Error in sendMessage:', error);
-            return { success: true }; // Silent success for UX
+            return { success: false, error: error.message || 'Failed to send message. Please try again.' };
         }
     }
 }
