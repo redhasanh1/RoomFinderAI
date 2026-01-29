@@ -158,9 +158,14 @@ class NotificationService {
 
     // Load notifications from database
     async loadNotifications() {
-        if (!this.supabase) return;
+        if (!this.supabase) {
+            console.log('🔔 loadNotifications: No supabase client');
+            return;
+        }
 
         try {
+            console.log('🔔 loadNotifications: Querying ai_chats for', this.userEmail);
+
             // Load from ai_chats table
             // Select only needed columns to reduce egress costs
             const { data: aiChats, error } = await this.supabase
@@ -170,8 +175,10 @@ class NotificationService {
                 .order('created_at', { ascending: false })
                 .limit(20);
 
+            console.log('🔔 loadNotifications result:', { aiChats: aiChats?.length, error: error?.message });
+
             if (error) {
-                console.error('Error loading notifications:', error);
+                console.error('🔔 Error loading notifications:', error);
                 return;
             }
 
