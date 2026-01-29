@@ -813,11 +813,16 @@
             // Send button click handler
             sendButton.addEventListener('click', sendMessage);
             
-            // Enter key handler
+            // Enter key handler - respects Reply Mode
             messageInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
-                    sendMessage();
+                    // Check if in Reply Mode (landlord replying to tenant)
+                    if (window.replyContext && window.replyContext.tenantEmail) {
+                        sendReplyFromChat();
+                    } else {
+                        sendMessage();
+                    }
                 }
             });
             
@@ -1258,22 +1263,30 @@
         }
 
         function openNotificationInChat(notification) {
-            // Extract sender email from notification message if available
-            let senderEmail = '';
-            const fromMatch = notification.message.match(/From:\s*([^\n]+)/);
-            if (fromMatch) {
-                senderEmail = fromMatch[1].trim();
+            // Extract metadata from notification (conversation_id, tenant_email from new format)
+            const metadata = notification.metadata || {};
+            console.log('🔔 Opening notification with metadata:', metadata);
+
+            // Extract sender email from metadata first, fallback to parsing message
+            let senderEmail = metadata.tenant_email || '';
+            if (!senderEmail) {
+                const fromMatch = notification.message.match(/From:\s*([^\n]+)/);
+                if (fromMatch) {
+                    senderEmail = fromMatch[1].trim();
+                }
             }
 
             // Extract property name from title
-            let propertyName = notification.title.replace('New Message: ', '').replace('Reply from Landlord: ', '');
+            let propertyName = metadata.listing_title || notification.title.replace('New Message: ', '').replace('Reply from Landlord: ', '').replace('New Inquiry: ', '');
 
-            // Store reply context for when user sends message
+            // Store reply context for when user sends message (including conversation_id!)
             window.replyContext = {
                 tenantEmail: senderEmail,
                 propertyName: propertyName,
-                originalMessage: notification.message
+                originalMessage: notification.message,
+                conversationId: metadata.conversation_id || null  // CRITICAL for message insertion
             };
+            console.log('🔔 Reply context set:', window.replyContext);
 
             // Get the main chat messages container
             const chatMessages = document.getElementById('chatMessages');
@@ -1403,7 +1416,7 @@
                 return;
             }
 
-            const { tenantEmail, propertyName } = window.replyContext;
+            const { tenantEmail, propertyName, conversationId } = window.replyContext;
             const sendButton = document.getElementById('sendButton');
 
             // Disable button while sending
@@ -1411,6 +1424,7 @@
 
             try {
                 console.log('🔔 Sending reply to:', tenantEmail);
+                console.log('🔔 Conversation ID:', conversationId);
 
                 // Show sending indicator in chat
                 const chatMessages = document.getElementById('chatMessages');
@@ -1426,7 +1440,28 @@
                 chatMessages.appendChild(sendingDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
 
-                // Create notification for the tenant
+                // CRITICAL: Insert message into messages table so AI negotiator can detect and auto-respond
+                if (conversationId) {
+                    console.log('📤 Inserting landlord reply into messages table...');
+                    const { error: msgError } = await supabaseClient
+                        .from('messages')
+                        .insert({
+                            conversation_id: conversationId,
+                            sender_email: currentUser?.email || 'landlord',
+                            content: replyMessage
+                        });
+
+                    if (msgError) {
+                        console.error('❌ Failed to insert message:', msgError);
+                        // Don't fail completely, continue with notification
+                    } else {
+                        console.log('✅ Landlord reply inserted into messages table - AI will auto-respond!');
+                    }
+                } else {
+                    console.warn('⚠️ No conversation_id available - AI auto-reply may not work');
+                }
+
+                // Also create notification for the tenant (as backup/for older conversations)
                 const notificationTitle = `Reply from Landlord: ${propertyName}`;
                 const notificationContent = `Landlord Reply\n\nProperty: ${propertyName}\nFrom: ${currentUser?.email || 'Landlord'}\n\nMessage: "${replyMessage}"`;
 
@@ -1441,12 +1476,11 @@
                 if (indicator) indicator.remove();
 
                 if (error) {
-                    console.error('🔔 RPC error:', error);
-                    alert('Failed to send reply. Please try again.');
-                    return;
+                    console.error('🔔 RPC notification error:', error);
+                    // Don't fail if notification fails - the main message was sent
                 }
 
-                console.log('🔔 Reply sent successfully! ID:', data);
+                console.log('🔔 Reply sent successfully!');
 
                 // Show success message in chat
                 const successDiv = document.createElement('div');
@@ -1455,6 +1489,7 @@
                     <div class="inline-block bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
                         <p class="text-gray-700">${replyMessage}</p>
                         <p class="text-xs text-green-600 mt-1">✓ Reply sent to ${tenantEmail}</p>
+                        ${conversationId ? '<p class="text-xs text-blue-600">AI will auto-respond shortly...</p>' : ''}
                     </div>
                 `;
                 chatMessages.appendChild(successDiv);

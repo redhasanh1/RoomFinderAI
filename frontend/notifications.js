@@ -216,11 +216,13 @@ class NotificationService {
                         if (typeof conversationData === 'string') {
                             conversationData = JSON.parse(conversationData);
                         }
-                        const message = Array.isArray(conversationData)
-                            ? (conversationData[0]?.content || '')
-                            : (conversationData?.content || String(conversationData) || '');
+                        const firstEntry = Array.isArray(conversationData) ? conversationData[0] : conversationData;
+                        const message = firstEntry?.content || String(conversationData) || '';
 
-                        console.log('🔔 Chat notification:', chat.title, message.substring(0, 50));
+                        // Extract metadata for reply functionality (conversation_id, tenant_email)
+                        const metadata = firstEntry?.metadata || {};
+
+                        console.log('🔔 Chat notification:', chat.title, message.substring(0, 50), 'metadata:', metadata);
 
                         allNotifications.push({
                             id: `chat_${chat.id}`,
@@ -229,7 +231,8 @@ class NotificationService {
                             title: chat.title || 'Notification',
                             message: message.substring(0, 150),
                             timestamp: chat.created_at,
-                            read: false
+                            read: false,
+                            metadata: metadata  // Include conversation_id, tenant_email for replies
                         });
                     } catch (e) {
                         console.error('Error parsing chat:', e, chat);
@@ -278,9 +281,11 @@ class NotificationService {
             if (typeof conversationData === 'string') {
                 conversationData = JSON.parse(conversationData);
             }
-            const message = Array.isArray(conversationData)
-                ? (conversationData[0]?.content || '')
-                : (conversationData?.content || String(conversationData) || '');
+            const firstEntry = Array.isArray(conversationData) ? conversationData[0] : conversationData;
+            const message = firstEntry?.content || String(conversationData) || '';
+
+            // Extract metadata for reply functionality
+            const metadata = firstEntry?.metadata || {};
 
             const notification = {
                 id: `chat_${data.id}`,
@@ -289,7 +294,8 @@ class NotificationService {
                 title: data.title || 'New Notification',
                 message: message.substring(0, 150),
                 timestamp: data.created_at || new Date().toISOString(),
-                read: false
+                read: false,
+                metadata: metadata  // Include conversation_id, tenant_email for replies
             };
 
             this.addNotification(notification);
