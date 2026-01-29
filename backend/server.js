@@ -7639,7 +7639,7 @@ async function setUserContext(userEmail) {
     } catch (error) {
         if (error.message.includes('function') && error.message.includes('does not exist')) {
             // Create the function
-            const { error: functionError } = await supabase.rpc('exec', {
+            const { error: functionError } = await supabase.rpc('exec_sql', {
                 sql: `
                 CREATE OR REPLACE FUNCTION set_user_context(user_email TEXT)
                 RETURNS VOID AS $$
