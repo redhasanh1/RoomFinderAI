@@ -3714,9 +3714,54 @@ Generate ONLY the message. No greetings, no signatures.
                             console.log('📨 Found listing:', listing);
 
                             if (listing) {
-                                console.log('🚀 Starting handleNegotiationReply...');
-                                await this.handleNegotiationReply(newMessage, conversation.id, listing);
-                                console.log('✅ handleNegotiationReply completed');
+                                console.log('🚀 [PHASED v2] Starting human-like reply handler...');
+
+                                // Try to find existing negotiation state, or create one
+                                let negotiationId = null;
+                                for (const [id, neg] of this.activeNegotiations.entries()) {
+                                    if (neg.listingId === listing.id) {
+                                        negotiationId = id;
+                                        break;
+                                    }
+                                }
+
+                                // If no existing negotiation, create a new conversation state
+                                if (!negotiationId) {
+                                    negotiationId = `neg_conv_${conversation.id}`;
+                                    // Get user budget from localStorage or use default
+                                    const savedBudget = localStorage.getItem('ai_negotiation_budget');
+                                    const userBudget = savedBudget ? parseInt(savedBudget) : listing.price * 0.85;
+                                    this.initConversationState(negotiationId, listing, userBudget, conversation.sender_email);
+                                    // Set phase based on message count (if we already sent intro, move to next phase)
+                                    const state = this.getConversationState(negotiationId);
+                                    if (state) {
+                                        state.currentPhase = 'RAPPORT_BUILDING'; // Landlord replied, so we're past intro
+                                    }
+                                }
+
+                                // Use the NEW phased reply handler
+                                const response = await this.handleLandlordReplyWithPhases(
+                                    newMessage.content,
+                                    negotiationId,
+                                    listing
+                                );
+
+                                if (response && response.message) {
+                                    // Apply human-like delay
+                                    const delay = response.delay || 2000;
+                                    console.log(`⏳ Waiting ${delay}ms before responding...`);
+                                    await new Promise(resolve => setTimeout(resolve, delay));
+
+                                    // Send the phased response
+                                    await this.sendNegotiationMessage(
+                                        conversation.id,
+                                        response.message,
+                                        conversation.sender_email,
+                                        listing.user_email,
+                                        listing.title
+                                    );
+                                    console.log(`✅ [PHASED v2] Sent ${response.phase} response`);
+                                }
                             }
                         }
                     }
