@@ -74,11 +74,11 @@
             <div class="mobile-menu-content">
                 <div class="mobile-menu-header">
                     <div class="text-lg font-bold gradient-text">RoomFinderAI</div>
-                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu">×</button>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
                 </div>
-                
+
                 <div class="mobile-menu-items">
-                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">🏠 Home</a>
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Home</a>
 
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -1040,12 +1040,18 @@
 
     <!-- Chat Modal -->
     <div id="chatModal" class="chat-modal">
-        <div class="chat-modal-content">
+        <div class="chat-modal-content" style="position: relative;">
             <div class="chat-header">
                 <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
                 <span class="close-button chat-close-button">×</span>
             </div>
             <div id="chatMessages" class="chat-messages"></div>
+            <!-- Scroll to bottom button -->
+            <button id="scrollToBottomBtn" onclick="document.getElementById('chatMessages').scrollTo({top: document.getElementById('chatMessages').scrollHeight, behavior: 'smooth'})" style="position: absolute; bottom: 90px; right: 20px; width: 40px; height: 40px; border-radius: 50%; background: rgba(59, 130, 246, 0.9); color: white; border: none; cursor: pointer; display: none; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.2); z-index: 100;">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="width: 20px; height: 20px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+                </svg>
+            </button>
             <div class="chat-input-container">
                 <div class="flex items-end space-x-2">
                     <div class="flex-1">
@@ -1053,8 +1059,9 @@
                     </div>
                     <div class="flex flex-col space-y-1">
                         <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
-                        <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm hidden" onclick="document.getElementById('fileInput').click()">
-                            📎 Files
+                        <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm flex items-center gap-1 hidden" onclick="document.getElementById('fileInput').click()">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                            Attach
                         </button>
                         <button id="chatSendBtn" class="chat-send-btn">Send</button>
                     </div>

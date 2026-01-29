@@ -897,22 +897,27 @@ class AIChatHandler {
             console.error('Error: #chatMessages element not found');
             return;
         }
-        
+
         const messageDiv = document.createElement('div');
-        messageDiv.className = `chat-bubble ${sender.toLowerCase()}`;
-        
-        if (sender.toLowerCase() === 'ai') {
-            messageDiv.innerHTML = `
-                <div class="font-semibold text-sm text-gray-500 mb-1">AI Assistant</div>
-                <p>${message}</p>
-            `;
-        } else {
-            messageDiv.innerHTML = `
-                <div class="font-semibold text-sm text-blue-200 mb-1">You</div>
-                <p>${message}</p>
-            `;
-        }
-        
+        // Use align parameter: 'right' = sent (user), 'left' = received (other)
+        const alignClass = align === 'right' ? 'sent' : 'received';
+        messageDiv.className = `message ${alignClass}`;
+
+        // Determine display name
+        let displayName = sender;
+        if (sender.toLowerCase() === 'you') displayName = 'You';
+        else if (sender.toLowerCase() === 'ai') displayName = 'AI Assistant';
+        else if (sender.toLowerCase() === 'ai negotiator') displayName = 'AI Negotiator';
+        else if (sender.toLowerCase() === 'landlord') displayName = 'Landlord';
+        else if (sender.toLowerCase() === 'system') displayName = 'System';
+
+        const labelClass = align === 'right' ? 'text-indigo-200' : 'text-gray-500';
+
+        messageDiv.innerHTML = `
+            <div class="font-semibold text-xs ${labelClass} mb-1">${displayName}</div>
+            <p>${message}</p>
+        `;
+
         messages.appendChild(messageDiv);
         messages.scrollTop = messages.scrollHeight;
     }

@@ -1697,17 +1697,21 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
         try {
             console.log('🤖 Generating elite negotiation message for:', listing.title);
 
-            // STRATEGIC PRICING: Start at 65-70% of listing price
-            // This gives room to negotiate UP while staying credible
-            // NOTE: Do NOT use marketData.min as a floor - it may include the current listing
-            // and would defeat the purpose of negotiating below asking price
-            const strategicStart = Math.max(
-                Math.round(listing.price * 0.65),  // 65% of asking - strong anchor
-                Math.round(userBudget * 0.7)  // Start below user's max to have room
+            // STRATEGIC PRICING: Start at 65-75% of listing price
+            // CRITICAL: Never offer MORE than the listing price - that's absurd
+            // Cap at listing price, then apply discount
+            const maxOffer = listing.price; // Never go above asking price
+            const budgetBasedStart = Math.round(Math.min(userBudget, maxOffer) * 0.75);
+            const priceBasedStart = Math.round(listing.price * 0.70);
+
+            // Use the lower of the two, but cap at listing price
+            const strategicStart = Math.min(
+                Math.max(budgetBasedStart, priceBasedStart),
+                maxOffer
             );
 
             // Apply Ackerman pricing - precise number feels calculated
-            const initialOffer = this.getAckermanPrice(strategicStart);
+            const initialOffer = Math.min(this.getAckermanPrice(strategicStart), maxOffer);
 
             // Check if market data supports our position
             const marketSupportsUs = marketData.average && marketData.average < listing.price;
@@ -1791,11 +1795,13 @@ Generate ONLY the message. No greetings, no signatures.
             console.warn('⚠️ OpenAI unavailable, using elite fallback');
 
             // Strategic fallback - still uses elite style
-            const strategicStart = Math.max(
-                Math.round(listing.price * 0.65),
-                Math.round(userBudget * 0.7)
+            // CRITICAL: Never offer more than the listing price
+            const maxOffer = listing.price;
+            const strategicStart = Math.min(
+                Math.round(listing.price * 0.70),
+                maxOffer
             );
-            const initialOffer = this.getAckermanPrice(strategicStart);
+            const initialOffer = Math.min(this.getAckermanPrice(strategicStart), maxOffer);
 
             return `Interested in ${listing.title}. My budget allows $${initialOffer}/month - I'm a reliable tenant ready to sign today.`;
         }
@@ -2005,7 +2011,7 @@ Generate ONLY the message. No greetings, no signatures.
             // Also directly update the AI chat if it's available
             try {
                 if (typeof window !== 'undefined' && window.aiNegotiator) {
-                    window.aiNegotiator.appendMessage('AI', `💬 **Landlord Reply**: "${message.content}" - Processing response...`, 'left');
+                    window.aiNegotiator.appendMessage('Landlord', `💬 "${message.content}"`, 'left');
                 }
             } catch (error) {
                 console.log('Could not directly update AI chat:', error.message);
@@ -2057,9 +2063,9 @@ Generate ONLY the message. No greetings, no signatures.
                             try {
                                 if (typeof window !== 'undefined' && window.aiNegotiator) {
                                     console.log('🎯 DIRECTLY updating AI chat interface with success');
-                                    window.aiNegotiator.appendMessage('AI', `💬 **Landlord:** "${message.content}"`, 'left');
-                                    window.aiNegotiator.appendMessage('AI', `🤖 **AI Response:** "${response}"`, 'left');
-                                    window.aiNegotiator.appendMessage('AI', successMessage, 'left');
+                                    window.aiNegotiator.appendMessage('Landlord', `💬 "${message.content}"`, 'left');
+                                    window.aiNegotiator.appendMessage('AI Negotiator', `🤖 "${response}"`, 'right');
+                                    window.aiNegotiator.appendMessage('System', successMessage, 'left');
                                     window.aiNegotiator.celebrateSuccess();
                                     console.log('✅ Direct UI update successful!');
                                 } else {
@@ -2117,7 +2123,7 @@ Generate ONLY the message. No greetings, no signatures.
                             // Show AI response in chat for ongoing negotiation
                             try {
                                 if (typeof window !== 'undefined' && window.aiNegotiator) {
-                                    window.aiNegotiator.appendMessage('AI', `🤖 **My Response**: "${response}"`, 'left');
+                                    window.aiNegotiator.appendMessage('AI Negotiator', `🤖 "${response}"`, 'right');
                                 }
                             } catch (error) {
                                 console.log('Could not directly update AI chat with response:', error.message);
@@ -2166,7 +2172,8 @@ Generate ONLY the message. No greetings, no signatures.
                     // Show in AI chat immediately
                     try {
                         if (typeof window !== 'undefined' && window.aiNegotiator) {
-                            window.aiNegotiator.appendMessage('AI', `❌ **Landlord Rejected**: "${message.content}" - Sent market-based counter-offer: "${marketResponse}"`, 'left');
+                            window.aiNegotiator.appendMessage('Landlord', `❌ "${message.content}"`, 'left');
+                            window.aiNegotiator.appendMessage('AI Negotiator', `🤖 Counter-offer sent: "${marketResponse}"`, 'right');
                         }
                     } catch (error) {
                         console.log('Could not directly update AI chat with rejection response:', error.message);
@@ -2703,7 +2710,7 @@ Generate ONLY the message. No greetings, no signatures.
         negotiation.negotiationState.concessionCount++;
 
         console.log('📊 Counter-offer strategy: Their offer $', counterPrice, '-> Our counter $', newOffer);
-        console.log('📊 Concession #', negotiation.negotiationState.concessionCount, ', increments left:', increments.length - state.concessionCount);
+        console.log('📊 Concession #', negotiation.negotiationState.concessionCount);
 
         // Use different tactics based on concession count
         if (state.concessionCount === 0) {
@@ -3450,13 +3457,48 @@ Generate ONLY the response message. No explanations. No "As an AI". Just the hum
             negotiation.negotiationState.offersRejected++;
 
             // If response contains a new price offer, track it
-            const priceMatch = negotiationResponse.match(/\$(\d+)/);
-            if (priceMatch) {
-                const offeredPrice = parseInt(priceMatch[1]);
-                negotiation.negotiationState.offersMade.push(offeredPrice);
-                negotiation.negotiationState.lastOffer = offeredPrice;
-                negotiation.negotiationState.concessionCount++;
-                console.log('📊 Tracked new offer:', offeredPrice, 'Concession count:', negotiation.negotiationState.concessionCount);
+            // Smarter price extraction - look for offer context first, then fall back to LAST price
+            let extractedPrice = null;
+
+            // Method 1: Look for offer-context patterns (most reliable)
+            const offerPatterns = [
+                /(?:I can do|I offer|my offer is|how about|I'll go|let's do|I'm at|stretch to|cap at|best I can do is)\s*\$(\d+)/i,
+                /\$(\d+)\s*(?:is my|is where I|that's my|that's where|works for me)/i
+            ];
+
+            for (const pattern of offerPatterns) {
+                const match = negotiationResponse.match(pattern);
+                if (match) {
+                    extractedPrice = parseInt(match[1]);
+                    console.log('📊 Found offer via context pattern:', extractedPrice);
+                    break;
+                }
+            }
+
+            // Method 2: Fall back to LAST price mentioned (not first) - offers typically come at end
+            if (!extractedPrice) {
+                const allPrices = negotiationResponse.match(/\$(\d+)/g);
+                if (allPrices && allPrices.length > 0) {
+                    const lastPrice = allPrices[allPrices.length - 1];
+                    extractedPrice = parseInt(lastPrice.replace('$', ''));
+                    console.log('📊 Using last price mentioned:', extractedPrice, 'from', allPrices.length, 'prices found');
+                }
+            }
+
+            // Method 3: Validate price is within expected bounds before tracking
+            if (extractedPrice) {
+                const minExpected = (negotiation.userBudget || startingPoint) * 0.8; // 80% of user budget
+                const maxExpected = maxOffer + 10; // Slightly above max offer for tolerance
+
+                if (extractedPrice >= minExpected && extractedPrice <= maxExpected) {
+                    negotiation.negotiationState.offersMade.push(extractedPrice);
+                    negotiation.negotiationState.lastOffer = extractedPrice;
+                    negotiation.negotiationState.concessionCount++;
+                    console.log('📊 Tracked new offer:', extractedPrice, 'Concession count:', negotiation.negotiationState.concessionCount);
+                } else {
+                    console.warn('⚠️ Extracted price out of bounds:', extractedPrice,
+                        'Expected range:', minExpected, '-', maxExpected, '- NOT tracking this price');
+                }
             }
 
             console.log('✅ Generated market-based negotiation response using tactic:', tacticToUse);
