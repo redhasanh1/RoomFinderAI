@@ -641,7 +641,7 @@ class AIChatHandler {
         this.startNegotiationForListing(listing);
     }
 
-    // Handle viewing a specific listing by number
+    // Handle viewing a specific listing by number - Opens popup modal
     handleListingView(listingNumber) {
         console.log('👁️ User wants to view listing #', listingNumber);
 
@@ -660,27 +660,20 @@ class AIChatHandler {
         const listing = this.matchingListings[index];
         this.currentViewedListing = listing;
 
-        // Show detailed listing information
-        this.appendMessage('AI', `📋 **${listing.title || 'Property Details'}**`, 'left');
-        this.appendMessage('AI', `📍 Location: ${listing.city || 'Not specified'}${listing.street ? `, ${listing.street}` : ''}`, 'left');
-        this.appendMessage('AI', `💰 Price: $${listing.price || 'Not listed'}/month`, 'left');
-        this.appendMessage('AI', `🛏️ Bedrooms: ${listing.bedrooms || 'Not specified'}`, 'left');
-        this.appendMessage('AI', `🏠 Type: ${listing.house_type || 'Not specified'}`, 'left');
-
-        if (listing.utilities) {
-            this.appendMessage('AI', `💡 Utilities: ${listing.utilities}`, 'left');
+        // Open the popup modal to show listing details
+        if (typeof window.openListingPopup === 'function') {
+            window.openListingPopup(listing);
+        } else {
+            // Fallback: Show details as text if popup not available
+            console.warn('Popup function not available, showing text details');
+            this.appendMessage('AI', `📋 **${listing.title || 'Property Details'}**`, 'left');
+            this.appendMessage('AI', `📍 Location: ${listing.city || 'Not specified'}${listing.street ? `, ${listing.street}` : ''}`, 'left');
+            this.appendMessage('AI', `💰 Price: $${listing.price || 'Not listed'}/month`, 'left');
+            this.appendMessage('AI', `🛏️ Bedrooms: ${listing.bedrooms || 'Not specified'}`, 'left');
+            this.appendMessage('AI', `🏠 Type: ${listing.house_type || 'Not specified'}`, 'left');
+            this.appendMessage('AI', 'Would you like me to message this landlord on your behalf?', 'left');
+            this.pendingUserResponse = 'contact_landlord';
         }
-
-        if (listing.description) {
-            const shortDesc = listing.description.length > 200
-                ? listing.description.substring(0, 200) + '...'
-                : listing.description;
-            this.appendMessage('AI', `📝 ${shortDesc}`, 'left');
-        }
-
-        // Ask if they want to contact the landlord
-        this.appendMessage('AI', 'Would you like me to message this landlord on your behalf?', 'left');
-        this.pendingUserResponse = 'contact_landlord';
     }
 
     // Main search and messaging function
@@ -703,7 +696,7 @@ class AIChatHandler {
             // Update the left sidebar with matching listings
             this.updateSidebarWithListings(this.matchingListings);
 
-            // Display listings with numbers for selection
+            // Display listings with clickable View buttons
             const listingsToShow = this.matchingListings.slice(0, 5);
             for (let i = 0; i < listingsToShow.length; i++) {
                 const listing = listingsToShow[i];
@@ -712,10 +705,25 @@ class AIChatHandler {
                 const priceText = listing.price ? `$${listing.price}/month` : 'Price not listed';
                 const bedroomText = listing.bedrooms ? `${listing.bedrooms}BR` : '';
                 const typeText = listing.house_type || '';
-
-                // Format: "1. Modern 2BR Apartment in Downtown - $1,800/month"
                 const details = [bedroomText, typeText].filter(Boolean).join(' ');
-                this.appendMessage('AI', `**${i + 1}.** ${titleText} - ${cityText} - ${priceText}${details ? ` (${details})` : ''}`, 'left');
+
+                // Create a listing card with View button
+                const listingCardHTML = `
+                    <div class="listing-card-chat">
+                        <div class="listing-card-chat-title">${i + 1}. ${titleText}</div>
+                        <div class="listing-card-chat-details">
+                            📍 ${cityText} • 💰 ${priceText}${details ? ` • ${details}` : ''}
+                        </div>
+                        <button class="listing-view-btn" onclick="window.aiChat.handleListingView(${i + 1})">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                            View Details
+                        </button>
+                    </div>
+                `;
+                this.appendMessageHTML('AI', listingCardHTML, 'left');
             }
 
             if (this.matchingListings.length > 5) {
@@ -723,7 +731,7 @@ class AIChatHandler {
             }
 
             // Ask user to select a listing to view
-            this.appendMessage('AI', 'Would you like to view details on any of these? Just say the number (e.g., "1" or "view 2").', 'left');
+            this.appendMessage('AI', 'Click "View Details" on any listing to see more information.', 'left');
 
             // Set pending response for listing selection
             this.listingSelectionMode = true;
@@ -1238,16 +1246,44 @@ class AIChatHandler {
     appendMessage(sender, message, align, isTypingIndicator = false) {
         // Display the message
         this.displayMessage(sender, message, align, isTypingIndicator);
-        
+
         // Save to history and localStorage (skip typing indicators)
         if (!isTypingIndicator) {
             // Map display names to OpenAI-compatible roles
-            const role = sender.toLowerCase() === 'you' ? 'user' : 
-                        sender.toLowerCase() === 'ai' ? 'assistant' : 
+            const role = sender.toLowerCase() === 'you' ? 'user' :
+                        sender.toLowerCase() === 'ai' ? 'assistant' :
                         sender.toLowerCase();
             this.conversationHistory.push({ role: role, content: message });
             this.saveConversationHistory();
         }
+    }
+
+    // Append HTML message to chat (for cards, buttons, etc.) - doesn't save to history
+    appendMessageHTML(sender, htmlContent, align) {
+        const messages = document.getElementById('chatMessages');
+        if (!messages) {
+            console.error('Error: #chatMessages element not found');
+            return;
+        }
+
+        const messageDiv = document.createElement('div');
+        const alignClass = align === 'right' ? 'sent' : 'received';
+        messageDiv.className = `message ${alignClass}`;
+
+        // Determine display name
+        let displayName = sender;
+        if (sender.toLowerCase() === 'you') displayName = 'You';
+        else if (sender.toLowerCase() === 'ai') displayName = 'AI Assistant';
+
+        const labelClass = align === 'right' ? 'text-indigo-200' : 'text-gray-500';
+
+        messageDiv.innerHTML = `
+            <div class="font-semibold text-xs ${labelClass} mb-1">${displayName}</div>
+            ${htmlContent}
+        `;
+
+        messages.appendChild(messageDiv);
+        messages.scrollTop = messages.scrollHeight;
     }
 
     // Remove typing indicator

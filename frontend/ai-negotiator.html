@@ -14,8 +14,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="/frontend/notifications.js?v=20260129b"></script>
-    <script src="/frontend/ai-chat.js?v=20260129-flow-fix-v4"></script>
-    <script src="/frontend/ai-negotiation.js?v=20260129-flow-fix-v4"></script>
+    <script src="/frontend/ai-chat.js?v=20260129-popup-v5"></script>
+    <script src="/frontend/ai-negotiation.js?v=20260129-popup-v5"></script>
     <script type="module" src="/frontend/chat-system.js?v=20260129b"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
@@ -78,6 +78,173 @@
         .notification-item.unread {
             background: #eff6ff;
             border-left: 3px solid #3b82f6;
+        }
+
+        /* Listing Popup Modal Styles */
+        .listing-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 10000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .listing-popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .listing-popup {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 85vh;
+            overflow: hidden;
+            transform: scale(0.9);
+            opacity: 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.4);
+        }
+        .listing-popup-overlay.active .listing-popup {
+            transform: scale(1);
+            opacity: 1;
+        }
+        .listing-popup-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 24px;
+            position: relative;
+        }
+        .listing-popup-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        .listing-popup-close:hover {
+            background: rgba(255,255,255,0.3);
+        }
+        .listing-popup-body {
+            padding: 24px;
+            max-height: calc(85vh - 200px);
+            overflow-y: auto;
+        }
+        .listing-popup-detail {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .listing-popup-detail:last-child {
+            border-bottom: none;
+        }
+        .listing-popup-detail-icon {
+            font-size: 20px;
+            width: 32px;
+            text-align: center;
+        }
+        .listing-popup-detail-content {
+            flex: 1;
+        }
+        .listing-popup-detail-label {
+            font-size: 12px;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 2px;
+        }
+        .listing-popup-detail-value {
+            font-size: 15px;
+            color: #1f2937;
+            font-weight: 500;
+        }
+        .listing-popup-footer {
+            padding: 16px 24px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            gap: 12px;
+        }
+        .listing-popup-btn {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+        }
+        .listing-popup-btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .listing-popup-btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        .listing-popup-btn-secondary {
+            background: white;
+            color: #374151;
+            border: 2px solid #e5e7eb;
+        }
+        .listing-popup-btn-secondary:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        /* Listing card view button in chat */
+        .listing-card-chat {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 8px 0;
+        }
+        .listing-card-chat-title {
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 4px;
+        }
+        .listing-card-chat-details {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+        }
+        .listing-view-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .listing-view-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
     </style>
 </head>
@@ -1427,6 +1594,149 @@
                 console.error('❌ Failed to initialize chat system:', error);
             }
         });
+    </script>
+
+    <!-- Listing Popup Modal -->
+    <div id="listingPopupOverlay" class="listing-popup-overlay" onclick="closeListingPopup(event)">
+        <div class="listing-popup" onclick="event.stopPropagation()">
+            <div class="listing-popup-header">
+                <button class="listing-popup-close" onclick="closeListingPopup()">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+                <h2 id="listingPopupTitle" class="text-xl font-bold">Property Details</h2>
+                <p id="listingPopupSubtitle" class="text-sm opacity-80 mt-1">Review the listing details below</p>
+            </div>
+            <div class="listing-popup-body">
+                <div class="listing-popup-detail">
+                    <span class="listing-popup-detail-icon">📍</span>
+                    <div class="listing-popup-detail-content">
+                        <div class="listing-popup-detail-label">Location</div>
+                        <div id="listingPopupLocation" class="listing-popup-detail-value">-</div>
+                    </div>
+                </div>
+                <div class="listing-popup-detail">
+                    <span class="listing-popup-detail-icon">💰</span>
+                    <div class="listing-popup-detail-content">
+                        <div class="listing-popup-detail-label">Monthly Rent</div>
+                        <div id="listingPopupPrice" class="listing-popup-detail-value">-</div>
+                    </div>
+                </div>
+                <div class="listing-popup-detail">
+                    <span class="listing-popup-detail-icon">🛏️</span>
+                    <div class="listing-popup-detail-content">
+                        <div class="listing-popup-detail-label">Bedrooms</div>
+                        <div id="listingPopupBedrooms" class="listing-popup-detail-value">-</div>
+                    </div>
+                </div>
+                <div class="listing-popup-detail">
+                    <span class="listing-popup-detail-icon">🏠</span>
+                    <div class="listing-popup-detail-content">
+                        <div class="listing-popup-detail-label">Property Type</div>
+                        <div id="listingPopupType" class="listing-popup-detail-value">-</div>
+                    </div>
+                </div>
+                <div class="listing-popup-detail" id="listingPopupUtilitiesRow" style="display:none;">
+                    <span class="listing-popup-detail-icon">💡</span>
+                    <div class="listing-popup-detail-content">
+                        <div class="listing-popup-detail-label">Utilities</div>
+                        <div id="listingPopupUtilities" class="listing-popup-detail-value">-</div>
+                    </div>
+                </div>
+                <div class="listing-popup-detail" id="listingPopupDescRow" style="display:none;">
+                    <span class="listing-popup-detail-icon">📝</span>
+                    <div class="listing-popup-detail-content">
+                        <div class="listing-popup-detail-label">Description</div>
+                        <div id="listingPopupDesc" class="listing-popup-detail-value" style="line-height: 1.5;">-</div>
+                    </div>
+                </div>
+            </div>
+            <div class="listing-popup-footer">
+                <button class="listing-popup-btn listing-popup-btn-secondary" onclick="closeListingPopup()">
+                    Back to Chat
+                </button>
+                <button class="listing-popup-btn listing-popup-btn-primary" onclick="contactLandlordFromPopup()">
+                    Contact Landlord
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Listing Popup Functions
+        let currentPopupListing = null;
+
+        function openListingPopup(listing) {
+            currentPopupListing = listing;
+
+            // Populate popup with listing data
+            document.getElementById('listingPopupTitle').textContent = listing.title || 'Property Details';
+            document.getElementById('listingPopupSubtitle').textContent = `Listed by landlord`;
+            document.getElementById('listingPopupLocation').textContent =
+                `${listing.city || 'Not specified'}${listing.street ? ', ' + listing.street : ''}`;
+            document.getElementById('listingPopupPrice').textContent =
+                listing.price ? `$${listing.price}/month` : 'Price not listed';
+            document.getElementById('listingPopupBedrooms').textContent =
+                listing.bedrooms || 'Not specified';
+            document.getElementById('listingPopupType').textContent =
+                listing.house_type || 'Not specified';
+
+            // Show utilities if available
+            const utilitiesRow = document.getElementById('listingPopupUtilitiesRow');
+            if (listing.utilities) {
+                document.getElementById('listingPopupUtilities').textContent = listing.utilities;
+                utilitiesRow.style.display = 'flex';
+            } else {
+                utilitiesRow.style.display = 'none';
+            }
+
+            // Show description if available
+            const descRow = document.getElementById('listingPopupDescRow');
+            if (listing.description) {
+                document.getElementById('listingPopupDesc').textContent = listing.description;
+                descRow.style.display = 'flex';
+            } else {
+                descRow.style.display = 'none';
+            }
+
+            // Show the popup
+            document.getElementById('listingPopupOverlay').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeListingPopup(event) {
+            // If called from overlay click, only close if clicking the overlay itself
+            if (event && event.target !== event.currentTarget) return;
+
+            document.getElementById('listingPopupOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+
+            // Ask the user if they want to contact the landlord
+            if (currentPopupListing && window.aiChat) {
+                window.aiChat.appendMessage('AI', 'Would you like me to message this landlord on your behalf?', 'left');
+                window.aiChat.pendingUserResponse = 'contact_landlord';
+                window.aiChat.currentViewedListing = currentPopupListing;
+            }
+        }
+
+        function contactLandlordFromPopup() {
+            if (currentPopupListing && window.aiChat) {
+                document.getElementById('listingPopupOverlay').classList.remove('active');
+                document.body.style.overflow = '';
+
+                window.aiChat.appendMessage('AI', `Great! I'll reach out to the landlord for "${currentPopupListing.title}"...`, 'left');
+                window.aiChat.pendingUserResponse = null;
+                setTimeout(() => {
+                    window.aiChat.startNegotiationForListing(currentPopupListing);
+                }, 1000);
+            }
+        }
+
+        // Make functions globally available
+        window.openListingPopup = openListingPopup;
+        window.closeListingPopup = closeListingPopup;
+        window.contactLandlordFromPopup = contactLandlordFromPopup;
     </script>
 </body>
 </html>
