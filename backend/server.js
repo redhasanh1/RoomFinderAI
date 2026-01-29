@@ -1311,27 +1311,46 @@ app.delete('/api/listings/:id', async (req, res) => {
             return res.status(400).json({ error: 'User email is required' });
         }
 
-        // First, delete any favorites that reference this listing (FK constraint)
-        const { error: favError } = await supabase
-            .from('favorites')
-            .delete()
-            .eq('listing_id', listingId);
+        // First verify the listing exists and belongs to this user
+        const { data: existingListing, error: fetchError } = await supabase
+            .from('listings')
+            .select('id, user_email')
+            .eq('id', listingId)
+            .single();
 
-        if (favError) {
-            console.log('Error deleting favorites (may not exist):', favError.message);
-            // Continue anyway - favorites table might not have FK constraint
-        } else {
-            console.log(`Deleted favorites for listing ${listingId}`);
+        console.log('DELETE: Existing listing check:', { existingListing, fetchError: fetchError?.message });
+
+        if (fetchError || !existingListing) {
+            console.log('Listing not found or error:', fetchError?.message);
+            return res.status(404).json({ error: 'Listing not found' });
         }
 
-        // Now delete the listing
-        const { error } = await supabase
+        if (existingListing.user_email !== userEmail) {
+            console.log('User mismatch:', { listingOwner: existingListing.user_email, requestUser: userEmail });
+            return res.status(403).json({ error: 'Not authorized to delete this listing' });
+        }
+
+        // Delete any favorites that reference this listing (FK constraint)
+        try {
+            const { error: favError } = await supabase
+                .from('favorites')
+                .delete()
+                .eq('listing_id', listingId);
+            if (favError) {
+                console.log('Error deleting favorites:', favError.message);
+            }
+        } catch (favErr) {
+            console.log('Favorites delete exception:', favErr.message);
+        }
+
+        // Now delete the listing - only filter by id since we verified ownership above
+        const { data: deletedData, error } = await supabase
             .from('listings')
             .delete()
             .eq('id', listingId)
-            .eq('user_email', userEmail);
+            .select();
 
-        console.log(`DELETE result: error=${JSON.stringify(error)}`);
+        console.log(`DELETE result: deletedData=${JSON.stringify(deletedData)}, error=${JSON.stringify(error)}`);
 
         if (error) {
             console.error('Delete error details:', {
@@ -1349,10 +1368,11 @@ app.delete('/api/listings/:id', async (req, res) => {
             });
         }
 
-        // If no error, deletion was successful (or listing didn't exist)
+        console.log(`Successfully deleted listing ${listingId}`);
         res.json({
             message: 'Listing deleted successfully',
-            listingId: listingId
+            listingId: listingId,
+            deleted: deletedData
         });
     } catch (error) {
         console.error('DELETE /api/listings/:id error:', error);
