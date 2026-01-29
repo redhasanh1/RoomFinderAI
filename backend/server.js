@@ -7633,35 +7633,13 @@ async function ensureSubleaseTablesExist() {
 
 // Helper function to set user context with error handling
 async function setUserContext(userEmail) {
-    try {
-        // Try to create the function if it doesn't exist
-        await supabase.rpc('set_user_context', { user_email: userEmail });
-    } catch (error) {
-        if (error.message.includes('function') && error.message.includes('does not exist')) {
-            // Create the function
-            const { error: functionError } = await supabase.rpc('exec_sql', {
-                sql: `
-                CREATE OR REPLACE FUNCTION set_user_context(user_email TEXT)
-                RETURNS VOID AS $$
-                BEGIN
-                    PERFORM set_config('app.current_user_email', user_email, TRUE);
-                END;
-                $$ LANGUAGE plpgsql;
-                `
-            });
-            
-            if (functionError) {
-                console.log('Could not create set_user_context function. Using alternative approach.');
-                // Set the context directly in a different way
-                return;
-            }
-            
-            // Try again
-            await supabase.rpc('set_user_context', { user_email: userEmail });
-        } else {
-            // For now, continue without setting context (will use email filtering in queries)
-            console.log('User context not set, using email filtering instead');
-        }
+    // Supabase RPC returns { data, error }, it doesn't throw
+    const { error } = await supabase.rpc('set_user_context', { user_email: userEmail });
+
+    if (error) {
+        // Function might not exist or other error - just log and continue
+        // The delete query uses .eq('user_email', userEmail) as a fallback
+        console.log('set_user_context RPC failed (function may not exist):', error.message);
     }
 }
 
