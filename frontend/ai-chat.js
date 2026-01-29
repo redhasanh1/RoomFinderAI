@@ -807,7 +807,15 @@ class AIChatHandler {
                 if (negotiationData && negotiationData.message) {
                     // Step 4: Send the AI-generated negotiation message
                     console.log('📤 Sending AI-generated message to conversation:', conversationId);
-                    const sent = await this.negotiationEngine.sendNegotiationMessage(conversationId, negotiationData.message, this.currentUser.email);
+                    const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
+                    const sent = await this.negotiationEngine.sendNegotiationMessage(
+                        conversationId,
+                        negotiationData.message,
+                        this.currentUser.email,
+                        listing.user_email,  // landlordEmail
+                        listing.id,          // listingId
+                        userName             // userName for email
+                    );
 
                     if (sent) {
                         this.appendMessage('AI', `✅ Successfully contacted landlord for "${listing.title}"`, 'left');
