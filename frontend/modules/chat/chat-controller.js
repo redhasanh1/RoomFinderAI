@@ -626,12 +626,11 @@ class ChatController {
 
     /**
      * Create a notification in ai_chats table for the message recipient
-     * Uses backend API to bypass RLS restrictions
+     * Uses Supabase RPC function to bypass RLS restrictions
      */
     async createMessageNotificationForRecipient(currentUser, messageContent) {
         try {
             console.log('🔔 createMessageNotificationForRecipient called');
-            console.log('🔔 currentListing:', this.currentListing);
 
             if (!this.currentListing || !this.currentListing.user_email) {
                 console.log('🔔 No listing or user_email, skipping notification');
@@ -647,6 +646,12 @@ class ChatController {
                 return;
             }
 
+            const supabase = window.configManager ? window.configManager.getSupabase() : null;
+            if (!supabase) {
+                console.error('🔔 Supabase not available');
+                return;
+            }
+
             const listingTitle = this.currentListing.title || 'Property';
             const truncatedMessage = messageContent.length > 100
                 ? messageContent.substring(0, 100) + '...'
@@ -654,27 +659,34 @@ class ChatController {
 
             const notificationContent = `New Message from Tenant\n\nProperty: ${listingTitle}\nFrom: ${currentUser.email}\n\nMessage: "${truncatedMessage}"\n\nReply in the chat to continue the conversation.`;
 
-            console.log('🔔 Calling /api/create-notification for:', landlordEmail);
+            console.log('🔔 Calling create_notification RPC for:', landlordEmail);
 
-            // Use backend API to bypass RLS
-            const response = await fetch('/api/create-notification', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    recipientEmail: landlordEmail,
-                    title: `New Message: ${listingTitle}`,
-                    content: notificationContent,
-                    senderEmail: currentUser.email
-                })
+            // Use Supabase RPC function to bypass RLS
+            const { data, error } = await supabase.rpc('create_notification', {
+                recipient_email: landlordEmail,
+                notification_title: `New Message: ${listingTitle}`,
+                notification_content: notificationContent
             });
 
-            const responseData = await response.json();
-            console.log('🔔 API response:', response.status, responseData);
+            if (error) {
+                console.error('🔔 RPC error:', error);
+                // Fallback: Try direct insert (might fail due to RLS but worth trying)
+                console.log('🔔 Trying fallback direct insert...');
+                const { error: insertError } = await supabase
+                    .from('ai_chats')
+                    .insert({
+                        user_email: landlordEmail,
+                        title: `New Message: ${listingTitle}`,
+                        conversation_data: JSON.stringify([{ role: 'assistant', content: notificationContent }])
+                    });
 
-            if (!response.ok) {
-                console.error('🔔 Failed to create notification:', responseData);
+                if (insertError) {
+                    console.error('🔔 Fallback insert also failed:', insertError);
+                } else {
+                    console.log('🔔 Fallback insert succeeded!');
+                }
             } else {
-                console.log('🔔 Notification created successfully for landlord:', landlordEmail);
+                console.log('🔔 Notification created successfully via RPC! ID:', data);
             }
         } catch (error) {
             console.error('🔔 Error creating notification:', error);
