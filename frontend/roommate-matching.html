@@ -31,6 +31,7 @@
 
     <!-- Unified CSS System - No Inline Styles -->
     <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
+    <link rel="stylesheet" href="css/roommate-matching.css"/>
 </head>
 <body>
     <!-- Header -->
@@ -242,7 +243,7 @@
             <!-- Create Profile Form -->
             <div id="createProfileTab" class="card p-8 max-w-2xl fade-in">
                 <h2 class="text-xl font-bold text-gray-900 mb-6">Your Roommate Profile</h2>
-                <form id="seekerForm" class="space-y-6">
+                <form id="quickProfileForm" class="space-y-6">
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Budget Min *</label>
@@ -425,6 +426,20 @@
             </div>
         </div>
 
+        <!-- Success Section -->
+        <div id="successSection" class="section-view">
+            <div class="text-center py-16">
+                <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900 mb-4">Posted Successfully!</h2>
+                <p class="text-gray-600 mb-8">Your room listing is now live.</p>
+                <button onclick="showSection('selector')" class="btn-primary px-8 py-3">Back to Home</button>
+            </div>
+        </div>
+
     </main>
 
     <!-- Compatibility Questions Modal -->
@@ -514,21 +529,14 @@
     </div>
 
     <!-- JavaScript -->
-    <script src="js/roommate-matching.js"></script>
     <script src="js/roommate-api.js"></script>
+    <script src="js/roommate-matching.js"></script>
     <script>
         // Mobile Menu Toggle
         function toggleMobileMenu() {
             document.getElementById('mobileMenu').classList.toggle('open');
             document.getElementById('mobileOverlay').classList.toggle('open');
         }
-
-        // Initialize app
-        document.addEventListener('DOMContentLoaded', () => {
-            if (typeof RoomPalApp !== 'undefined') {
-                window.roomPalApp = new RoomPalApp();
-            }
-        });
     </script>
 </body>
 </html>
