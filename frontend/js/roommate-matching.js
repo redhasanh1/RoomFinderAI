@@ -1,13 +1,26 @@
-// RoomPal - Simple Roommate Matching App
-// Simplified, no-hassle platform to find roommates quickly
+// RoomPal - Simplified Roommate Matching
+// Two paths: "I Have a Room" and "I Need a Room"
 
 class RoomPalApp {
     constructor() {
-        this.currentSection = 'selector';
+        this.currentSection = 'landing';
         this.currentUser = null;
-        this.userProfile = null;
-        this.userGroup = null;
         this.api = null;
+        this.allRooms = [];
+        this.filteredRooms = [];
+        this.allPeople = [];
+        this.filteredPeople = [];
+        this.uploadedPhoto = null;
+        this.hasUserProfile = false;
+
+        // Profile form state
+        this.profileFormData = {
+            cleanliness: 8,
+            social: 5,
+            sleep: null,
+            smoking: 'Non-Smoker',
+            pets: null
+        };
 
         this.init();
     }
@@ -18,17 +31,12 @@ class RoomPalApp {
             this.api = new RoommateAPIService();
         }
 
-        // Load current user from localStorage
+        // Load current user
         this.loadCurrentUser();
-
-        // Update header to show user name if logged in
         this.updateHeader();
 
         // Setup event listeners
         this.setupEventListeners();
-
-        // Load initial data
-        await this.loadPreviewData();
 
         console.log('RoomPal App initialized');
     }
@@ -37,16 +45,6 @@ class RoomPalApp {
         const stored = localStorage.getItem('currentUser');
         if (stored) {
             this.currentUser = JSON.parse(stored);
-        }
-
-        const storedProfile = localStorage.getItem('roommateProfile');
-        if (storedProfile) {
-            this.userProfile = JSON.parse(storedProfile);
-        }
-
-        const storedGroup = localStorage.getItem('roommateGroup');
-        if (storedGroup) {
-            this.userGroup = JSON.parse(storedGroup);
         }
     }
 
@@ -57,7 +55,6 @@ class RoomPalApp {
         if (this.currentUser) {
             const userName = this.currentUser.firstName || this.currentUser.name || 'User';
 
-            // Update desktop header
             if (desktopAuth) {
                 desktopAuth.innerHTML = `
                     <div class="flex items-center gap-3">
@@ -67,7 +64,6 @@ class RoomPalApp {
                 `;
             }
 
-            // Update mobile menu
             if (mobileAuth) {
                 mobileAuth.textContent = `Hi, ${userName}`;
                 mobileAuth.href = 'profile.html';
@@ -76,62 +72,40 @@ class RoomPalApp {
     }
 
     setupEventListeners() {
-        // Tab switching
-        document.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => this.handleTabClick(e));
-        });
-
-        // Filter pills
-        document.querySelectorAll('.filter-pill').forEach(pill => {
-            pill.addEventListener('click', (e) => this.handleFilterClick(e));
-        });
-
         // Room form submission
         const roomForm = document.getElementById('roomForm');
         if (roomForm) {
             roomForm.addEventListener('submit', (e) => this.handleRoomFormSubmit(e));
         }
 
-        // Seeker form submission
-        const seekerForm = document.getElementById('seekerForm');
-        if (seekerForm) {
-            seekerForm.addEventListener('submit', (e) => this.handleSeekerFormSubmit(e));
+        // Contact form submission
+        const contactForm = document.getElementById('contactForm');
+        if (contactForm) {
+            contactForm.addEventListener('submit', (e) => this.handleContactSubmit(e));
         }
 
-        // Compatibility form submission
-        const compatibilityForm = document.getElementById('compatibilityForm');
-        if (compatibilityForm) {
-            compatibilityForm.addEventListener('submit', (e) => this.handleCompatibilitySubmit(e));
+        // Photo upload
+        const roomPhoto = document.getElementById('roomPhoto');
+        if (roomPhoto) {
+            roomPhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'roomPhotoPreview'));
         }
 
-        // Message form submission
-        const messageForm = document.getElementById('messageForm');
-        if (messageForm) {
-            messageForm.addEventListener('submit', (e) => this.handleMessageSubmit(e));
-        }
-
-        // Photo upload handlers
-        const roomPhotos = document.getElementById('roomPhotos');
-        if (roomPhotos) {
-            roomPhotos.addEventListener('change', (e) => this.handlePhotoUpload(e, 'room'));
-        }
-
-        const profilePhoto = document.getElementById('profilePhoto');
-        if (profilePhoto) {
-            profilePhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'profile'));
+        // Quick profile form submission
+        const quickProfileForm = document.getElementById('quickProfileForm');
+        if (quickProfileForm) {
+            quickProfileForm.addEventListener('submit', (e) => this.handleQuickProfileSubmit(e));
         }
     }
 
     // ==================== SECTION NAVIGATION ====================
 
     showSection(section) {
-        // Map section names to element IDs
         const sectionMap = {
-            'selector': 'sectionSelector',
+            'landing': 'landingSection',
             'hasRoom': 'hasRoomSection',
-            'seeking': 'seekingSection',
-            'browseRooms': 'browseRoomsSection',
-            'browseSeekers': 'browseSeekersSection'
+            'needRoom': 'needRoomSection',
+            'findPeople': 'findPeopleSection',
+            'success': 'successSection'
         };
 
         // Hide all sections
@@ -147,209 +121,241 @@ class RoomPalApp {
                 targetEl.classList.add('active');
                 this.currentSection = section;
 
-                // Load section-specific data
-                this.loadSectionData(section);
+                // Load data for sections
+                if (section === 'needRoom') {
+                    this.loadRooms();
+                } else if (section === 'findPeople') {
+                    this.loadPeople();
+                }
             }
         }
 
-        // Scroll to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    async loadSectionData(section) {
-        switch (section) {
-            case 'browseRooms':
-                await this.loadRoomsGrid('roomsGrid');
-                break;
-            case 'browseSeekers':
-                await this.loadSeekersGrid('allSeekersGrid');
-                break;
-            case 'seeking':
-                await this.loadSeekersGrid('seekersGrid');
-                this.updateGroupDashboard();
-                break;
+    // ==================== LOAD ROOMS ====================
+
+    async loadRooms() {
+        const grid = document.getElementById('roomsGrid');
+        const emptyState = document.getElementById('emptyState');
+        const resultsCount = document.getElementById('resultsCount');
+
+        if (!grid) return;
+
+        // Show loading
+        grid.innerHTML = '<p class="col-span-2 text-center text-gray-500 py-8">Loading rooms...</p>';
+
+        try {
+            // Get rooms from API
+            const rooms = await this.getRooms();
+            this.allRooms = rooms;
+            this.filteredRooms = rooms;
+
+            this.renderRooms();
+        } catch (error) {
+            console.error('Error loading rooms:', error);
+            grid.innerHTML = '<p class="col-span-2 text-center text-red-500 py-8">Failed to load rooms</p>';
         }
     }
 
-    // ==================== TAB HANDLING ====================
-
-    handleTabClick(e) {
-        const tabBtn = e.target;
-        const tabName = tabBtn.dataset.tab;
-        const tabContainer = tabBtn.closest('.section-view');
-
-        // Update tab buttons
-        tabContainer.querySelectorAll('.tab-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        tabBtn.classList.add('active');
-
-        // Show/hide tab content based on section
-        if (tabContainer.id === 'hasRoomSection') {
-            this.showHasRoomTab(tabName);
-        } else if (tabContainer.id === 'seekingSection') {
-            this.showSeekingTab(tabName);
-        }
-    }
-
-    showHasRoomTab(tabName) {
-        document.getElementById('postRoomTab').classList.toggle('hidden', tabName !== 'postRoom');
-        document.getElementById('myRoomsTab').classList.toggle('hidden', tabName !== 'myRooms');
-
-        if (tabName === 'myRooms') {
-            this.loadMyRooms();
-        }
-    }
-
-    showSeekingTab(tabName) {
-        document.getElementById('createProfileTab').classList.toggle('hidden', tabName !== 'createProfile');
-        document.getElementById('browsePeopleTab').classList.toggle('hidden', tabName !== 'browsePeople');
-        document.getElementById('myGroupTab').classList.toggle('hidden', tabName !== 'myGroup');
-
-        if (tabName === 'browsePeople') {
-            this.loadSeekersGrid('seekersGrid');
-        } else if (tabName === 'myGroup') {
-            this.updateGroupDashboard();
-        }
-    }
-
-    // ==================== FILTER HANDLING ====================
-
-    handleFilterClick(e) {
-        const pill = e.target;
-        const container = pill.closest('.section-view') || pill.closest('div');
-
-        // Update active state
-        container.querySelectorAll('.filter-pill').forEach(p => {
-            p.classList.remove('active');
-        });
-        pill.classList.add('active');
-
-        // Apply filter
-        const filterValue = pill.textContent.trim();
-        this.applyFilter(filterValue);
-    }
-
-    applyFilter(filterValue) {
-        // Filter logic would go here
-        console.log('Applying filter:', filterValue);
-    }
-
-    // ==================== DATA LOADING ====================
-
-    async loadPreviewData() {
-        await Promise.all([
-            this.loadRoomsGrid('previewRoomsGrid', 3),
-            this.loadSeekersGrid('previewSeekersGrid', 3)
-        ]);
-    }
-
-    async loadRoomsGrid(containerId, limit = 12) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        // Get rooms from API or use mock data
-        const rooms = await this.getRooms(limit);
-
-        container.innerHTML = rooms.map(room => this.createRoomCard(room)).join('');
-    }
-
-    async loadSeekersGrid(containerId, limit = 12) {
-        const container = document.getElementById(containerId);
-        if (!container) return;
-
-        // Get seekers from API or use mock data
-        const seekers = await this.getSeekers(limit);
-
-        container.innerHTML = seekers.map(seeker => this.createSeekerCard(seeker)).join('');
-    }
-
-    async getRooms(limit = 12) {
-        // Try to get from API
-        if (this.api) {
+    async getRooms() {
+        if (this.api && this.api.initialized) {
             try {
-                const rooms = await this.api.getRoomPosts({ limit });
-                if (rooms && rooms.length > 0) return rooms;
+                const rooms = await this.api.getRoomPosts({ limit: 50 });
+                if (rooms && rooms.length > 0) {
+                    return rooms;
+                }
             } catch (e) {
-                console.log('Using mock room data');
+                console.log('API error, returning empty:', e);
             }
         }
-
-        // Return mock data
-        return this.getMockRooms().slice(0, limit);
+        return [];
     }
 
-    async getSeekers(limit = 12) {
-        // Try to get from API
-        if (this.api) {
-            try {
-                const seekers = await this.api.getSeekerProfiles({ limit });
-                if (seekers && seekers.length > 0) return seekers;
-            } catch (e) {
-                console.log('Using mock seeker data');
-            }
+    renderRooms() {
+        const grid = document.getElementById('roomsGrid');
+        const emptyState = document.getElementById('emptyState');
+        const resultsCount = document.getElementById('resultsCount');
+
+        if (this.filteredRooms.length === 0) {
+            grid.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            resultsCount.textContent = 'No rooms found';
+            return;
         }
 
-        // Return mock data
-        return this.getMockSeekers().slice(0, limit);
-    }
+        grid.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        resultsCount.textContent = `${this.filteredRooms.length} room${this.filteredRooms.length !== 1 ? 's' : ''} available`;
 
-    // ==================== CARD TEMPLATES ====================
+        grid.innerHTML = this.filteredRooms.map(room => this.createRoomCard(room)).join('');
+    }
 
     createRoomCard(room) {
-        const photoUrl = room.room_photos?.[0]?.url || room.photos?.[0] || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop';
-        const verified = room.is_verified ? '<span class="verified-badge">Verified</span>' : '';
-        const formattedDate = room.room_available_date ? this.formatDate(room.room_available_date) : 'Available Now';
-        const roomTypeLabel = this.formatRoomType(room.room_type);
+        const photoUrl = room.room_photos?.[0] || room.photo_url || 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop';
+        const rent = room.room_rent || room.rent || 0;
+        const location = room.room_location || room.location || 'Location not specified';
+        const description = room.room_description || room.description || 'No description provided';
+        const availableDate = room.room_available_date || room.available_date;
+        const formattedDate = availableDate ? this.formatDate(availableDate) : 'Available Now';
+        const hostName = room.name || 'Host';
 
         return `
-            <div class="card overflow-hidden cursor-pointer" onclick="roomPalApp.viewRoom('${room.id}')">
-                <img src="${photoUrl}" alt="Room" class="room-image">
-                <div class="p-4">
+            <div class="room-card">
+                <img src="${photoUrl}" alt="Room photo" class="room-image" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop'">
+                <div class="p-5">
                     <div class="flex justify-between items-start mb-2">
-                        <span class="text-xl font-bold text-indigo-600">$${room.room_rent}/mo</span>
-                        ${verified}
+                        <span class="room-price">$${rent}/mo</span>
+                        <span class="text-sm text-gray-500">${formattedDate}</span>
                     </div>
-                    <p class="text-gray-900 font-medium mb-1">${room.room_location || 'Location'}</p>
-                    <div class="flex items-center gap-2 text-sm text-gray-500 mb-3">
-                        <span>${roomTypeLabel}</span>
-                        <span>-</span>
-                        <span>${formattedDate}</span>
-                    </div>
-                    <p class="text-sm text-gray-600 line-clamp-2 mb-4">${room.room_description || 'Great room available!'}</p>
-                    <button onclick="event.stopPropagation(); roomPalApp.openMessage('room', '${room.id}', '${room.name || 'Host'}')" class="btn-message w-full">
-                        Message
+                    <h3 class="room-location mb-2">${location}</h3>
+                    <p class="room-description mb-4">${description}</p>
+                    <button onclick="roomPalApp.openContact('${room.id}', '${hostName}')" class="btn-primary w-full">
+                        Contact ${hostName}
                     </button>
                 </div>
             </div>
         `;
     }
 
-    createSeekerCard(seeker) {
-        const avatarUrl = seeker.avatar_url || seeker.avatar?.photos?.[0]?.url || `https://ui-avatars.com/api/?name=${encodeURIComponent(seeker.name || 'User')}&background=6366f1&color=fff&size=160`;
-        const verified = seeker.is_verified ? '<span class="verified-badge">Verified</span>' : '';
-        const budgetRange = seeker.budget_min && seeker.budget_max ? `$${seeker.budget_min} - $${seeker.budget_max}` : 'Budget flexible';
-        const moveDate = seeker.move_in_date ? this.formatDate(seeker.move_in_date) : 'Flexible';
-        const areas = Array.isArray(seeker.preferred_areas) ? seeker.preferred_areas.join(', ') : (seeker.preferred_areas || 'Any area');
-        const compatibility = seeker.compatibility_score ? `<span class="text-emerald-600 font-medium">${seeker.compatibility_score}% match</span>` : '';
+    // ==================== FILTERS ====================
+
+    applyFilters() {
+        const budgetFilter = document.getElementById('budgetFilter')?.value;
+
+        this.filteredRooms = this.allRooms.filter(room => {
+            const rent = room.room_rent || room.rent || 0;
+
+            if (budgetFilter) {
+                if (budgetFilter === '0-1000' && rent > 1000) return false;
+                if (budgetFilter === '1000-1500' && (rent < 1000 || rent > 1500)) return false;
+                if (budgetFilter === '1500-2000' && (rent < 1500 || rent > 2000)) return false;
+                if (budgetFilter === '2000+' && rent < 2000) return false;
+            }
+
+            return true;
+        });
+
+        this.renderRooms();
+    }
+
+    // ==================== LOAD PEOPLE ====================
+
+    async loadPeople() {
+        const grid = document.getElementById('peopleGrid');
+        const emptyState = document.getElementById('peopleEmptyState');
+        const resultsCount = document.getElementById('peopleResultsCount');
+
+        if (!grid) return;
+
+        // Show loading
+        grid.innerHTML = '<p class="col-span-full text-center text-gray-500 py-8">Loading people...</p>';
+
+        try {
+            // Get people from API
+            const people = await this.getPeople();
+            this.allPeople = people;
+            this.filteredPeople = people;
+
+            // Check if current user has a profile and show prompt if not
+            if (this.currentUser) {
+                await this.checkUserProfile();
+                if (!this.hasUserProfile) {
+                    this.showProfilePrompt();
+                }
+            }
+
+            this.renderPeople();
+        } catch (error) {
+            console.error('Error loading people:', error);
+            grid.innerHTML = '<p class="col-span-full text-center text-red-500 py-8">Failed to load people</p>';
+        }
+    }
+
+    async getPeople() {
+        if (this.api && this.api.initialized) {
+            try {
+                const people = await this.api.getSeekerProfiles({ limit: 50 });
+                if (people && people.length > 0) {
+                    return people;
+                }
+            } catch (e) {
+                console.log('API error, returning empty:', e);
+            }
+        }
+        return [];
+    }
+
+    renderPeople() {
+        const grid = document.getElementById('peopleGrid');
+        const emptyState = document.getElementById('peopleEmptyState');
+        const resultsCount = document.getElementById('peopleResultsCount');
+
+        if (this.filteredPeople.length === 0) {
+            grid.classList.add('hidden');
+            emptyState.classList.remove('hidden');
+            resultsCount.textContent = 'No people found';
+            return;
+        }
+
+        grid.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        resultsCount.textContent = `${this.filteredPeople.length} ${this.filteredPeople.length === 1 ? 'person' : 'people'} looking`;
+
+        grid.innerHTML = this.filteredPeople.map(person => this.createPersonCard(person)).join('');
+    }
+
+    createPersonCard(person) {
+        const avatarUrl = person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name || 'User')}&background=6366f1&color=fff&size=160`;
+        const name = person.name || 'Anonymous';
+        const age = person.age ? `, ${person.age}` : '';
+        const location = person.preferred_areas?.[0] || person.location || 'Location flexible';
+        const budgetMin = person.budget_min || 0;
+        const budgetMax = person.budget_max || 0;
+        const budgetText = budgetMin && budgetMax ? `$${budgetMin} - $${budgetMax}/mo` : (budgetMax ? `Up to $${budgetMax}/mo` : 'Budget flexible');
+        const bio = person.bio || 'Looking for a great roommate situation!';
+        const truncatedBio = bio.length > 100 ? bio.substring(0, 100) + '...' : bio;
+        const moveInDate = person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible';
+
+        // Extract lifestyle for badges
+        const lifestyle = person.lifestyle || {};
+        const scores = person.compatibility_scores || {};
+        const badges = this.getLifestyleBadges(lifestyle, scores);
+        const badgesHtml = badges.map(b =>
+            `<span class="lifestyle-badge">${b.icon} ${b.label}</span>`
+        ).join('');
 
         return `
-            <div class="card p-6 text-center cursor-pointer" onclick="roomPalApp.viewSeeker('${seeker.id}')">
-                <img src="${avatarUrl}" alt="${seeker.name}" class="seeker-avatar mx-auto mb-4">
-                <div class="flex items-center justify-center gap-2 mb-2">
-                    <h3 class="font-bold text-gray-900">${seeker.name || 'Anonymous'}</h3>
-                    ${verified}
+            <div class="person-card">
+                <div class="person-avatar-section">
+                    <img src="${avatarUrl}" alt="${name}" class="person-avatar" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=160'">
                 </div>
-                ${compatibility}
-                <p class="text-indigo-600 font-medium mb-1">${budgetRange}</p>
-                <p class="text-sm text-gray-500 mb-1">${areas}</p>
-                <p class="text-sm text-gray-400 mb-4">Moving: ${moveDate}</p>
-                <p class="text-sm text-gray-600 line-clamp-2 mb-4">${seeker.bio || 'Looking for roommates!'}</p>
-                <div class="flex gap-2">
-                    <button onclick="event.stopPropagation(); roomPalApp.inviteToGroup('${seeker.id}')" class="btn-secondary flex-1 text-sm py-2">
-                        Invite
-                    </button>
-                    <button onclick="event.stopPropagation(); roomPalApp.openMessage('seeker', '${seeker.id}', '${seeker.name || 'User'}')" class="btn-message flex-1">
+                <div class="person-info">
+                    <h3 class="person-name">${name}${age}</h3>
+                    <div class="person-details">
+                        <span class="person-detail">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            ${location}
+                        </span>
+                        <span class="person-detail">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            ${budgetText}
+                        </span>
+                        <span class="person-detail">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            ${moveInDate}
+                        </span>
+                    </div>
+                    ${badgesHtml ? `<div class="lifestyle-badges">${badgesHtml}</div>` : ''}
+                    <p class="person-bio">${truncatedBio}</p>
+                    <button onclick="roomPalApp.openPersonContact('${person.id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">
                         Connect
                     </button>
                 </div>
@@ -357,48 +363,192 @@ class RoomPalApp {
         `;
     }
 
+    getLifestyleBadges(lifestyle, scores) {
+        const badges = [];
+
+        // Cleanliness badge
+        if (scores.cleanliness >= 7) {
+            badges.push({ icon: '🧹', label: 'Clean' });
+        } else if (scores.cleanliness && scores.cleanliness <= 4) {
+            badges.push({ icon: '🪴', label: 'Relaxed' });
+        }
+
+        // Sleep schedule
+        if (lifestyle.sleepSchedule?.toLowerCase().includes('night') || lifestyle.sleepSchedule?.toLowerCase().includes('late')) {
+            badges.push({ icon: '🌙', label: 'Night Owl' });
+        } else if (lifestyle.sleepSchedule?.toLowerCase().includes('early') || lifestyle.sleepSchedule?.toLowerCase().includes('morning')) {
+            badges.push({ icon: '☀️', label: 'Early Bird' });
+        }
+
+        // Smoking
+        if (lifestyle.smoking === 'Never' || lifestyle.smoking === 'No' || lifestyle.smoking === 'Non-Smoker') {
+            badges.push({ icon: '🚭', label: 'Non-Smoker' });
+        }
+
+        // Pets
+        if (lifestyle.pets?.toLowerCase().includes('cat') || lifestyle.pets?.toLowerCase().includes('dog') || lifestyle.hasPets) {
+            badges.push({ icon: '🐾', label: 'Pet Owner' });
+        } else if (scores.petPolicy >= 7 || lifestyle.petsOk) {
+            badges.push({ icon: '🐱', label: 'Pets OK' });
+        } else if (scores.petPolicy !== undefined && scores.petPolicy <= 3) {
+            badges.push({ icon: '🚫', label: 'No Pets' });
+        }
+
+        // Social level
+        if (scores.socialLevel >= 7) {
+            badges.push({ icon: '🎉', label: 'Social' });
+        } else if (scores.socialLevel && scores.socialLevel <= 3) {
+            badges.push({ icon: '📚', label: 'Quiet' });
+        }
+
+        return badges;
+    }
+
+    applyPeopleFilters() {
+        const budgetFilter = document.getElementById('peopleBudgetFilter')?.value;
+        const cleanFilter = document.getElementById('cleanFilter')?.value;
+        const scheduleFilter = document.getElementById('scheduleFilter')?.value;
+        const smokingFilter = document.getElementById('smokingFilter')?.value;
+        const petsFilter = document.getElementById('petsFilter')?.value;
+
+        this.filteredPeople = this.allPeople.filter(person => {
+            const budgetMax = person.budget_max || 0;
+            const lifestyle = person.lifestyle || {};
+            const scores = person.compatibility_scores || {};
+
+            // Budget filter
+            if (budgetFilter) {
+                if (budgetFilter === '0-800' && budgetMax > 800) return false;
+                if (budgetFilter === '800-1200' && (budgetMax < 800 || budgetMax > 1200)) return false;
+                if (budgetFilter === '1200-1600' && (budgetMax < 1200 || budgetMax > 1600)) return false;
+                if (budgetFilter === '1600+' && budgetMax < 1600) return false;
+            }
+
+            // Cleanliness filter
+            if (cleanFilter) {
+                const cleanliness = scores.cleanliness || 5;
+                if (cleanFilter === 'clean' && cleanliness < 7) return false;
+                if (cleanFilter === 'relaxed' && cleanliness > 4) return false;
+            }
+
+            // Schedule filter
+            if (scheduleFilter) {
+                const schedule = (lifestyle.sleepSchedule || '').toLowerCase();
+                if (scheduleFilter === 'night' && !schedule.includes('night') && !schedule.includes('late')) return false;
+                if (scheduleFilter === 'early' && !schedule.includes('early') && !schedule.includes('morning')) return false;
+            }
+
+            // Smoking filter
+            if (smokingFilter === 'no') {
+                const smoking = lifestyle.smoking || '';
+                if (smoking !== 'Never' && smoking !== 'No' && smoking !== 'Non-Smoker' && smoking !== '') return false;
+            }
+
+            // Pets filter
+            if (petsFilter) {
+                const petPolicy = scores.petPolicy || 5;
+                const petsOk = lifestyle.petsOk;
+                if (petsFilter === 'ok' && petPolicy < 5 && !petsOk) return false;
+                if (petsFilter === 'no' && (petPolicy > 5 || petsOk)) return false;
+            }
+
+            return true;
+        });
+
+        this.renderPeople();
+    }
+
+    openPersonContact(personId, personName) {
+        if (!this.currentUser) {
+            alert('Please log in to connect with people.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        this.contactRoomId = personId;
+        this.contactHostName = personName;
+
+        // Update modal title
+        const modalTitle = document.getElementById('contactModalTitle');
+        if (modalTitle) {
+            modalTitle.textContent = `Connect with ${personName}`;
+        }
+
+        // Update placeholder
+        const messageInput = document.getElementById('contactMessage');
+        if (messageInput) {
+            messageInput.placeholder = `Hi ${personName}! I have a room available that might interest you...`;
+        }
+
+        const recipientEl = document.getElementById('contactRecipient');
+        if (recipientEl) {
+            const person = this.allPeople.find(p => p.id === personId);
+            const avatarUrl = person?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(personName)}&background=6366f1&color=fff&size=80`;
+
+            recipientEl.innerHTML = `
+                <img src="${avatarUrl}" alt="${personName}" class="w-12 h-12 rounded-full object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(personName)}&background=6366f1&color=fff&size=80'">
+                <div>
+                    <p class="font-medium text-gray-900">${personName}</p>
+                    <p class="text-sm text-gray-500">Looking for a room</p>
+                </div>
+            `;
+        }
+
+        const modal = document.getElementById('contactModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
     // ==================== FORM HANDLERS ====================
 
     async handleRoomFormSubmit(e) {
         e.preventDefault();
 
+        // Check login
+        if (!this.currentUser) {
+            alert('Please log in to post a room.');
+            window.location.href = 'login.html';
+            return;
+        }
+
         const form = e.target;
         const formData = new FormData(form);
 
         const roomData = {
-            user_type: 'has_spot',
-            room_rent: parseInt(formData.get('room_rent')),
-            room_location: formData.get('room_location'),
-            room_type: formData.get('room_type'),
-            room_available_date: formData.get('room_available_date'),
-            room_description: formData.get('room_description'),
-            room_photos: this.uploadedPhotos || []
+            room_location: formData.get('location'),
+            room_rent: parseInt(formData.get('rent')),
+            room_available_date: formData.get('available_date'),
+            room_description: formData.get('description'),
+            room_photos: this.uploadedPhoto ? [this.uploadedPhoto] : [],
+            name: this.currentUser?.firstName || 'Host'
         };
 
-        // Show loading state
+        // Show loading
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
         submitBtn.textContent = 'Posting...';
         submitBtn.disabled = true;
 
         try {
-            // Save to API or localStorage
             if (this.api && this.api.initialized) {
-                await this.api.saveRoomPost(roomData);
+                const result = await this.api.saveRoomPost(roomData);
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to post room');
+                }
             } else {
-                // Save locally
-                const rooms = JSON.parse(localStorage.getItem('myRooms') || '[]');
+                // Save locally as fallback
+                const localRooms = JSON.parse(localStorage.getItem('localRooms') || '[]');
                 roomData.id = 'room_' + Date.now();
                 roomData.created_at = new Date().toISOString();
-                rooms.push(roomData);
-                localStorage.setItem('myRooms', JSON.stringify(rooms));
+                localRooms.push(roomData);
+                localStorage.setItem('localRooms', JSON.stringify(localRooms));
             }
 
             // Show success
-            this.showToast('Room posted successfully!', 'success');
             form.reset();
-            this.uploadedPhotos = [];
-            document.getElementById('photoPreview').innerHTML = '';
+            this.uploadedPhoto = null;
+            document.getElementById('roomPhotoPreview').innerHTML = '';
+            this.showSection('success');
 
         } catch (error) {
             console.error('Error posting room:', error);
@@ -409,45 +559,239 @@ class RoomPalApp {
         }
     }
 
-    async handleSeekerFormSubmit(e) {
+    handlePhotoUpload(e, previewId) {
+        const files = e.target.files;
+        if (!files.length) return;
+
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            this.uploadedPhoto = event.target.result;
+            const previewEl = document.getElementById(previewId);
+            if (previewEl) {
+                previewEl.innerHTML = `
+                    <img src="${event.target.result}" class="w-32 h-24 object-cover rounded-lg">
+                `;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ==================== CONTACT MODAL ====================
+
+    openContact(roomId, hostName) {
+        if (!this.currentUser) {
+            alert('Please log in to contact hosts.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        this.contactRoomId = roomId;
+        this.contactHostName = hostName;
+
+        // Update modal title
+        const modalTitle = document.getElementById('contactModalTitle');
+        if (modalTitle) {
+            modalTitle.textContent = 'Contact Host';
+        }
+
+        // Update placeholder
+        const messageInput = document.getElementById('contactMessage');
+        if (messageInput) {
+            messageInput.placeholder = "Hi! I'm interested in your room...";
+        }
+
+        const recipientEl = document.getElementById('contactRecipient');
+        if (recipientEl) {
+            recipientEl.innerHTML = `
+                <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="font-medium text-gray-900">${hostName}</p>
+                    <p class="text-sm text-gray-500">Room host</p>
+                </div>
+            `;
+        }
+
+        const modal = document.getElementById('contactModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    closeContactModal() {
+        const modal = document.getElementById('contactModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    async handleContactSubmit(e) {
         e.preventDefault();
+
+        const form = e.target;
+        const message = form.querySelector('textarea[name="message"]').value;
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Sending...';
+        submitBtn.disabled = true;
+
+        try {
+            if (this.api && this.api.initialized) {
+                await this.api.sendMessage(this.contactRoomId, message);
+            }
+
+            this.showToast('Message sent!', 'success');
+            this.closeContactModal();
+            form.reset();
+        } catch (error) {
+            console.error('Error sending message:', error);
+            this.showToast('Failed to send message', 'error');
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    // ==================== PROFILE FORM ====================
+
+    async checkUserProfile() {
+        if (!this.currentUser || !this.api || !this.api.initialized) {
+            return false;
+        }
+
+        try {
+            const profiles = await this.api.getSeekerProfiles({ limit: 100 });
+            const userProfile = profiles.find(p => p.user_id === this.currentUser.id);
+            this.hasUserProfile = !!userProfile;
+            return this.hasUserProfile;
+        } catch (e) {
+            console.log('Could not check profile:', e);
+            return false;
+        }
+    }
+
+    showProfilePrompt() {
+        const prompt = document.getElementById('createProfilePrompt');
+        if (prompt && this.currentUser && !this.hasUserProfile) {
+            prompt.classList.remove('hidden');
+        }
+    }
+
+    hideProfilePrompt() {
+        const prompt = document.getElementById('createProfilePrompt');
+        if (prompt) {
+            prompt.classList.add('hidden');
+        }
+    }
+
+    toggleProfileForm() {
+        const form = document.getElementById('quickProfileForm');
+        const toggleText = document.getElementById('profileFormToggleText');
+
+        if (form.classList.contains('hidden')) {
+            form.classList.remove('hidden');
+            toggleText.textContent = 'Hide Form';
+        } else {
+            form.classList.add('hidden');
+            toggleText.textContent = 'Show Form';
+        }
+    }
+
+    selectScore(type, value) {
+        this.profileFormData[type] = value;
+
+        // Update UI
+        const selectorId = type === 'cleanliness' ? 'cleanlinessSelector' : 'socialSelector';
+        const buttons = document.querySelectorAll(`#${selectorId} .score-btn`);
+        buttons.forEach(btn => {
+            const btnScore = parseInt(btn.dataset.score);
+            if (btnScore === value) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+    selectOption(type, value) {
+        this.profileFormData[type] = value;
+
+        // Update UI - find parent container
+        let container;
+        if (type === 'sleep') {
+            container = document.querySelector('button[data-value="Early Bird"]')?.parentElement;
+        } else if (type === 'smoking') {
+            container = document.querySelector('button[data-value="Non-Smoker"]')?.parentElement;
+        } else if (type === 'pets') {
+            container = document.querySelector('button[data-value="Have Pets"]')?.parentElement;
+        }
+
+        if (container) {
+            container.querySelectorAll('.option-btn').forEach(btn => {
+                if (btn.dataset.value === value) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+    }
+
+    async handleQuickProfileSubmit(e) {
+        e.preventDefault();
+
+        if (!this.currentUser) {
+            alert('Please log in to create a profile.');
+            window.location.href = 'login.html';
+            return;
+        }
 
         const form = e.target;
         const formData = new FormData(form);
 
-        const areas = formData.get('preferred_areas').split(',').map(a => a.trim()).filter(a => a);
-
         const profileData = {
-            user_type: 'seeking',
-            budget_min: parseInt(formData.get('budget_min')),
-            budget_max: parseInt(formData.get('budget_max')),
-            preferred_areas: areas,
-            move_in_date: formData.get('move_in_date'),
-            bio: formData.get('bio'),
-            avatar_url: this.uploadedAvatar || null,
-            name: this.currentUser?.firstName || 'Anonymous'
+            name: formData.get('name'),
+            preferred_areas: formData.get('location') ? [formData.get('location')] : [],
+            budget_min: parseInt(formData.get('budget_min')) || null,
+            budget_max: parseInt(formData.get('budget_max')) || null,
+            move_in_date: formData.get('move_in_date') || null,
+            bio: formData.get('bio') || '',
+            lifestyle: {
+                sleepSchedule: this.profileFormData.sleep,
+                smoking: this.profileFormData.smoking,
+                pets: this.profileFormData.pets,
+                petsOk: this.profileFormData.pets === 'Pets OK' || this.profileFormData.pets === 'Have Pets',
+                hasPets: this.profileFormData.pets === 'Have Pets'
+            },
+            compatibility_scores: {
+                cleanliness: this.profileFormData.cleanliness,
+                socialLevel: this.profileFormData.social,
+                petPolicy: this.profileFormData.pets === 'No Pets' ? 1 : (this.profileFormData.pets === 'Pets OK' || this.profileFormData.pets === 'Have Pets' ? 8 : 5)
+            }
         };
 
-        // Show loading state
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Creating...';
+        submitBtn.textContent = 'Creating Profile...';
         submitBtn.disabled = true;
 
         try {
-            // Save to API or localStorage
             if (this.api && this.api.initialized) {
-                await this.api.saveSeekerProfile(profileData);
-            } else {
-                // Save locally
-                profileData.id = 'seeker_' + Date.now();
-                profileData.created_at = new Date().toISOString();
-                localStorage.setItem('roommateProfile', JSON.stringify(profileData));
-                this.userProfile = profileData;
+                const result = await this.api.saveSeekerProfile(profileData);
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to create profile');
+                }
             }
 
-            // Show success
-            this.showToast('Profile created successfully!', 'success');
+            this.hasUserProfile = true;
+            this.hideProfilePrompt();
+            this.showToast('Profile created! You\'re now visible to hosts.', 'success');
+
+            // Reload people to include new profile
+            await this.loadPeople();
 
         } catch (error) {
             console.error('Error creating profile:', error);
@@ -458,296 +802,10 @@ class RoomPalApp {
         }
     }
 
-    handleCompatibilitySubmit(e) {
-        e.preventDefault();
-
-        const form = e.target;
-        const formData = new FormData(form);
-
-        const compatibilityData = {
-            sleepSchedule: formData.get('sleepSchedule'),
-            cleanliness: formData.get('cleanliness'),
-            socialLevel: formData.get('socialLevel'),
-            smoking: formData.get('smoking'),
-            pets: formData.get('pets')
-        };
-
-        // Save compatibility preferences
-        const profile = this.userProfile || {};
-        profile.compatibility_scores = compatibilityData;
-        localStorage.setItem('roommateProfile', JSON.stringify(profile));
-        this.userProfile = profile;
-
-        // Close modal
-        this.closeCompatibilityModal();
-        this.showToast('Preferences saved!', 'success');
-    }
-
-    async handleMessageSubmit(e) {
-        e.preventDefault();
-
-        // Verify user is still authenticated
-        if (!this.requireAuth('send messages')) {
-            return;
-        }
-
-        const form = e.target;
-        const message = form.querySelector('textarea[name="message"]').value;
-
-        // Show loading state
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const originalText = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
-        submitBtn.disabled = true;
-
-        try {
-            // Send through API if available
-            if (this.api && this.api.initialized) {
-                const result = await this.api.sendMessage(this.messageRecipient.id, message);
-                if (!result.success) {
-                    throw new Error(result.error || 'Failed to send message');
-                }
-            }
-
-            this.showToast('Message sent!', 'success');
-            this.closeMessageModal();
-            form.reset();
-        } catch (error) {
-            console.error('Error sending message:', error);
-            this.showToast('Failed to send message. Please try again.', 'error');
-        } finally {
-            submitBtn.textContent = originalText;
-            submitBtn.disabled = false;
-        }
-    }
-
-    handlePhotoUpload(e, type) {
-        const files = e.target.files;
-        if (!files.length) return;
-
-        if (type === 'room') {
-            this.uploadedPhotos = this.uploadedPhotos || [];
-            const previewContainer = document.getElementById('photoPreview');
-
-            Array.from(files).forEach(file => {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    this.uploadedPhotos.push({ url: event.target.result, name: file.name });
-                    previewContainer.innerHTML += `
-                        <div class="relative">
-                            <img src="${event.target.result}" class="w-20 h-20 object-cover rounded-lg">
-                            <button type="button" onclick="roomPalApp.removePhoto(${this.uploadedPhotos.length - 1})"
-                                class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs">x</button>
-                        </div>
-                    `;
-                };
-                reader.readAsDataURL(file);
-            });
-        } else if (type === 'profile') {
-            const file = files[0];
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                this.uploadedAvatar = event.target.result;
-                document.getElementById('avatarPreview').innerHTML = `
-                    <img src="${event.target.result}" class="w-24 h-24 rounded-full object-cover mx-auto">
-                `;
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    removePhoto(index) {
-        this.uploadedPhotos.splice(index, 1);
-        // Re-render preview
-        const previewContainer = document.getElementById('photoPreview');
-        previewContainer.innerHTML = this.uploadedPhotos.map((photo, i) => `
-            <div class="relative">
-                <img src="${photo.url}" class="w-20 h-20 object-cover rounded-lg">
-                <button type="button" onclick="roomPalApp.removePhoto(${i})"
-                    class="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white rounded-full text-xs">x</button>
-            </div>
-        `).join('');
-    }
-
-    // ==================== GROUP MANAGEMENT ====================
-
-    createGroup() {
-        const groupName = prompt('Enter a name for your group:') || 'Our Roommate Group';
-
-        this.userGroup = {
-            id: 'group_' + Date.now(),
-            name: groupName,
-            creator_id: this.currentUser?.id || 'user_' + Date.now(),
-            members: [{
-                user_id: this.currentUser?.id || 'user_' + Date.now(),
-                name: this.currentUser?.firstName || this.userProfile?.name || 'You',
-                avatar: this.userProfile?.avatar_url,
-                budget_min: this.userProfile?.budget_min || 800,
-                budget_max: this.userProfile?.budget_max || 1500,
-                role: 'creator',
-                status: 'accepted'
-            }],
-            status: 'forming',
-            created_at: new Date().toISOString()
-        };
-
-        localStorage.setItem('roommateGroup', JSON.stringify(this.userGroup));
-        this.updateGroupDashboard();
-        this.showToast('Group created!', 'success');
-    }
-
-    inviteToGroup(seekerId) {
-        // Require login before inviting
-        if (!this.requireAuth('invite people to your group')) {
-            return;
-        }
-
-        if (!this.userGroup) {
-            if (confirm('You need to create a group first. Create one now?')) {
-                this.createGroup();
-            }
-            return;
-        }
-
-        // In a real app, this would send an invitation through the API
-        this.showToast('Invitation sent!', 'success');
-    }
-
-    updateGroupDashboard() {
-        const noGroupView = document.getElementById('noGroupView');
-        const groupDashboard = document.getElementById('groupDashboard');
-
-        if (!noGroupView || !groupDashboard) return;
-
-        if (this.userGroup) {
-            noGroupView.classList.add('hidden');
-            groupDashboard.classList.remove('hidden');
-
-            // Update group name
-            document.getElementById('groupName').textContent = this.userGroup.name;
-
-            // Update members list
-            const membersList = document.getElementById('groupMembersList');
-            membersList.innerHTML = this.userGroup.members.map(member => `
-                <div class="group-member">
-                    <img src="${member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name)}&background=6366f1&color=fff`}"
-                         class="w-10 h-10 rounded-full">
-                    <div class="flex-1">
-                        <p class="font-medium text-gray-900">${member.name}</p>
-                        <p class="text-sm text-gray-500">$${member.budget_min} - $${member.budget_max}/mo</p>
-                    </div>
-                    ${member.role === 'creator' ? '<span class="text-xs text-indigo-600">Creator</span>' : ''}
-                </div>
-            `).join('');
-
-            // Calculate combined budget
-            const totalMin = this.userGroup.members.reduce((sum, m) => sum + (m.budget_min || 0), 0);
-            const totalMax = this.userGroup.members.reduce((sum, m) => sum + (m.budget_max || 0), 0);
-            document.getElementById('combinedBudget').textContent = `$${totalMin.toLocaleString()} - $${totalMax.toLocaleString()}`;
-
-        } else {
-            noGroupView.classList.remove('hidden');
-            groupDashboard.classList.add('hidden');
-        }
-    }
-
-    // ==================== MY ROOMS ====================
-
-    loadMyRooms() {
-        const container = document.getElementById('myRoomsTab');
-        if (!container) return;
-
-        const myRooms = JSON.parse(localStorage.getItem('myRooms') || '[]');
-
-        if (myRooms.length === 0) {
-            container.innerHTML = `
-                <div class="card p-8 text-center text-gray-500">
-                    <p>You haven't posted any rooms yet.</p>
-                </div>
-            `;
-        } else {
-            container.innerHTML = `
-                <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    ${myRooms.map(room => this.createRoomCard(room)).join('')}
-                </div>
-            `;
-        }
-    }
-
-    // ==================== MODALS ====================
-
-    openMessage(type, id, name) {
-        // Require login before messaging
-        if (!this.requireAuth('send messages')) {
-            return;
-        }
-
-        this.messageRecipient = { type, id, name };
-
-        const recipientEl = document.getElementById('messageRecipient');
-        recipientEl.innerHTML = `
-            <div class="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-                <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                </svg>
-            </div>
-            <div>
-                <p class="font-medium text-gray-900">${name}</p>
-                <p class="text-sm text-gray-500">${type === 'room' ? 'Room host' : 'Room seeker'}</p>
-            </div>
-        `;
-
-        const modal = document.getElementById('messageModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    closeMessageModal() {
-        const modal = document.getElementById('messageModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    showCompatibilityQuestions() {
-        const modal = document.getElementById('compatibilityModal');
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
-    }
-
-    closeCompatibilityModal() {
-        const modal = document.getElementById('compatibilityModal');
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
-    }
-
-    viewRoom(roomId) {
-        console.log('Viewing room:', roomId);
-        // In a real app, this would open a detailed room view
-    }
-
-    viewSeeker(seekerId) {
-        console.log('Viewing seeker:', seekerId);
-        // In a real app, this would open a detailed seeker profile
-    }
-
-    // ==================== AUTHENTICATION ====================
-
-    requireAuth(action = 'perform this action') {
-        // Check localStorage user first
-        if (this.currentUser) {
-            return true;
-        }
-
-        // Not authenticated - show message and redirect
-        alert(`Please log in to ${action}.`);
-        window.location.href = 'login.html';
-        return false;
-    }
-
     // ==================== UTILITIES ====================
 
     formatDate(dateStr) {
-        if (!dateStr) return 'Flexible';
+        if (!dateStr) return 'Available Now';
         const date = new Date(dateStr);
         const now = new Date();
         const diffDays = Math.ceil((date - now) / (1000 * 60 * 60 * 24));
@@ -755,25 +813,13 @@ class RoomPalApp {
         if (diffDays <= 0) return 'Available Now';
         if (diffDays <= 7) return 'This Week';
         if (diffDays <= 14) return 'Next Week';
-        if (diffDays <= 30) return 'This Month';
 
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    formatRoomType(type) {
-        const types = {
-            'private': 'Private Room',
-            'shared': 'Shared Room',
-            'studio': 'Studio',
-            'other': 'Other'
-        };
-        return types[type] || type || 'Room';
-    }
-
     showToast(message, type = 'info') {
-        // Create toast element
         const toast = document.createElement('div');
-        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50 transition-all transform translate-y-0 opacity-100 ${
+        toast.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg text-white z-50 ${
             type === 'success' ? 'bg-emerald-500' :
             type === 'error' ? 'bg-red-500' : 'bg-indigo-500'
         }`;
@@ -781,196 +827,28 @@ class RoomPalApp {
 
         document.body.appendChild(toast);
 
-        // Remove after 3 seconds
         setTimeout(() => {
-            toast.classList.add('opacity-0', 'translate-y-2');
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(10px)';
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
-
-    // ==================== MOCK DATA ====================
-
-    getMockRooms() {
-        return [
-            {
-                id: 'room_1',
-                room_rent: 1200,
-                room_location: 'Downtown Seattle, WA',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Bright, spacious private room in a modern apartment. Great natural light, in-unit laundry, and close to public transit.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Alex'
-            },
-            {
-                id: 'room_2',
-                room_rent: 950,
-                room_location: 'Capitol Hill, Seattle',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Cozy room in a friendly household. Walking distance to restaurants and bars. Pet-friendly!',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Jordan'
-            },
-            {
-                id: 'room_3',
-                room_rent: 800,
-                room_location: 'University District, Seattle',
-                room_type: 'shared',
-                room_available_date: new Date().toISOString(),
-                room_description: 'Affordable shared room near UW campus. Great for students! Utilities included.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=400&h=300&fit=crop' }],
-                is_verified: false,
-                name: 'Taylor'
-            },
-            {
-                id: 'room_4',
-                room_rent: 1500,
-                room_location: 'Ballard, Seattle',
-                room_type: 'studio',
-                room_available_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Beautiful studio apartment with modern amenities. Quiet neighborhood with great cafes nearby.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Morgan'
-            },
-            {
-                id: 'room_5',
-                room_rent: 1100,
-                room_location: 'Fremont, Seattle',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Charming room in a vintage home. Creative neighborhood with art galleries and unique shops.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1484154218962-a197022b5858?w=400&h=300&fit=crop' }],
-                is_verified: false,
-                name: 'Casey'
-            },
-            {
-                id: 'room_6',
-                room_rent: 1350,
-                room_location: 'South Lake Union, Seattle',
-                room_type: 'private',
-                room_available_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
-                room_description: 'Modern high-rise apartment with amazing city views. Gym and rooftop access included.',
-                room_photos: [{ url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop' }],
-                is_verified: true,
-                name: 'Jamie'
-            }
-        ];
-    }
-
-    getMockSeekers() {
-        return [
-            {
-                id: 'seeker_1',
-                name: 'Sarah',
-                budget_min: 800,
-                budget_max: 1200,
-                preferred_areas: ['Capitol Hill', 'Downtown', 'Fremont'],
-                move_in_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
-                bio: 'Software developer looking for a quiet, clean household. Love cooking and weekend hikes!',
-                avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop&crop=face',
-                is_verified: true,
-                compatibility_score: 92
-            },
-            {
-                id: 'seeker_2',
-                name: 'Marcus',
-                budget_min: 900,
-                budget_max: 1400,
-                preferred_areas: ['Ballard', 'Fremont', 'Wallingford'],
-                move_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-                bio: 'Graduate student at UW. Quiet, respectful, and enjoy good conversations. Night owl but respectful of quiet hours.',
-                avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face',
-                is_verified: true,
-                compatibility_score: 87
-            },
-            {
-                id: 'seeker_3',
-                name: 'Emily',
-                budget_min: 700,
-                budget_max: 1000,
-                preferred_areas: ['University District', 'Ravenna'],
-                move_in_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-                bio: 'Medical student looking for roommates! Clean and organized. Usually studying but love movie nights.',
-                avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200&h=200&fit=crop&crop=face',
-                is_verified: false,
-                compatibility_score: 78
-            },
-            {
-                id: 'seeker_4',
-                name: 'David',
-                budget_min: 1000,
-                budget_max: 1500,
-                preferred_areas: ['Downtown', 'South Lake Union', 'Capitol Hill'],
-                move_in_date: new Date().toISOString(),
-                bio: 'Remote worker in tech. Looking for a social household with professionals. Love board games and cooking!',
-                avatar_url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200&h=200&fit=crop&crop=face',
-                is_verified: true,
-                compatibility_score: 85
-            },
-            {
-                id: 'seeker_5',
-                name: 'Lisa',
-                budget_min: 850,
-                budget_max: 1200,
-                preferred_areas: ['Queen Anne', 'Magnolia', 'Ballard'],
-                move_in_date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString(),
-                bio: 'Artist and part-time barista. Creative, easy-going, and love plants. Looking for a chill environment.',
-                avatar_url: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=200&h=200&fit=crop&crop=face',
-                is_verified: false,
-                compatibility_score: 81
-            },
-            {
-                id: 'seeker_6',
-                name: 'Kevin',
-                budget_min: 750,
-                budget_max: 1100,
-                preferred_areas: ['Beacon Hill', 'Columbia City', 'Georgetown'],
-                move_in_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
-                bio: 'Teacher at local high school. Active and social but respect quiet time. Love outdoor activities!',
-                avatar_url: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=200&h=200&fit=crop&crop=face',
-                is_verified: true,
-                compatibility_score: 89
-            }
-        ];
-    }
 }
 
-// Global functions for onclick handlers
+// Global functions
 function showSection(section) {
     if (window.roomPalApp) {
         window.roomPalApp.showSection(section);
     }
 }
 
-function showCompatibilityQuestions() {
+function closeContactModal() {
     if (window.roomPalApp) {
-        window.roomPalApp.showCompatibilityQuestions();
+        window.roomPalApp.closeContactModal();
     }
 }
 
-function closeCompatibilityModal() {
-    if (window.roomPalApp) {
-        window.roomPalApp.closeCompatibilityModal();
-    }
-}
-
-function closeMessageModal() {
-    if (window.roomPalApp) {
-        window.roomPalApp.closeMessageModal();
-    }
-}
-
-function createGroup() {
-    if (window.roomPalApp) {
-        window.roomPalApp.createGroup();
-    }
-}
-
-// Initialize app when DOM is ready
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
     window.roomPalApp = new RoomPalApp();
 });

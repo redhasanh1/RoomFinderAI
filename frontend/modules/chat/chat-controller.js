@@ -10,6 +10,7 @@ class ChatController {
         this.isInitialized = false;
         this.selectedFiles = [];
         this.isCurrentUserLandlord = false;
+        this.userScrolledUp = false; // Track if user manually scrolled up
         this.chatSystemStatus = {
             isInitialized: false,
             elementsReady: false,
@@ -59,6 +60,8 @@ class ChatController {
         this.setupEventListeners();
         this.setupRealtimeSubscription();
         this.initializeFileUpload();
+        this.setupScrollTracking();
+        this.createScrollToBottomButton();
 
         // Mark chat system as successfully initialized
         this.chatSystemStatus.isInitialized = true;
@@ -124,11 +127,10 @@ class ChatController {
     setupRealtimeSubscription() {
         const supabase = window.configManager ? window.configManager.getSupabase() : null;
         if (!supabase) {
-            console.error('❌ Supabase client not available for real-time subscription');
+            console.error('Supabase client not available for real-time subscription');
             return;
         }
 
-        // SIMPLIFIED Real-time subscription with better debugging
         const messageChannel = supabase
             .channel('messages_realtime_' + Math.random())
             .on('postgres_changes', {
@@ -136,37 +138,29 @@ class ChatController {
                 schema: 'public',
                 table: 'messages'
             }, (payload) => {
-                console.log('🔔 REALTIME EVENT RECEIVED:', payload);
-                console.log('Current conversation ID:', this.currentConversationId);
-                console.log('Message conversation ID:', payload.new.conversation_id);
+                // Only handle messages for current conversation
+                if (!this.currentConversationId || this.currentConversationId !== payload.new.conversation_id) {
+                    return;
+                }
 
-                if (this.currentConversationId && this.currentConversationId === payload.new.conversation_id) {
-                    console.log('✅ Message is for current conversation!');
+                const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
+                if (!currentUser) return;
 
-                    // Reload messages to ensure we get the latest
-                    this.loadMessages(this.currentConversationId);
+                // Skip if this is our own message (already added instantly when sent)
+                if (payload.new.sender_email === currentUser.email) {
+                    return;
+                }
 
-                    // Also try instant append for better UX
-                    const currentUser = window.authManager ? window.authManager.getCurrentUser() : null;
-                    const chatMessagesContainer = document.getElementById('chatMessages');
-
-                    if (chatMessagesContainer && currentUser && payload.new.sender_email !== currentUser.email) {
-                        console.log('🚀 Adding message instantly to UI');
-                    }
-                } else {
-                    console.log('❌ Message not for current conversation');
+                // Append the new message from other user
+                const chatMessagesContainer = document.getElementById('chatMessages');
+                if (chatMessagesContainer) {
+                    const messageElement = this.createMessageElement(payload.new, currentUser);
+                    chatMessagesContainer.appendChild(messageElement);
+                    // Scroll to bottom only if user wasn't reading history
+                    this.scrollToBottom(false);
                 }
             })
-            .subscribe((status) => {
-                console.log('💬 REALTIME SUBSCRIPTION STATUS:', status);
-                if (status === 'SUBSCRIBED') {
-                    console.log('✅ Successfully subscribed to messages!');
-                } else if (status === 'CHANNEL_ERROR') {
-                    console.error('❌ Channel error - real-time not working');
-                } else if (status === 'TIMED_OUT') {
-                    console.error('⏰ Subscription timed out');
-                }
-            });
+            .subscribe();
     }
 
     /**
@@ -230,9 +224,9 @@ class ChatController {
 
             this.currentConversationId = conversation.id;
 
-            // Setup file upload permissions
+            // Setup file upload - enabled for all users
             this.isCurrentUserLandlord = currentUser.email === listing.user_email;
-            this.updateFileUploadVisibility();
+            this.showFileUploadButton();
 
             // Load messages and show modal
             await this.loadAndShowChat(conversation.id);
@@ -412,9 +406,13 @@ class ChatController {
         }
 
         try {
+            // Reset scroll state when opening chat
+            this.userScrolledUp = false;
             await this.loadMessages(conversationId);
             chatModal.classList.add('active');
-            console.log('✅ Chat modal opened for conversation:', conversationId);
+            // Force scroll to bottom when first opening
+            this.scrollToBottom(true);
+            console.log('Chat modal opened for conversation:', conversationId);
         } catch (loadError) {
             console.error('❌ Error loading messages:', loadError);
             alert('Failed to load chat messages. Please try again.');
@@ -425,20 +423,15 @@ class ChatController {
     }
 
     /**
-     * Update file upload button visibility
+     * Show file upload button - enabled for all users
      */
-    updateFileUploadVisibility() {
+    showFileUploadButton() {
         const fileUploadBtn = document.getElementById('fileUploadBtn');
         if (fileUploadBtn) {
-            if (this.isCurrentUserLandlord) {
-                fileUploadBtn.classList.remove('hidden');
-                console.log('📎 File upload enabled for listing owner (landlord)');
-            } else {
-                fileUploadBtn.classList.add('hidden');
-                console.log('📎 File upload disabled for non-owner (tenant)');
-            }
+            fileUploadBtn.classList.remove('hidden');
+            console.log('File upload enabled for user');
         }
-        console.log('🏠 User role:', this.isCurrentUserLandlord ? 'Landlord' : 'Tenant');
+        console.log('User role:', this.isCurrentUserLandlord ? 'Landlord' : 'Tenant');
     }
 
     /**
@@ -489,8 +482,9 @@ class ChatController {
                 chatMessagesContainer.appendChild(messageElement);
             });
 
-            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-            console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
+            // Only auto-scroll if user hasn't scrolled up to read history
+            this.scrollToBottom(false);
+            console.log('Messages loaded successfully:', messages.length, 'messages displayed');
 
         } catch (error) {
             console.error('💥 Exception in loadMessages:', error);
@@ -512,11 +506,11 @@ class ChatController {
             messageContent = `
                 <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                     <div class="flex items-center space-x-2">
-                        <span class="text-lg">📎</span>
+                        <svg class="w-5 h-5 ${isOwner ? 'text-blue-600' : 'text-gray-600'}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <div>
                             <p class="font-medium ${isOwner ? 'text-blue-900' : 'text-gray-900'}">${this.sanitizeInput(message.file_name || 'File')}</p>
                             <p class="text-sm ${isOwner ? 'text-blue-600' : 'text-gray-600'}">${message.file_size ? this.formatFileSize(message.file_size) : ''}</p>
-                            <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium">📥 Download</a>
+                            <a href="${message.file_url}" target="_blank" class="${isOwner ? 'text-blue-800 hover:text-blue-900' : 'text-gray-800 hover:text-gray-900'} text-sm font-medium flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download</a>
                         </div>
                     </div>
                 </div>
@@ -568,8 +562,8 @@ class ChatController {
                 }
             }
 
-            // Send files if any are selected and user is landlord
-            if (this.selectedFiles && this.selectedFiles.length > 0 && this.isCurrentUserLandlord) {
+            // Send files if any are selected - enabled for all users
+            if (this.selectedFiles && this.selectedFiles.length > 0) {
                 for (const file of this.selectedFiles) {
                     await this.sendFileMessage(file, currentUser, timestamp);
                 }
@@ -603,7 +597,8 @@ class ChatController {
             <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
         `;
         chatMessagesContainer.appendChild(messageElement);
-        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        // Force scroll when user sends a message
+        this.scrollToBottom(true);
 
         // Send to database
         const { error } = await supabase
@@ -648,7 +643,7 @@ class ChatController {
         messageElement.innerHTML = `
             <div class="file-message bg-blue-50 p-3 rounded">
                 <div class="flex items-center space-x-2">
-                    <span class="text-lg">📎</span>
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <div>
                         <p class="font-medium text-blue-900">${file.name}</p>
                         <p class="text-sm text-blue-600">Uploading... (${this.formatFileSize(file.size)})</p>
@@ -658,7 +653,8 @@ class ChatController {
             <div class="message-timestamp">${new Date(timestamp).toLocaleTimeString()}</div>
         `;
         chatMessagesContainer.appendChild(messageElement);
-        chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+        // Force scroll when user sends a file
+        this.scrollToBottom(true);
 
         try {
             // Upload file to Supabase storage
@@ -704,11 +700,11 @@ class ChatController {
             messageElement.innerHTML = `
                 <div class="file-message bg-blue-50 p-3 rounded">
                     <div class="flex items-center space-x-2">
-                        <span class="text-lg">📎</span>
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                         <div>
                             <p class="font-medium text-blue-900">${file.name}</p>
                             <p class="text-sm text-blue-600">${this.formatFileSize(file.size)}</p>
-                            <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium">📥 Download</a>
+                            <a href="${urlData.publicUrl}" target="_blank" class="text-blue-800 hover:text-blue-900 text-sm font-medium flex items-center gap-1"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg> Download</a>
                         </div>
                     </div>
                 </div>
@@ -764,11 +760,11 @@ class ChatController {
         selectedFilesContainer.innerHTML = files.map((file, index) => `
             <div class="flex items-center justify-between bg-gray-100 p-2 rounded">
                 <div class="flex items-center space-x-2">
-                    <span class="text-sm">📎</span>
+                    <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
                     <span class="text-sm text-gray-700">${file.name}</span>
                     <span class="text-xs text-gray-500">(${this.formatFileSize(file.size)})</span>
                 </div>
-                <button onclick="chatController.removeFileFromChat(${index})" class="text-red-500 hover:text-red-700 text-sm">×</button>
+                <button onclick="chatController.removeFileFromChat(${index})" class="text-red-500 hover:text-red-700 text-sm">x</button>
             </div>
         `).join('');
     }
@@ -798,6 +794,104 @@ class ChatController {
         if (fileInput) fileInput.value = '';
         const selectedFilesContainer = document.getElementById('selectedFiles');
         if (selectedFilesContainer) selectedFilesContainer.classList.add('hidden');
+    }
+
+    /**
+     * Setup scroll tracking to detect when user scrolls up
+     */
+    setupScrollTracking() {
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        if (!chatMessagesContainer) return;
+
+        chatMessagesContainer.addEventListener('scroll', () => {
+            const { scrollTop, scrollHeight, clientHeight } = chatMessagesContainer;
+            const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+            // User is "at bottom" if within 100px of bottom
+            this.userScrolledUp = distanceFromBottom > 100;
+            this.updateScrollButtonVisibility();
+        });
+    }
+
+    /**
+     * Create scroll to bottom button
+     */
+    createScrollToBottomButton() {
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        if (!chatMessagesContainer) return;
+
+        // Check if button already exists
+        if (document.getElementById('scrollToBottomBtn')) return;
+
+        const scrollBtn = document.createElement('button');
+        scrollBtn.id = 'scrollToBottomBtn';
+        scrollBtn.className = 'scroll-to-bottom-btn';
+        scrollBtn.innerHTML = `
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
+            </svg>
+        `;
+        scrollBtn.style.cssText = `
+            position: absolute;
+            bottom: 80px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.9);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+            transition: all 0.2s ease;
+            z-index: 100;
+        `;
+        scrollBtn.addEventListener('mouseenter', () => {
+            scrollBtn.style.background = 'rgba(37, 99, 235, 1)';
+            scrollBtn.style.transform = 'scale(1.1)';
+        });
+        scrollBtn.addEventListener('mouseleave', () => {
+            scrollBtn.style.background = 'rgba(59, 130, 246, 0.9)';
+            scrollBtn.style.transform = 'scale(1)';
+        });
+        scrollBtn.addEventListener('click', () => this.scrollToBottom(true));
+
+        // Insert button into chat modal content area
+        const chatContent = chatMessagesContainer.parentElement;
+        if (chatContent) {
+            chatContent.style.position = 'relative';
+            chatContent.appendChild(scrollBtn);
+        }
+    }
+
+    /**
+     * Update scroll button visibility
+     */
+    updateScrollButtonVisibility() {
+        const scrollBtn = document.getElementById('scrollToBottomBtn');
+        if (scrollBtn) {
+            scrollBtn.style.display = this.userScrolledUp ? 'flex' : 'none';
+        }
+    }
+
+    /**
+     * Scroll to bottom of chat - only if user hasn't scrolled up or if forced
+     */
+    scrollToBottom(force = false) {
+        const chatMessagesContainer = document.getElementById('chatMessages');
+        if (!chatMessagesContainer) return;
+
+        if (force || !this.userScrolledUp) {
+            chatMessagesContainer.scrollTo({
+                top: chatMessagesContainer.scrollHeight,
+                behavior: force ? 'smooth' : 'auto'
+            });
+            this.userScrolledUp = false;
+            this.updateScrollButtonVisibility();
+        }
     }
 
     /**
