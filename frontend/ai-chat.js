@@ -794,7 +794,7 @@ class AIChatHandler {
 
             // Step 3: Use HUMAN-LIKE phased conversation approach
             if (this.negotiationEngine) {
-                console.log('🎭 Starting human-like conversation (phased approach)...');
+                console.log('🎭 [NEW CODE v2] Starting human-like phased conversation - NO PRICING IN FIRST MESSAGE');
 
                 const budget = this.userNeeds.maxPrice || listing.price * 0.85; // Default to 85% of listing price
                 const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
