@@ -24,6 +24,16 @@ class AIChatHandler {
         // Track active conversation contexts
         this.activeConversations = new Map();
         this.pendingUserResponse = null;
+
+        // Requirements collection state - must collect ALL before searching
+        this.requiredFields = {
+            budget: null,
+            bedrooms: null,
+            location: null
+        };
+        this.requirementsComplete = false;
+        this.listingSelectionMode = false;
+        this.currentViewedListing = null;
     }
 
     // Initialize the chat system
@@ -248,33 +258,57 @@ class AIChatHandler {
         }
     }
 
-    // Handle extracted rental criteria
+    // Handle extracted rental criteria - NEW: Collect ALL requirements before searching
     handleExtractedData(extractedData, aiResponse) {
         // Update user needs from extracted data
         this.updateUserNeeds(extractedData);
 
-        // Check if we should search for listings
-        const shouldSearch = extractedData.intent === 'search' ||
-                            (extractedData.price && extractedData.city) ||
-                            (extractedData.house_type && (extractedData.price || extractedData.city));
-
-        console.log('🎯 Should search for listings:', shouldSearch, {
-            hasIntent: extractedData.intent === 'search',
-            hasPrice: !!extractedData.price,
-            hasCity: !!extractedData.city,
-            hasType: !!extractedData.house_type
-        });
-
-        if (shouldSearch) {
-            // If AI already responded, just search. Otherwise show searching message.
-            if (!aiResponse) {
-                this.appendMessage('AI', 'Searching for matching listings in our database...', 'left');
-            }
-            setTimeout(() => this.searchAndMessage(), 1000);
-        } else if (!aiResponse) {
-            // Only show fallback message if AI didn't respond
-            this.appendMessage('AI', 'I understand your preferences. To search for listings, try saying something like "I need a 2-bedroom apartment under $1500 in Toronto"', 'left');
+        // Update required fields from extracted data
+        if (extractedData.price) {
+            this.requiredFields.budget = extractedData.price;
+            console.log('📝 Captured budget:', extractedData.price);
         }
+        if (extractedData.bedrooms) {
+            this.requiredFields.bedrooms = extractedData.bedrooms;
+            console.log('📝 Captured bedrooms:', extractedData.bedrooms);
+        }
+        if (extractedData.city) {
+            this.requiredFields.location = extractedData.city;
+            console.log('📝 Captured location:', extractedData.city);
+        }
+
+        // Check if this looks like a rental search intent
+        const hasSearchIntent = extractedData.intent === 'search' ||
+            extractedData.price || extractedData.city || extractedData.bedrooms ||
+            extractedData.house_type;
+
+        if (!hasSearchIntent) {
+            // Not a rental search - let the AI response handle it
+            console.log('ℹ️ No rental search intent detected');
+            return;
+        }
+
+        // Check if all requirements are complete
+        const status = this.checkRequirementsComplete();
+        console.log('🔍 Requirements status:', status);
+
+        if (!status.complete) {
+            // Ask for the missing requirement (only if AI didn't already ask)
+            if (!aiResponse || !aiResponse.toLowerCase().includes(status.missing)) {
+                this.appendMessage('AI', status.question, 'left');
+            }
+            console.log(`⏳ Missing requirement: ${status.missing}`);
+            return;
+        }
+
+        // All requirements complete - now search!
+        this.requirementsComplete = true;
+        console.log('✅ All requirements collected, starting search...');
+
+        const summary = `Got it! Searching for ${this.requiredFields.bedrooms}-bedroom places in ${this.requiredFields.location} under $${this.requiredFields.budget}/month...`;
+        this.appendMessage('AI', summary, 'left');
+
+        setTimeout(() => this.searchAndMessage(), 1000);
     }
 
     // Extract rental information - now primarily uses API, with manual fallback
@@ -404,6 +438,38 @@ class AIChatHandler {
         }
         
         console.log('🔧 Final user needs:', this.userNeeds);
+    }
+
+    // Check if all required fields are collected before searching
+    checkRequirementsComplete() {
+        const { budget, bedrooms, location } = this.requiredFields;
+        console.log('🔍 Checking requirements:', { budget, bedrooms, location });
+
+        // Check in priority order: location, budget, bedrooms
+        if (!location) {
+            return {
+                complete: false,
+                missing: 'location',
+                question: "What area or city are you looking to rent in?"
+            };
+        }
+        if (!budget) {
+            return {
+                complete: false,
+                missing: 'budget',
+                question: "What's your monthly budget for rent?"
+            };
+        }
+        if (!bedrooms) {
+            return {
+                complete: false,
+                missing: 'bedrooms',
+                question: "How many bedrooms do you need?"
+            };
+        }
+
+        console.log('✅ All requirements complete!');
+        return { complete: true };
     }
 
     // Search for matching listings in Supabase
@@ -575,6 +641,48 @@ class AIChatHandler {
         this.startNegotiationForListing(listing);
     }
 
+    // Handle viewing a specific listing by number
+    handleListingView(listingNumber) {
+        console.log('👁️ User wants to view listing #', listingNumber);
+
+        // Validate the selection
+        if (!this.matchingListings || this.matchingListings.length === 0) {
+            this.appendMessage('AI', 'No listings available. Please search for listings first.', 'left');
+            return;
+        }
+
+        const index = listingNumber - 1; // Convert to 0-based index
+        if (index < 0 || index >= this.matchingListings.length) {
+            this.appendMessage('AI', `Invalid selection. Please choose a number between 1 and ${Math.min(this.matchingListings.length, 5)}.`, 'left');
+            return;
+        }
+
+        const listing = this.matchingListings[index];
+        this.currentViewedListing = listing;
+
+        // Show detailed listing information
+        this.appendMessage('AI', `📋 **${listing.title || 'Property Details'}**`, 'left');
+        this.appendMessage('AI', `📍 Location: ${listing.city || 'Not specified'}${listing.street ? `, ${listing.street}` : ''}`, 'left');
+        this.appendMessage('AI', `💰 Price: $${listing.price || 'Not listed'}/month`, 'left');
+        this.appendMessage('AI', `🛏️ Bedrooms: ${listing.bedrooms || 'Not specified'}`, 'left');
+        this.appendMessage('AI', `🏠 Type: ${listing.house_type || 'Not specified'}`, 'left');
+
+        if (listing.utilities) {
+            this.appendMessage('AI', `💡 Utilities: ${listing.utilities}`, 'left');
+        }
+
+        if (listing.description) {
+            const shortDesc = listing.description.length > 200
+                ? listing.description.substring(0, 200) + '...'
+                : listing.description;
+            this.appendMessage('AI', `📝 ${shortDesc}`, 'left');
+        }
+
+        // Ask if they want to contact the landlord
+        this.appendMessage('AI', 'Would you like me to message this landlord on your behalf?', 'left');
+        this.pendingUserResponse = 'contact_landlord';
+    }
+
     // Main search and messaging function
     async searchAndMessage() {
         try {
@@ -589,27 +697,37 @@ class AIChatHandler {
                 return;
             }
             
-            // Show found listings
+            // Show found listings with numbered selection
             this.appendMessage('AI', `Found ${this.matchingListings.length} matching listing(s)!`, 'left');
-            
+
             // Update the left sidebar with matching listings
             this.updateSidebarWithListings(this.matchingListings);
-            
-            for (const listing of this.matchingListings.slice(0, 3)) {
-                // Display listings based on your actual database schema
+
+            // Display listings with numbers for selection
+            const listingsToShow = this.matchingListings.slice(0, 5);
+            for (let i = 0; i < listingsToShow.length; i++) {
+                const listing = listingsToShow[i];
                 const titleText = listing.title || 'Untitled Property';
                 const cityText = listing.city || 'City not specified';
-                const streetText = listing.street ? ` - ${listing.street}` : '';
-                const priceText = listing.price ? ` - $${listing.price}` : '';
-                const typeText = listing.house_type ? ` (${listing.house_type})` : '';
-                this.appendMessage('AI', `🏠 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
+                const priceText = listing.price ? `$${listing.price}/month` : 'Price not listed';
+                const bedroomText = listing.bedrooms ? `${listing.bedrooms}BR` : '';
+                const typeText = listing.house_type || '';
+
+                // Format: "1. Modern 2BR Apartment in Downtown - $1,800/month"
+                const details = [bedroomText, typeText].filter(Boolean).join(' ');
+                this.appendMessage('AI', `**${i + 1}.** ${titleText} - ${cityText} - ${priceText}${details ? ` (${details})` : ''}`, 'left');
             }
-            
-            // Ask if user wants to negotiate
-            this.appendMessage('AI', 'Would you like me to help you negotiate with any of these landlords? I can send professional messages on your behalf using market data and negotiation strategies!', 'left');
-            
-            // Set pending response context so "yes" will trigger negotiations
-            this.pendingUserResponse = 'negotiate_offer';
+
+            if (this.matchingListings.length > 5) {
+                this.appendMessage('AI', `...and ${this.matchingListings.length - 5} more listings available.`, 'left');
+            }
+
+            // Ask user to select a listing to view
+            this.appendMessage('AI', 'Would you like to view details on any of these? Just say the number (e.g., "1" or "view 2").', 'left');
+
+            // Set pending response for listing selection
+            this.listingSelectionMode = true;
+            this.pendingUserResponse = 'listing_selection';
             
         } catch (error) {
             this.removeTypingIndicator();
@@ -678,46 +796,96 @@ class AIChatHandler {
         this.negotiationState = 'idle';
     }
 
-    // Check if the message is a negotiation response (yes, sure, etc.)
+    // Check if the message is a response to pending questions (listing selection, contact, etc.)
     checkForNegotiationResponse(message) {
-        console.log('🔍 [NEGOTIATION CHECK] Starting check for message:', message);
+        console.log('🔍 [RESPONSE CHECK] Checking message:', message, 'Pending:', this.pendingUserResponse);
         const cleanMessage = message.toLowerCase().trim();
-        
-        // First check: Do we have any active conversations waiting for user response?
-        const hasActiveContext = this.pendingUserResponse !== null || this.activeConversations.size > 0;
-        
-        if (hasActiveContext) {
-            console.log('🔍 [NEGOTIATION CHECK] Has active context, checking responses...');
-            
-            // Check for affirmative responses
-            const affirmativeResponses = ['yes', 'sure', 'ok', 'okay', 'please', 'go ahead', 'proceed', 'contact them', 'negotiate', 'send message'];
-            const isAffirmative = affirmativeResponses.some(response => cleanMessage.includes(response));
-            
-            if (isAffirmative && this.matchingListings.length > 0) {
-                console.log('✅ [NEGOTIATION CHECK] Affirmative response detected, starting negotiations');
-                this.appendMessage('AI', '🤖 Great! I\'ll contact the landlords for you using smart negotiation strategies...', 'left');
-                
-                // Clear pending response
-                this.pendingUserResponse = null;
-                
-                // Start negotiations for all matching listings
-                setTimeout(() => this.startNegotiationsForAllListings(), 1000);
+
+        // Define common responses
+        const affirmativeResponses = ['yes', 'sure', 'ok', 'okay', 'please', 'go ahead', 'proceed', 'yep', 'yeah', 'definitely', 'absolutely'];
+        const negativeResponses = ['no', 'nope', 'not yet', 'pass', 'skip', 'nah', 'maybe later'];
+        const isAffirmative = affirmativeResponses.some(r => cleanMessage.includes(r));
+        const isNegative = negativeResponses.some(r => cleanMessage.includes(r));
+
+        // Handle listing selection (user says "1", "2", "view 2", etc.)
+        if (this.pendingUserResponse === 'listing_selection') {
+            // Check for number in message
+            const numberMatch = cleanMessage.match(/(\d+)/);
+            if (numberMatch) {
+                const listingNum = parseInt(numberMatch[1]);
+                console.log('✅ User selected listing #', listingNum);
+                this.handleListingView(listingNum);
+                return true;
+            }
+
+            // Check if user wants to see all or contact all
+            if (cleanMessage.includes('all') || cleanMessage.includes('contact') || cleanMessage.includes('message')) {
+                this.appendMessage('AI', 'Which listing number would you like to view first? (1, 2, 3...)', 'left');
                 return true;
             }
         }
-        
-        // Check for direct negotiation requests about specific listings
-        const negotiationKeywords = ['negotiate', 'contact', 'message', 'talk to landlord', 'reach out'];
-        const hasNegotiationKeyword = negotiationKeywords.some(keyword => cleanMessage.includes(keyword));
-        
-        if (hasNegotiationKeyword && this.matchingListings.length > 0) {
-            console.log('✅ [NEGOTIATION CHECK] Direct negotiation request detected');
-            this.appendMessage('AI', '🤖 I\'ll help you negotiate with the landlords. Starting contact now...', 'left');
-            setTimeout(() => this.startNegotiationsForAllListings(), 1000);
+
+        // Handle contact landlord response (after viewing a listing)
+        if (this.pendingUserResponse === 'contact_landlord') {
+            if (isAffirmative && this.currentViewedListing) {
+                console.log('✅ User wants to contact landlord for listing');
+                this.appendMessage('AI', `Great! I'll reach out to the landlord for "${this.currentViewedListing.title}"...`, 'left');
+                this.pendingUserResponse = null;
+                setTimeout(() => this.startNegotiationForListing(this.currentViewedListing), 1000);
+                return true;
+            } else if (isNegative) {
+                console.log('❌ User declined to contact landlord');
+                this.pendingUserResponse = 'continue_browsing';
+                this.appendMessage('AI', 'No problem! Would you like to view another listing, or is there anything else I can help with?', 'left');
+                return true;
+            }
+        }
+
+        // Handle continue browsing response
+        if (this.pendingUserResponse === 'continue_browsing') {
+            // Check if they want to view another listing
+            const numberMatch = cleanMessage.match(/(\d+)/);
+            if (numberMatch) {
+                const listingNum = parseInt(numberMatch[1]);
+                console.log('✅ User wants to view another listing #', listingNum);
+                this.handleListingView(listingNum);
+                return true;
+            }
+
+            if (cleanMessage.includes('another') || cleanMessage.includes('other') || cleanMessage.includes('different')) {
+                this.appendMessage('AI', 'Sure! Which listing number would you like to view?', 'left');
+                this.pendingUserResponse = 'listing_selection';
+                return true;
+            }
+
+            if (isNegative || cleanMessage.includes('nothing') || cleanMessage.includes('done') || cleanMessage.includes('that\'s all')) {
+                this.appendMessage('AI', 'Alright! Feel free to search again if you need anything else. Good luck with your rental search!', 'left');
+                this.pendingUserResponse = null;
+                this.listingSelectionMode = false;
+                return true;
+            }
+        }
+
+        // Legacy: Handle old negotiate_offer response type
+        if (this.pendingUserResponse === 'negotiate_offer' && isAffirmative && this.matchingListings.length > 0) {
+            console.log('✅ Legacy negotiate_offer - redirecting to listing selection');
+            this.appendMessage('AI', 'Which listing would you like me to contact the landlord for? Just say the number.', 'left');
+            this.pendingUserResponse = 'listing_selection';
             return true;
         }
-        
-        console.log('❌ [NEGOTIATION CHECK] No negotiation response detected');
+
+        // Check for direct negotiation requests
+        const negotiationKeywords = ['negotiate', 'contact landlord', 'message landlord', 'talk to landlord', 'reach out'];
+        const hasNegotiationKeyword = negotiationKeywords.some(keyword => cleanMessage.includes(keyword));
+
+        if (hasNegotiationKeyword && this.matchingListings.length > 0) {
+            console.log('✅ Direct negotiation request - asking which listing');
+            this.appendMessage('AI', 'Which listing would you like me to contact the landlord for? Just say the number (e.g., "1").', 'left');
+            this.pendingUserResponse = 'listing_selection';
+            return true;
+        }
+
+        console.log('❌ [RESPONSE CHECK] No matching response detected');
         return false;
     }
 
