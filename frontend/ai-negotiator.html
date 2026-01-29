@@ -752,6 +752,11 @@
                 console.log('Creating AINegotiator engine...');
                 const negotiationEngine = new AINegotiator(supabaseClient, configData);
                 aiNegotiator.setNegotiationEngine(negotiationEngine);
+
+                // CRITICAL: Call init() to setup global message listener for landlord replies
+                await negotiationEngine.init();
+                console.log('✅ Negotiation engine initialized with message listener');
+
                 window.aiNegotiator = negotiationEngine; // Make globally accessible
 
                 // Make aiChat globally accessible for sidebar button clicks
