@@ -10,7 +10,637 @@ class AINegotiator {
         this.aiUserInitialized = false;
         this.rentcastApiKey = '90680b91c3984ae095227bf9e4b02c78'; // RentCast API key for real market data
         this.rentcastCache = new Map(); // Cache RentCast results per negotiation
+        this.conversationStates = new Map(); // Track conversation phases per negotiation
         this.init();
+    }
+
+    // ========================================
+    // HUMAN-LIKE CONVERSATION PHASE SYSTEM
+    // ========================================
+
+    // Conversation phases - mimics natural human-to-landlord flow
+    CONVERSATION_PHASES = {
+        INTRODUCTION: {
+            name: 'INTRODUCTION',
+            order: 1,
+            minMessages: 1,
+            maxMessages: 1,
+            description: 'First contact - greeting and interest',
+            noPricing: true
+        },
+        RAPPORT_BUILDING: {
+            name: 'RAPPORT_BUILDING',
+            order: 2,
+            minMessages: 1,
+            maxMessages: 2,
+            description: 'Ask about property, show interest',
+            noPricing: true
+        },
+        QUALIFICATION: {
+            name: 'QUALIFICATION',
+            order: 3,
+            minMessages: 1,
+            maxMessages: 2,
+            description: 'Share tenant background naturally',
+            noPricing: true
+        },
+        AVAILABILITY_DISCUSSION: {
+            name: 'AVAILABILITY_DISCUSSION',
+            order: 4,
+            minMessages: 1,
+            maxMessages: 1,
+            description: 'Discuss move-in, lease terms',
+            noPricing: false // Can mention if asked
+        },
+        PRICE_INTRODUCTION: {
+            name: 'PRICE_INTRODUCTION',
+            order: 5,
+            minMessages: 1,
+            maxMessages: 1,
+            description: 'Bring up budget naturally',
+            noPricing: false
+        },
+        ACTIVE_NEGOTIATION: {
+            name: 'ACTIVE_NEGOTIATION',
+            order: 6,
+            minMessages: 1,
+            maxMessages: 10,
+            description: 'Actual price negotiation',
+            noPricing: false
+        }
+    };
+
+    // Initialize conversation state for a new negotiation
+    initConversationState(negotiationId, listing, userBudget, userEmail) {
+        const state = {
+            negotiationId: negotiationId,
+            currentPhase: 'INTRODUCTION',
+            phaseMessageCount: 0,
+            totalMessageCount: 0,
+            listing: listing,
+            userBudget: userBudget,
+            userEmail: userEmail,
+            userName: null, // Will be set from user profile
+            messageHistory: [],
+            phaseHistory: ['INTRODUCTION'],
+            landlordResponses: [],
+            lastLandlordMessage: null,
+            currentOffer: null,
+            landlordCounterOffer: null,
+            agreedPrice: null,
+            propertyFeature: this.extractPropertyFeature(listing)
+        };
+        this.conversationStates.set(negotiationId, state);
+        return state;
+    }
+
+    // Get conversation state
+    getConversationState(negotiationId) {
+        return this.conversationStates.get(negotiationId);
+    }
+
+    // Update conversation state
+    updateConversationState(negotiationId, updates) {
+        const state = this.conversationStates.get(negotiationId);
+        if (state) {
+            Object.assign(state, updates);
+            this.conversationStates.set(negotiationId, state);
+        }
+        return state;
+    }
+
+    // Extract a notable feature from listing for personalization
+    extractPropertyFeature(listing) {
+        const features = [];
+
+        // Check title for keywords
+        const title = (listing.title || '').toLowerCase();
+        if (title.includes('renovated')) features.push('the recent renovations');
+        if (title.includes('view')) features.push('the views');
+        if (title.includes('modern')) features.push('the modern design');
+        if (title.includes('spacious')) features.push('how spacious it looks');
+        if (title.includes('bright')) features.push('the natural light');
+        if (title.includes('quiet')) features.push('the quiet location');
+        if (title.includes('downtown')) features.push('the downtown location');
+        if (title.includes('parking')) features.push('the parking');
+
+        // Add based on property attributes
+        if (listing.bedrooms >= 3) features.push(`all ${listing.bedrooms} bedrooms`);
+        if (listing.house_type === 'Apartment') features.push('the apartment layout');
+        if (listing.house_type === 'Condo') features.push('the condo amenities');
+        if (listing.house_type === 'House') features.push('the whole house setup');
+        if (listing.house_type === 'Townhouse') features.push('the townhouse style');
+
+        // Generic fallbacks
+        features.push('the layout', 'the location', 'how it looks');
+
+        return features[Math.floor(Math.random() * Math.min(features.length, 5))];
+    }
+
+    // Detect when to transition to next phase based on landlord's response
+    detectPhaseTransition(landlordMessage, currentPhase, conversationState) {
+        const message = (landlordMessage || '').toLowerCase();
+        const messageCount = conversationState.phaseMessageCount || 0;
+        const phaseConfig = this.CONVERSATION_PHASES[currentPhase];
+
+        // Skip to PRICE_INTRODUCTION if landlord brings up price/money
+        const priceKeywords = /\$\d+|price|rent|budget|cost|afford|monthly|per month|how much|offer/i;
+        if (priceKeywords.test(message) && currentPhase !== 'ACTIVE_NEGOTIATION' && currentPhase !== 'PRICE_INTRODUCTION') {
+            console.log('⏩ Landlord mentioned price - skipping to PRICE_INTRODUCTION');
+            return 'PRICE_INTRODUCTION';
+        }
+
+        // Skip to QUALIFICATION if landlord asks about tenant
+        const qualificationKeywords = /job|work|employ|income|credit|reference|background|who are you|tell me about|what do you do/i;
+        if (qualificationKeywords.test(message) && (currentPhase === 'INTRODUCTION' || currentPhase === 'RAPPORT_BUILDING')) {
+            console.log('⏩ Landlord asked about tenant - moving to QUALIFICATION');
+            return 'QUALIFICATION';
+        }
+
+        // Phase-specific transitions
+        const transitions = {
+            INTRODUCTION: {
+                // Any response from landlord after intro = move to rapport
+                nextPhase: 'RAPPORT_BUILDING',
+                conditions: () => message.length > 0
+            },
+            RAPPORT_BUILDING: {
+                nextPhase: 'QUALIFICATION',
+                conditions: () => {
+                    const positiveResponse = /yes|available|sure|great|sounds|interested|tell me|love to/i.test(message);
+                    return messageCount >= 1 || positiveResponse;
+                }
+            },
+            QUALIFICATION: {
+                nextPhase: 'AVAILABILITY_DISCUSSION',
+                conditions: () => {
+                    const positiveResponse = /sounds good|great|perfect|stable|reliable|good tenant/i.test(message);
+                    return messageCount >= 1 || positiveResponse;
+                }
+            },
+            AVAILABILITY_DISCUSSION: {
+                nextPhase: 'PRICE_INTRODUCTION',
+                conditions: () => {
+                    const discussedAvailability = /available|move.?in|when|date|lease|month/i.test(message);
+                    return messageCount >= 1 || discussedAvailability;
+                }
+            },
+            PRICE_INTRODUCTION: {
+                nextPhase: 'ACTIVE_NEGOTIATION',
+                conditions: () => {
+                    const priceDiscussion = /\$\d+|counter|offer|agree|deal|accept|firm|flexible|negotiate/i.test(message);
+                    return priceDiscussion;
+                }
+            },
+            ACTIVE_NEGOTIATION: {
+                nextPhase: null, // Terminal phase (until deal or rejection)
+                conditions: () => false
+            }
+        };
+
+        const rule = transitions[currentPhase];
+        if (rule && rule.conditions()) {
+            console.log(`➡️ Advancing from ${currentPhase} to ${rule.nextPhase}`);
+            return rule.nextPhase;
+        }
+
+        return currentPhase; // Stay in current phase
+    }
+
+    // Get context for generating phase-specific message
+    buildPhaseContext(conversationState) {
+        return {
+            userName: conversationState.userName || 'there',
+            propertyTitle: conversationState.listing?.title || 'your place',
+            propertyFeature: conversationState.propertyFeature || 'the layout',
+            city: conversationState.listing?.city || 'the area',
+            userBudget: conversationState.userBudget,
+            listingPrice: conversationState.listing?.price,
+            lastLandlordMessage: conversationState.lastLandlordMessage || '',
+            currentOffer: conversationState.currentOffer,
+            landlordCounterOffer: conversationState.landlordCounterOffer,
+            agreedPrice: conversationState.agreedPrice,
+            messageHistory: conversationState.messageHistory
+        };
+    }
+
+    // Add natural human variations to messages
+    addHumanVariations(message) {
+        let result = message;
+
+        // 25% chance to add casual filler at start
+        if (Math.random() < 0.25) {
+            const fillers = ['Actually, ', 'Oh, ', 'So, ', 'Yeah, ', 'Honestly, ', 'Just '];
+            const filler = fillers[Math.floor(Math.random() * fillers.length)];
+            result = filler + result.charAt(0).toLowerCase() + result.slice(1);
+        }
+
+        // 20% chance to add casual closer
+        if (Math.random() < 0.20) {
+            const closers = [' Thanks!', ' Let me know!', ' Appreciate it!', ' :)', ''];
+            const closer = closers[Math.floor(Math.random() * closers.length)];
+            result = result.replace(/[.!?]$/, '') + closer;
+        }
+
+        // 15% chance to remove trailing period (casual texting style)
+        if (Math.random() < 0.15) {
+            result = result.replace(/\.$/, '');
+        }
+
+        return result;
+    }
+
+    // Generate phase-specific message using OpenAI
+    async generatePhaseMessage(conversationState, phase = null) {
+        const currentPhase = phase || conversationState.currentPhase;
+        const context = this.buildPhaseContext(conversationState);
+
+        console.log(`🎭 Generating ${currentPhase} phase message`);
+
+        try {
+            // Build the system prompt for this phase
+            const systemPrompt = this.buildPhaseSystemPrompt(currentPhase, context);
+
+            // Build conversation history for context
+            const messages = [
+                { role: 'system', content: systemPrompt }
+            ];
+
+            // Add recent message history for context (last 4 messages)
+            const recentHistory = conversationState.messageHistory.slice(-4);
+            for (const msg of recentHistory) {
+                messages.push({
+                    role: msg.sender === 'ai' ? 'assistant' : 'user',
+                    content: msg.content
+                });
+            }
+
+            // Add instruction to generate response
+            if (conversationState.lastLandlordMessage) {
+                messages.push({
+                    role: 'user',
+                    content: conversationState.lastLandlordMessage
+                });
+            }
+
+            const response = await fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
+                    ...(this.config.OPENAI_ORG_ID && { 'OpenAI-Organization': this.config.OPENAI_ORG_ID })
+                },
+                body: JSON.stringify({
+                    model: this.config.OPENAI_MODEL || 'gpt-4',
+                    messages: messages,
+                    max_tokens: 150,
+                    temperature: 0.8
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`OpenAI API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            let message = data.choices[0].message.content.trim();
+
+            // Add human variations
+            message = this.addHumanVariations(message);
+
+            console.log(`✅ Generated ${currentPhase} message:`, message);
+            return message;
+
+        } catch (error) {
+            console.warn('⚠️ OpenAI unavailable, using fallback template');
+            return this.getFallbackMessage(currentPhase, context);
+        }
+    }
+
+    // Build system prompt for specific phase (client-side version)
+    buildPhaseSystemPrompt(phase, context) {
+        const userName = context.userName || 'there';
+        const propertyTitle = context.propertyTitle || 'your place';
+        const propertyFeature = context.propertyFeature || 'the layout';
+        const city = context.city || 'the area';
+        const userBudget = context.userBudget || 1500;
+        const listingPrice = context.listingPrice || userBudget;
+        const lastLandlordMessage = context.lastLandlordMessage || '';
+
+        const basePersonality = `You are a REAL PERSON - a working professional looking for a rental. NOT an AI.
+
+CRITICAL RULES:
+- Write like texting, NOT formal letters
+- Use contractions (I'm, don't, can't, it's)
+- Keep messages SHORT: 2-4 sentences max
+- Include occasional fillers: "Actually", "Oh", "So", "Honestly"
+- NEVER use bullet points or lists
+- NEVER say "I'm here to help" or mention being AI
+- NEVER use formal phrases like "I am writing to" or "Kind regards"
+- Sound like texting a potential landlord
+
+YOUR PERSONA: Working professional, stable income, reliable, been renting for years.`;
+
+        const phasePrompts = {
+            INTRODUCTION: `${basePersonality}
+
+PHASE: FIRST CONTACT
+
+GOAL: Casual greeting, show interest in ONE property detail, ask if available.
+DO NOT mention price or qualifications yet.
+
+PROPERTY: ${propertyTitle} in ${city}
+FEATURE TO MENTION: ${propertyFeature}
+
+Write 2-3 sentences max. Example: "Hey! Saw your listing and it caught my eye. Is it still available?"`,
+
+            RAPPORT_BUILDING: `${basePersonality}
+
+PHASE: BUILDING CONNECTION
+
+LANDLORD SAID: "${lastLandlordMessage}"
+
+GOAL: Ask 1-2 questions about property/neighborhood. Show genuine interest.
+Still NO pricing discussion.
+
+Good questions: What's the neighborhood like? Is it quiet? How's parking?
+
+Write 2-3 sentences responding to them and asking a question.`,
+
+            QUALIFICATION: `${basePersonality}
+
+PHASE: SHARING BACKGROUND
+
+LANDLORD SAID: "${lastLandlordMessage}"
+
+GOAL: Naturally share why you'd be a great tenant (don't list everything).
+Mention: stable job, good rental history, responsible.
+
+Write 2-3 sentences. Be humble, not salesy.`,
+
+            AVAILABILITY_DISCUSSION: `${basePersonality}
+
+PHASE: LOGISTICS
+
+LANDLORD SAID: "${lastLandlordMessage}"
+
+GOAL: Discuss move-in timing, lease terms, maybe suggest viewing.
+
+Write 2-3 sentences about timing/availability.`,
+
+            PRICE_INTRODUCTION: `${basePersonality}
+
+PHASE: BUDGET DISCUSSION
+
+LANDLORD SAID: "${lastLandlordMessage}"
+
+YOUR BUDGET: ~$${userBudget}/month
+LISTING PRICE: $${listingPrice}/month
+
+GOAL: Bring up budget casually, ask if flexible. Be honest, not demanding.
+
+Example: "So I wanted to be upfront - my budget is around $${userBudget}. Any flexibility on rent?"
+
+Write 2-3 sentences introducing your budget.`,
+
+            ACTIVE_NEGOTIATION: `${basePersonality}
+
+PHASE: NEGOTIATING
+
+LANDLORD SAID: "${lastLandlordMessage}"
+
+YOUR BUDGET: $${userBudget}/month
+LISTING: $${listingPrice}/month
+${context.currentOffer ? `YOUR LAST OFFER: $${context.currentOffer}` : ''}
+
+GOAL: Work toward agreement. Acknowledge their position, make reasonable counters.
+
+Write 2-3 sentences negotiating naturally.`
+        };
+
+        return phasePrompts[phase] || phasePrompts.INTRODUCTION;
+    }
+
+    // Fallback messages when OpenAI is unavailable
+    getFallbackMessage(phase, context) {
+        const templates = {
+            INTRODUCTION: [
+                `Hey! Just came across your listing for ${context.propertyTitle} and it caught my eye. Is it still available?`,
+                `Hi there! Saw your place on RoomFinder - love ${context.propertyFeature}. Still looking for a tenant?`,
+                `Hey! I'm apartment hunting in ${context.city} and your place stood out. Would love to know more!`
+            ],
+            RAPPORT_BUILDING: [
+                `Awesome, glad it's still available! Quick question - what's the neighborhood like?`,
+                `Great! Is it pretty quiet around there? I work from home so that's important for me.`,
+                `Nice! How long have you had the place? Any issues I should know about?`
+            ],
+            QUALIFICATION: [
+                `Sounds great. A bit about me - I work in tech, stable income, been at my current place for 3 years. My landlord can vouch for me.`,
+                `Perfect. I should mention - I'm a working professional, pretty low-maintenance as a tenant. Never missed a rent payment.`,
+                `Good to know! I work from home, very quiet, and take good care of places I live. Been renting for years with great references.`
+            ],
+            AVAILABILITY_DISCUSSION: [
+                `When would move-in work for you? I'm looking at next month but I'm flexible.`,
+                `Is the lease 12 months? I'm open to longer if that helps. When could I see the place?`,
+                `I'm pretty flexible on the exact move-in date. Would love to schedule a viewing if possible.`
+            ],
+            PRICE_INTRODUCTION: [
+                `So I wanted to be upfront about budget - I'm working with around $${context.userBudget}/month. Is there any flexibility on the rent?`,
+                `I really like the place. Just being honest, my comfortable range is around $${context.userBudget}. Any wiggle room?`,
+                `Everything looks perfect. The only thing is budget - I'm at around $${context.userBudget}. What do you think?`
+            ],
+            ACTIVE_NEGOTIATION: [
+                `I hear you. Would $${context.currentOffer || context.userBudget} work? I can commit to a longer lease if that helps.`,
+                `That's a bit above what I was hoping, but I really want this place. Could you do $${context.currentOffer || context.userBudget}?`,
+                `I understand. What if we met somewhere in the middle?`
+            ]
+        };
+
+        const phaseTemplates = templates[phase] || templates.INTRODUCTION;
+        return phaseTemplates[Math.floor(Math.random() * phaseTemplates.length)];
+    }
+
+    // Start conversation with introduction (new human-like flow)
+    async startHumanLikeConversation(listing, userBudget, userEmail, userName = null) {
+        try {
+            console.log('🚀 Starting human-like conversation for:', listing.title);
+
+            // Create negotiation ID
+            const negotiationId = `neg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            // Initialize conversation state
+            const conversationState = this.initConversationState(negotiationId, listing, userBudget, userEmail);
+            if (userName) conversationState.userName = userName;
+
+            // Generate introduction message (NO pricing)
+            const introMessage = await this.generatePhaseMessage(conversationState, 'INTRODUCTION');
+
+            // Record the message
+            conversationState.messageHistory.push({
+                sender: 'ai',
+                content: introMessage,
+                timestamp: new Date(),
+                phase: 'INTRODUCTION'
+            });
+            conversationState.phaseMessageCount = 1;
+            conversationState.totalMessageCount = 1;
+
+            // Also track in activeNegotiations for compatibility
+            this.activeNegotiations.set(negotiationId, {
+                listingId: listing.id,
+                listingTitle: listing.title,
+                originalPrice: listing.price,
+                userBudget: userBudget,
+                userEmail: userEmail,
+                landlordEmail: listing.user_email,
+                marketData: null, // Will be fetched when needed
+                status: 'active',
+                startTime: new Date(),
+                conversationPhase: 'INTRODUCTION',
+                messages: [{
+                    sender: 'ai',
+                    content: introMessage,
+                    timestamp: new Date()
+                }],
+                negotiationState: {
+                    currentPhase: 'INTRODUCTION',
+                    offersMade: [],
+                    offersRejected: 0,
+                    lastOffer: null,
+                    concessionCount: 0
+                },
+                landlordProfile: this.getDefaultLandlordProfile(),
+                memory: {
+                    landlordConcerns: [],
+                    effectivePhrases: [],
+                    rapportLevel: 50,
+                    topicsDiscussed: []
+                }
+            });
+
+            console.log('✅ Started conversation with introduction (no pricing)');
+
+            return {
+                message: introMessage,
+                negotiationId: negotiationId,
+                phase: 'INTRODUCTION',
+                conversationState: conversationState
+            };
+
+        } catch (error) {
+            console.error('Error starting human-like conversation:', error);
+            throw error;
+        }
+    }
+
+    // Handle landlord reply and generate next phase response
+    async handleLandlordReplyWithPhases(landlordMessage, negotiationId, listing) {
+        try {
+            console.log('💬 Processing landlord reply for phased conversation');
+
+            // Get conversation state
+            let conversationState = this.getConversationState(negotiationId);
+
+            if (!conversationState) {
+                // Try to reconstruct from activeNegotiations
+                const negotiation = this.activeNegotiations.get(negotiationId);
+                if (negotiation) {
+                    conversationState = this.initConversationState(negotiationId, listing, negotiation.userBudget, negotiation.userEmail);
+                    conversationState.currentPhase = negotiation.conversationPhase || 'RAPPORT_BUILDING';
+                    conversationState.messageHistory = negotiation.messages || [];
+                } else {
+                    console.error('No conversation state found for:', negotiationId);
+                    return null;
+                }
+            }
+
+            // Record landlord's message
+            conversationState.lastLandlordMessage = landlordMessage;
+            conversationState.landlordResponses.push({
+                content: landlordMessage,
+                timestamp: new Date()
+            });
+            conversationState.messageHistory.push({
+                sender: 'landlord',
+                content: landlordMessage,
+                timestamp: new Date()
+            });
+
+            // Detect phase transition
+            const newPhase = this.detectPhaseTransition(
+                landlordMessage,
+                conversationState.currentPhase,
+                conversationState
+            );
+
+            // Update phase if changed
+            if (newPhase !== conversationState.currentPhase) {
+                console.log(`📍 Phase transition: ${conversationState.currentPhase} → ${newPhase}`);
+                conversationState.currentPhase = newPhase;
+                conversationState.phaseMessageCount = 0;
+                conversationState.phaseHistory.push(newPhase);
+            }
+
+            // If entering ACTIVE_NEGOTIATION, get market data
+            if (newPhase === 'ACTIVE_NEGOTIATION' || newPhase === 'PRICE_INTRODUCTION') {
+                const negotiation = this.activeNegotiations.get(negotiationId);
+                if (negotiation && !negotiation.marketData) {
+                    negotiation.marketData = await this.getMarketData(
+                        listing.city, listing.house_type, listing.bedrooms, listing
+                    );
+                }
+            }
+
+            // Generate response for current phase
+            const responseMessage = await this.generatePhaseMessage(conversationState);
+
+            // Record our response
+            conversationState.messageHistory.push({
+                sender: 'ai',
+                content: responseMessage,
+                timestamp: new Date(),
+                phase: conversationState.currentPhase
+            });
+            conversationState.phaseMessageCount++;
+            conversationState.totalMessageCount++;
+
+            // Update active negotiation tracking
+            const negotiation = this.activeNegotiations.get(negotiationId);
+            if (negotiation) {
+                negotiation.conversationPhase = conversationState.currentPhase;
+                negotiation.messages.push({
+                    sender: 'landlord',
+                    content: landlordMessage,
+                    timestamp: new Date()
+                });
+                negotiation.messages.push({
+                    sender: 'ai',
+                    content: responseMessage,
+                    timestamp: new Date()
+                });
+            }
+
+            // Calculate human-like response delay
+            const delay = this.calculateResponseDelay({
+                messageLength: landlordMessage.length,
+                responseLength: responseMessage.length,
+                emotionalContent: /!|\?{2,}|urgent|asap|hurry/i.test(landlordMessage),
+                isComplexDecision: conversationState.currentPhase === 'ACTIVE_NEGOTIATION'
+            });
+
+            console.log(`✅ Generated ${conversationState.currentPhase} response (delay: ${delay}ms)`);
+
+            return {
+                message: responseMessage,
+                phase: conversationState.currentPhase,
+                delay: delay,
+                conversationState: conversationState
+            };
+
+        } catch (error) {
+            console.error('Error handling landlord reply with phases:', error);
+            throw error;
+        }
     }
 
     // Get combined tactic for each negotiation round
