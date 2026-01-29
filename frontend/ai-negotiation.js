@@ -3602,9 +3602,16 @@ Generate ONLY the message. No greetings, no signatures.
             if (landlordEmail) {
                 try {
                     console.log('🔔 Creating notification for landlord:', landlordEmail);
+
+                    // Include conversation metadata for reply functionality
                     const notificationContent = [{
                         role: 'assistant',
-                        content: `📬 New inquiry from ${userEmail}:\n\n"${message.substring(0, 200)}${message.length > 200 ? '...' : ''}"`
+                        content: `📬 New inquiry from ${userEmail}:\n\n"${message.substring(0, 200)}${message.length > 200 ? '...' : ''}"`,
+                        metadata: {
+                            conversation_id: conversationId,
+                            tenant_email: userEmail,
+                            listing_title: listingTitle
+                        }
                     }];
 
                     const { error: notifError } = await this.supabase
@@ -3618,7 +3625,7 @@ Generate ONLY the message. No greetings, no signatures.
                     if (notifError) {
                         console.error('⚠️ Failed to create landlord notification:', notifError);
                     } else {
-                        console.log('✅ Created notification for landlord');
+                        console.log('✅ Created notification for landlord with conversation_id:', conversationId);
                     }
                 } catch (notifError) {
                     console.error('⚠️ Error creating landlord notification:', notifError);
