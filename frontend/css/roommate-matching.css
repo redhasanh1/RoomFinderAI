@@ -360,6 +360,88 @@ textarea.form-input {
     box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
 }
 
+/* ==================== LIFESTYLE BADGES ==================== */
+
+.lifestyle-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.lifestyle-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    background: #f3f4f6;
+    border-radius: 999px;
+    font-size: 12px;
+    color: #374151;
+    white-space: nowrap;
+}
+
+.lifestyle-badge:hover {
+    background: #e5e7eb;
+}
+
+/* ==================== SCORE BUTTONS ==================== */
+
+.score-btn {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.score-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.score-btn.selected {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+}
+
+/* ==================== OPTION BUTTONS ==================== */
+
+.option-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.option-btn:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+}
+
+.option-btn.selected {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+}
+
 /* ==================== RESPONSIVE ==================== */
 
 @media (max-width: 768px) {

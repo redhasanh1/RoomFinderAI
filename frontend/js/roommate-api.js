@@ -209,6 +209,8 @@ class RoommateAPIService {
                 move_in_date: profileData.move_in_date,
                 bio: profileData.bio,
                 avatar_url: profileData.avatar_url,
+                lifestyle: profileData.lifestyle || {},
+                compatibility_scores: profileData.compatibility_scores || {},
                 is_active: true,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
