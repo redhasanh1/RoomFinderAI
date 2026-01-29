@@ -183,21 +183,31 @@ class NotificationService {
 
             // Process ai_chats
             if (aiChats) {
+                console.log('🔔 Processing', aiChats.length, 'ai_chats');
                 aiChats.forEach(chat => {
                     try {
-                        const conversationData = JSON.parse(chat.conversation_data);
-                        const message = conversationData[0]?.content || '';
+                        // Handle both JSONB (object) and string formats
+                        let conversationData = chat.conversation_data;
+                        if (typeof conversationData === 'string') {
+                            conversationData = JSON.parse(conversationData);
+                        }
+                        const message = Array.isArray(conversationData)
+                            ? (conversationData[0]?.content || '')
+                            : (conversationData?.content || String(conversationData) || '');
+
+                        console.log('🔔 Chat notification:', chat.title, message.substring(0, 50));
 
                         allNotifications.push({
                             id: `chat_${chat.id}`,
-                            type: chat.title?.includes('Success') ? 'negotiation_success' : 'landlord_reply',
+                            type: chat.title?.includes('Success') ? 'negotiation_success' :
+                                  chat.title?.includes('Message') ? 'landlord_reply' : 'notification',
                             title: chat.title || 'Notification',
                             message: message.substring(0, 150),
                             timestamp: chat.created_at,
                             read: false
                         });
                     } catch (e) {
-                        console.error('Error parsing chat:', e);
+                        console.error('Error parsing chat:', e, chat);
                     }
                 });
             }
@@ -237,12 +247,20 @@ class NotificationService {
     // Handle new notification from real-time subscription
     handleNewNotification(data) {
         try {
-            const conversationData = JSON.parse(data.conversation_data);
-            const message = conversationData[0]?.content || '';
+            console.log('🔔 handleNewNotification:', data);
+            // Handle both JSONB (object) and string formats
+            let conversationData = data.conversation_data;
+            if (typeof conversationData === 'string') {
+                conversationData = JSON.parse(conversationData);
+            }
+            const message = Array.isArray(conversationData)
+                ? (conversationData[0]?.content || '')
+                : (conversationData?.content || String(conversationData) || '');
 
             const notification = {
                 id: `chat_${data.id}`,
-                type: data.title?.includes('Success') ? 'negotiation_success' : 'landlord_reply',
+                type: data.title?.includes('Success') ? 'negotiation_success' :
+                      data.title?.includes('Message') ? 'landlord_reply' : 'notification',
                 title: data.title || 'New Notification',
                 message: message.substring(0, 150),
                 timestamp: data.created_at || new Date().toISOString(),
