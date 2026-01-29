@@ -818,6 +818,21 @@ class AIChatHandler {
                 return true;
             }
 
+            // FIX 1: Auto-select if affirmative and only 1 listing
+            if (isAffirmative && this.matchingListings && this.matchingListings.length === 1) {
+                console.log('✅ Auto-selecting only listing (single match + affirmative)');
+                this.handleListingView(1);
+                return true;
+            }
+
+            // Handle "view" or "view this" without number when only 1 listing
+            if ((cleanMessage.includes('view') || cleanMessage.includes('this') || cleanMessage.includes('that'))
+                && this.matchingListings && this.matchingListings.length === 1) {
+                console.log('✅ Auto-selecting only listing (view keyword + single match)');
+                this.handleListingView(1);
+                return true;
+            }
+
             // Check if user wants to see all or contact all
             if (cleanMessage.includes('all') || cleanMessage.includes('contact') || cleanMessage.includes('message')) {
                 this.appendMessage('AI', 'Which listing number would you like to view first? (1, 2, 3...)', 'left');
@@ -827,8 +842,22 @@ class AIChatHandler {
 
         // Handle contact landlord response (after viewing a listing)
         if (this.pendingUserResponse === 'contact_landlord') {
-            if (isAffirmative && this.currentViewedListing) {
-                console.log('✅ User wants to contact landlord for listing');
+            // FIX 2: Better keyword detection for "msg landlord", "message the landlord", "I like it contact", etc.
+            const wantsToMessage = cleanMessage.includes('msg') ||
+                                   cleanMessage.includes('message') ||
+                                   cleanMessage.includes('contact') ||
+                                   cleanMessage.includes('reach out') ||
+                                   cleanMessage.includes('landlord');
+            const likesIt = cleanMessage.includes('like') ||
+                            cleanMessage.includes('good') ||
+                            cleanMessage.includes('great') ||
+                            cleanMessage.includes('perfect') ||
+                            cleanMessage.includes('love') ||
+                            cleanMessage.includes('interested');
+
+            // Check affirmative OR explicit message intent OR likes it + has listing
+            if ((isAffirmative || wantsToMessage || likesIt) && this.currentViewedListing) {
+                console.log('✅ User wants to contact landlord (affirmative/keyword match)');
                 this.appendMessage('AI', `Great! I'll reach out to the landlord for "${this.currentViewedListing.title}"...`, 'left');
                 this.pendingUserResponse = null;
                 setTimeout(() => this.startNegotiationForListing(this.currentViewedListing), 1000);
@@ -883,6 +912,20 @@ class AIChatHandler {
             this.appendMessage('AI', 'Which listing would you like me to contact the landlord for? Just say the number (e.g., "1").', 'left');
             this.pendingUserResponse = 'listing_selection';
             return true;
+        }
+
+        // FIX 3: CRITICAL - Prevent fall-through to AI API when pending response exists
+        // If we have a pending response but didn't match above, ask for clarification instead of calling AI
+        if (this.pendingUserResponse && ['listing_selection', 'contact_landlord', 'continue_browsing'].includes(this.pendingUserResponse)) {
+            console.log('⚠️ Pending response not matched, asking for clarification instead of calling AI');
+            if (this.pendingUserResponse === 'listing_selection') {
+                this.appendMessage('AI', 'Please enter a listing number to view its details (e.g., "1" or "2").', 'left');
+            } else if (this.pendingUserResponse === 'contact_landlord') {
+                this.appendMessage('AI', 'Would you like me to message this landlord? Just say "yes" or "no".', 'left');
+            } else if (this.pendingUserResponse === 'continue_browsing') {
+                this.appendMessage('AI', 'Would you like to view another listing, or is there anything else I can help with?', 'left');
+            }
+            return true; // CRITICAL: This prevents the AI API call which would trigger a new search
         }
 
         console.log('❌ [RESPONSE CHECK] No matching response detected');
