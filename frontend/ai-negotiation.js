@@ -460,10 +460,10 @@ Write 2-3 sentences negotiating naturally.`
         return phaseTemplates[Math.floor(Math.random() * phaseTemplates.length)];
     }
 
-    // Start conversation with introduction (new human-like flow)
+    // Start conversation with introduction (new human-like flow) - v2
     async startHumanLikeConversation(listing, userBudget, userEmail, userName = null) {
         try {
-            console.log('🚀 Starting human-like conversation for:', listing.title);
+            console.log('🚀 [HUMAN-LIKE v2] Starting phased conversation for:', listing.title);
 
             // Create negotiation ID
             const negotiationId = `neg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
