@@ -79,45 +79,6 @@
             background: #eff6ff;
             border-left: 3px solid #3b82f6;
         }
-        /* Floating notification button */
-        .floating-notification-btn {
-            position: fixed;
-            bottom: 100px;
-            right: 20px;
-            width: 56px;
-            height: 56px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
-            color: white;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4);
-            z-index: 9997;
-            transition: all 0.3s ease;
-        }
-        .floating-notification-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5);
-        }
-        .floating-notification-btn .badge {
-            position: absolute;
-            top: -5px;
-            right: -5px;
-            background: #ef4444;
-            color: white;
-            border-radius: 50%;
-            min-width: 22px;
-            height: 22px;
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border: 2px solid white;
-        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -1028,8 +989,14 @@
             }
         }
 
+        // Store notifications globally for click handling
+        window.notificationsData = [];
+
         function updateNotificationUI({ notifications, unreadCount }) {
             console.log('🔔 updateNotificationUI called:', { notificationCount: notifications?.length, unreadCount });
+
+            // Store notifications for click handling
+            window.notificationsData = notifications || [];
 
             // Update header badge
             const badge = document.getElementById('notificationBadge');
@@ -1039,17 +1006,6 @@
                     badge.classList.remove('hidden');
                 } else {
                     badge.classList.add('hidden');
-                }
-            }
-
-            // Update floating badge
-            const floatingBadge = document.getElementById('floatingNotificationBadge');
-            if (floatingBadge) {
-                if (notifications && notifications.length > 0) {
-                    floatingBadge.textContent = notifications.length > 99 ? '99+' : notifications.length;
-                    floatingBadge.classList.remove('hidden');
-                } else {
-                    floatingBadge.classList.add('hidden');
                 }
             }
 
@@ -1064,26 +1020,29 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
                         </svg>
                         <p class="text-sm">No notifications yet</p>
-                        <p class="text-xs text-gray-400 mt-2">You'll be notified when landlords reply</p>
+                        <p class="text-xs text-gray-400 mt-2">You'll be notified when tenants message you</p>
                     </div>
                 `;
                 return;
             }
 
-            list.innerHTML = notifications.map(notification => {
+            list.innerHTML = notifications.map((notification, index) => {
                 const typeIcon = notification.type === 'negotiation_success' ? '🎉' :
                                 notification.type === 'landlord_reply' ? '💬' : '📬';
                 const timeAgo = formatTimeAgo(new Date(notification.timestamp));
 
                 return `
                     <div class="notification-item relative ${notification.read ? '' : 'unread'}"
-                         onclick="handleNotificationClick('${notification.id}')">
+                         onclick="handleNotificationClick(${index})">
                         <div class="flex items-start gap-3 ${notification.read ? '' : 'pl-4'}">
                             <span class="text-2xl">${typeIcon}</span>
                             <div class="flex-1 min-w-0">
                                 <h4 class="text-sm font-semibold text-gray-800">${notification.title}</h4>
                                 <p class="text-xs text-gray-600 mt-1 line-clamp-2">${notification.message}</p>
                                 <span class="text-xs text-gray-400 mt-1 block">${timeAgo}</span>
+                                <button class="mt-2 text-xs bg-purple-600 text-white px-3 py-1 rounded hover:bg-purple-700 transition">
+                                    View & Reply
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -1102,13 +1061,132 @@
             return date.toLocaleDateString();
         }
 
-        function handleNotificationClick(notificationId) {
-            if (window.notificationService) {
-                window.notificationService.markAsRead(notificationId);
+        function handleNotificationClick(notificationIndex) {
+            const notification = window.notificationsData[notificationIndex];
+            if (!notification) {
+                console.error('Notification not found at index:', notificationIndex);
+                return;
             }
 
-            // Optionally navigate to related content
-            console.log('Notification clicked:', notificationId);
+            // Mark as read
+            if (window.notificationService) {
+                window.notificationService.markAsRead(notification.id);
+            }
+
+            console.log('Notification clicked:', notification);
+
+            // Close notification panel
+            closeNotificationPanel();
+
+            // Open reply modal with notification details
+            openReplyModal(notification);
+        }
+
+        function openReplyModal(notification) {
+            // Extract sender email from notification message if available
+            let senderEmail = '';
+            const fromMatch = notification.message.match(/From:\s*([^\n]+)/);
+            if (fromMatch) {
+                senderEmail = fromMatch[1].trim();
+            }
+
+            // Extract property name from title
+            let propertyName = notification.title.replace('New Message: ', '');
+
+            // Create reply modal
+            const modal = document.createElement('div');
+            modal.id = 'replyModal';
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden">
+                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-lg font-bold">💬 Reply to Tenant</h3>
+                            <button onclick="closeReplyModal()" class="text-white hover:text-gray-200">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            </button>
+                        </div>
+                        <p class="text-sm text-purple-100 mt-1">Property: ${propertyName}</p>
+                    </div>
+                    <div class="p-4">
+                        <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                            <p class="text-xs text-gray-500 mb-1">Original Message:</p>
+                            <p class="text-sm text-gray-700">${notification.message}</p>
+                        </div>
+                        ${senderEmail ? `<p class="text-xs text-gray-500 mb-2">Replying to: <strong>${senderEmail}</strong></p>` : ''}
+                        <textarea id="replyMessage"
+                            class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                            rows="4"
+                            placeholder="Type your reply..."></textarea>
+                        <div class="flex gap-3 mt-4">
+                            <button onclick="closeReplyModal()"
+                                class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition">
+                                Cancel
+                            </button>
+                            <button onclick="sendReply('${senderEmail}', '${propertyName.replace(/'/g, "\\'")}')"
+                                class="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition">
+                                Send Reply
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            // Focus on textarea
+            setTimeout(() => {
+                document.getElementById('replyMessage')?.focus();
+            }, 100);
+        }
+
+        function closeReplyModal() {
+            const modal = document.getElementById('replyModal');
+            if (modal) {
+                modal.remove();
+            }
+        }
+
+        async function sendReply(tenantEmail, propertyName) {
+            const replyMessage = document.getElementById('replyMessage')?.value?.trim();
+            if (!replyMessage) {
+                alert('Please enter a reply message');
+                return;
+            }
+
+            if (!tenantEmail) {
+                alert('Unable to determine tenant email. Please reply through the listings page.');
+                return;
+            }
+
+            try {
+                console.log('🔔 Sending reply to:', tenantEmail);
+
+                // Create notification for the tenant
+                const notificationTitle = `Reply from Landlord: ${propertyName}`;
+                const notificationContent = `Landlord Reply\n\nProperty: ${propertyName}\nFrom: ${currentUser?.email || 'Landlord'}\n\nMessage: "${replyMessage}"`;
+
+                const { data, error } = await supabaseClient.rpc('create_notification', {
+                    recipient_email: tenantEmail,
+                    notification_title: notificationTitle,
+                    notification_content: notificationContent
+                });
+
+                if (error) {
+                    console.error('🔔 RPC error:', error);
+                    alert('Failed to send reply. Please try again.');
+                    return;
+                }
+
+                console.log('🔔 Reply sent successfully! ID:', data);
+                alert('Reply sent successfully!');
+                closeReplyModal();
+
+            } catch (error) {
+                console.error('🔔 Error sending reply:', error);
+                alert('Failed to send reply. Please try again.');
+            }
         }
 
         function markAllNotificationsRead() {
@@ -1117,14 +1195,6 @@
             }
         }
     </script>
-
-    <!-- Floating Notification Button (always visible) -->
-    <button id="floatingNotificationBtn" class="floating-notification-btn" onclick="toggleNotificationPanel()" title="View Notifications">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path>
-        </svg>
-        <span id="floatingNotificationBadge" class="badge hidden">0</span>
-    </button>
 
     <!-- Notification Panel -->
     <div class="notification-overlay" id="notificationOverlay" onclick="closeNotificationPanel()"></div>
