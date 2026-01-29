@@ -11,6 +11,16 @@ class RoomPalApp {
         this.allPeople = [];
         this.filteredPeople = [];
         this.uploadedPhoto = null;
+        this.hasUserProfile = false;
+
+        // Profile form state
+        this.profileFormData = {
+            cleanliness: 8,
+            social: 5,
+            sleep: null,
+            smoking: 'Non-Smoker',
+            pets: null
+        };
 
         this.init();
     }
@@ -78,6 +88,12 @@ class RoomPalApp {
         const roomPhoto = document.getElementById('roomPhoto');
         if (roomPhoto) {
             roomPhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'roomPhotoPreview'));
+        }
+
+        // Quick profile form submission
+        const quickProfileForm = document.getElementById('quickProfileForm');
+        if (quickProfileForm) {
+            quickProfileForm.addEventListener('submit', (e) => this.handleQuickProfileSubmit(e));
         }
     }
 
@@ -241,6 +257,14 @@ class RoomPalApp {
             this.allPeople = people;
             this.filteredPeople = people;
 
+            // Check if current user has a profile and show prompt if not
+            if (this.currentUser) {
+                await this.checkUserProfile();
+                if (!this.hasUserProfile) {
+                    this.showProfilePrompt();
+                }
+            }
+
             this.renderPeople();
         } catch (error) {
             console.error('Error loading people:', error);
@@ -293,6 +317,14 @@ class RoomPalApp {
         const truncatedBio = bio.length > 100 ? bio.substring(0, 100) + '...' : bio;
         const moveInDate = person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible';
 
+        // Extract lifestyle for badges
+        const lifestyle = person.lifestyle || {};
+        const scores = person.compatibility_scores || {};
+        const badges = this.getLifestyleBadges(lifestyle, scores);
+        const badgesHtml = badges.map(b =>
+            `<span class="lifestyle-badge">${b.icon} ${b.label}</span>`
+        ).join('');
+
         return `
             <div class="person-card">
                 <div class="person-avatar-section">
@@ -321,6 +353,7 @@ class RoomPalApp {
                             ${moveInDate}
                         </span>
                     </div>
+                    ${badgesHtml ? `<div class="lifestyle-badges">${badgesHtml}</div>` : ''}
                     <p class="person-bio">${truncatedBio}</p>
                     <button onclick="roomPalApp.openPersonContact('${person.id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">
                         Connect
@@ -330,17 +363,93 @@ class RoomPalApp {
         `;
     }
 
+    getLifestyleBadges(lifestyle, scores) {
+        const badges = [];
+
+        // Cleanliness badge
+        if (scores.cleanliness >= 7) {
+            badges.push({ icon: '🧹', label: 'Clean' });
+        } else if (scores.cleanliness && scores.cleanliness <= 4) {
+            badges.push({ icon: '🪴', label: 'Relaxed' });
+        }
+
+        // Sleep schedule
+        if (lifestyle.sleepSchedule?.toLowerCase().includes('night') || lifestyle.sleepSchedule?.toLowerCase().includes('late')) {
+            badges.push({ icon: '🌙', label: 'Night Owl' });
+        } else if (lifestyle.sleepSchedule?.toLowerCase().includes('early') || lifestyle.sleepSchedule?.toLowerCase().includes('morning')) {
+            badges.push({ icon: '☀️', label: 'Early Bird' });
+        }
+
+        // Smoking
+        if (lifestyle.smoking === 'Never' || lifestyle.smoking === 'No' || lifestyle.smoking === 'Non-Smoker') {
+            badges.push({ icon: '🚭', label: 'Non-Smoker' });
+        }
+
+        // Pets
+        if (lifestyle.pets?.toLowerCase().includes('cat') || lifestyle.pets?.toLowerCase().includes('dog') || lifestyle.hasPets) {
+            badges.push({ icon: '🐾', label: 'Pet Owner' });
+        } else if (scores.petPolicy >= 7 || lifestyle.petsOk) {
+            badges.push({ icon: '🐱', label: 'Pets OK' });
+        } else if (scores.petPolicy !== undefined && scores.petPolicy <= 3) {
+            badges.push({ icon: '🚫', label: 'No Pets' });
+        }
+
+        // Social level
+        if (scores.socialLevel >= 7) {
+            badges.push({ icon: '🎉', label: 'Social' });
+        } else if (scores.socialLevel && scores.socialLevel <= 3) {
+            badges.push({ icon: '📚', label: 'Quiet' });
+        }
+
+        return badges;
+    }
+
     applyPeopleFilters() {
         const budgetFilter = document.getElementById('peopleBudgetFilter')?.value;
+        const cleanFilter = document.getElementById('cleanFilter')?.value;
+        const scheduleFilter = document.getElementById('scheduleFilter')?.value;
+        const smokingFilter = document.getElementById('smokingFilter')?.value;
+        const petsFilter = document.getElementById('petsFilter')?.value;
 
         this.filteredPeople = this.allPeople.filter(person => {
             const budgetMax = person.budget_max || 0;
+            const lifestyle = person.lifestyle || {};
+            const scores = person.compatibility_scores || {};
 
+            // Budget filter
             if (budgetFilter) {
                 if (budgetFilter === '0-800' && budgetMax > 800) return false;
                 if (budgetFilter === '800-1200' && (budgetMax < 800 || budgetMax > 1200)) return false;
                 if (budgetFilter === '1200-1600' && (budgetMax < 1200 || budgetMax > 1600)) return false;
                 if (budgetFilter === '1600+' && budgetMax < 1600) return false;
+            }
+
+            // Cleanliness filter
+            if (cleanFilter) {
+                const cleanliness = scores.cleanliness || 5;
+                if (cleanFilter === 'clean' && cleanliness < 7) return false;
+                if (cleanFilter === 'relaxed' && cleanliness > 4) return false;
+            }
+
+            // Schedule filter
+            if (scheduleFilter) {
+                const schedule = (lifestyle.sleepSchedule || '').toLowerCase();
+                if (scheduleFilter === 'night' && !schedule.includes('night') && !schedule.includes('late')) return false;
+                if (scheduleFilter === 'early' && !schedule.includes('early') && !schedule.includes('morning')) return false;
+            }
+
+            // Smoking filter
+            if (smokingFilter === 'no') {
+                const smoking = lifestyle.smoking || '';
+                if (smoking !== 'Never' && smoking !== 'No' && smoking !== 'Non-Smoker' && smoking !== '') return false;
+            }
+
+            // Pets filter
+            if (petsFilter) {
+                const petPolicy = scores.petPolicy || 5;
+                const petsOk = lifestyle.petsOk;
+                if (petsFilter === 'ok' && petPolicy < 5 && !petsOk) return false;
+                if (petsFilter === 'no' && (petPolicy > 5 || petsOk)) return false;
             }
 
             return true;
@@ -540,6 +649,153 @@ class RoomPalApp {
         } catch (error) {
             console.error('Error sending message:', error);
             this.showToast('Failed to send message', 'error');
+        } finally {
+            submitBtn.textContent = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    // ==================== PROFILE FORM ====================
+
+    async checkUserProfile() {
+        if (!this.currentUser || !this.api || !this.api.initialized) {
+            return false;
+        }
+
+        try {
+            const profiles = await this.api.getSeekerProfiles({ limit: 100 });
+            const userProfile = profiles.find(p => p.user_id === this.currentUser.id);
+            this.hasUserProfile = !!userProfile;
+            return this.hasUserProfile;
+        } catch (e) {
+            console.log('Could not check profile:', e);
+            return false;
+        }
+    }
+
+    showProfilePrompt() {
+        const prompt = document.getElementById('createProfilePrompt');
+        if (prompt && this.currentUser && !this.hasUserProfile) {
+            prompt.classList.remove('hidden');
+        }
+    }
+
+    hideProfilePrompt() {
+        const prompt = document.getElementById('createProfilePrompt');
+        if (prompt) {
+            prompt.classList.add('hidden');
+        }
+    }
+
+    toggleProfileForm() {
+        const form = document.getElementById('quickProfileForm');
+        const toggleText = document.getElementById('profileFormToggleText');
+
+        if (form.classList.contains('hidden')) {
+            form.classList.remove('hidden');
+            toggleText.textContent = 'Hide Form';
+        } else {
+            form.classList.add('hidden');
+            toggleText.textContent = 'Show Form';
+        }
+    }
+
+    selectScore(type, value) {
+        this.profileFormData[type] = value;
+
+        // Update UI
+        const selectorId = type === 'cleanliness' ? 'cleanlinessSelector' : 'socialSelector';
+        const buttons = document.querySelectorAll(`#${selectorId} .score-btn`);
+        buttons.forEach(btn => {
+            const btnScore = parseInt(btn.dataset.score);
+            if (btnScore === value) {
+                btn.classList.add('selected');
+            } else {
+                btn.classList.remove('selected');
+            }
+        });
+    }
+
+    selectOption(type, value) {
+        this.profileFormData[type] = value;
+
+        // Update UI - find parent container
+        let container;
+        if (type === 'sleep') {
+            container = document.querySelector('button[data-value="Early Bird"]')?.parentElement;
+        } else if (type === 'smoking') {
+            container = document.querySelector('button[data-value="Non-Smoker"]')?.parentElement;
+        } else if (type === 'pets') {
+            container = document.querySelector('button[data-value="Have Pets"]')?.parentElement;
+        }
+
+        if (container) {
+            container.querySelectorAll('.option-btn').forEach(btn => {
+                if (btn.dataset.value === value) {
+                    btn.classList.add('selected');
+                } else {
+                    btn.classList.remove('selected');
+                }
+            });
+        }
+    }
+
+    async handleQuickProfileSubmit(e) {
+        e.preventDefault();
+
+        if (!this.currentUser) {
+            alert('Please log in to create a profile.');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        const form = e.target;
+        const formData = new FormData(form);
+
+        const profileData = {
+            name: formData.get('name'),
+            preferred_areas: formData.get('location') ? [formData.get('location')] : [],
+            budget_min: parseInt(formData.get('budget_min')) || null,
+            budget_max: parseInt(formData.get('budget_max')) || null,
+            move_in_date: formData.get('move_in_date') || null,
+            bio: formData.get('bio') || '',
+            lifestyle: {
+                sleepSchedule: this.profileFormData.sleep,
+                smoking: this.profileFormData.smoking,
+                pets: this.profileFormData.pets,
+                petsOk: this.profileFormData.pets === 'Pets OK' || this.profileFormData.pets === 'Have Pets',
+                hasPets: this.profileFormData.pets === 'Have Pets'
+            },
+            compatibility_scores: {
+                cleanliness: this.profileFormData.cleanliness,
+                socialLevel: this.profileFormData.social,
+                petPolicy: this.profileFormData.pets === 'No Pets' ? 1 : (this.profileFormData.pets === 'Pets OK' || this.profileFormData.pets === 'Have Pets' ? 8 : 5)
+            }
+        };
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Creating Profile...';
+        submitBtn.disabled = true;
+
+        try {
+            if (this.api && this.api.initialized) {
+                const result = await this.api.saveSeekerProfile(profileData);
+                if (!result.success) {
+                    throw new Error(result.error || 'Failed to create profile');
+                }
+            }
+
+            this.hasUserProfile = true;
+            this.hideProfilePrompt();
+            this.showToast('Profile created! You\'re now visible to hosts.', 'success');
+
+            // Reload people to include new profile
+            await this.loadPeople();
+
+        } catch (error) {
+            console.error('Error creating profile:', error);
+            this.showToast('Failed to create profile. Please try again.', 'error');
         } finally {
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
