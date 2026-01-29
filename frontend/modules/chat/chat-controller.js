@@ -621,14 +621,14 @@ class ChatController {
         }
 
         // Create notification for the recipient (landlord) in AI negotiations section
-        await this.createMessageNotificationForRecipient(currentUser, messageContent, supabase);
+        await this.createMessageNotificationForRecipient(currentUser, messageContent);
     }
 
     /**
      * Create a notification in ai_chats table for the message recipient
-     * This ensures landlords see tenant messages in the AI negotiations notifications
+     * Uses backend API to bypass RLS restrictions
      */
-    async createMessageNotificationForRecipient(currentUser, messageContent, supabase) {
+    async createMessageNotificationForRecipient(currentUser, messageContent) {
         try {
             if (!this.currentListing || !this.currentListing.user_email) {
                 return;
@@ -648,16 +648,24 @@ class ChatController {
 
             const notificationContent = `New Message from Tenant\n\nProperty: ${listingTitle}\nFrom: ${currentUser.email}\n\nMessage: "${truncatedMessage}"\n\nReply in the chat to continue the conversation.`;
 
-            await supabase
-                .from('ai_chats')
-                .insert({
-                    user_email: landlordEmail,
-                    conversation_data: JSON.stringify([{
-                        role: 'assistant',
-                        content: notificationContent
-                    }]),
-                    title: `New Message: ${listingTitle}`
-                });
+            // Use backend API to bypass RLS
+            const response = await fetch('/api/create-notification', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    recipientEmail: landlordEmail,
+                    title: `New Message: ${listingTitle}`,
+                    content: notificationContent,
+                    senderEmail: currentUser.email
+                })
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Failed to create notification:', errorData);
+            } else {
+                console.log('Notification created for landlord:', landlordEmail);
+            }
         } catch (error) {
             console.error('Error creating notification:', error);
         }
