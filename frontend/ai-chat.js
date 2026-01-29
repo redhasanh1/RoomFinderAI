@@ -737,18 +737,18 @@ class AIChatHandler {
         }
     }
 
-    // Start negotiation for a specific listing
+    // Start negotiation for a specific listing - HUMAN-LIKE PHASED APPROACH
     async startNegotiationForListing(listing) {
         try {
-            this.appendMessage('AI', `📤 Preparing to contact landlord for listing ${listing.id}...`, 'left');
+            this.appendMessage('AI', `Starting conversation with landlord for "${listing.title}"...`, 'left');
 
             if (!this.currentUser?.email) {
-                this.appendMessage('AI', '❌ Error: You must be logged in to send messages', 'left');
+                this.appendMessage('AI', 'You need to be logged in to contact landlords.', 'left');
                 return;
             }
 
             if (!listing.user_email) {
-                this.appendMessage('AI', '❌ Error: Listing has no landlord contact information', 'left');
+                this.appendMessage('AI', 'This listing has no landlord contact information.', 'left');
                 return;
             }
 
@@ -770,11 +770,6 @@ class AIChatHandler {
             // Step 2: Create conversation if it doesn't exist
             if (!conversationId) {
                 console.log('📝 Creating new conversation...');
-                console.log('📝 Conversation details:', {
-                    listing_id: listing.id,
-                    sender_email: this.currentUser.email,
-                    receiver_email: listing.user_email
-                });
                 const { data: newConversation, error: createError } = await this.supabase
                     .from('conversations')
                     .insert({
@@ -787,51 +782,64 @@ class AIChatHandler {
 
                 if (createError) {
                     console.error('❌ Error creating conversation:', createError);
-                    this.appendMessage('AI', `❌ Failed to create conversation: ${createError.message}`, 'left');
+                    this.appendMessage('AI', `Failed to create conversation: ${createError.message}`, 'left');
                     return;
                 }
 
                 conversationId = newConversation.id;
-                console.log('✅ Created new conversation with ID:', conversationId, 'between', this.currentUser.email, 'and', listing.user_email);
+                console.log('✅ Created new conversation with ID:', conversationId);
             } else {
                 console.log('✅ Found existing conversation with ID:', conversationId);
             }
 
-            // Step 3: Use negotiation engine to generate message
+            // Step 3: Use HUMAN-LIKE phased conversation approach
             if (this.negotiationEngine) {
-                console.log('🤖 Using AI negotiation engine...');
+                console.log('🎭 Starting human-like conversation (phased approach)...');
 
-                const budget = this.userNeeds.maxPrice || 1000;
-                const negotiationData = await this.negotiationEngine.startNegotiation(listing, budget, this.currentUser.email);
+                const budget = this.userNeeds.maxPrice || listing.price * 0.85; // Default to 85% of listing price
+                const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
 
-                if (negotiationData && negotiationData.message) {
-                    // Step 4: Send the AI-generated negotiation message
-                    console.log('📤 Sending AI-generated message to conversation:', conversationId);
+                // Start with introduction phase (NO pricing)
+                const conversationData = await this.negotiationEngine.startHumanLikeConversation(
+                    listing,
+                    budget,
+                    this.currentUser.email,
+                    userName
+                );
+
+                if (conversationData && conversationData.message) {
+                    // Store the negotiation ID for tracking
+                    this.activeNegotiationId = conversationData.negotiationId;
+                    this.activeConversationId = conversationId;
+                    this.activeListing = listing;
+
+                    // Send the introduction message
+                    console.log('📤 Sending introduction message (no pricing):', conversationData.message);
                     const sent = await this.negotiationEngine.sendNegotiationMessage(
                         conversationId,
-                        negotiationData.message,
+                        conversationData.message,
                         this.currentUser.email,
-                        listing.user_email,  // landlordEmail for notification
-                        listing.title        // listingTitle for notification
+                        listing.user_email,
+                        listing.title
                     );
 
                     if (sent) {
-                        this.appendMessage('AI', `✅ Successfully contacted landlord for "${listing.title}"`, 'left');
-                        this.appendMessage('AI', `📝 Sent message: "${negotiationData.message}"`, 'left');
+                        this.appendMessage('AI', `Reached out to the landlord for "${listing.title}"`, 'left');
+                        this.appendMessage('AI', `Sent: "${conversationData.message}"`, 'left');
+                        this.appendMessage('AI', `I'll continue the conversation naturally when they reply - building rapport before discussing price.`, 'left');
 
-                        if (negotiationData.marketData) {
-                            this.appendMessage('AI', `📊 Market analysis: Average price in area is $${negotiationData.marketData.average}/month (${negotiationData.marketData.count} listings analyzed)`, 'left');
-                        }
+                        // Set up auto-reply listener for this conversation
+                        this.setupConversationAutoReply(conversationId, conversationData.negotiationId, listing);
                     } else {
-                        this.appendMessage('AI', `❌ Failed to send message to landlord`, 'left');
+                        this.appendMessage('AI', `Failed to send message to landlord`, 'left');
                     }
                 } else {
-                    this.appendMessage('AI', '❌ Failed to generate negotiation message', 'left');
+                    this.appendMessage('AI', 'Failed to start conversation', 'left');
                 }
             } else {
-                // Fallback: Send basic message without AI negotiation
-                console.log('📤 Sending basic message (no AI engine available)...');
-                const message = `Hi! I'm interested in your listing "${listing.title}". ${this.userNeeds.maxPrice ? `My budget is around $${this.userNeeds.maxPrice}/month.` : ''} Could we discuss the rental terms?`;
+                // Fallback: Send basic human-like message without full AI engine
+                console.log('📤 Sending basic introduction (no AI engine available)...');
+                const message = `Hey! I saw your listing for "${listing.title}" and it caught my eye. Is it still available?`;
 
                 const { error: sendError } = await this.supabase
                     .from('messages')
@@ -843,16 +851,103 @@ class AIChatHandler {
 
                 if (sendError) {
                     console.error('❌ Error sending message:', sendError);
-                    this.appendMessage('AI', `❌ Failed to send message: ${sendError.message}`, 'left');
+                    this.appendMessage('AI', `Failed to send message: ${sendError.message}`, 'left');
                     return;
                 }
 
-                this.appendMessage('AI', `✅ Sent message to landlord for "${listing.title}"`, 'left');
-                this.appendMessage('AI', `📝 Message: "${message}"`, 'left');
+                this.appendMessage('AI', `Sent message to landlord for "${listing.title}"`, 'left');
+                this.appendMessage('AI', `Message: "${message}"`, 'left');
             }
         } catch (error) {
-            console.error('Negotiation error:', error);
-            this.appendMessage('AI', `❌ Error negotiating for listing ${listing.id}: ${error.message}`, 'left');
+            console.error('Conversation error:', error);
+            this.appendMessage('AI', `Error contacting landlord: ${error.message}`, 'left');
+        }
+    }
+
+    // Set up auto-reply for landlord responses
+    setupConversationAutoReply(conversationId, negotiationId, listing) {
+        console.log('🔔 Setting up auto-reply listener for conversation:', conversationId);
+
+        // Subscribe to new messages in this conversation
+        const channel = this.supabase
+            .channel(`conversation_${conversationId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `conversation_id=eq.${conversationId}`
+                },
+                async (payload) => {
+                    const newMessage = payload.new;
+
+                    // Only respond to landlord messages (not our own)
+                    if (newMessage.sender_email === listing.user_email) {
+                        console.log('📩 Landlord replied:', newMessage.content);
+
+                        // Process the reply and generate phased response
+                        await this.handleLandlordAutoReply(newMessage, conversationId, negotiationId, listing);
+                    }
+                }
+            )
+            .subscribe((status) => {
+                console.log('🔔 Auto-reply subscription status:', status);
+            });
+
+        // Store channel for cleanup
+        if (!this.autoReplyChannels) {
+            this.autoReplyChannels = new Map();
+        }
+        this.autoReplyChannels.set(conversationId, channel);
+    }
+
+    // Handle landlord reply and auto-respond with next phase
+    async handleLandlordAutoReply(landlordMessage, conversationId, negotiationId, listing) {
+        try {
+            console.log('🤖 Auto-replying to landlord message...');
+
+            if (!this.negotiationEngine) {
+                console.error('No negotiation engine available');
+                return;
+            }
+
+            // Get phased response from negotiation engine
+            const response = await this.negotiationEngine.handleLandlordReplyWithPhases(
+                landlordMessage.content,
+                negotiationId,
+                listing
+            );
+
+            if (response && response.message) {
+                // Apply human-like delay before responding
+                const delay = response.delay || 2000;
+                console.log(`⏳ Waiting ${delay}ms before responding (human-like delay)...`);
+
+                await new Promise(resolve => setTimeout(resolve, delay));
+
+                // Send the response
+                const userName = this.currentUser?.firstName || this.currentUser?.email?.split('@')[0] || 'Tenant';
+                const sent = await this.negotiationEngine.sendNegotiationMessage(
+                    conversationId,
+                    response.message,
+                    this.currentUser.email,
+                    listing.user_email,
+                    listing.title
+                );
+
+                if (sent) {
+                    console.log(`✅ Sent ${response.phase} response:`, response.message);
+
+                    // Notify user about the exchange
+                    this.appendMessage('AI', `Landlord replied: "${landlordMessage.content}"`, 'left');
+                    this.appendMessage('AI', `I responded (${response.phase.replace(/_/g, ' ').toLowerCase()}): "${response.message}"`, 'left');
+                } else {
+                    console.error('Failed to send auto-reply');
+                }
+            }
+        } catch (error) {
+            console.error('Error handling landlord auto-reply:', error);
         }
     }
 
