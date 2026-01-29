@@ -346,7 +346,10 @@
                 return;
             }
 
-            alert(`Contact feature: The owner's email is ${email}. Chat functionality coming soon!`);
+            // Open email client with pre-filled message
+            const subject = encodeURIComponent('Inquiry about your listing on RoomPal');
+            const body = encodeURIComponent('Hi,\n\nI am interested in your listing on RoomPal. Please let me know if it is still available.\n\nThank you!');
+            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
         }
 
         // Initialize immediately - DOM is ready since script is at bottom

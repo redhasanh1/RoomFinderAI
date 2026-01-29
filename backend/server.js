@@ -1299,96 +1299,84 @@ app.delete('/api/listings/:id', async (req, res) => {
     try {
         const listingId = req.params.id;
         const userEmail = req.headers['user-email'] || req.query.userEmail;
-        
-        console.log(`🗑️ Attempting to delete listing ${listingId} for user ${userEmail}`);
-        
-        // First try to delete from Supabase if available
-        if (supabase) {
-            try {
-                // First verify the listing belongs to the user
-                console.log(`🔍 Looking up listing ${listingId} in Supabase...`);
-                const { data: listing, error: fetchError } = await supabase
-                    .from('listings')
-                    .select('*')
-                    .eq('id', listingId)
-                    .single();
 
-                if (fetchError) {
-                    console.error('❌ Error fetching listing:', fetchError);
-                    console.error('   Listing ID:', listingId);
-                    console.error('   User email:', userEmail);
+        console.log(`DELETE listing: id=${listingId}, user=${userEmail}, supabase=${!!supabase}`);
+        console.log(`DELETE: Using service role key: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
 
-                    // Check if this is a "no rows" error vs actual error
-                    if (fetchError.code === 'PGRST116') {
-                        return res.status(404).json({
-                            error: 'Listing not found',
-                            details: `No listing exists with ID: ${listingId}`
-                        });
-                    }
-                    return res.status(404).json({ error: 'Listing not found', details: fetchError.message });
-                }
-                
-                // Check if user owns the listing
-                if (listing.user_email !== userEmail) {
-                    return res.status(403).json({ error: 'Unauthorized to delete this listing' });
-                }
-                
-                // Delete from Supabase
-                const { error: deleteError } = await supabase
-                    .from('listings')
-                    .delete()
-                    .eq('id', listingId);
-                
-                if (deleteError) {
-                    console.error('Error deleting from Supabase:', deleteError);
-                    throw deleteError;
-                }
-                
-                console.log(`✅ Successfully deleted listing ${listingId} from Supabase`);
-                
-                // Also remove from in-memory array if it exists
-                const listingIndex = listings.findIndex(l => l.id === listingId);
-                if (listingIndex !== -1) {
-                    listings.splice(listingIndex, 1);
-                }
-                
-                res.json({ 
-                    message: 'Listing deleted successfully', 
-                    listingId: listingId,
-                    source: 'supabase'
-                });
-            } catch (supabaseError) {
-                console.error('Supabase deletion failed:', supabaseError);
-                // Fall back to in-memory deletion
-                const listingIndex = listings.findIndex(l => l.id === listingId);
-                if (listingIndex === -1) {
-                    return res.status(404).json({ error: 'Listing not found' });
-                }
-                
-                const deletedListing = listings.splice(listingIndex, 1)[0];
-                res.json({ 
-                    message: 'Listing deleted from local storage', 
-                    listing: deletedListing,
-                    source: 'local'
-                });
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        // First verify the listing exists and belongs to this user
+        const { data: existingListing, error: fetchError } = await supabase
+            .from('listings')
+            .select('id, user_email')
+            .eq('id', listingId)
+            .single();
+
+        console.log('DELETE: Existing listing check:', { existingListing, fetchError: fetchError?.message });
+
+        if (fetchError || !existingListing) {
+            console.log('Listing not found or error:', fetchError?.message);
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        if (existingListing.user_email !== userEmail) {
+            console.log('User mismatch:', { listingOwner: existingListing.user_email, requestUser: userEmail });
+            return res.status(403).json({ error: 'Not authorized to delete this listing' });
+        }
+
+        // Delete any favorites that reference this listing (FK constraint)
+        try {
+            const { error: favError } = await supabase
+                .from('favorites')
+                .delete()
+                .eq('listing_id', listingId);
+            if (favError) {
+                console.log('Error deleting favorites:', favError.message);
             }
-        } else {
-            // No Supabase, use in-memory storage
-            const listingIndex = listings.findIndex(l => l.id === listingId);
-            if (listingIndex === -1) {
-                return res.status(404).json({ error: 'Listing not found' });
-            }
-            
-            const deletedListing = listings.splice(listingIndex, 1)[0];
-            res.json({ 
-                message: 'Listing deleted from local storage', 
-                listing: deletedListing,
-                source: 'local'
+        } catch (favErr) {
+            console.log('Favorites delete exception:', favErr.message);
+        }
+
+        // Now delete the listing - only filter by id since we verified ownership above
+        const { data: deletedData, error } = await supabase
+            .from('listings')
+            .delete()
+            .eq('id', listingId)
+            .select();
+
+        console.log(`DELETE result: deletedData=${JSON.stringify(deletedData)}, error=${JSON.stringify(error)}`);
+
+        if (error) {
+            console.error('Delete error details:', {
+                code: error.code,
+                message: error.message,
+                details: error.details,
+                hint: error.hint,
+                status: error.status
+            });
+            return res.status(500).json({
+                error: 'Database error',
+                details: error.message,
+                code: error.code,
+                hint: error.hint
             });
         }
+
+        console.log(`Successfully deleted listing ${listingId}`);
+        res.json({
+            message: 'Listing deleted successfully',
+            listingId: listingId,
+            deleted: deletedData
+        });
     } catch (error) {
-        console.error('Error in DELETE /api/listings/:id:', error.message);
-        res.status(500).json({ error: 'Failed to delete listing' });
+        console.error('DELETE /api/listings/:id error:', error);
+        res.status(500).json({ error: 'Failed to delete listing', details: error.message });
     }
 });
 
@@ -7667,35 +7655,13 @@ async function ensureSubleaseTablesExist() {
 
 // Helper function to set user context with error handling
 async function setUserContext(userEmail) {
-    try {
-        // Try to create the function if it doesn't exist
-        await supabase.rpc('set_user_context', { user_email: userEmail });
-    } catch (error) {
-        if (error.message.includes('function') && error.message.includes('does not exist')) {
-            // Create the function
-            const { error: functionError } = await supabase.rpc('exec', {
-                sql: `
-                CREATE OR REPLACE FUNCTION set_user_context(user_email TEXT)
-                RETURNS VOID AS $$
-                BEGIN
-                    PERFORM set_config('app.current_user_email', user_email, TRUE);
-                END;
-                $$ LANGUAGE plpgsql;
-                `
-            });
-            
-            if (functionError) {
-                console.log('Could not create set_user_context function. Using alternative approach.');
-                // Set the context directly in a different way
-                return;
-            }
-            
-            // Try again
-            await supabase.rpc('set_user_context', { user_email: userEmail });
-        } else {
-            // For now, continue without setting context (will use email filtering in queries)
-            console.log('User context not set, using email filtering instead');
-        }
+    // Supabase RPC returns { data, error }, it doesn't throw
+    const { error } = await supabase.rpc('set_user_context', { user_email: userEmail });
+
+    if (error) {
+        // Function might not exist or other error - just log and continue
+        // The delete query uses .eq('user_email', userEmail) as a fallback
+        console.log('set_user_context RPC failed (function may not exist):', error.message);
     }
 }
 

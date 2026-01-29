@@ -454,9 +454,17 @@ class PerformanceManager {
     // Optimize DOM structure
     optimizeDOM() {
         // Remove hidden elements that are no longer needed
+        // IMPORTANT: Never remove critical elements like header, nav, footer, or auth sections
         const hiddenElements = document.querySelectorAll('[style*="display: none"], .hidden');
+        const criticalSelectors = ['header', 'nav', 'footer', '#header', '#authSection', '.premium-header', '.desktop-nav', '.mobile-menu', '#messagePanel', '#messagingPanel', '#messageToggleBtn', '.chat-modal', '#chatModal'];
+
         hiddenElements.forEach(element => {
-            if (element.dataset.keepHidden !== 'true') {
+            // Skip critical elements
+            const isCritical = criticalSelectors.some(sel =>
+                element.matches(sel) || element.closest(sel)
+            );
+
+            if (!isCritical && element.dataset.keepHidden !== 'true') {
                 element.remove();
             }
         });
