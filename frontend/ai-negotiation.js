@@ -2037,7 +2037,13 @@ Generate ONLY the message. No greetings, no signatures.
 
                     // Send the response
                     console.log('📤 Sending response to conversation:', conversationId);
-                    const sentSuccessfully = await this.sendNegotiationMessage(conversationId, response, negotiation.userEmail);
+                    const sentSuccessfully = await this.sendNegotiationMessage(
+                        conversationId,
+                        response,
+                        negotiation.userEmail,
+                        negotiation.landlordEmail,
+                        negotiation.listingId
+                    );
                     
                     if (sentSuccessfully) {
                         console.log('✅ Response sent successfully');
@@ -2158,7 +2164,13 @@ Generate ONLY the message. No greetings, no signatures.
                     });
                     console.log('⏱️ Using market response delay:', marketDelay, 'ms');
                     await new Promise(resolve => setTimeout(resolve, marketDelay));
-                    await this.sendNegotiationMessage(conversationId, marketResponse, negotiation.userEmail);
+                    await this.sendNegotiationMessage(
+                        conversationId,
+                        marketResponse,
+                        negotiation.userEmail,
+                        negotiation.landlordEmail,
+                        negotiation.listingId
+                    );
                     
                     negotiation.messages.push({
                         sender: 'ai',
@@ -2919,14 +2931,14 @@ Generate ONLY the message. No greetings, no signatures.
         return `How can we make this work? I'm a reliable tenant ready to sign immediately. What would it take to get to $${state.lastOffer}?`;
     }
 
-    // Send negotiation message
-    async sendNegotiationMessage(conversationId, message, userEmail) {
+    // Send negotiation message with optional email notification to landlord
+    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingId = null, userName = null) {
         try {
             // Ensure AI user exists first
             await this.ensureAIUserExists();
-            
+
             const senderEmail = 'ai-negotiator@roomfinder.com';
-            
+
             const { error } = await this.supabase
                 .from('messages')
                 .insert({
@@ -2937,7 +2949,7 @@ Generate ONLY the message. No greetings, no signatures.
 
             if (error) {
                 console.error('Error sending negotiation message with AI email:', error);
-                
+
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
                 const { error: retryError } = await this.supabase
@@ -2954,7 +2966,39 @@ Generate ONLY the message. No greetings, no signatures.
                 }
             }
 
-            console.log('✅ Sent negotiation message');
+            console.log('✅ Sent negotiation message to database');
+
+            // Send email notification to landlord if we have their info
+            if (landlordEmail && listingId) {
+                try {
+                    console.log('📧 Sending email notification to landlord:', landlordEmail);
+                    const emailResponse = await fetch('/api/message-landlord', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            listingId: listingId,
+                            landlordEmail: landlordEmail,
+                            message: message,
+                            userEmail: userEmail,
+                            userName: userName || 'Interested Tenant'
+                        })
+                    });
+
+                    if (emailResponse.ok) {
+                        const result = await emailResponse.json();
+                        console.log('✅ Email notification sent to landlord:', result.message);
+                    } else {
+                        const errorText = await emailResponse.text();
+                        console.warn('⚠️ Failed to send email to landlord:', errorText);
+                    }
+                } catch (emailError) {
+                    // Log but don't fail - message is already in DB
+                    console.error('❌ Error sending landlord email notification:', emailError);
+                }
+            } else {
+                console.log('ℹ️ Skipping email notification - missing landlord info');
+            }
+
             return true;
 
         } catch (error) {
