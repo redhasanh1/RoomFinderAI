@@ -619,6 +619,48 @@ class ChatController {
             }
             throw error;
         }
+
+        // Create notification for the recipient (landlord) in AI negotiations section
+        await this.createMessageNotificationForRecipient(currentUser, messageContent, supabase);
+    }
+
+    /**
+     * Create a notification in ai_chats table for the message recipient
+     * This ensures landlords see tenant messages in the AI negotiations notifications
+     */
+    async createMessageNotificationForRecipient(currentUser, messageContent, supabase) {
+        try {
+            if (!this.currentListing || !this.currentListing.user_email) {
+                return;
+            }
+
+            const landlordEmail = this.currentListing.user_email;
+
+            // Skip if user is the landlord
+            if (currentUser.email === landlordEmail) {
+                return;
+            }
+
+            const listingTitle = this.currentListing.title || 'Property';
+            const truncatedMessage = messageContent.length > 100
+                ? messageContent.substring(0, 100) + '...'
+                : messageContent;
+
+            const notificationContent = `New Message from Tenant\n\nProperty: ${listingTitle}\nFrom: ${currentUser.email}\n\nMessage: "${truncatedMessage}"\n\nReply in the chat to continue the conversation.`;
+
+            await supabase
+                .from('ai_chats')
+                .insert({
+                    user_email: landlordEmail,
+                    conversation_data: JSON.stringify([{
+                        role: 'assistant',
+                        content: notificationContent
+                    }]),
+                    title: `New Message: ${listingTitle}`
+                });
+        } catch (error) {
+            console.error('Error creating notification:', error);
+        }
     }
 
     /**
