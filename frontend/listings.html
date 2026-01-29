@@ -2566,7 +2566,7 @@
                 `;
                 chatMessagesContainer.appendChild(messageElement);
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-                
+
                 // Send to database
                 const { error } = await supabase
                     .from('messages')
@@ -2582,6 +2582,54 @@
                     messageElement.remove();
                     chatInput.value = messageContent; // Restore message
                     throw error;
+                }
+
+                // Create notification for landlord in AI negotiations section
+                await createNotificationForLandlord(currentUser, messageContent);
+            }
+
+            // Create notification for landlord when tenant sends message
+            async function createNotificationForLandlord(currentUser, messageContent) {
+                try {
+                    console.log('🔔 createNotificationForLandlord called');
+
+                    if (!currentListing || !currentListing.user_email) {
+                        console.log('🔔 No listing or user_email, skipping notification');
+                        return;
+                    }
+
+                    const landlordEmail = currentListing.user_email;
+                    console.log('🔔 Landlord:', landlordEmail, 'Tenant:', currentUser.email);
+
+                    // Skip if user is the landlord
+                    if (currentUser.email === landlordEmail) {
+                        console.log('🔔 User is landlord, skipping notification');
+                        return;
+                    }
+
+                    const listingTitle = currentListing.title || 'Property';
+                    const truncatedMessage = messageContent.length > 100
+                        ? messageContent.substring(0, 100) + '...'
+                        : messageContent;
+
+                    const notificationContent = `New Message from Tenant\n\nProperty: ${listingTitle}\nFrom: ${currentUser.email}\n\nMessage: "${truncatedMessage}"\n\nReply in the chat to continue the conversation.`;
+
+                    console.log('🔔 Calling create_notification RPC for:', landlordEmail);
+
+                    // Use Supabase RPC function to bypass RLS
+                    const { data, error } = await supabase.rpc('create_notification', {
+                        recipient_email: landlordEmail,
+                        notification_title: `New Message: ${listingTitle}`,
+                        notification_content: notificationContent
+                    });
+
+                    if (error) {
+                        console.error('🔔 RPC error:', error);
+                    } else {
+                        console.log('🔔 Notification created successfully! ID:', data);
+                    }
+                } catch (err) {
+                    console.error('🔔 Error creating notification:', err);
                 }
             }
 
