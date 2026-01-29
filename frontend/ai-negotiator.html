@@ -1061,6 +1061,9 @@
             return date.toLocaleDateString();
         }
 
+        // Store current reply context
+        window.replyContext = null;
+
         function handleNotificationClick(notificationIndex) {
             const notification = window.notificationsData[notificationIndex];
             if (!notification) {
@@ -1078,11 +1081,11 @@
             // Close notification panel
             closeNotificationPanel();
 
-            // Open reply modal with notification details
-            openReplyModal(notification);
+            // Open notification in main chat area
+            openNotificationInChat(notification);
         }
 
-        function openReplyModal(notification) {
+        function openNotificationInChat(notification) {
             // Extract sender email from notification message if available
             let senderEmail = '';
             const fromMatch = notification.message.match(/From:\s*([^\n]+)/);
@@ -1091,77 +1094,165 @@
             }
 
             // Extract property name from title
-            let propertyName = notification.title.replace('New Message: ', '');
+            let propertyName = notification.title.replace('New Message: ', '').replace('Reply from Landlord: ', '');
 
-            // Create reply modal
-            const modal = document.createElement('div');
-            modal.id = 'replyModal';
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            modal.innerHTML = `
-                <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 max-h-[90vh] overflow-hidden">
-                    <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4">
-                        <div class="flex items-center justify-between">
-                            <h3 class="text-lg font-bold">💬 Reply to Tenant</h3>
-                            <button onclick="closeReplyModal()" class="text-white hover:text-gray-200">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                                </svg>
-                            </button>
+            // Store reply context for when user sends message
+            window.replyContext = {
+                tenantEmail: senderEmail,
+                propertyName: propertyName,
+                originalMessage: notification.message
+            };
+
+            // Get the main chat messages container
+            const chatMessages = document.getElementById('chatMessages');
+            const chatContainer = document.getElementById('chatContainer');
+
+            if (!chatMessages) {
+                console.error('Chat messages container not found');
+                return;
+            }
+
+            // Clear existing messages and show the notification conversation
+            chatMessages.innerHTML = `
+                <!-- Reply Mode Banner -->
+                <div id="replyModeBanner" class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 rounded-lg mb-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="font-bold flex items-center gap-2">
+                                <span>💬</span> Reply Mode - ${propertyName}
+                            </h3>
+                            <p class="text-sm text-purple-100 mt-1">Replying to: ${senderEmail || 'Tenant'}</p>
                         </div>
-                        <p class="text-sm text-purple-100 mt-1">Property: ${propertyName}</p>
-                    </div>
-                    <div class="p-4">
-                        <div class="bg-gray-50 rounded-lg p-3 mb-4">
-                            <p class="text-xs text-gray-500 mb-1">Original Message:</p>
-                            <p class="text-sm text-gray-700">${notification.message}</p>
-                        </div>
-                        ${senderEmail ? `<p class="text-xs text-gray-500 mb-2">Replying to: <strong>${senderEmail}</strong></p>` : ''}
-                        <textarea id="replyMessage"
-                            class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-                            rows="4"
-                            placeholder="Type your reply..."></textarea>
-                        <div class="flex gap-3 mt-4">
-                            <button onclick="closeReplyModal()"
-                                class="flex-1 bg-gray-200 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-300 transition">
-                                Cancel
-                            </button>
-                            <button onclick="sendReply('${senderEmail}', '${propertyName.replace(/'/g, "\\'")}')"
-                                class="flex-1 bg-purple-600 text-white py-2 px-4 rounded-lg hover:bg-purple-700 transition">
-                                Send Reply
-                            </button>
-                        </div>
+                        <button onclick="exitReplyMode()" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded text-sm transition">
+                            Exit Reply Mode
+                        </button>
                     </div>
                 </div>
+
+                <!-- Original Message from Tenant -->
+                <div class="chat-bubble ai mb-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="text-lg">📨</span>
+                        <span class="font-semibold text-gray-700">Message from Tenant</span>
+                        <span class="text-xs text-gray-400">${formatTimeAgo(new Date(notification.timestamp))}</span>
+                    </div>
+                    <div class="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-500">
+                        <p class="text-gray-700 whitespace-pre-wrap">${notification.message}</p>
+                    </div>
+                </div>
+
+                <!-- Reply Instructions -->
+                <div class="text-center py-4">
+                    <p class="text-sm text-gray-500">Type your reply below and click Send</p>
+                    <p class="text-xs text-gray-400 mt-1">Your reply will be sent as a notification to the tenant</p>
+                </div>
             `;
-            document.body.appendChild(modal);
 
-            // Focus on textarea
-            setTimeout(() => {
-                document.getElementById('replyMessage')?.focus();
-            }, 100);
-        }
+            // Scroll to top to see the message
+            if (chatContainer) {
+                chatContainer.scrollTop = 0;
+            }
 
-        function closeReplyModal() {
-            const modal = document.getElementById('replyModal');
-            if (modal) {
-                modal.remove();
+            // Update the chat header to show reply mode
+            const chatHeader = document.querySelector('.glass-card .px-5.py-4.border-b h3');
+            if (chatHeader) {
+                chatHeader.innerHTML = `<span class="text-purple-600">💬 Replying to Tenant</span>`;
+            }
+
+            // Focus on message input
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.placeholder = 'Type your reply to the tenant...';
+                messageInput.focus();
+            }
+
+            // Override the send button to send reply instead
+            const sendButton = document.getElementById('sendButton');
+            if (sendButton) {
+                sendButton.onclick = sendReplyFromChat;
             }
         }
 
-        async function sendReply(tenantEmail, propertyName) {
-            const replyMessage = document.getElementById('replyMessage')?.value?.trim();
+        function exitReplyMode() {
+            // Clear reply context
+            window.replyContext = null;
+
+            // Reset chat header
+            const chatHeader = document.querySelector('.glass-card .px-5.py-4.border-b h3');
+            if (chatHeader) {
+                chatHeader.innerHTML = 'Negotiator';
+            }
+
+            // Reset message input placeholder
+            const messageInput = document.getElementById('messageInput');
+            if (messageInput) {
+                messageInput.placeholder = "Tell me what you're looking for...";
+            }
+
+            // Reset send button
+            const sendButton = document.getElementById('sendButton');
+            if (sendButton) {
+                sendButton.onclick = sendMessage;
+            }
+
+            // Restore default chat content
+            const chatMessages = document.getElementById('chatMessages');
+            if (chatMessages) {
+                chatMessages.innerHTML = `
+                    <div class="chat-bubble ai">
+                        <p>Hi! I can help you find your next home. Describe what you're looking for, or pick a quick start below:</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2 mt-3 mb-4">
+                        <button onclick="window.aiChat && window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
+                            📉 Under $2,000 / mo
+                        </button>
+                        <button onclick="window.aiChat && window.aiChat.sendQuickMessage('Find me a 1 bedroom apartment in Toronto')" class="quick-chip">
+                            🏢 1-Bed in Toronto
+                        </button>
+                        <button onclick="window.aiChat && window.aiChat.sendQuickMessage('Show me pet-friendly rentals')" class="quick-chip">
+                            🐶 Pet-Friendly Only
+                        </button>
+                    </div>
+                `;
+            }
+        }
+
+        async function sendReplyFromChat() {
+            const messageInput = document.getElementById('messageInput');
+            const replyMessage = messageInput?.value?.trim();
+
             if (!replyMessage) {
                 alert('Please enter a reply message');
                 return;
             }
 
-            if (!tenantEmail) {
-                alert('Unable to determine tenant email. Please reply through the listings page.');
+            if (!window.replyContext || !window.replyContext.tenantEmail) {
+                alert('Unable to determine tenant email. Please try again.');
                 return;
             }
 
+            const { tenantEmail, propertyName } = window.replyContext;
+            const sendButton = document.getElementById('sendButton');
+
+            // Disable button while sending
+            if (sendButton) sendButton.disabled = true;
+
             try {
                 console.log('🔔 Sending reply to:', tenantEmail);
+
+                // Show sending indicator in chat
+                const chatMessages = document.getElementById('chatMessages');
+                const sendingDiv = document.createElement('div');
+                sendingDiv.id = 'sendingIndicator';
+                sendingDiv.className = 'chat-bubble user text-right';
+                sendingDiv.innerHTML = `
+                    <div class="inline-block bg-purple-100 p-3 rounded-lg">
+                        <p class="text-gray-700">${replyMessage}</p>
+                        <p class="text-xs text-gray-400 mt-1">Sending...</p>
+                    </div>
+                `;
+                chatMessages.appendChild(sendingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
 
                 // Create notification for the tenant
                 const notificationTitle = `Reply from Landlord: ${propertyName}`;
@@ -1173,6 +1264,10 @@
                     notification_content: notificationContent
                 });
 
+                // Remove sending indicator
+                const indicator = document.getElementById('sendingIndicator');
+                if (indicator) indicator.remove();
+
                 if (error) {
                     console.error('🔔 RPC error:', error);
                     alert('Failed to send reply. Please try again.');
@@ -1180,12 +1275,29 @@
                 }
 
                 console.log('🔔 Reply sent successfully! ID:', data);
-                alert('Reply sent successfully!');
-                closeReplyModal();
+
+                // Show success message in chat
+                const successDiv = document.createElement('div');
+                successDiv.className = 'chat-bubble user text-right mb-4';
+                successDiv.innerHTML = `
+                    <div class="inline-block bg-green-100 p-3 rounded-lg border-l-4 border-green-500">
+                        <p class="text-gray-700">${replyMessage}</p>
+                        <p class="text-xs text-green-600 mt-1">✓ Reply sent to ${tenantEmail}</p>
+                    </div>
+                `;
+                chatMessages.appendChild(successDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Clear input
+                messageInput.value = '';
+                const charCount = document.getElementById('charCount');
+                if (charCount) charCount.textContent = '0/500';
 
             } catch (error) {
                 console.error('🔔 Error sending reply:', error);
                 alert('Failed to send reply. Please try again.');
+            } finally {
+                if (sendButton) sendButton.disabled = false;
             }
         }
 
