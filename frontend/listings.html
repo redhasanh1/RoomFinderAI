@@ -852,9 +852,32 @@
                 <h3 class="font-semibold text-sm tracking-wide">Messages</h3>
                 <button id="forceHideNotifications" class="text-xs text-blue-100 hover:text-white transition-colors" title="Mark all as read">Mark all read</button>
             </div>
-            <div id="conversationTabs" class="max-h-96 overflow-y-auto">
-                <div id="noConversations" class="p-4 text-gray-500 text-center">
-                    No conversations yet
+            <!-- Tab Navigation -->
+            <div class="flex border-b bg-gray-50">
+                <button id="messagesTabBtn" onclick="switchMessagingTab('messages')" class="flex-1 px-4 py-2 text-sm font-medium text-blue-600 border-b-2 border-blue-600 bg-white">
+                    Messages
+                    <span id="messagesTabBadge" class="ml-1 bg-red-500 text-white text-xs rounded-full px-1.5 hidden">0</span>
+                </button>
+                <button id="aiNotifTabBtn" onclick="switchMessagingTab('aiNotifications')" class="flex-1 px-4 py-2 text-sm font-medium text-gray-500 hover:text-gray-700 border-b-2 border-transparent">
+                    AI Notifications
+                    <span id="aiNotifTabBadge" class="ml-1 bg-purple-500 text-white text-xs rounded-full px-1.5 hidden">0</span>
+                </button>
+            </div>
+            <!-- Messages Tab Content -->
+            <div id="messagesTabContent" class="max-h-80 overflow-y-auto">
+                <div id="conversationTabs">
+                    <div id="noConversations" class="p-4 text-gray-500 text-center">
+                        No conversations yet
+                    </div>
+                </div>
+            </div>
+            <!-- AI Notifications Tab Content -->
+            <div id="aiNotificationsTabContent" class="max-h-80 overflow-y-auto hidden">
+                <div id="aiNotificationsList" class="p-2">
+                    <div class="p-4 text-gray-500 text-center">
+                        <p class="text-sm">No AI notifications yet</p>
+                        <p class="text-xs text-gray-400 mt-1">You'll see tenant inquiries here</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -3374,6 +3397,164 @@
         let globalUserConversations = [];
         let globalUnreadCount = 0;
         let locallyReadConversations = new Set(); // Track conversations marked as read locally
+        let globalAINotifications = []; // Store AI notifications
+        let currentMessagingTab = 'messages'; // Track current tab
+
+        // Tab switching function
+        window.switchMessagingTab = function(tabName) {
+            currentMessagingTab = tabName;
+            const messagesTab = document.getElementById('messagesTabContent');
+            const aiNotifTab = document.getElementById('aiNotificationsTabContent');
+            const messagesBtn = document.getElementById('messagesTabBtn');
+            const aiNotifBtn = document.getElementById('aiNotifTabBtn');
+
+            if (tabName === 'messages') {
+                messagesTab.classList.remove('hidden');
+                aiNotifTab.classList.add('hidden');
+                messagesBtn.classList.add('text-blue-600', 'border-blue-600', 'bg-white');
+                messagesBtn.classList.remove('text-gray-500', 'border-transparent');
+                aiNotifBtn.classList.remove('text-blue-600', 'border-blue-600', 'bg-white');
+                aiNotifBtn.classList.add('text-gray-500', 'border-transparent');
+            } else {
+                messagesTab.classList.add('hidden');
+                aiNotifTab.classList.remove('hidden');
+                aiNotifBtn.classList.add('text-blue-600', 'border-blue-600', 'bg-white');
+                aiNotifBtn.classList.remove('text-gray-500', 'border-transparent');
+                messagesBtn.classList.remove('text-blue-600', 'border-blue-600', 'bg-white');
+                messagesBtn.classList.add('text-gray-500', 'border-transparent');
+                // Load AI notifications when tab is opened
+                loadAINotifications();
+            }
+        };
+
+        // Load AI notifications from ai_chats table
+        async function loadAINotifications() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || !currentUser.email) return;
+
+            try {
+                const { data: notifications, error } = await supabase
+                    .from('ai_chats')
+                    .select('id, title, conversation_data, created_at')
+                    .eq('user_email', currentUser.email)
+                    .order('created_at', { ascending: false })
+                    .limit(20);
+
+                if (error) {
+                    console.error('Error loading AI notifications:', error);
+                    return;
+                }
+
+                globalAINotifications = notifications || [];
+                displayAINotifications();
+                updateAINotificationBadge();
+            } catch (error) {
+                console.error('Error in loadAINotifications:', error);
+            }
+        }
+
+        // Display AI notifications
+        function displayAINotifications() {
+            const listContainer = document.getElementById('aiNotificationsList');
+            if (!listContainer) return;
+
+            if (globalAINotifications.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="p-4 text-gray-500 text-center">
+                        <p class="text-sm">No AI notifications yet</p>
+                        <p class="text-xs text-gray-400 mt-1">You'll see tenant inquiries here</p>
+                    </div>
+                `;
+                return;
+            }
+
+            listContainer.innerHTML = globalAINotifications.map(notif => {
+                let message = '';
+                try {
+                    const data = JSON.parse(notif.conversation_data);
+                    message = data[0]?.content || '';
+                } catch (e) {
+                    message = notif.conversation_data || '';
+                }
+                const truncatedMsg = message.length > 100 ? message.substring(0, 100) + '...' : message;
+                const timeAgo = formatTimeAgo(new Date(notif.created_at));
+                const icon = notif.title?.includes('Message') ? '💬' : notif.title?.includes('Success') ? '🎉' : '📬';
+
+                return `
+                    <div class="border-b hover:bg-gray-50 cursor-pointer p-3" onclick="viewAINotification('${notif.id}')">
+                        <div class="flex items-start gap-3">
+                            <span class="text-xl">${icon}</span>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900 truncate">${notif.title || 'Notification'}</h4>
+                                <p class="text-xs text-gray-600 mt-1 line-clamp-2">${truncatedMsg.replace(/\\n/g, ' ')}</p>
+                                <span class="text-xs text-gray-400 mt-1 block">${timeAgo}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Format time ago
+        function formatTimeAgo(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            if (seconds < 60) return 'Just now';
+            if (seconds < 3600) return Math.floor(seconds / 60) + 'm ago';
+            if (seconds < 86400) return Math.floor(seconds / 3600) + 'h ago';
+            if (seconds < 604800) return Math.floor(seconds / 86400) + 'd ago';
+            return date.toLocaleDateString();
+        }
+
+        // Update AI notification badge
+        function updateAINotificationBadge() {
+            const badge = document.getElementById('aiNotifTabBadge');
+            if (badge) {
+                const count = globalAINotifications.length;
+                if (count > 0) {
+                    badge.textContent = count > 99 ? '99+' : count;
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        // View AI notification detail
+        window.viewAINotification = function(notifId) {
+            const notif = globalAINotifications.find(n => n.id == notifId);
+            if (!notif) return;
+
+            let message = '';
+            try {
+                const data = JSON.parse(notif.conversation_data);
+                message = data[0]?.content || '';
+            } catch (e) {
+                message = notif.conversation_data || '';
+            }
+
+            alert(notif.title + '\\n\\n' + message.replace(/\\n/g, '\\n'));
+        };
+
+        // Setup real-time subscription for AI notifications
+        function setupAINotificationSubscription() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || !supabase) return;
+
+            supabase
+                .channel('ai_notifications_' + Math.random())
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'ai_chats',
+                    filter: 'user_email=eq.' + currentUser.email
+                }, (payload) => {
+                    console.log('New AI notification received:', payload);
+                    globalAINotifications.unshift(payload.new);
+                    displayAINotifications();
+                    updateAINotificationBadge();
+                })
+                .subscribe();
+        }
 
         // Setup Messaging Panel - with retry counter for robustness
         let messagingPanelRetries = 0;
@@ -3712,7 +3893,11 @@
 
             // Initialize
             loadUserConversations();
-            
+
+            // Initialize AI notifications
+            loadAINotifications();
+            setupAINotificationSubscription();
+
             // Expose function globally for external access
             window.refreshConversations = loadUserConversations;
             
@@ -3728,6 +3913,10 @@
                         loadMessages(currentConversationId);
                     }
                     loadUserConversations();
+                    // Also refresh AI notifications
+                    if (currentMessagingTab === 'aiNotifications') {
+                        loadAINotifications();
+                    }
                 }, 3000);
             }
 
