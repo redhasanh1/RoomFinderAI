@@ -1301,13 +1301,15 @@ app.delete('/api/listings/:id', async (req, res) => {
         const userEmail = req.headers['user-email'] || req.query.userEmail;
 
         console.log(`DELETE listing: id=${listingId}, user=${userEmail}, supabase=${!!supabase}`);
+        console.log(`DELETE: Using service role key: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
 
         if (!supabase) {
             return res.status(500).json({ error: 'Database not connected' });
         }
 
-        // Set user context for RLS policies
-        await setUserContext(userEmail);
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
 
         // First, delete any favorites that reference this listing (FK constraint)
         const { error: favError } = await supabase
