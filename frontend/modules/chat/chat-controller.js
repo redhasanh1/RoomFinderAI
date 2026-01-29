@@ -630,14 +630,20 @@ class ChatController {
      */
     async createMessageNotificationForRecipient(currentUser, messageContent) {
         try {
+            console.log('🔔 createMessageNotificationForRecipient called');
+            console.log('🔔 currentListing:', this.currentListing);
+
             if (!this.currentListing || !this.currentListing.user_email) {
+                console.log('🔔 No listing or user_email, skipping notification');
                 return;
             }
 
             const landlordEmail = this.currentListing.user_email;
+            console.log('🔔 Landlord email:', landlordEmail, 'Current user:', currentUser.email);
 
             // Skip if user is the landlord
             if (currentUser.email === landlordEmail) {
+                console.log('🔔 User is landlord, skipping notification');
                 return;
             }
 
@@ -647,6 +653,8 @@ class ChatController {
                 : messageContent;
 
             const notificationContent = `New Message from Tenant\n\nProperty: ${listingTitle}\nFrom: ${currentUser.email}\n\nMessage: "${truncatedMessage}"\n\nReply in the chat to continue the conversation.`;
+
+            console.log('🔔 Calling /api/create-notification for:', landlordEmail);
 
             // Use backend API to bypass RLS
             const response = await fetch('/api/create-notification', {
@@ -660,14 +668,16 @@ class ChatController {
                 })
             });
 
+            const responseData = await response.json();
+            console.log('🔔 API response:', response.status, responseData);
+
             if (!response.ok) {
-                const errorData = await response.json();
-                console.error('Failed to create notification:', errorData);
+                console.error('🔔 Failed to create notification:', responseData);
             } else {
-                console.log('Notification created for landlord:', landlordEmail);
+                console.log('🔔 Notification created successfully for landlord:', landlordEmail);
             }
         } catch (error) {
-            console.error('Error creating notification:', error);
+            console.error('🔔 Error creating notification:', error);
         }
     }
 

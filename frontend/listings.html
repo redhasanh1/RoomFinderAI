@@ -3430,9 +3430,14 @@
         // Load AI notifications from ai_chats table
         async function loadAINotifications() {
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser || !currentUser.email) return;
+            console.log('🔔 loadAINotifications called, user:', currentUser?.email);
+            if (!currentUser || !currentUser.email) {
+                console.log('🔔 No user, skipping AI notifications');
+                return;
+            }
 
             try {
+                console.log('🔔 Querying ai_chats for:', currentUser.email);
                 const { data: notifications, error } = await supabase
                     .from('ai_chats')
                     .select('id, title, conversation_data, created_at')
@@ -3440,16 +3445,19 @@
                     .order('created_at', { ascending: false })
                     .limit(20);
 
+                console.log('🔔 AI notifications result:', { count: notifications?.length, error: error?.message, notifications });
+
                 if (error) {
-                    console.error('Error loading AI notifications:', error);
+                    console.error('🔔 Error loading AI notifications:', error);
                     return;
                 }
 
                 globalAINotifications = notifications || [];
+                console.log('🔔 Loaded', globalAINotifications.length, 'AI notifications');
                 displayAINotifications();
                 updateAINotificationBadge();
             } catch (error) {
-                console.error('Error in loadAINotifications:', error);
+                console.error('🔔 Error in loadAINotifications:', error);
             }
         }
 
@@ -4723,13 +4731,24 @@
             if (messagePanelOpen) {
                 messagePanel.classList.remove('hidden');
                 messagePanel.style.display = 'block';
-                // Load conversations if user is logged in
+                // Load conversations and AI notifications if user is logged in
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                if (currentUser && typeof loadUserConversations === 'function') {
-                    try {
-                        await loadUserConversations();
-                    } catch (e) {
-                        console.error('Error loading conversations:', e);
+                if (currentUser) {
+                    if (typeof loadUserConversations === 'function') {
+                        try {
+                            await loadUserConversations();
+                        } catch (e) {
+                            console.error('Error loading conversations:', e);
+                        }
+                    }
+                    // Also load AI notifications
+                    if (typeof loadAINotifications === 'function') {
+                        try {
+                            console.log('🔔 Loading AI notifications on panel open...');
+                            await loadAINotifications();
+                        } catch (e) {
+                            console.error('Error loading AI notifications:', e);
+                        }
                     }
                 }
             } else {
