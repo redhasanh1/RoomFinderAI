@@ -163,40 +163,34 @@ class NotificationService {
             return;
         }
 
+        if (!this.userEmail) {
+            console.log('🔔 loadNotifications: No user email set');
+            return;
+        }
+
         try {
             console.log('🔔 loadNotifications: Querying ai_chats for', this.userEmail);
 
-            let aiChats = null;
+            let aiChats = [];
             let error = null;
 
-            // Try RPC function first (bypasses RLS issues)
-            try {
-                console.log('🔔 Trying RPC get_user_notifications...');
-                const rpcResult = await this.supabase.rpc('get_user_notifications', {
-                    user_email_param: this.userEmail
-                });
-                if (!rpcResult.error && rpcResult.data) {
-                    aiChats = rpcResult.data;
-                    console.log('🔔 RPC succeeded, got', aiChats.length, 'notifications');
-                } else {
-                    console.log('🔔 RPC failed or returned no data:', rpcResult.error?.message);
-                    error = rpcResult.error;
-                }
-            } catch (rpcErr) {
-                console.log('🔔 RPC function not available, trying direct query...', rpcErr.message);
-            }
+            // Use RPC function to get notifications (secure - filters by email server-side)
+            console.log('🔔 Calling RPC get_user_notifications for:', this.userEmail);
+            const { data, error: rpcError } = await this.supabase.rpc('get_user_notifications', {
+                user_email_param: this.userEmail
+            });
 
-            // Fallback to direct query if RPC failed
-            if (!aiChats) {
-                console.log('🔔 Falling back to direct query...');
-                const directResult = await this.supabase
-                    .from('ai_chats')
-                    .select('id, title, conversation_data, created_at')
-                    .eq('user_email', this.userEmail)
-                    .order('created_at', { ascending: false })
-                    .limit(20);
-                aiChats = directResult.data;
-                error = directResult.error;
+            if (rpcError) {
+                console.error('🔔 RPC error:', rpcError.message);
+                error = rpcError;
+                // If RPC function doesn't exist, notifications won't load
+                // User needs to run the SQL migration
+                if (rpcError.message.includes('function') || rpcError.code === '42883') {
+                    console.error('🔔 get_user_notifications function not found. Please run the SQL migration.');
+                }
+            } else {
+                aiChats = data || [];
+                console.log('🔔 RPC succeeded, got', aiChats.length, 'notifications for', this.userEmail);
             }
 
             console.log('🔔 loadNotifications result:', { aiChats: aiChats?.length, error: error?.message });
