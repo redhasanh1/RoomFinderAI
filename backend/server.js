@@ -4887,6 +4887,47 @@ app.post('/api/ai-negotiator', async (req, res) => {
     }
 });
 
+// API: Create notification for a user (bypasses RLS using service role)
+app.post('/api/create-notification', async (req, res) => {
+    try {
+        const { recipientEmail, title, content, senderEmail } = req.body;
+
+        if (!recipientEmail || !title || !content) {
+            return res.status(400).json({ error: 'recipientEmail, title, and content are required' });
+        }
+
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not available' });
+        }
+
+        // Insert notification into ai_chats table (service role bypasses RLS)
+        const { data, error } = await supabase
+            .from('ai_chats')
+            .insert({
+                user_email: recipientEmail,
+                title: title,
+                conversation_data: JSON.stringify([{
+                    role: 'assistant',
+                    content: content
+                }])
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error creating notification:', error);
+            return res.status(500).json({ error: 'Failed to create notification', details: error.message });
+        }
+
+        console.log('Notification created for:', recipientEmail, 'title:', title);
+        res.json({ success: true, notification: data });
+
+    } catch (error) {
+        console.error('Error in /api/create-notification:', error.message);
+        res.status(500).json({ error: 'Failed to create notification' });
+    }
+});
+
 // API: Generate Kijiji URL
 app.post('/api/predict/kijiji', async (req, res) => {
     try {
