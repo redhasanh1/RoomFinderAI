@@ -99,9 +99,14 @@ class RoommateAPIService {
                 return { success: false, error: 'Database not available' };
             }
 
-            const { data: { user } } = await this.supabase.auth.getUser();
-            if (!user) {
-                return { success: false, error: 'Not authenticated' };
+            // Get user from localStorage (app uses Railway backend auth, not Supabase auth)
+            const storedUser = localStorage.getItem('currentUser');
+            if (!storedUser) {
+                return { success: false, error: 'Not authenticated. Please log in.' };
+            }
+            const user = JSON.parse(storedUser);
+            if (!user || !user.id) {
+                return { success: false, error: 'Invalid user session. Please log in again.' };
             }
 
             const payload = {
@@ -203,9 +208,14 @@ class RoommateAPIService {
                 return { success: false, error: 'Database not available' };
             }
 
-            const { data: { user } } = await this.supabase.auth.getUser();
-            if (!user) {
-                return { success: false, error: 'Not authenticated' };
+            // Get user from localStorage (app uses Railway backend auth, not Supabase auth)
+            const storedUser = localStorage.getItem('currentUser');
+            if (!storedUser) {
+                return { success: false, error: 'Not authenticated. Please log in.' };
+            }
+            const user = JSON.parse(storedUser);
+            if (!user || !user.id) {
+                return { success: false, error: 'Invalid user session. Please log in again.' };
             }
 
             const payload = {
@@ -272,9 +282,14 @@ class RoommateAPIService {
                 return { success: false, error: 'Database not available. Please try again later.' };
             }
 
-            const { data: { user } } = await this.supabase.auth.getUser();
-            if (!user) {
-                return { success: false, error: 'Not authenticated' };
+            // Get user from localStorage (app uses Railway backend auth, not Supabase auth)
+            const storedUser = localStorage.getItem('currentUser');
+            if (!storedUser) {
+                return { success: false, error: 'Not authenticated. Please log in.' };
+            }
+            const user = JSON.parse(storedUser);
+            if (!user || !user.id) {
+                return { success: false, error: 'Invalid user session. Please log in again.' };
             }
 
             // Find or create conversation
