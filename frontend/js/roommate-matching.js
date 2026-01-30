@@ -242,6 +242,9 @@ class RoomPalApp {
         const formattedDate = availableDate ? this.formatDate(availableDate) : 'Available Now';
         const hostName = room.name || 'Host';
 
+        // Check if this is the current user's own room
+        const isOwnRoom = this.currentUser && room.user_id === this.currentUser.id;
+
         return `
             <div class="room-card">
                 <img src="${photoUrl}" alt="Room photo" class="room-image" onerror="this.src='https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop'">
@@ -252,9 +255,10 @@ class RoomPalApp {
                     </div>
                     <h3 class="room-location mb-2">${location}</h3>
                     <p class="room-description mb-4">${description}</p>
-                    <button onclick="roomPalApp.openContact('${room.id}', '${hostName}')" class="btn-primary w-full">
-                        Contact ${hostName}
-                    </button>
+                    ${isOwnRoom
+                        ? `<span class="inline-block w-full text-center py-2 text-gray-500 bg-gray-100 rounded-lg">Your Listing</span>`
+                        : `<button onclick="roomPalApp.openContact('${room.user_id}', '${hostName}')" class="btn-primary w-full">Contact ${hostName}</button>`
+                    }
                 </div>
             </div>
         `;
@@ -397,9 +401,10 @@ class RoomPalApp {
                     </div>
                     ${badgesHtml ? `<div class="lifestyle-badges">${badgesHtml}</div>` : ''}
                     <p class="person-bio">${truncatedBio}</p>
-                    <button onclick="roomPalApp.openPersonContact('${person.id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">
-                        Connect
-                    </button>
+                    ${this.currentUser && person.user_id === this.currentUser.id
+                        ? `<span class="inline-block w-full text-center py-2 text-gray-500 bg-gray-100 rounded-lg text-sm">Your Profile</span>`
+                        : `<button onclick="roomPalApp.openPersonContact('${person.user_id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">Connect</button>`
+                    }
                 </div>
             </div>
         `;
