@@ -292,6 +292,11 @@ class RoommateAPIService {
                 return { success: false, error: 'Invalid user session. Please log in again.' };
             }
 
+            // Prevent messaging yourself
+            if (user.id === recipientId) {
+                return { success: false, error: 'You cannot message yourself.' };
+            }
+
             // Find or create conversation
             let { data: conversation } = await this.supabase
                 .from('roommate_conversations')
