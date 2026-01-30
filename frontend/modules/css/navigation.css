@@ -181,16 +181,9 @@
     transform-origin: center;
 }
 
-.mobile-menu-btn.active .hamburger-line:nth-child(1) {
-    transform: rotate(45deg) translate(6px, 6px);
-}
-
-.mobile-menu-btn.active .hamburger-line:nth-child(2) {
-    opacity: 0;
-}
-
-.mobile-menu-btn.active .hamburger-line:nth-child(3) {
-    transform: rotate(-45deg) translate(6px, -6px);
+/* Hide hamburger when menu is open to avoid double X */
+.mobile-menu-btn.active {
+    display: none !important;
 }
 
 /* Mobile Menu Container */
