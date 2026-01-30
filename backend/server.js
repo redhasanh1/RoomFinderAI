@@ -1300,8 +1300,7 @@ app.delete('/api/listings/:id', async (req, res) => {
         const listingId = req.params.id;
         const userEmail = req.headers['user-email'] || req.query.userEmail;
 
-        console.log(`DELETE listing: id=${listingId}, user=${userEmail}, supabase=${!!supabase}`);
-        console.log(`DELETE: Using service role key: ${!!process.env.SUPABASE_SERVICE_ROLE_KEY}`);
+        console.log(`DELETE listing: id=${listingId}, user=${userEmail}`);
 
         if (!supabase) {
             return res.status(500).json({ error: 'Database not connected' });
@@ -1316,12 +1315,15 @@ app.delete('/api/listings/:id', async (req, res) => {
             .from('listings')
             .select('id, user_email')
             .eq('id', listingId)
-            .single();
+            .maybeSingle();
 
-        console.log('DELETE: Existing listing check:', { existingListing, fetchError: fetchError?.message });
+        if (fetchError) {
+            console.log('Error fetching listing:', fetchError.message);
+            return res.status(500).json({ error: 'Database error', details: fetchError.message });
+        }
 
-        if (fetchError || !existingListing) {
-            console.log('Listing not found or error:', fetchError?.message);
+        if (!existingListing) {
+            console.log('Listing not found:', listingId);
             return res.status(404).json({ error: 'Listing not found' });
         }
 
@@ -1330,50 +1332,33 @@ app.delete('/api/listings/:id', async (req, res) => {
             return res.status(403).json({ error: 'Not authorized to delete this listing' });
         }
 
-        // Delete any favorites that reference this listing (FK constraint)
-        try {
-            const { error: favError } = await supabase
-                .from('favorites')
-                .delete()
-                .eq('listing_id', listingId);
-            if (favError) {
-                console.log('Error deleting favorites:', favError.message);
+        // Delete related records first (in case CASCADE isn't working)
+        const relatedTables = ['favorites', 'conversations', 'notifications'];
+        for (const table of relatedTables) {
+            try {
+                await supabase.from(table).delete().eq('listing_id', listingId);
+            } catch (e) {
+                console.log(`Note: Could not clean ${table}:`, e.message);
             }
-        } catch (favErr) {
-            console.log('Favorites delete exception:', favErr.message);
         }
 
-        // Now delete the listing - only filter by id since we verified ownership above
-        const { data: deletedData, error } = await supabase
+        // Delete the listing
+        const { error: deleteError } = await supabase
             .from('listings')
             .delete()
-            .eq('id', listingId)
-            .select();
+            .eq('id', listingId);
 
-        console.log(`DELETE result: deletedData=${JSON.stringify(deletedData)}, error=${JSON.stringify(error)}`);
-
-        if (error) {
-            console.error('Delete error details:', {
-                code: error.code,
-                message: error.message,
-                details: error.details,
-                hint: error.hint,
-                status: error.status
-            });
+        if (deleteError) {
+            console.error('Delete error:', deleteError);
             return res.status(500).json({
-                error: 'Database error',
-                details: error.message,
-                code: error.code,
-                hint: error.hint
+                error: 'Failed to delete listing',
+                details: deleteError.message,
+                code: deleteError.code
             });
         }
 
         console.log(`Successfully deleted listing ${listingId}`);
-        res.json({
-            message: 'Listing deleted successfully',
-            listingId: listingId,
-            deleted: deletedData
-        });
+        res.json({ message: 'Listing deleted successfully', listingId });
     } catch (error) {
         console.error('DELETE /api/listings/:id error:', error);
         res.status(500).json({ error: 'Failed to delete listing', details: error.message });
