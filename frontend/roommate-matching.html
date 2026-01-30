@@ -93,7 +93,7 @@
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
+            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
                 <!-- I Have a Room -->
                 <button class="section-btn" onclick="showSection('hasRoom')">
                     <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -102,7 +102,7 @@
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold text-gray-900 mb-2">I Have a Room</h2>
-                    <p class="text-gray-600">Post your available room and receive messages</p>
+                    <p class="text-gray-600">Post your available room and receive messages from interested roommates</p>
                 </button>
 
                 <!-- Looking for Roommates -->
@@ -113,19 +113,7 @@
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold text-gray-900 mb-2">Looking for Roommates</h2>
-                    <p class="text-gray-600">Create a profile and connect with others</p>
-                </button>
-
-                <!-- Messages -->
-                <button class="section-btn" onclick="showSection('messages')" id="messagesBtn">
-                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
-                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                        </svg>
-                        <span id="unreadBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
-                    </div>
-                    <h2 class="text-xl font-bold text-gray-900 mb-2">Messages</h2>
-                    <p class="text-gray-600">View your conversations</p>
+                    <p class="text-gray-600">Create a profile, connect with others, and form a roommate group</p>
                 </button>
             </div>
 
@@ -596,6 +584,217 @@
         function toggleMobileMenu() {
             document.getElementById('mobileMenu').classList.toggle('open');
             document.getElementById('mobileOverlay').classList.toggle('open');
+        }
+    </script>
+
+    <!-- Floating Messages Panel (Facebook-style) -->
+    <div id="floatingMessenger" class="fixed bottom-6 right-6 z-50">
+        <!-- Toggle Button -->
+        <button id="messengerToggle" onclick="toggleMessenger()" class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center relative">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+            </svg>
+            <span id="msgBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">0</span>
+        </button>
+
+        <!-- Messenger Panel -->
+        <div id="messengerPanel" class="hidden absolute bottom-16 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
+            <!-- Header -->
+            <div class="bg-gradient-to-r from-blue-500 to-indigo-600 text-white p-4 flex justify-between items-center">
+                <h3 class="font-semibold" id="messengerTitle">Messages</h3>
+                <button onclick="toggleMessenger()" class="hover:bg-white/20 rounded-full p-1 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Conversations List View -->
+            <div id="convListView" class="max-h-96 overflow-y-auto">
+                <div id="convList" class="divide-y">
+                    <div class="p-8 text-center text-gray-500">
+                        <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        <p class="text-sm">No messages yet</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat View (hidden by default) -->
+            <div id="chatDetailView" class="hidden">
+                <div class="flex items-center gap-2 p-3 border-b bg-gray-50">
+                    <button onclick="backToConvList()" class="text-gray-600 hover:text-gray-900 p-1">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <div id="chatPartner" class="flex items-center gap-2">
+                        <div class="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">?</div>
+                        <span class="font-medium text-gray-900">User</span>
+                    </div>
+                </div>
+                <div id="chatMsgs" class="h-64 overflow-y-auto p-3 space-y-2 bg-gray-50">
+                    <!-- Messages here -->
+                </div>
+                <form id="quickReplyForm" class="p-3 border-t flex gap-2" onsubmit="sendQuickReply(event)">
+                    <input type="text" id="quickReplyInput" class="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Type a message...">
+                    <button type="submit" class="bg-blue-500 text-white rounded-full p-2 hover:bg-blue-600 transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Floating Messenger Functions
+        let messengerOpen = false;
+        let currentConvId = null;
+        let currentPartnerId = null;
+
+        function toggleMessenger() {
+            messengerOpen = !messengerOpen;
+            const panel = document.getElementById('messengerPanel');
+            if (messengerOpen) {
+                panel.classList.remove('hidden');
+                loadFloatingConversations();
+            } else {
+                panel.classList.add('hidden');
+            }
+        }
+
+        async function loadFloatingConversations() {
+            const container = document.getElementById('convList');
+
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!currentUser) {
+                container.innerHTML = `
+                    <div class="p-6 text-center">
+                        <p class="text-gray-600 mb-3">Log in to see messages</p>
+                        <a href="login.html" class="text-blue-500 font-medium hover:underline">Login</a>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = '<div class="p-4 text-center"><div class="animate-spin w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div></div>';
+
+            try {
+                if (window.roommateAPI && window.roommateAPI.initialized) {
+                    const convs = await window.roommateAPI.getConversations();
+
+                    if (!convs || convs.length === 0) {
+                        container.innerHTML = `
+                            <div class="p-8 text-center text-gray-500">
+                                <svg class="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                </svg>
+                                <p class="text-sm">No messages yet</p>
+                                <p class="text-xs mt-1">Message someone to start chatting!</p>
+                            </div>
+                        `;
+                        return;
+                    }
+
+                    container.innerHTML = convs.map(c => `
+                        <div class="p-3 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors" onclick="openFloatingChat('${c.id}', '${c.other_user_id}', '${c.other_user_name || 'User'}')">
+                            <div class="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
+                                ${(c.other_user_name || 'U').charAt(0).toUpperCase()}
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex justify-between">
+                                    <span class="font-medium text-gray-900 truncate">${c.other_user_name || 'User'}</span>
+                                    <span class="text-xs text-gray-400">${c.last_message_time ? formatMsgTime(c.last_message_time) : ''}</span>
+                                </div>
+                                <p class="text-sm text-gray-500 truncate">${c.last_message || 'No messages'}</p>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) {
+                console.error('Error loading conversations:', err);
+                container.innerHTML = '<div class="p-4 text-center text-red-500 text-sm">Failed to load</div>';
+            }
+        }
+
+        function formatMsgTime(dateStr) {
+            const d = new Date(dateStr);
+            const now = new Date();
+            const diff = Math.floor((now - d) / 60000);
+            if (diff < 1) return 'now';
+            if (diff < 60) return diff + 'm';
+            if (diff < 1440) return Math.floor(diff / 60) + 'h';
+            return Math.floor(diff / 1440) + 'd';
+        }
+
+        async function openFloatingChat(convId, partnerId, partnerName) {
+            currentConvId = convId;
+            currentPartnerId = partnerId;
+
+            document.getElementById('convListView').classList.add('hidden');
+            document.getElementById('chatDetailView').classList.remove('hidden');
+            document.getElementById('messengerTitle').textContent = partnerName;
+            document.getElementById('chatPartner').innerHTML = `
+                <div class="w-8 h-8 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">${partnerName.charAt(0).toUpperCase()}</div>
+                <span class="font-medium text-gray-900">${partnerName}</span>
+            `;
+
+            const container = document.getElementById('chatMsgs');
+            container.innerHTML = '<div class="text-center py-4"><div class="animate-spin w-5 h-5 border-2 border-blue-500 border-t-transparent rounded-full mx-auto"></div></div>';
+
+            try {
+                const msgs = await window.roommateAPI.getMessages(convId);
+                const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+
+                if (!msgs || msgs.length === 0) {
+                    container.innerHTML = '<div class="text-center text-gray-500 text-sm py-4">No messages yet</div>';
+                } else {
+                    container.innerHTML = msgs.map(m => {
+                        const isMe = m.sender_id === currentUser.id;
+                        return `
+                            <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                                <div class="${isMe ? 'bg-blue-500 text-white' : 'bg-white border'} rounded-2xl px-3 py-2 max-w-[80%] shadow-sm">
+                                    <p class="text-sm">${m.content}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                    container.scrollTop = container.scrollHeight;
+                }
+            } catch (err) {
+                container.innerHTML = '<div class="text-center text-red-500 text-sm py-4">Failed to load</div>';
+            }
+        }
+
+        function backToConvList() {
+            document.getElementById('chatDetailView').classList.add('hidden');
+            document.getElementById('convListView').classList.remove('hidden');
+            document.getElementById('messengerTitle').textContent = 'Messages';
+            currentConvId = null;
+            currentPartnerId = null;
+        }
+
+        async function sendQuickReply(e) {
+            e.preventDefault();
+            const input = document.getElementById('quickReplyInput');
+            const msg = input.value.trim();
+            if (!msg || !currentPartnerId) return;
+
+            input.disabled = true;
+            try {
+                const result = await window.roommateAPI.sendMessage(currentPartnerId, msg);
+                if (result.success) {
+                    input.value = '';
+                    await openFloatingChat(currentConvId, currentPartnerId, document.getElementById('messengerTitle').textContent);
+                }
+            } catch (err) {
+                console.error('Send failed:', err);
+            }
+            input.disabled = false;
+            input.focus();
         }
     </script>
 </body>
