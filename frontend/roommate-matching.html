@@ -93,7 +93,7 @@
                 </p>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-6 max-w-3xl mx-auto mb-12">
+            <div class="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mb-12">
                 <!-- I Have a Room -->
                 <button class="section-btn" onclick="showSection('hasRoom')">
                     <div class="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
@@ -102,7 +102,7 @@
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold text-gray-900 mb-2">I Have a Room</h2>
-                    <p class="text-gray-600">Post your available room and receive messages from interested roommates</p>
+                    <p class="text-gray-600">Post your available room and receive messages</p>
                 </button>
 
                 <!-- Looking for Roommates -->
@@ -113,7 +113,19 @@
                         </svg>
                     </div>
                     <h2 class="text-xl font-bold text-gray-900 mb-2">Looking for Roommates</h2>
-                    <p class="text-gray-600">Create a profile, connect with others, and form a roommate group</p>
+                    <p class="text-gray-600">Create a profile and connect with others</p>
+                </button>
+
+                <!-- Messages -->
+                <button class="section-btn" onclick="showSection('messages')" id="messagesBtn">
+                    <div class="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-4 relative">
+                        <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        <span id="unreadBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>
+                    </div>
+                    <h2 class="text-xl font-bold text-gray-900 mb-2">Messages</h2>
+                    <p class="text-gray-600">View your conversations</p>
                 </button>
             </div>
 
@@ -437,6 +449,54 @@
                 <h2 class="text-2xl font-bold text-gray-900 mb-4">Posted Successfully!</h2>
                 <p class="text-gray-600 mb-8">Your room listing is now live.</p>
                 <button onclick="showSection('selector')" class="btn-primary px-8 py-3">Back to Home</button>
+            </div>
+        </div>
+
+        <!-- Messages Section -->
+        <div id="messagesSection" class="section-view">
+            <div class="flex items-center justify-between mb-6">
+                <button onclick="showSection('selector')" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                    </svg>
+                    Back
+                </button>
+                <h1 class="text-2xl font-bold text-gray-900">Messages</h1>
+                <div class="w-16"></div>
+            </div>
+
+            <!-- Conversations List -->
+            <div id="conversationsList" class="space-y-3">
+                <div class="text-center py-12 text-gray-500">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                    </svg>
+                    <p>No conversations yet</p>
+                    <p class="text-sm mt-2">Start by messaging someone from the listings!</p>
+                </div>
+            </div>
+
+            <!-- Chat View (hidden by default) -->
+            <div id="chatView" class="hidden">
+                <div class="flex items-center gap-3 mb-4 pb-4 border-b">
+                    <button onclick="closeChatView()" class="text-gray-600 hover:text-gray-900">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                        </svg>
+                    </button>
+                    <div id="chatPartnerInfo" class="flex items-center gap-3">
+                        <!-- Partner info loaded by JS -->
+                    </div>
+                </div>
+
+                <div id="messagesContainer" class="space-y-3 max-h-[50vh] overflow-y-auto mb-4 p-2">
+                    <!-- Messages loaded by JS -->
+                </div>
+
+                <form id="chatReplyForm" class="flex gap-2">
+                    <input type="text" name="reply" class="form-input flex-1" placeholder="Type a message..." required>
+                    <button type="submit" class="btn-primary px-6">Send</button>
+                </form>
             </div>
         </div>
 
