@@ -793,8 +793,8 @@ class RoomPalApp {
         const formData = new FormData(form);
 
         const profileData = {
-            name: formData.get('name'),
-            preferred_areas: formData.get('location') ? [formData.get('location')] : [],
+            name: this.currentUser?.user_metadata?.first_name || this.currentUser?.email?.split('@')[0] || 'Anonymous',
+            preferred_areas: formData.get('preferred_areas') ? formData.get('preferred_areas').split(',').map(s => s.trim()).filter(Boolean) : [],
             budget_min: parseInt(formData.get('budget_min')) || null,
             budget_max: parseInt(formData.get('budget_max')) || null,
             move_in_date: formData.get('move_in_date') || null,
@@ -835,7 +835,7 @@ class RoomPalApp {
 
         } catch (error) {
             console.error('Error creating profile:', error);
-            this.showToast('Failed to create profile. Please try again.', 'error');
+            this.showToast(error.message || 'Failed to create profile. Please try again.', 'error');
         } finally {
             submitBtn.textContent = originalText;
             submitBtn.disabled = false;
