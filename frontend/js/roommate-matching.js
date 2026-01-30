@@ -22,6 +22,10 @@ class RoomPalApp {
             pets: null
         };
 
+        // Messages state
+        this.currentConversationId = null;
+        this.currentChatPartner = null;
+
         this.init();
     }
 
@@ -140,7 +144,8 @@ class RoomPalApp {
             'seeking': 'seekingSection',
             'browseRooms': 'browseRoomsSection',
             'browseSeekers': 'browseSeekersSection',
-            'success': 'successSection'
+            'success': 'successSection',
+            'messages': 'messagesSection'
         };
 
         // Hide all sections
@@ -161,6 +166,8 @@ class RoomPalApp {
                     this.loadRooms();
                 } else if (section === 'browseSeekers' || section === 'seeking') {
                     this.loadPeople();
+                } else if (section === 'messages') {
+                    this.loadConversations();
                 }
             }
         }
@@ -891,6 +898,176 @@ class RoomPalApp {
             setTimeout(() => toast.remove(), 300);
         }, 3000);
     }
+
+    // ==================== MESSAGES ====================
+
+    async loadConversations() {
+        if (!this.currentUser) {
+            const container = document.getElementById('conversationsList');
+            container.innerHTML = `
+                <div class="text-center py-12">
+                    <p class="text-gray-600 mb-4">Please log in to view your messages</p>
+                    <a href="login.html" class="btn-primary">Login</a>
+                </div>
+            `;
+            return;
+        }
+
+        if (!this.api || !this.api.initialized) {
+            return;
+        }
+
+        const container = document.getElementById('conversationsList');
+        container.innerHTML = '<div class="text-center py-8"><div class="animate-spin w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div></div>';
+
+        try {
+            const conversations = await this.api.getConversations();
+
+            if (!conversations || conversations.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-12 text-gray-500">
+                        <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                        </svg>
+                        <p>No conversations yet</p>
+                        <p class="text-sm mt-2">Start by messaging someone from the listings!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = conversations.map(conv => `
+                <div class="conversation-item bg-white rounded-xl p-4 border hover:border-indigo-300 cursor-pointer transition-all" onclick="openChat('${conv.id}', '${conv.other_user_id}', '${conv.other_user_name}')">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                            ${conv.other_user_name ? conv.other_user_name.charAt(0).toUpperCase() : '?'}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex justify-between items-start">
+                                <h3 class="font-semibold text-gray-900 truncate">${conv.other_user_name || 'User'}</h3>
+                                <span class="text-xs text-gray-400">${conv.last_message_time ? this.formatMessageTime(conv.last_message_time) : ''}</span>
+                            </div>
+                            <p class="text-sm text-gray-500 truncate">${conv.last_message || 'No messages yet'}</p>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error loading conversations:', error);
+            container.innerHTML = '<div class="text-center py-8 text-red-500">Failed to load conversations</div>';
+        }
+    }
+
+    formatMessageTime(dateStr) {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diffMs = now - date;
+        const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
+
+        if (diffMins < 1) return 'Just now';
+        if (diffMins < 60) return `${diffMins}m ago`;
+        if (diffHours < 24) return `${diffHours}h ago`;
+        if (diffDays < 7) return `${diffDays}d ago`;
+
+        return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    async openChat(conversationId, partnerId, partnerName) {
+        this.currentConversationId = conversationId;
+        this.currentChatPartner = { id: partnerId, name: partnerName };
+
+        // Hide conversations list, show chat view
+        document.getElementById('conversationsList').classList.add('hidden');
+        document.getElementById('chatView').classList.remove('hidden');
+
+        // Set partner info
+        document.getElementById('chatPartnerInfo').innerHTML = `
+            <div class="w-10 h-10 bg-gradient-to-br from-indigo-400 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold">
+                ${partnerName ? partnerName.charAt(0).toUpperCase() : '?'}
+            </div>
+            <span class="font-semibold text-gray-900">${partnerName || 'User'}</span>
+        `;
+
+        // Load messages
+        await this.loadMessages(conversationId);
+
+        // Setup reply form
+        const replyForm = document.getElementById('chatReplyForm');
+        replyForm.onsubmit = (e) => this.handleChatReply(e);
+    }
+
+    async loadMessages(conversationId) {
+        const container = document.getElementById('messagesContainer');
+        container.innerHTML = '<div class="text-center py-4"><div class="animate-spin w-6 h-6 border-2 border-indigo-500 border-t-transparent rounded-full mx-auto"></div></div>';
+
+        try {
+            const messages = await this.api.getMessages(conversationId);
+
+            if (!messages || messages.length === 0) {
+                container.innerHTML = '<div class="text-center py-8 text-gray-500">No messages yet. Say hello!</div>';
+                return;
+            }
+
+            container.innerHTML = messages.map(msg => {
+                const isMe = msg.sender_id === this.currentUser.id;
+                return `
+                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                        <div class="${isMe ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-900'} rounded-2xl px-4 py-2 max-w-[75%]">
+                            <p>${msg.content}</p>
+                            <p class="text-xs ${isMe ? 'text-indigo-200' : 'text-gray-400'} mt-1">${this.formatMessageTime(msg.created_at)}</p>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Scroll to bottom
+            container.scrollTop = container.scrollHeight;
+
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            container.innerHTML = '<div class="text-center py-4 text-red-500">Failed to load messages</div>';
+        }
+    }
+
+    async handleChatReply(e) {
+        e.preventDefault();
+        const form = e.target;
+        const input = form.querySelector('input[name="reply"]');
+        const message = input.value.trim();
+
+        if (!message || !this.currentChatPartner) return;
+
+        const submitBtn = form.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.textContent = '...';
+
+        try {
+            const result = await this.api.sendMessage(this.currentChatPartner.id, message);
+
+            if (result.success) {
+                input.value = '';
+                await this.loadMessages(this.currentConversationId);
+            } else {
+                this.showToast(result.error || 'Failed to send', 'error');
+            }
+        } catch (error) {
+            console.error('Error sending reply:', error);
+            this.showToast('Failed to send message', 'error');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Send';
+        }
+    }
+
+    closeChatView() {
+        document.getElementById('chatView').classList.add('hidden');
+        document.getElementById('conversationsList').classList.remove('hidden');
+        this.currentConversationId = null;
+        this.currentChatPartner = null;
+    }
 }
 
 // Global functions
@@ -909,6 +1086,18 @@ function closeContactModal() {
 function closeMessageModal() {
     if (window.roomPalApp) {
         window.roomPalApp.closeContactModal();
+    }
+}
+
+function openChat(conversationId, partnerId, partnerName) {
+    if (window.roomPalApp) {
+        window.roomPalApp.openChat(conversationId, partnerId, partnerName);
+    }
+}
+
+function closeChatView() {
+    if (window.roomPalApp) {
+        window.roomPalApp.closeChatView();
     }
 }
 

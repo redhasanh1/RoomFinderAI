@@ -344,6 +344,88 @@ class RoommateAPIService {
             return { success: false, error: error.message || 'Failed to send message. Please try again.' };
         }
     }
+
+    async getConversations() {
+        try {
+            await this.ensureInitialized();
+            if (!this.supabase) return [];
+
+            const storedUser = localStorage.getItem('currentUser');
+            if (!storedUser) return [];
+            const user = JSON.parse(storedUser);
+            if (!user || !user.id) return [];
+
+            const { data, error } = await this.supabase
+                .from('roommate_conversations')
+                .select('*')
+                .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error('Error fetching conversations:', error);
+                return [];
+            }
+
+            // Get the other user's profile for each conversation
+            const enrichedConversations = await Promise.all((data || []).map(async (conv) => {
+                const otherUserId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id;
+
+                // Get profile info
+                const { data: profile } = await this.supabase
+                    .from('roommate_profiles')
+                    .select('name, avatar_url')
+                    .eq('user_id', otherUserId)
+                    .single();
+
+                // Get last message
+                const { data: lastMsg } = await this.supabase
+                    .from('roommate_messages')
+                    .select('content, created_at, sender_id')
+                    .eq('conversation_id', conv.id)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                return {
+                    ...conv,
+                    other_user_id: otherUserId,
+                    other_user_name: profile?.name || 'User',
+                    other_user_avatar: profile?.avatar_url,
+                    last_message: lastMsg?.content || '',
+                    last_message_time: lastMsg?.created_at,
+                    last_sender_id: lastMsg?.sender_id
+                };
+            }));
+
+            return enrichedConversations;
+        } catch (error) {
+            console.error('Error in getConversations:', error);
+            return [];
+        }
+    }
+
+    async getMessages(conversationId) {
+        try {
+            await this.ensureInitialized();
+            if (!this.supabase) return [];
+
+            const { data, error } = await this.supabase
+                .from('roommate_messages')
+                .select('*')
+                .eq('conversation_id', conversationId)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error fetching messages:', error);
+                return [];
+            }
+
+            return data || [];
+        } catch (error) {
+            console.error('Error in getMessages:', error);
+            return [];
+        }
+    }
 }
 
 // Global instance
