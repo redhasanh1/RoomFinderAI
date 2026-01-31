@@ -394,16 +394,17 @@ class RoomPalApp {
 
             if (desktopAuth) {
                 desktopAuth.innerHTML = `
-                    <div class="flex items-center gap-3">
-                        <span class="text-gray-700">Hi, ${userName}</span>
-                        <a href="profile.html" class="btn-secondary">Profile</a>
+                    <div class="flex items-center gap-4">
+                        <span class="text-gray-700 font-medium">Hi, ${userName}</span>
+                        <a href="profile.html" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">My Profile</a>
                     </div>
                 `;
             }
 
             if (mobileAuth) {
-                mobileAuth.textContent = `Hi, ${userName}`;
+                mobileAuth.textContent = `Hi, ${userName} - Profile`;
                 mobileAuth.href = 'profile.html';
+                mobileAuth.className = 'block py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium text-center hover:bg-indigo-700 transition-colors';
             }
         }
     }
