@@ -35,23 +35,24 @@
 </head>
 <body>
     <!-- Header -->
-    <header class="site-header sticky top-0 z-50">
+    <header class="bg-white shadow-sm sticky top-0 z-50">
         <nav class="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-            <a href="index.html" class="text-xl font-bold text-gray-900">RoomFinderAI</a>
+            <a href="index.html" class="text-xl font-bold text-gray-900 hover:text-indigo-600 transition-colors">RoomFinderAI</a>
 
             <!-- Desktop Nav -->
-            <div class="hidden md:flex items-center gap-6">
-                <a href="index.html" class="text-gray-600 hover:text-gray-900">Home</a>
-                <a href="listings.html" class="text-gray-600 hover:text-gray-900">Listings</a>
-                <span class="text-indigo-600 font-medium">RoomPal</span>
+            <div class="hidden md:flex items-center gap-8">
+                <a href="index.html" class="text-gray-600 hover:text-gray-900 transition-colors">Home</a>
+                <a href="listings.html" class="text-gray-600 hover:text-gray-900 transition-colors">Listings</a>
+                <span class="text-indigo-600 font-semibold">RoomPal</span>
             </div>
 
-            <div class="hidden md:block" id="desktopAuthSection">
-                <a href="login.html" class="btn-secondary">Login</a>
+            <!-- Desktop Auth -->
+            <div class="hidden md:flex items-center gap-4" id="desktopAuthSection">
+                <a href="login.html" class="bg-indigo-600 text-white px-5 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">Login / Register</a>
             </div>
 
             <!-- Mobile Menu Button -->
-            <button class="md:hidden p-2" onclick="toggleMobileMenu()">
+            <button class="md:hidden p-2 hover:bg-gray-100 rounded-lg" onclick="toggleMobileMenu()">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
                 </svg>
@@ -60,24 +61,24 @@
     </header>
 
     <!-- Mobile Menu Overlay -->
-    <div class="mobile-overlay" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
+    <div class="fixed inset-0 bg-black/50 z-40 hidden" id="mobileOverlay" onclick="toggleMobileMenu()"></div>
 
     <!-- Mobile Menu -->
-    <div class="mobile-menu" id="mobileMenu">
+    <div class="fixed top-0 right-0 w-72 h-full bg-white z-50 transform translate-x-full transition-transform duration-300" id="mobileMenu">
         <div class="p-4 border-b flex justify-between items-center">
             <span class="font-bold text-gray-900">Menu</span>
-            <button onclick="toggleMobileMenu()" class="p-2">
+            <button onclick="toggleMobileMenu()" class="p-2 hover:bg-gray-100 rounded-lg">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
                 </svg>
             </button>
         </div>
         <div class="p-4 space-y-2">
-            <a href="index.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg">Home</a>
-            <a href="listings.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg">Listings</a>
+            <a href="index.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Home</a>
+            <a href="listings.html" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">Listings</a>
             <a href="#" class="block py-3 px-4 text-indigo-600 bg-indigo-50 rounded-lg font-medium">RoomPal</a>
             <hr class="my-4">
-            <a href="login.html" id="mobileAuthLink" class="block py-3 px-4 text-gray-700 hover:bg-gray-100 rounded-lg">Login / Register</a>
+            <a href="login.html" id="mobileAuthLink" class="block py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium text-center hover:bg-indigo-700 transition-colors">Login / Register</a>
         </div>
     </div>
 
@@ -649,8 +650,18 @@
     <script>
         // Mobile Menu Toggle
         function toggleMobileMenu() {
-            document.getElementById('mobileMenu').classList.toggle('open');
-            document.getElementById('mobileOverlay').classList.toggle('open');
+            const menu = document.getElementById('mobileMenu');
+            const overlay = document.getElementById('mobileOverlay');
+
+            if (menu.classList.contains('translate-x-full')) {
+                menu.classList.remove('translate-x-full');
+                menu.classList.add('translate-x-0');
+                overlay.classList.remove('hidden');
+            } else {
+                menu.classList.add('translate-x-full');
+                menu.classList.remove('translate-x-0');
+                overlay.classList.add('hidden');
+            }
         }
     </script>
 
