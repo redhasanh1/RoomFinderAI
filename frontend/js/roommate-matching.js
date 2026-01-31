@@ -1,10 +1,11 @@
-// RoomPal - Simplified Roommate Matching
-// Two paths: "I Have a Room" and "I Need a Room"
+// RoomPal - Smart Roommate Matching System
+// Find compatible roommates with intelligent filtering
 
 class RoomPalApp {
     constructor() {
         this.currentSection = 'landing';
         this.currentUser = null;
+        this.userProfile = null;
         this.api = null;
         this.allRooms = [];
         this.filteredRooms = [];
@@ -26,6 +27,15 @@ class RoomPalApp {
         this.currentConversationId = null;
         this.currentChatPartner = null;
 
+        // Smart filter state
+        this.filters = {
+            city: '',
+            budgetRange: '',
+            moveIn: '',
+            lifestyle: '',
+            sort: 'match'
+        };
+
         this.init();
     }
 
@@ -42,10 +52,306 @@ class RoomPalApp {
         // Setup event listeners
         this.setupEventListeners();
 
-        // Load preview data for landing page
-        this.loadPreviewData();
+        // Load user's profile if logged in
+        await this.loadUserProfile();
 
-        console.log('RoomPal App initialized');
+        // Show/hide create profile CTA
+        this.updateProfileCTA();
+
+        // Load roommate matches immediately
+        await this.loadRoommateMatches();
+
+        console.log('RoomPal Smart Matching initialized');
+    }
+
+    async loadUserProfile() {
+        if (!this.currentUser || !this.api) return;
+
+        try {
+            const profiles = await this.api.getSeekerProfiles({ limit: 100 });
+            this.userProfile = profiles.find(p => p.user_id === this.currentUser.id);
+            this.hasUserProfile = !!this.userProfile;
+        } catch (error) {
+            console.error('Error loading user profile:', error);
+        }
+    }
+
+    updateProfileCTA() {
+        const cta = document.getElementById('createProfileCTA');
+        if (cta) {
+            if (!this.currentUser || !this.hasUserProfile) {
+                cta.classList.remove('hidden');
+            } else {
+                cta.classList.add('hidden');
+            }
+        }
+    }
+
+    async loadRoommateMatches() {
+        const grid = document.getElementById('matchResultsGrid');
+        const emptyState = document.getElementById('matchEmptyState');
+        const loadingState = document.getElementById('matchLoadingState');
+        const resultsCount = document.getElementById('matchResultsCount');
+
+        if (!grid) return;
+
+        // Show loading
+        if (loadingState) loadingState.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+        grid.classList.add('hidden');
+
+        try {
+            // Wait for API to initialize
+            if (this.api) {
+                await this.api.ensureInitialized();
+                this.allPeople = await this.api.getSeekerProfiles({}) || [];
+            }
+
+            // Filter out current user
+            if (this.currentUser) {
+                this.allPeople = this.allPeople.filter(p => p.user_id !== this.currentUser.id);
+            }
+
+            // Calculate compatibility scores
+            this.allPeople = this.allPeople.map(person => ({
+                ...person,
+                matchScore: this.calculateMatchScore(person)
+            }));
+
+            // Apply filters and sort
+            this.applySmartFilters();
+
+        } catch (error) {
+            console.error('Error loading roommate matches:', error);
+            if (loadingState) loadingState.classList.add('hidden');
+            if (resultsCount) resultsCount.textContent = 'Error loading matches';
+        }
+    }
+
+    calculateMatchScore(person) {
+        if (!this.userProfile) {
+            // Random score if no profile (still useful for demo)
+            return Math.floor(Math.random() * 30) + 60; // 60-90
+        }
+
+        let score = 50; // Base score
+        const userLifestyle = this.userProfile.lifestyle || {};
+        const personLifestyle = person.lifestyle || {};
+        const userScores = this.userProfile.compatibility_scores || {};
+        const personScores = person.compatibility_scores || {};
+
+        // Budget overlap (+20 points)
+        const userBudgetMax = this.userProfile.budget_max || 2000;
+        const personBudgetMax = person.budget_max || 2000;
+        const budgetDiff = Math.abs(userBudgetMax - personBudgetMax);
+        if (budgetDiff < 200) score += 20;
+        else if (budgetDiff < 500) score += 10;
+
+        // Location match (+15 points)
+        const userAreas = this.userProfile.preferred_areas || [];
+        const personAreas = person.preferred_areas || [];
+        if (userAreas.some(a => personAreas.some(pa =>
+            pa.toLowerCase().includes(a.toLowerCase()) || a.toLowerCase().includes(pa.toLowerCase())
+        ))) {
+            score += 15;
+        }
+
+        // Sleep schedule match (+10 points)
+        if (userLifestyle.sleepSchedule && personLifestyle.sleepSchedule) {
+            if (userLifestyle.sleepSchedule === personLifestyle.sleepSchedule) score += 10;
+        }
+
+        // Smoking compatibility (+10 points)
+        if (userLifestyle.smoking === personLifestyle.smoking) score += 10;
+
+        // Pet compatibility (+10 points)
+        if (userLifestyle.petsOk === personLifestyle.petsOk) score += 10;
+
+        // Cleanliness match (+5 points)
+        const cleanDiff = Math.abs((userScores.cleanliness || 5) - (personScores.cleanliness || 5));
+        if (cleanDiff <= 2) score += 5;
+
+        return Math.min(99, Math.max(40, score));
+    }
+
+    applySmartFilters() {
+        const grid = document.getElementById('matchResultsGrid');
+        const emptyState = document.getElementById('matchEmptyState');
+        const loadingState = document.getElementById('matchLoadingState');
+        const resultsCount = document.getElementById('matchResultsCount');
+
+        // Get filter values
+        this.filters.city = document.getElementById('cityFilter')?.value || '';
+        this.filters.budgetRange = document.getElementById('budgetRangeFilter')?.value || '';
+        this.filters.moveIn = document.getElementById('moveInFilter')?.value || '';
+        this.filters.lifestyle = document.getElementById('lifestyleFilter')?.value || '';
+        this.filters.sort = document.getElementById('sortFilter')?.value || 'match';
+
+        // Filter people
+        this.filteredPeople = this.allPeople.filter(person => {
+            // City filter
+            if (this.filters.city) {
+                const areas = (person.preferred_areas || []).join(' ').toLowerCase();
+                if (!areas.includes(this.filters.city.toLowerCase())) return false;
+            }
+
+            // Budget filter
+            if (this.filters.budgetRange) {
+                const budget = person.budget_max || 0;
+                const [min, max] = this.filters.budgetRange.split('-').map(n => parseInt(n) || 0);
+                if (this.filters.budgetRange.includes('+')) {
+                    if (budget < min) return false;
+                } else {
+                    if (budget < min || budget > max) return false;
+                }
+            }
+
+            // Move-in date filter
+            if (this.filters.moveIn && person.move_in_date) {
+                const moveDate = new Date(person.move_in_date);
+                const now = new Date();
+                const diffDays = Math.ceil((moveDate - now) / (1000 * 60 * 60 * 24));
+
+                if (this.filters.moveIn === 'immediate' && diffDays > 14) return false;
+                if (this.filters.moveIn === '1month' && diffDays > 30) return false;
+                if (this.filters.moveIn === '3months' && diffDays > 90) return false;
+            }
+
+            // Lifestyle filter
+            if (this.filters.lifestyle) {
+                const lifestyle = person.lifestyle || {};
+                const scores = person.compatibility_scores || {};
+
+                if (this.filters.lifestyle === 'quiet' && scores.socialLevel > 5) return false;
+                if (this.filters.lifestyle === 'social' && scores.socialLevel < 5) return false;
+                if (this.filters.lifestyle === 'pet-friendly' && !lifestyle.petsOk) return false;
+                if (this.filters.lifestyle === 'non-smoker' && lifestyle.smoking !== 'Non-Smoker' && lifestyle.smoking !== 'Never') return false;
+            }
+
+            return true;
+        });
+
+        // Sort
+        this.filteredPeople.sort((a, b) => {
+            switch (this.filters.sort) {
+                case 'match':
+                    return (b.matchScore || 0) - (a.matchScore || 0);
+                case 'newest':
+                    return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+                case 'budget-low':
+                    return (a.budget_max || 0) - (b.budget_max || 0);
+                case 'budget-high':
+                    return (b.budget_max || 0) - (a.budget_max || 0);
+                default:
+                    return 0;
+            }
+        });
+
+        // Hide loading
+        if (loadingState) loadingState.classList.add('hidden');
+
+        // Render results
+        if (this.filteredPeople.length === 0) {
+            grid.classList.add('hidden');
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (resultsCount) resultsCount.textContent = '0 matches found';
+        } else {
+            grid.classList.remove('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
+            if (resultsCount) resultsCount.textContent = `${this.filteredPeople.length} ${this.filteredPeople.length === 1 ? 'match' : 'matches'} found`;
+            grid.innerHTML = this.filteredPeople.map(person => this.createMatchCard(person)).join('');
+        }
+    }
+
+    createMatchCard(person) {
+        const avatarUrl = person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name || 'User')}&background=6366f1&color=fff&size=160`;
+        const name = person.name || 'Anonymous';
+        const location = person.preferred_areas?.[0] || 'Location flexible';
+        const budgetMax = person.budget_max || 0;
+        const budgetText = budgetMax ? `Up to $${budgetMax}/mo` : 'Budget flexible';
+        const bio = person.bio || 'Looking for a great roommate!';
+        const truncatedBio = bio.length > 80 ? bio.substring(0, 80) + '...' : bio;
+        const moveInDate = person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible';
+        const matchScore = person.matchScore || 75;
+
+        // Match score color
+        let matchColor = 'bg-gray-400';
+        if (matchScore >= 85) matchColor = 'bg-emerald-500';
+        else if (matchScore >= 70) matchColor = 'bg-blue-500';
+        else if (matchScore >= 55) matchColor = 'bg-yellow-500';
+
+        // Lifestyle badges
+        const lifestyle = person.lifestyle || {};
+        const badges = [];
+        if (lifestyle.smoking === 'Non-Smoker' || lifestyle.smoking === 'Never') badges.push('🚭');
+        if (lifestyle.petsOk) badges.push('🐾');
+        if (lifestyle.sleepSchedule?.includes('night') || lifestyle.sleepSchedule?.includes('owl')) badges.push('🌙');
+        if (lifestyle.sleepSchedule?.includes('early') || lifestyle.sleepSchedule?.includes('morning')) badges.push('☀️');
+
+        const isOwnProfile = this.currentUser && person.user_id === this.currentUser.id;
+
+        return `
+            <div class="bg-white rounded-2xl shadow-sm border hover:shadow-lg transition-all duration-300 overflow-hidden">
+                <!-- Match Score Badge -->
+                <div class="relative">
+                    <div class="absolute top-3 right-3 ${matchColor} text-white px-3 py-1 rounded-full text-sm font-bold shadow-md">
+                        ${matchScore}% Match
+                    </div>
+                    <div class="h-24 bg-gradient-to-br from-indigo-400 to-purple-500"></div>
+                    <img src="${avatarUrl}" alt="${name}" class="w-20 h-20 rounded-full border-4 border-white absolute -bottom-10 left-1/2 -translate-x-1/2 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=160'">
+                </div>
+
+                <div class="pt-12 p-5 text-center">
+                    <h3 class="text-lg font-bold text-gray-900 mb-1">${name}</h3>
+
+                    <div class="flex items-center justify-center gap-1 text-gray-500 text-sm mb-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                        </svg>
+                        ${location}
+                    </div>
+
+                    <div class="flex items-center justify-center gap-4 text-sm text-gray-600 mb-3">
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                            </svg>
+                            ${budgetText}
+                        </span>
+                        <span class="flex items-center gap-1">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            ${moveInDate}
+                        </span>
+                    </div>
+
+                    ${badges.length > 0 ? `
+                        <div class="flex items-center justify-center gap-2 mb-3">
+                            ${badges.map(b => `<span class="text-lg">${b}</span>`).join('')}
+                        </div>
+                    ` : ''}
+
+                    <p class="text-gray-600 text-sm mb-4">${truncatedBio}</p>
+
+                    ${isOwnProfile
+                        ? `<span class="inline-block w-full text-center py-2.5 text-gray-500 bg-gray-100 rounded-xl text-sm font-medium">Your Profile</span>`
+                        : `<button onclick="roomPalApp.openPersonContact('${person.user_id}', '${name.replace(/'/g, "\\'")}')" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">
+                            Connect
+                        </button>`
+                    }
+                </div>
+            </div>
+        `;
+    }
+
+    clearAllFilters() {
+        document.getElementById('cityFilter').value = '';
+        document.getElementById('budgetRangeFilter').value = '';
+        document.getElementById('moveInFilter').value = '';
+        document.getElementById('lifestyleFilter').value = '';
+        document.getElementById('sortFilter').value = 'match';
+        this.applySmartFilters();
     }
 
     async loadPreviewData() {
@@ -1103,6 +1409,18 @@ function openChat(conversationId, partnerId, partnerName) {
 function closeChatView() {
     if (window.roomPalApp) {
         window.roomPalApp.closeChatView();
+    }
+}
+
+function applySmartFilters() {
+    if (window.roomPalApp) {
+        window.roomPalApp.applySmartFilters();
+    }
+}
+
+function clearAllFilters() {
+    if (window.roomPalApp) {
+        window.roomPalApp.clearAllFilters();
     }
 }
 
