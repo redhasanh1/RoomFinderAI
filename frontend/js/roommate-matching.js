@@ -274,9 +274,15 @@ class RoomPalApp {
         // Pet compatibility (+10 points)
         if (userLifestyle.petsOk === personLifestyle.petsOk) score += 10;
 
-        // Cleanliness match (+5 points)
+        // Cleanliness match (+10 points, increased from +5)
         const cleanDiff = Math.abs((userScores.cleanliness || 5) - (personScores.cleanliness || 5));
-        if (cleanDiff <= 2) score += 5;
+        if (cleanDiff <= 2) score += 10;
+        else if (cleanDiff <= 4) score += 5;
+
+        // Social level match (+10 points, new)
+        const socialDiff = Math.abs((userScores.socialLevel || 5) - (personScores.socialLevel || 5));
+        if (socialDiff <= 2) score += 10;
+        else if (socialDiff <= 4) score += 5;
 
         return Math.min(99, Math.max(40, score));
     }
