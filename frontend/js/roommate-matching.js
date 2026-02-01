@@ -630,6 +630,9 @@ class RoomPalApp {
                 } else if (section === 'hasRoom') {
                     // Load seekers when posting a room so host can see who's looking
                     this.loadRoommateMatches();
+                } else if (section === 'selector') {
+                    // Load roommate matches for the main matches view
+                    this.loadRoommateMatches();
                 } else if (section === 'messages') {
                     this.loadConversations();
                 }
@@ -1304,10 +1307,11 @@ class RoomPalApp {
 
             this.hasUserProfile = true;
             this.hideProfilePrompt();
-            this.showToast('Profile created! You\'re now visible to hosts.', 'success');
+            this.showToast('Profile created! Finding your matches...', 'success');
 
-            // Reload people to include new profile
-            await this.loadPeople();
+            // Navigate to matches page and load matches
+            this.showSection('selector');
+            await this.loadRoommateMatches();
 
         } catch (error) {
             console.error('Error creating profile:', error);
@@ -1333,7 +1337,7 @@ class RoomPalApp {
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     }
 
-    handleCompatibilitySubmit(e) {
+    async handleCompatibilitySubmit(e) {
         e.preventDefault();
         const form = e.target;
         const formData = new FormData(form);
@@ -1348,7 +1352,11 @@ class RoomPalApp {
         };
 
         closeCompatibilityModal();
-        this.showToast('Preferences saved!', 'success');
+        this.showToast('Preferences saved! Finding your matches...', 'success');
+
+        // Navigate to matches page and load matches
+        this.showSection('selector');
+        await this.loadRoommateMatches();
     }
 
     showToast(message, type = 'info') {
