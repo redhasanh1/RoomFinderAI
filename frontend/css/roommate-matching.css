@@ -14,6 +14,228 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+/* ==================== TWO-BOX LANDING ==================== */
+
+.two-box-landing {
+    min-height: calc(100vh - 64px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 50%, #e0e7ff 100%);
+}
+
+.landing-container {
+    max-width: 900px;
+    width: 100%;
+    text-align: center;
+}
+
+.landing-title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: #1e1b4b;
+    margin-bottom: 12px;
+    letter-spacing: -0.02em;
+}
+
+.landing-subtitle {
+    font-size: 1.25rem;
+    color: #6b7280;
+    margin-bottom: 48px;
+}
+
+.choice-boxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.choice-box {
+    position: relative;
+    background: #fff;
+    border-radius: 24px;
+    padding: 48px 32px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.choice-box::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 6px;
+    border-radius: 24px 24px 0 0;
+}
+
+.has-room-box::before {
+    background: linear-gradient(90deg, #7c3aed 0%, #6366f1 100%);
+}
+
+.need-room-box::before {
+    background: linear-gradient(90deg, #0891b2 0%, #06b6d4 100%);
+}
+
+.choice-box:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 20px 50px rgba(99, 102, 241, 0.2);
+}
+
+.has-room-box:hover {
+    border-color: #8b5cf6;
+    box-shadow: 0 20px 50px rgba(139, 92, 246, 0.25);
+}
+
+.need-room-box:hover {
+    border-color: #06b6d4;
+    box-shadow: 0 20px 50px rgba(6, 182, 212, 0.25);
+}
+
+.box-icon {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 24px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.has-room-box .box-icon {
+    background: linear-gradient(135deg, #ede9fe 0%, #ddd6fe 100%);
+}
+
+.need-room-box .box-icon {
+    background: linear-gradient(135deg, #cffafe 0%, #a5f3fc 100%);
+}
+
+.box-icon svg {
+    width: 44px;
+    height: 44px;
+}
+
+.has-room-box .box-icon svg {
+    color: #7c3aed;
+}
+
+.need-room-box .box-icon svg {
+    color: #0891b2;
+}
+
+.choice-box:hover .box-icon {
+    transform: scale(1.1);
+}
+
+.box-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1e1b4b;
+    margin-bottom: 8px;
+}
+
+.box-subtitle {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-bottom: 20px;
+}
+
+.box-arrow {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.box-arrow svg {
+    width: 20px;
+    height: 20px;
+    color: #9ca3af;
+    transition: all 0.3s ease;
+}
+
+.has-room-box:hover .box-arrow {
+    background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+}
+
+.need-room-box:hover .box-arrow {
+    background: linear-gradient(135deg, #0891b2 0%, #06b6d4 100%);
+}
+
+.choice-box:hover .box-arrow svg {
+    color: #fff;
+    transform: translateX(4px);
+}
+
+.landing-footer {
+    font-size: 0.95rem;
+    color: #6b7280;
+}
+
+.landing-footer a {
+    color: #6366f1;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.landing-footer a:hover {
+    color: #4f46e5;
+    text-decoration: underline;
+}
+
+/* Mobile: Stack boxes vertically */
+@media (max-width: 768px) {
+    .two-box-landing {
+        padding: 24px 16px;
+        min-height: calc(100vh - 64px);
+    }
+
+    .landing-title {
+        font-size: 2rem;
+    }
+
+    .landing-subtitle {
+        font-size: 1rem;
+        margin-bottom: 32px;
+    }
+
+    .choice-boxes {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .choice-box {
+        padding: 32px 24px;
+    }
+
+    .box-icon {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 16px;
+    }
+
+    .box-icon svg {
+        width: 36px;
+        height: 36px;
+    }
+
+    .box-title {
+        font-size: 1.25rem;
+    }
+}
+
 /* ==================== SECTIONS ==================== */
 
 .section-view {
