@@ -55,6 +55,7 @@
             <div class="desktop-nav hidden md:flex items-center space-x-8">
                 <a href="index.html" class="nav-item">Home</a>
                 <span class="nav-item text-indigo-600 font-semibold">RoomPal</span>
+                <a href="listings.html" class="nav-item">Listings</a>
 
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
@@ -63,7 +64,6 @@
                     </button>
                     <div class="dropdown-menu" id="browse-dropdown">
                         <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
                         <a href="student-housing.html" class="dropdown-item">Student Housing</a>
                     </div>
                 </div>
@@ -77,7 +77,6 @@
                         <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
                         <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
                         <a href="legal.html" class="dropdown-item">Legal Help</a>
-                        <a href="mortgage.html" class="dropdown-item">Mortgage Tools</a>
                     </div>
                 </div>
 
@@ -129,6 +128,9 @@
                         </div>
                     </div>
 
+                    <!-- Listings -->
+                    <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">📋 Listings</a>
+
                     <!-- Browse Section -->
                     <div class="mobile-section">
                         <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
@@ -136,7 +138,6 @@
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
-                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
                             <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
                     </div>
