@@ -93,7 +93,10 @@ class RoomPalApp {
         const loadingState = document.getElementById('matchLoadingState');
         const resultsCount = document.getElementById('matchResultsCount');
 
-        if (!grid) return;
+        if (!grid) {
+            console.error('matchResultsGrid not found in DOM');
+            return;
+        }
 
         // Show loading
         if (loadingState) loadingState.classList.remove('hidden');
@@ -103,8 +106,25 @@ class RoomPalApp {
         try {
             // Wait for API to initialize
             if (this.api) {
-                await this.api.ensureInitialized();
-                this.allPeople = await this.api.getSeekerProfiles({}) || [];
+                const isInitialized = await this.api.ensureInitialized();
+                console.log('API initialized:', isInitialized);
+
+                if (isInitialized) {
+                    this.allPeople = await this.api.getSeekerProfiles({}) || [];
+                    console.log('Fetched seeker profiles:', this.allPeople.length);
+                } else {
+                    console.warn('API not initialized, using demo profiles');
+                    this.allPeople = this.getDemoProfiles();
+                }
+            } else {
+                console.warn('No API instance available, using demo profiles');
+                this.allPeople = this.getDemoProfiles();
+            }
+
+            // If database returned empty, show demo profiles so page isn't blank
+            if (this.allPeople.length === 0) {
+                console.log('No profiles in database, showing demo profiles');
+                this.allPeople = this.getDemoProfiles();
             }
 
             // Filter out current user
@@ -124,8 +144,94 @@ class RoomPalApp {
         } catch (error) {
             console.error('Error loading roommate matches:', error);
             if (loadingState) loadingState.classList.add('hidden');
-            if (resultsCount) resultsCount.textContent = 'Error loading matches';
+            if (emptyState) emptyState.classList.remove('hidden');
+            grid.classList.add('hidden');
+            if (resultsCount) resultsCount.textContent = 'Error loading matches. Please refresh.';
         }
+    }
+
+    getDemoProfiles() {
+        // Demo profiles shown when database is empty
+        return [
+            {
+                id: 'demo_1',
+                user_id: 'demo_user_1',
+                name: 'Sarah Chen',
+                bio: 'Graduate student at UBC looking for a quiet, clean roommate. I love cooking and reading!',
+                budget_max: 1200,
+                preferred_areas: ['Vancouver', 'Burnaby'],
+                move_in_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                lifestyle: { sleepSchedule: 'Early Bird', smoking: 'Non-Smoker', petsOk: true },
+                compatibility_scores: { cleanliness: 8, socialLevel: 4 },
+                created_at: new Date().toISOString(),
+                is_demo: true
+            },
+            {
+                id: 'demo_2',
+                user_id: 'demo_user_2',
+                name: 'Marcus Johnson',
+                bio: 'Young professional working in tech. Looking for a social roommate who enjoys occasional game nights!',
+                budget_max: 1500,
+                preferred_areas: ['Toronto', 'North York'],
+                move_in_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+                lifestyle: { sleepSchedule: 'Night Owl', smoking: 'Non-Smoker', petsOk: false },
+                compatibility_scores: { cleanliness: 6, socialLevel: 8 },
+                created_at: new Date().toISOString(),
+                is_demo: true
+            },
+            {
+                id: 'demo_3',
+                user_id: 'demo_user_3',
+                name: 'Emily Rodriguez',
+                bio: 'Medical resident looking for a clean and respectful roommate. I have a small cat named Luna!',
+                budget_max: 1400,
+                preferred_areas: ['Montreal', 'Plateau'],
+                move_in_date: new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString(),
+                lifestyle: { sleepSchedule: 'Early Bird', smoking: 'Non-Smoker', petsOk: true, hasPets: true },
+                compatibility_scores: { cleanliness: 9, socialLevel: 5 },
+                created_at: new Date().toISOString(),
+                is_demo: true
+            },
+            {
+                id: 'demo_4',
+                user_id: 'demo_user_4',
+                name: 'David Kim',
+                bio: 'Software developer working from home. Looking for someone chill who respects quiet hours during work.',
+                budget_max: 1600,
+                preferred_areas: ['Calgary', 'Downtown'],
+                move_in_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                lifestyle: { sleepSchedule: 'Night Owl', smoking: 'Non-Smoker', petsOk: true },
+                compatibility_scores: { cleanliness: 7, socialLevel: 4 },
+                created_at: new Date().toISOString(),
+                is_demo: true
+            },
+            {
+                id: 'demo_5',
+                user_id: 'demo_user_5',
+                name: 'Aisha Patel',
+                bio: 'Freelance designer and yoga enthusiast. Looking for a mindful, plant-friendly roommate!',
+                budget_max: 1300,
+                preferred_areas: ['Ottawa', 'Centretown'],
+                move_in_date: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString(),
+                lifestyle: { sleepSchedule: 'Early Bird', smoking: 'Non-Smoker', petsOk: true },
+                compatibility_scores: { cleanliness: 8, socialLevel: 6 },
+                created_at: new Date().toISOString(),
+                is_demo: true
+            },
+            {
+                id: 'demo_6',
+                user_id: 'demo_user_6',
+                name: 'Jake Thompson',
+                bio: 'Culinary school student who loves to cook! Looking for a roommate who appreciates good food.',
+                budget_max: 1100,
+                preferred_areas: ['Edmonton', 'Whyte Ave'],
+                move_in_date: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
+                lifestyle: { sleepSchedule: 'Night Owl', smoking: 'Non-Smoker', petsOk: false },
+                compatibility_scores: { cleanliness: 7, socialLevel: 7 },
+                created_at: new Date().toISOString(),
+                is_demo: true
+            }
+        ];
     }
 
     calculateMatchScore(person) {
@@ -250,6 +356,35 @@ class RoomPalApp {
         // Hide loading
         if (loadingState) loadingState.classList.add('hidden');
 
+        // Check if showing demo profiles
+        const hasRealProfiles = this.filteredPeople.some(p => !p.is_demo);
+        const demoBanner = document.getElementById('demoBanner');
+
+        // Show/hide demo banner
+        if (!hasRealProfiles && this.filteredPeople.length > 0) {
+            if (!demoBanner) {
+                // Create demo banner if it doesn't exist
+                const banner = document.createElement('div');
+                banner.id = 'demoBanner';
+                banner.className = 'bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6';
+                banner.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <p class="text-amber-800 font-medium">These are demo profiles</p>
+                            <p class="text-amber-700 text-sm">Create your roommate profile to find real matches and appear in searches!</p>
+                            <button onclick="showSection('seeking')" class="mt-2 text-sm font-medium text-amber-900 underline hover:no-underline">Create Your Profile</button>
+                        </div>
+                    </div>
+                `;
+                grid.parentElement.insertBefore(banner, grid);
+            }
+        } else if (demoBanner) {
+            demoBanner.remove();
+        }
+
         // Render results
         if (this.filteredPeople.length === 0) {
             grid.classList.add('hidden');
@@ -336,6 +471,8 @@ class RoomPalApp {
 
                     ${isOwnProfile
                         ? `<span class="inline-block w-full text-center py-2.5 text-gray-500 bg-gray-100 rounded-xl text-sm font-medium">Your Profile</span>`
+                        : person.is_demo
+                        ? `<span class="inline-block w-full text-center py-2.5 text-amber-600 bg-amber-50 rounded-xl text-sm font-medium">Demo Profile</span>`
                         : `<button onclick="roomPalApp.openPersonContact('${person.user_id}', '${name.replace(/'/g, "\\'")}')" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">
                             Connect
                         </button>`
