@@ -58,9 +58,11 @@ class RoomPalApp {
         // Show/hide create profile CTA
         this.updateProfileCTA();
 
-        // Show landing section by default (don't auto-load matches)
-        // Matches will load when user navigates to a section
+        // Show landing section by default
         this.currentSection = 'landing';
+
+        // Load roommate profiles on landing page immediately
+        await this.loadLandingProfiles();
 
         console.log('RoomPal Smart Matching initialized');
     }
@@ -496,6 +498,186 @@ class RoomPalApp {
         document.getElementById('lifestyleFilter').value = '';
         document.getElementById('sortFilter').value = 'match';
         this.applySmartFilters();
+    }
+
+    // ==================== LANDING PAGE PROFILES ====================
+
+    async loadLandingProfiles() {
+        const grid = document.getElementById('landingProfilesGrid');
+        const emptyState = document.getElementById('landingEmptyState');
+        const loadingState = document.getElementById('landingLoadingState');
+        const resultsCount = document.getElementById('landingResultsCount');
+
+        if (!grid) {
+            console.log('Landing profiles grid not found');
+            return;
+        }
+
+        // Show loading
+        if (loadingState) loadingState.classList.remove('hidden');
+        if (emptyState) emptyState.classList.add('hidden');
+        grid.classList.add('hidden');
+
+        try {
+            // Wait for API to initialize
+            if (this.api) {
+                const isInitialized = await this.api.ensureInitialized();
+                console.log('API initialized for landing:', isInitialized);
+
+                if (isInitialized) {
+                    this.landingProfiles = await this.api.getSeekerProfiles({}) || [];
+                    console.log('Fetched landing profiles:', this.landingProfiles.length);
+                } else {
+                    console.warn('API not initialized, using demo profiles for landing');
+                    this.landingProfiles = this.getDemoProfiles();
+                }
+            } else {
+                console.warn('No API instance available, using demo profiles for landing');
+                this.landingProfiles = this.getDemoProfiles();
+            }
+
+            // If database returned empty, show demo profiles
+            if (this.landingProfiles.length === 0) {
+                console.log('No profiles in database, showing demo profiles on landing');
+                this.landingProfiles = this.getDemoProfiles();
+            }
+
+            // Filter out current user
+            if (this.currentUser) {
+                this.landingProfiles = this.landingProfiles.filter(p => p.user_id !== this.currentUser.id);
+            }
+
+            // Calculate compatibility scores
+            this.landingProfiles = this.landingProfiles.map(person => ({
+                ...person,
+                matchScore: this.calculateMatchScore(person)
+            }));
+
+            // Sort by match score
+            this.landingProfiles.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+            // Store original list for filtering
+            this.allLandingProfiles = [...this.landingProfiles];
+
+            // Render profiles
+            this.renderLandingProfiles();
+
+        } catch (error) {
+            console.error('Error loading landing profiles:', error);
+            if (loadingState) loadingState.classList.add('hidden');
+            if (emptyState) emptyState.classList.remove('hidden');
+            grid.classList.add('hidden');
+            if (resultsCount) resultsCount.textContent = 'Error loading profiles. Please refresh.';
+        }
+    }
+
+    renderLandingProfiles() {
+        const grid = document.getElementById('landingProfilesGrid');
+        const emptyState = document.getElementById('landingEmptyState');
+        const loadingState = document.getElementById('landingLoadingState');
+        const resultsCount = document.getElementById('landingResultsCount');
+
+        // Hide loading
+        if (loadingState) loadingState.classList.add('hidden');
+
+        // Check if showing demo profiles
+        const hasRealProfiles = this.landingProfiles.some(p => !p.is_demo);
+        const demoBanner = document.getElementById('landingDemoBanner');
+
+        // Show/hide demo banner
+        if (!hasRealProfiles && this.landingProfiles.length > 0) {
+            if (!demoBanner) {
+                const banner = document.createElement('div');
+                banner.id = 'landingDemoBanner';
+                banner.className = 'bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6';
+                banner.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <svg class="w-5 h-5 text-amber-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <div>
+                            <p class="text-amber-800 font-medium">These are example profiles</p>
+                            <p class="text-amber-700 text-sm">Be the first to create a real roommate profile!</p>
+                            <button onclick="showSection('seeking')" class="mt-2 text-sm font-medium text-amber-900 underline hover:no-underline">Create Your Profile</button>
+                        </div>
+                    </div>
+                `;
+                grid.parentElement.insertBefore(banner, grid);
+            }
+        } else if (demoBanner) {
+            demoBanner.remove();
+        }
+
+        // Render results
+        if (this.landingProfiles.length === 0) {
+            grid.classList.add('hidden');
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (resultsCount) resultsCount.textContent = '0 profiles found';
+        } else {
+            grid.classList.remove('hidden');
+            if (emptyState) emptyState.classList.add('hidden');
+            if (resultsCount) resultsCount.textContent = `${this.landingProfiles.length} ${this.landingProfiles.length === 1 ? 'person' : 'people'} looking for roommates`;
+            grid.innerHTML = this.landingProfiles.map(person => this.createMatchCard(person)).join('');
+        }
+    }
+
+    applyLandingFilters() {
+        const cityFilter = document.getElementById('landingCityFilter')?.value || '';
+        const budgetFilter = document.getElementById('landingBudgetFilter')?.value || '';
+        const lifestyleFilter = document.getElementById('landingLifestyleFilter')?.value || '';
+
+        // Start with all profiles
+        this.landingProfiles = [...(this.allLandingProfiles || [])];
+
+        // Filter
+        this.landingProfiles = this.landingProfiles.filter(person => {
+            // City filter
+            if (cityFilter) {
+                const areas = (person.preferred_areas || []).join(' ').toLowerCase();
+                if (!areas.includes(cityFilter.toLowerCase())) return false;
+            }
+
+            // Budget filter
+            if (budgetFilter) {
+                const budget = person.budget_max || 0;
+                if (budgetFilter === '0-800' && budget > 800) return false;
+                if (budgetFilter === '800-1200' && (budget < 800 || budget > 1200)) return false;
+                if (budgetFilter === '1200-1600' && (budget < 1200 || budget > 1600)) return false;
+                if (budgetFilter === '1600+' && budget < 1600) return false;
+            }
+
+            // Lifestyle filter
+            if (lifestyleFilter) {
+                const lifestyle = person.lifestyle || {};
+                const scores = person.compatibility_scores || {};
+
+                if (lifestyleFilter === 'quiet' && scores.socialLevel > 5) return false;
+                if (lifestyleFilter === 'social' && scores.socialLevel < 5) return false;
+                if (lifestyleFilter === 'pet-friendly' && !lifestyle.petsOk) return false;
+                if (lifestyleFilter === 'non-smoker' && lifestyle.smoking !== 'Non-Smoker' && lifestyle.smoking !== 'Never') return false;
+            }
+
+            return true;
+        });
+
+        // Sort by match score
+        this.landingProfiles.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0));
+
+        // Render
+        this.renderLandingProfiles();
+    }
+
+    clearLandingFilters() {
+        const cityFilter = document.getElementById('landingCityFilter');
+        const budgetFilter = document.getElementById('landingBudgetFilter');
+        const lifestyleFilter = document.getElementById('landingLifestyleFilter');
+
+        if (cityFilter) cityFilter.value = '';
+        if (budgetFilter) budgetFilter.value = '';
+        if (lifestyleFilter) lifestyleFilter.value = '';
+
+        this.landingProfiles = [...(this.allLandingProfiles || [])];
+        this.renderLandingProfiles();
     }
 
     async loadPreviewData() {
@@ -1615,6 +1797,18 @@ function closeCompatibilityModal() {
 function createGroup() {
     if (window.roomPalApp) {
         window.roomPalApp.showToast('Group feature coming soon!', 'info');
+    }
+}
+
+function applyLandingFilters() {
+    if (window.roomPalApp) {
+        window.roomPalApp.applyLandingFilters();
+    }
+}
+
+function clearLandingFilters() {
+    if (window.roomPalApp) {
+        window.roomPalApp.clearLandingFilters();
     }
 }
 
