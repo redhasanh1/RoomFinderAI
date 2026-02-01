@@ -1383,6 +1383,9 @@
                 <!-- RoomPal - Standalone -->
                 <a href="roommate-matching.html" class="nav-item">RoomPal</a>
 
+                <!-- Listings - Standalone -->
+                <a href="listings.html" class="nav-item">Listings</a>
+
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
@@ -1390,8 +1393,6 @@
                     </button>
                     <div class="dropdown-menu" id="browse-dropdown">
                         <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <!-- HIDDEN FOR DEVELOPMENT -->
-                        <a href="sublease.html" class="dropdown-item" style="display: none !important;">Sublease Property</a>
                         <a href="https://www.roomfinderai.com/student-housing.html" class="dropdown-item" style="display: none !important;">Student Housing</a>
                     </div>
                 </div>
@@ -1404,8 +1405,6 @@
                     <div class="dropdown-menu" id="tools-dropdown">
                         <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
                         <a href="https://www.roomfinderai.com/legal.html" class="dropdown-item">Legal Help</a>
-                        <!-- HIDDEN FOR DEVELOPMENT -->
-                        <a href="mortgage.html" class="dropdown-item" style="display: none !important;">Mortgage Tools</a>
                     </div>
                 </div>
                 
@@ -1466,8 +1465,6 @@
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item">Browse Listings</a>
-                            <!-- HIDDEN FOR DEVELOPMENT -->
-                            <a href="sublease.html" class="mobile-menu-item" style="display: none !important;">Sublease Property</a>
                             <a href="https://www.roomfinderai.com/student-housing.html" class="mobile-menu-item" style="display: none !important;">Student Housing</a>
                         </div>
                     </div>
@@ -1480,8 +1477,6 @@
                         <div class="mobile-section-content" id="tools-section">
                             <a href="ai-negotiator.html" class="mobile-menu-item">AI Negotiator</a>
                             <a href="https://www.roomfinderai.com/legal.html" class="mobile-menu-item">Legal Help</a>
-                            <!-- HIDDEN FOR DEVELOPMENT -->
-                            <a href="mortgage.html" class="mobile-menu-item" style="display: none !important;">Mortgage Tools</a>
                         </div>
                     </div>
 
@@ -1650,23 +1645,6 @@
                     </a>
                 </div>
                 
-                <!-- HIDDEN FOR DEVELOPMENT: Sublease Finder Card -->
-                <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="display: none !important; animation-delay: 0.2s;">
-                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-green-500 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Sublease Finder</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Find short-term rentals and subleases with our specialized search and matching system.</p>
-                    <a href="sublease.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-xl font-semibold text-base hover:from-green-600 hover:to-teal-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
-                        Find Subleases
-                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                        </svg>
-                    </a>
-                </div>
-                
                 <!-- Market Analysis Feature -->
                 <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="animation-delay: 0.4s;">
                     <div class="feature-icon w-20 h-20 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
@@ -1684,22 +1662,6 @@
                     </a>
                 </div>
                 
-                <!-- HIDDEN FOR DEVELOPMENT: Mortgage Calculator Card -->
-                <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="display: none !important; animation-delay: 0.6s;">
-                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
-                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"></path>
-                        </svg>
-                    </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Mortgage Calculator</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Calculate monthly payments and compare rent vs. buy scenarios with our mortgage tools.</p>
-                    <a href="mortgage.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl font-semibold text-base hover:from-purple-600 hover:to-pink-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
-                        Calculate Now
-                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                        </svg>
-                    </a>
-                </div>
             </div>
         </div>
         
@@ -1721,7 +1683,7 @@
                     Everything You Need for <span class="gradient-text">Housing Success</span>
                 </h2>
                 <p class="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                    From student housing to legal support and mortgage guidance - comprehensive tools for every step of your housing journey.
+                    From roommate matching to legal support - comprehensive tools for every step of your housing journey.
                 </p>
             </div>
             
@@ -1822,52 +1784,6 @@
                     </div>
                 </div>
 
-                <!-- HIDDEN FOR DEVELOPMENT: Mortgage Intelligence Hub Card -->
-                <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border-2 border-transparent hover:border-green-200" style="display: none !important;">
-                    <div class="text-center flex flex-col h-full">
-                        <div class="w-20 h-20 bg-gradient-to-r from-green-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
-                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                            </svg>
-                        </div>
-                        <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Mortgage Intelligence Hub</h3>
-                        <p class="text-gray-600 mb-8 leading-relaxed">Revolutionary AI-driven mortgage platform that analyzes 50+ lenders in real-time, predicts rate changes, and maximizes your home buying power.</p>
-                        
-                        <div class="space-y-4 mb-8 flex-grow">
-                            <div class="flex items-center text-left">
-                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-gray-700">AI Rate Predictor & Market Analysis</span>
-                            </div>
-                            <div class="flex items-center text-left">
-                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-gray-700">Smart Pre-Approval Optimizer</span>
-                            </div>
-                            <div class="flex items-center text-left">
-                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-gray-700">Personalized Savings Strategies</span>
-                            </div>
-                            <div class="flex items-center text-left">
-                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                </svg>
-                                <span class="text-gray-700">50+ Lender Instant Comparison</span>
-                            </div>
-                        </div>
-                        
-                        <button onclick="window.location.href='mortgage.html'" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300 group mt-auto">
-                            Analyze Mortgage
-                            <svg class="w-5 h-5 ml-2 inline group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                            </svg>
-                        </button>
-                    </div>
-                </div>
             </div>
             
         </div>
@@ -1878,152 +1794,6 @@
              class="absolute bottom-0 right-0 w-48 h-48 object-contain opacity-20 pointer-events-none">
     </section>
 
-    <!-- HIDDEN FOR DEVELOPMENT: Enhanced Mortgage Intelligence Section -->
-    <section id="mortgage-intelligence" class="py-32 bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 relative overflow-hidden" style="display: none !important;">
-        <div class="absolute inset-0 bg-gradient-to-r from-green-100/20 to-emerald-100/20"></div>
-        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-            <div class="text-center mb-20 reveal">
-                <div class="inline-block px-6 py-3 bg-gradient-to-r from-green-100 to-emerald-100 rounded-full text-sm font-medium text-gray-600 mb-6">
-                    🏡 Revolutionary Mortgage Technology
-                </div>
-                <h2 class="text-5xl sm:text-6xl font-black text-gray-900 mb-8 font-display">
-                    Your <span class="gradient-text">Mortgage Intelligence</span> Advantage
-                </h2>
-                <p class="text-xl text-gray-600 max-w-4xl mx-auto leading-relaxed">
-                    Save thousands with AI that analyzes market trends, predicts rate changes, and negotiates the best mortgage deals across 50+ Canadian lenders.
-                </p>
-            </div>
-            
-            <div class="grid lg:grid-cols-2 gap-12 items-center mb-20">
-                <!-- Left Side - Feature Highlights -->
-                <div class="space-y-6 reveal-left">
-                    <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-green-500">
-                        <div class="flex items-start">
-                            <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
-                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900 mb-2">Real-Time Market Intelligence</h3>
-                                <p class="text-gray-600">AI monitors rate changes across all major lenders every 15 minutes, alerting you to opportunities instantly.</p>
-                                <div class="mt-3 text-green-600 font-semibold">Average savings: $47,000 over mortgage term</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-emerald-500">
-                        <div class="flex items-start">
-                            <div class="w-12 h-12 bg-emerald-100 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
-                                <svg class="w-6 h-6 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900 mb-2">Instant Pre-Approval Power</h3>
-                                <p class="text-gray-600">Get pre-approved with multiple lenders in minutes, not days. Our AI optimizes your application for maximum approval amounts.</p>
-                                <div class="mt-3 text-emerald-600 font-semibold">95% approval success rate</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 border-l-4 border-teal-500">
-                        <div class="flex items-start">
-                            <div class="w-12 h-12 bg-teal-100 rounded-xl flex items-center justify-center mr-4 flex-shrink-0">
-                                <svg class="w-6 h-6 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08-.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
-                                </svg>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold text-gray-900 mb-2">Smart Payment Optimization</h3>
-                                <p class="text-gray-600">AI creates personalized payment strategies that can save you years off your mortgage and tens of thousands in interest.</p>
-                                <div class="mt-3 text-teal-600 font-semibold">Average 6.2 years saved on mortgage</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Right Side - Live Demo -->
-                <div class="bg-white rounded-3xl p-8 shadow-2xl reveal-right">
-                    <div class="mb-6">
-                        <h3 class="text-2xl font-bold text-gray-900 mb-2">Live Rate Analysis</h3>
-                        <p class="text-gray-600">See how our AI finds the best rates in real-time</p>
-                    </div>
-                    
-                    <div class="space-y-4">
-                        <!-- Rate Comparison Widget -->
-                        <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6">
-                            <div class="flex justify-between items-center mb-4">
-                                <span class="text-sm font-medium text-gray-600">Current Market Analysis</span>
-                                <div class="flex items-center">
-                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse mr-2"></div>
-                                    <span class="text-xs text-green-600">Live</span>
-                                </div>
-                            </div>
-                            
-                            <div class="space-y-3">
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-700">Big 5 Banks Average</span>
-                                    <span class="text-xl font-bold text-gray-900">5.89%</span>
-                                </div>
-                                <div class="flex justify-between items-center">
-                                    <span class="text-gray-700 font-medium">AI Found Best Rate</span>
-                                    <span class="text-xl font-bold text-green-600">4.79%</span>
-                                </div>
-                                <div class="border-t pt-3">
-                                    <div class="flex justify-between items-center">
-                                        <span class="text-gray-700 font-medium">Your Savings</span>
-                                        <span class="text-2xl font-bold gradient-text">$312/month</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Quick Calculator -->
-                        <div class="bg-gray-50 rounded-xl p-6">
-                            <h4 class="font-semibold text-gray-900 mb-4">Quick Mortgage Calculator</h4>
-                            <div class="space-y-3">
-                                <div>
-                                    <label class="text-sm text-gray-600">Home Price</label>
-                                    <div class="w-full mt-1 px-4 py-2 bg-gray-100 rounded-lg text-gray-700 font-medium">$650,000</div>
-                                </div>
-                                <div>
-                                    <label class="text-sm text-gray-600">Down Payment</label>
-                                    <div class="w-full mt-1 px-4 py-2 bg-gray-100 rounded-lg text-gray-700 font-medium">$130,000 (20%)</div>
-                                </div>
-                                <div class="pt-3 border-t">
-                                    <div class="flex justify-between mb-2">
-                                        <span class="text-gray-600">Monthly Payment</span>
-                                        <span class="font-bold text-gray-900">$2,847</span>
-                                    </div>
-                                    <div class="flex justify-between">
-                                        <span class="text-gray-600">With AI Optimization</span>
-                                        <span class="font-bold text-green-600">$2,535</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <button onclick="window.location.href='mortgage.html'" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-4 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition-all duration-300">
-                            Start Free Mortgage Analysis
-                        </button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Bottom CTA Section -->
-            <div class="bg-gradient-to-r from-green-600 to-emerald-600 rounded-3xl p-12 text-white text-center reveal">
-                <h3 class="text-3xl font-bold mb-4">Ready to Save Thousands on Your Mortgage?</h3>
-                <p class="text-xl mb-8 text-green-100">Join 10,000+ homeowners who've optimized their mortgages with AI</p>
-                <div class="flex justify-center">
-                    <button onclick="window.location.href='mortgage.html'" class="bg-white text-green-600 px-8 py-4 rounded-xl font-semibold hover:bg-gray-100 transition-all duration-300">
-                        Get Started
-                    </button>
-                </div>
-            </div>
-        </div>
-    </section>
-    
     <!-- HIDDEN FOR DEVELOPMENT: Interactive Demo Section (AI Search) -->
     <section id="roomfinder-in-action" class="py-20 bg-gray-50" style="display: none !important;">
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2263,9 +2033,7 @@
                     <ul class="space-y-2">
                         <li><a href="ai-negotiator.html" class="hover:text-blue-400">AI Negotiator</a></li>
                         <li><a href="listings.html" class="hover:text-blue-400">Listings</a></li>
-                        <!-- HIDDEN FOR DEVELOPMENT -->
-                        <li style="display: none !important;"><a href="mortgage.html" class="hover:text-blue-400">Mortgage Calculator</a></li>
-                        <li style="display: none !important;"><a href="sublease.html" class="hover:text-blue-400">Sublease</a></li>
+                        <li><a href="roommate-matching.html" class="hover:text-blue-400">RoomPal</a></li>
                     </ul>
                 </div>
                 <!-- Social -->
