@@ -58,8 +58,9 @@ class RoomPalApp {
         // Show/hide create profile CTA
         this.updateProfileCTA();
 
-        // Load roommate matches immediately
-        await this.loadRoommateMatches();
+        // Show landing section by default (don't auto-load matches)
+        // Matches will load when user navigates to a section
+        this.currentSection = 'landing';
 
         console.log('RoomPal Smart Matching initialized');
     }
@@ -583,7 +584,6 @@ class RoomPalApp {
     showSection(section) {
         const sectionMap = {
             'selector': 'sectionSelector',
-            'landing': 'sectionSelector',
             'hasRoom': 'hasRoomSection',
             'seeking': 'seekingSection',
             'browseRooms': 'browseRoomsSection',
@@ -591,6 +591,23 @@ class RoomPalApp {
             'success': 'successSection',
             'messages': 'messagesSection'
         };
+
+        // Handle landing section separately
+        const landingSection = document.getElementById('landingSection');
+
+        if (section === 'landing') {
+            // Show landing, hide all other sections
+            if (landingSection) landingSection.style.display = 'flex';
+            document.querySelectorAll('.section-view').forEach(el => {
+                el.classList.remove('active');
+            });
+            this.currentSection = 'landing';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        // Hide landing section when going to any other section
+        if (landingSection) landingSection.style.display = 'none';
 
         // Hide all sections
         document.querySelectorAll('.section-view').forEach(el => {
@@ -608,8 +625,11 @@ class RoomPalApp {
                 // Load data for sections
                 if (section === 'browseRooms') {
                     this.loadRooms();
-                } else if (section === 'browseSeekers' || section === 'seeking') {
+                } else if (section === 'browseSeekers') {
                     this.loadPeople();
+                } else if (section === 'hasRoom') {
+                    // Load seekers when posting a room so host can see who's looking
+                    this.loadRoommateMatches();
                 } else if (section === 'messages') {
                     this.loadConversations();
                 }
