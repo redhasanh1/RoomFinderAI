@@ -329,56 +329,73 @@ class ChatController {
     }
 
     /**
-     * Find existing conversation or create new one
+     * Find existing conversation or create new one (BIDIRECTIONAL)
+     * Checks both directions: currentUser->landlord AND landlord->currentUser
      */
     async findOrCreateConversation(listing, currentUser, supabase) {
-        console.log('🔍 Checking for existing conversations...');
+        console.log('🔍 Checking for existing conversations (bidirectional)...');
 
         try {
-            const { data: conversations, error } = await supabase
+            const userA = currentUser.email;
+            const userB = listing.user_email;
+
+            // Check direction 1: current user as sender
+            const { data: conv1, error: err1 } = await supabase
                 .from('conversations')
                 .select('*')
                 .eq('listing_id', listing.id)
-                .eq('sender_email', currentUser.email)
-                .eq('receiver_email', listing.user_email);
+                .eq('sender_email', userA)
+                .eq('receiver_email', userB)
+                .maybeSingle();
 
-            console.log('💬 Conversation query result:', {
-                found: conversations?.length || 0,
-                error: error?.message
-            });
+            if (err1 && err1.code !== 'PGRST116') {
+                console.error('❌ Error checking conversation (direction 1):', err1);
+            }
 
-            if (error) {
-                console.error('❌ Database error checking conversation:', error);
-                alert('Failed to load conversation: ' + error.message);
+            if (conv1) {
+                console.log('✅ Found existing conversation (user->landlord):', conv1.id);
+                return conv1;
+            }
+
+            // Check direction 2: current user as receiver
+            const { data: conv2, error: err2 } = await supabase
+                .from('conversations')
+                .select('*')
+                .eq('listing_id', listing.id)
+                .eq('sender_email', userB)
+                .eq('receiver_email', userA)
+                .maybeSingle();
+
+            if (err2 && err2.code !== 'PGRST116') {
+                console.error('❌ Error checking conversation (direction 2):', err2);
+            }
+
+            if (conv2) {
+                console.log('✅ Found existing conversation (landlord->user):', conv2.id);
+                return conv2;
+            }
+
+            // No existing conversation - create new one
+            console.log('📝 No existing conversation found, creating new...');
+            const { data, error: insertError } = await supabase
+                .from('conversations')
+                .insert({
+                    listing_id: listing.id,
+                    sender_email: currentUser.email,
+                    receiver_email: listing.user_email,
+                    created_at: new Date().toISOString()
+                })
+                .select()
+                .single();
+
+            if (insertError) {
+                console.error('❌ Error creating conversation:', insertError);
+                alert('Failed to start conversation: ' + insertError.message);
                 return null;
             }
 
-            let conversation;
-            if (conversations && conversations.length > 0) {
-                conversation = conversations[0];
-                console.log('Existing conversation found:', conversation.id);
-            } else {
-                const { data, error: insertError } = await supabase
-                    .from('conversations')
-                    .insert({
-                        listing_id: listing.id,
-                        sender_email: currentUser.email,
-                        receiver_email: listing.user_email,
-                        created_at: new Date().toISOString()
-                    })
-                    .select()
-                    .single();
-
-                if (insertError) {
-                    console.error('Error creating conversation:', insertError);
-                    alert('Failed to start conversation: ' + insertError.message);
-                    return null;
-                }
-                conversation = data;
-                console.log('New conversation created:', conversation.id);
-            }
-
-            return conversation;
+            console.log('✅ New conversation created:', data.id);
+            return data;
 
         } catch (queryError) {
             console.error('💥 Error querying conversations:', queryError);
