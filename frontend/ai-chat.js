@@ -971,20 +971,50 @@ class AIChatHandler {
                 return;
             }
 
-            // Step 1: Check if conversation already exists
-            console.log('🔍 Checking for existing conversation...');
-            const { data: existingConversations, error: checkError } = await this.supabase
+            // Step 1: Check if conversation already exists (BIDIRECTIONAL)
+            console.log('🔍 Checking for existing conversation (bidirectional)...');
+
+            let conversationId = null;
+            const userA = this.currentUser.email;
+            const userB = listing.user_email;
+
+            // Check direction 1: tenant as original sender
+            const { data: conv1, error: err1 } = await this.supabase
                 .from('conversations')
                 .select('id')
                 .eq('listing_id', listing.id)
-                .or(`and(sender_email.eq.${this.currentUser.email},receiver_email.eq.${listing.user_email}),and(sender_email.eq.${listing.user_email},receiver_email.eq.${this.currentUser.email})`)
+                .eq('sender_email', userA)
+                .eq('receiver_email', userB)
                 .maybeSingle();
 
-            if (checkError) {
-                console.error('❌ Error checking for existing conversation:', checkError);
+            if (err1 && err1.code !== 'PGRST116') {
+                console.error('❌ Error in conversation lookup (direction 1):', err1);
             }
 
-            let conversationId = existingConversations?.id;
+            if (conv1) {
+                conversationId = conv1.id;
+                console.log('✅ Found existing conversation (tenant->landlord):', conversationId);
+            }
+
+            // Check direction 2: landlord as original sender (if not found)
+            if (!conversationId) {
+                const { data: conv2, error: err2 } = await this.supabase
+                    .from('conversations')
+                    .select('id')
+                    .eq('listing_id', listing.id)
+                    .eq('sender_email', userB)
+                    .eq('receiver_email', userA)
+                    .maybeSingle();
+
+                if (err2 && err2.code !== 'PGRST116') {
+                    console.error('❌ Error in conversation lookup (direction 2):', err2);
+                }
+
+                if (conv2) {
+                    conversationId = conv2.id;
+                    console.log('✅ Found existing conversation (landlord->tenant):', conversationId);
+                }
+            }
 
             // Step 2: Create conversation if it doesn't exist
             if (!conversationId) {
@@ -1007,8 +1037,6 @@ class AIChatHandler {
 
                 conversationId = newConversation.id;
                 console.log('✅ Created new conversation with ID:', conversationId);
-            } else {
-                console.log('✅ Found existing conversation with ID:', conversationId);
             }
 
             // Step 3: Use HUMAN-LIKE phased conversation approach

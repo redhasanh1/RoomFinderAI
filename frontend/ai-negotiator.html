@@ -1463,14 +1463,22 @@
                     console.warn('⚠️ No conversation_id available - AI auto-reply may not work');
                 }
 
-                // Also create notification for the tenant (as backup/for older conversations)
+                // Create notification for the tenant WITH metadata for conversation continuity
                 const notificationTitle = `Reply from Landlord: ${propertyName}`;
                 const notificationContent = `Landlord Reply\n\nProperty: ${propertyName}\nFrom: ${currentUser?.email || 'Landlord'}\n\nMessage: "${replyMessage}"`;
+
+                // Include conversation_id so tenant can continue the same conversation
+                const notificationMetadata = {
+                    conversation_id: conversationId,
+                    landlord_email: currentUser?.email,
+                    listing_title: propertyName
+                };
 
                 const { data, error } = await supabaseClient.rpc('create_notification', {
                     recipient_email: tenantEmail,
                     notification_title: notificationTitle,
-                    notification_content: notificationContent
+                    notification_content: notificationContent,
+                    notification_metadata: notificationMetadata
                 });
 
                 // Remove sending indicator
