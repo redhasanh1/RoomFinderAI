@@ -34,10 +34,12 @@ GRANT SELECT, INSERT ON ai_chats TO anon;
 GRANT SELECT, INSERT ON ai_chats TO authenticated;
 
 -- Create notification function (for inserting)
+-- Updated to support metadata parameter for conversation_id tracking
 CREATE OR REPLACE FUNCTION create_notification(
     recipient_email TEXT,
     notification_title TEXT,
-    notification_content TEXT
+    notification_content TEXT,
+    notification_metadata JSONB DEFAULT '{}'::jsonb
 )
 RETURNS UUID AS $$
 DECLARE
@@ -47,7 +49,13 @@ BEGIN
     VALUES (
         recipient_email,
         notification_title,
-        jsonb_build_array(jsonb_build_object('role', 'assistant', 'content', notification_content)),
+        jsonb_build_array(
+            jsonb_build_object(
+                'role', 'assistant',
+                'content', notification_content,
+                'metadata', notification_metadata
+            )
+        ),
         NOW()
     )
     RETURNING id INTO new_id;
@@ -75,7 +83,8 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Grant execute permissions
-GRANT EXECUTE ON FUNCTION create_notification(TEXT, TEXT, TEXT) TO anon;
-GRANT EXECUTE ON FUNCTION create_notification(TEXT, TEXT, TEXT) TO authenticated;
+-- Note: The function now accepts an optional 4th parameter (metadata)
+GRANT EXECUTE ON FUNCTION create_notification(TEXT, TEXT, TEXT, JSONB) TO anon;
+GRANT EXECUTE ON FUNCTION create_notification(TEXT, TEXT, TEXT, JSONB) TO authenticated;
 GRANT EXECUTE ON FUNCTION get_user_notifications(TEXT) TO anon;
 GRANT EXECUTE ON FUNCTION get_user_notifications(TEXT) TO authenticated;
