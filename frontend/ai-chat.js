@@ -99,14 +99,18 @@ class AIChatHandler {
 
         console.log('🔔 Setting up real-time subscription for user:', this.currentUser.email);
 
-        // Unsubscribe from existing channel if any
+        // Unsubscribe from existing channels if any
         if (this.negotiationChannel) {
-            console.log('🔄 Removing existing subscription');
+            console.log('🔄 Removing existing ai_chats subscription');
             this.supabase.removeChannel(this.negotiationChannel);
+        }
+        if (this.messagesChannel) {
+            console.log('🔄 Removing existing messages subscription');
+            this.supabase.removeChannel(this.messagesChannel);
         }
 
         try {
-            // Use consistent channel name instead of timestamp
+            // Channel 1: Listen to ai_chats for notifications (negotiation success, landlord reply alerts)
             this.negotiationChannel = this.supabase
                 .channel(`negotiation_updates_${this.currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}`)
                 .on('postgres_changes', {
@@ -114,34 +118,161 @@ class AIChatHandler {
                     schema: 'public',
                     table: 'ai_chats'
                 }, (payload) => {
-                    console.log('📬 Received real-time update:', payload);
+                    console.log('📬 Received ai_chats update:', payload);
                     try {
                         const newChat = payload.new;
-                        
+
                         // Filter for current user
                         if (newChat.user_email !== this.currentUser.email) {
                             console.log('📭 Update not for current user, skipping');
                             return;
                         }
-                        
-                        console.log('📨 Processing update for current user:', newChat.title);
-                        
+
+                        console.log('📨 Processing ai_chats update for current user:', newChat.title);
+
                         if (newChat.title && newChat.title.includes('Negotiation Success')) {
                             console.log('🎉 Negotiation success detected!');
                             this.displayNegotiationSuccess(newChat);
                         } else if (newChat.title && newChat.title.includes('Landlord Reply')) {
                             console.log('📧 Landlord reply detected!');
                             this.displayLandlordReply(newChat);
+                        } else if (newChat.title && newChat.title.includes('New Inquiry')) {
+                            console.log('📨 New inquiry detected!');
+                            this.displayNewInquiry(newChat);
                         }
                     } catch (error) {
-                        console.error('Error processing real-time update:', error);
+                        console.error('Error processing ai_chats update:', error);
                     }
                 })
                 .subscribe();
 
-            console.log('✅ Real-time subscription established');
+            console.log('✅ ai_chats subscription established');
+
+            // Channel 2: Listen to messages table for real-time conversation updates
+            // This catches AI negotiator responses that landlords need to see
+            this.messagesChannel = this.supabase
+                .channel(`messages_realtime_${this.currentUser.email.replace(/[^a-zA-Z0-9]/g, '_')}`)
+                .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages'
+                }, async (payload) => {
+                    console.log('📬 Received messages table update:', payload);
+                    try {
+                        const newMessage = payload.new;
+
+                        // Skip messages sent by the current user
+                        if (newMessage.sender_email === this.currentUser.email) {
+                            console.log('📭 Own message, skipping');
+                            return;
+                        }
+
+                        // Get conversation to check if current user is involved
+                        const { data: conversation, error: convError } = await this.supabase
+                            .from('conversations')
+                            .select('*')
+                            .eq('id', newMessage.conversation_id)
+                            .maybeSingle();
+
+                        if (convError || !conversation) {
+                            console.log('📭 Could not find conversation, skipping');
+                            return;
+                        }
+
+                        // Check if current user is part of this conversation
+                        const isInvolved = conversation.sender_email === this.currentUser.email ||
+                                          conversation.receiver_email === this.currentUser.email;
+
+                        if (!isInvolved) {
+                            console.log('📭 User not involved in this conversation, skipping');
+                            return;
+                        }
+
+                        console.log('📨 New message in user conversation:', newMessage.content?.substring(0, 50));
+
+                        // Display the new message in chat
+                        this.displayIncomingMessage(newMessage, conversation);
+
+                    } catch (error) {
+                        console.error('Error processing messages update:', error);
+                    }
+                })
+                .subscribe();
+
+            console.log('✅ messages subscription established');
+
         } catch (error) {
-            console.error('❌ Failed to setup real-time subscription:', error);
+            console.error('❌ Failed to setup real-time subscriptions:', error);
+        }
+    }
+
+    // Display incoming message from messages table
+    displayIncomingMessage(message, conversation) {
+        try {
+            // Determine the sender label
+            let senderLabel = 'Tenant';
+            if (message.sender_email.includes('ai-negotiator')) {
+                senderLabel = 'AI Negotiator';
+            } else if (message.sender_email === conversation.receiver_email) {
+                senderLabel = 'Tenant';
+            } else if (message.sender_email === conversation.sender_email) {
+                senderLabel = 'Tenant';
+            }
+
+            // Check if this is an AI message on behalf of tenant
+            if (message.content && message.content.includes('AI Negotiator on behalf of')) {
+                senderLabel = 'AI Negotiator';
+            }
+
+            this.appendMessage(senderLabel, message.content || 'New message received', 'left');
+
+            // Play notification sound if available
+            this.playNotificationSound();
+
+        } catch (error) {
+            console.error('Error displaying incoming message:', error);
+            this.appendMessage('System', 'New message received', 'left');
+        }
+    }
+
+    // Play notification sound
+    playNotificationSound() {
+        try {
+            // Create a simple notification sound
+            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            oscillator.frequency.value = 800;
+            oscillator.type = 'sine';
+            gainNode.gain.value = 0.1;
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (error) {
+            // Audio not supported, ignore
+        }
+    }
+
+    // Display new inquiry notification
+    displayNewInquiry(chatData) {
+        try {
+            const conversationData = JSON.parse(chatData.conversation_data);
+            const message = conversationData[0]?.content || 'New inquiry received';
+            const metadata = conversationData[0]?.metadata || {};
+
+            this.appendMessage('System', `New inquiry received!\n\n${message}`, 'left');
+
+            // Store conversation context if available
+            if (metadata.conversation_id) {
+                this.activeConversationId = metadata.conversation_id;
+            }
+        } catch (error) {
+            console.error('Error displaying new inquiry:', error);
+            this.appendMessage('System', 'New inquiry received', 'left');
         }
     }
 
