@@ -148,4 +148,4 @@ Full walkthrough: [`SETUP_GUIDE.md`](./SETUP_GUIDE.md). Deployment: [`docs/RAILW
 
 MIT. See [`backend/package.json`](./backend/package.json).
 
-**Connor Wilson** — [github.com/connorwilson365](https://github.com/connorwilson365) — connorwilson365@yahoo.com
+**Hasan Iqbal** — [github.com/redhasanh1](https://github.com/redhasanh1) — hasaniqbal2@hotmail.com
