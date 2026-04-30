@@ -8,7 +8,7 @@ class AINegotiator {
         this.activeNegotiations = new Map(); // Track ongoing negotiations
         this.marketData = new Map(); // Cache market data
         this.aiUserInitialized = false;
-        this.rentcastApiKey = '90680b91c3984ae095227bf9e4b02c78'; // RentCast API key for real market data
+        this.rentcastApiKey = null; // RentCast calls now proxied through backend
         this.rentcastCache = new Map(); // Cache RentCast results per negotiation
         this.conversationStates = new Map(); // Track conversation phases per negotiation
         this.init();
@@ -250,6 +250,21 @@ class AINegotiator {
         return result;
     }
 
+    async postJSON(path, body) {
+        const response = await fetch(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {})
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => '');
+            throw new Error(`Request failed (${response.status}) ${errorText}`.trim());
+        }
+
+        return await response.json();
+    }
+
     // Generate phase-specific message using OpenAI
     async generatePhaseMessage(conversationState, phase = null) {
         const currentPhase = phase || conversationState.currentPhase;
@@ -258,52 +273,14 @@ class AINegotiator {
         console.log(`🎭 Generating ${currentPhase} phase message`);
 
         try {
-            // Build the system prompt for this phase
-            const systemPrompt = this.buildPhaseSystemPrompt(currentPhase, context);
-
-            // Build conversation history for context
-            const messages = [
-                { role: 'system', content: systemPrompt }
-            ];
-
-            // Add recent message history for context (last 4 messages)
-            const recentHistory = conversationState.messageHistory.slice(-4);
-            for (const msg of recentHistory) {
-                messages.push({
-                    role: msg.sender === 'ai' ? 'assistant' : 'user',
-                    content: msg.content
-                });
-            }
-
-            // Add instruction to generate response
-            if (conversationState.lastLandlordMessage) {
-                messages.push({
-                    role: 'user',
-                    content: conversationState.lastLandlordMessage
-                });
-            }
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    ...(this.config.OPENAI_ORG_ID && { 'OpenAI-Organization': this.config.OPENAI_ORG_ID })
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: messages,
-                    max_tokens: 150,
-                    temperature: 0.8
-                })
+            const data = await this.postJSON('/api/negotiate/phase-message', {
+                phase: currentPhase,
+                context,
+                messageHistory: conversationState.messageHistory || []
             });
 
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            let message = data.choices[0].message.content.trim();
+            let message = (data.response || '').trim();
+            if (!message) throw new Error('Empty phase-message response');
 
             // Add human variations
             message = this.addHumanVariations(message);
@@ -312,7 +289,7 @@ class AINegotiator {
             return message;
 
         } catch (error) {
-            console.warn('⚠️ OpenAI unavailable, using fallback template');
+            console.warn('⚠️ AI phase-message unavailable, using fallback template');
             return this.getFallbackMessage(currentPhase, context);
         }
     }
@@ -2201,56 +2178,13 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
     async getAIMarketData(location, houseType, bedrooms) {
         try {
             console.log('🤖 Getting AI market estimates for:', { location, houseType, bedrooms });
+            const data = await this.postJSON('/api/negotiate/market-estimate', { location, houseType, bedrooms });
+            const marketData = data.marketData || {};
 
-            const prompt = `
-            You are a real estate market analyst. Provide realistic rental market data for:
-            - Location: ${location || 'General area'}
-            - Property Type: ${houseType || 'Any'}
-            - Bedrooms: ${bedrooms || 'Any'}
-
-            Based on current market conditions, provide realistic estimates in this JSON format:
-            {
-                "average": 1200,
-                "median": 1150,
-                "min": 900,
-                "max": 1500,
-                "analysis": "Brief market analysis explaining the pricing",
-                "negotiationTips": "Tips for negotiating in this market"
-            }
-
-            Focus on realistic prices for the specified location and property type.
-            `;
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 300,
-                    temperature: 0.3
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const marketData = JSON.parse(data.choices[0].message.content.trim());
-            
-            return {
-                ...marketData,
-                count: 0,
-                source: 'ai_estimate'
-            };
+            return { ...marketData, count: marketData.count ?? 0, source: marketData.source || 'ai_estimate' };
 
         } catch (error) {
-            console.warn('⚠️ OpenAI market analysis unavailable, using estimates');
+            console.warn('⚠️ AI market analysis unavailable, using estimates');
 
             // Fallback to basic estimates
             return {
@@ -2346,33 +2280,15 @@ Build rapport through genuine appreciation of the property.
 Generate ONLY the message. No greetings, no signatures.
 `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 100,
-                    temperature: 0.7
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const message = data.choices[0].message.content.trim();
+            const data = await this.postJSON('/api/negotiate/contextual-response', { prompt });
+            const message = (data.response || '').trim();
+            if (!message) throw new Error('Empty negotiation message');
 
             console.log('✅ Generated elite negotiation message with offer:', initialOffer);
             return message;
 
         } catch (error) {
-            console.warn('⚠️ OpenAI unavailable, using elite fallback');
+            console.warn('⚠️ AI unavailable, using elite fallback');
 
             // Strategic fallback - still uses elite style
             // CRITICAL: Never offer more than the listing price
@@ -3060,28 +2976,14 @@ Generate ONLY the message. No greetings, no signatures.
             5. Extract prices carefully - any $ or number followed by "month" or "per month"
             `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 250,
-                    temperature: 0.1
-                })
+            const data = await this.postJSON('/api/negotiate/analyze-reply', {
+                replyContent,
+                negotiationState: negotiation?.negotiationState,
+                listing
             });
 
-            if (!response.ok) {
-                console.warn('OpenAI API failed, using fallback analysis');
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            let analysis = JSON.parse(data.choices[0].message.content.trim());
+            const analysis = data.analysis;
+            if (!analysis) throw new Error('Empty analysis');
 
             console.log('📊 AI Analysis result:', analysis);
             return analysis;
@@ -3467,41 +3369,25 @@ Generate ONLY the message. No greetings, no signatures.
             Generate ONLY the response:
             `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 150,
-                    temperature: 0.7
-                })
-            });
+            const data = await this.postJSON('/api/negotiate/contextual-response', { prompt });
+            const responseText = (data.response || '').trim();
+            if (!responseText) throw new Error('Empty contextual response');
 
-            if (response.ok) {
-                const data = await response.json();
-                const responseText = data.choices[0].message.content.trim();
-
-                // Track the tactic used
-                if (!negotiation.negotiationState) {
-                    negotiation.negotiationState = { tacticsUsed: [], offersMade: [], lastOffer: negotiation.userBudget };
-                }
-                negotiation.negotiationState.tacticsUsed.push(tacticToUse);
-
-                // Track any price mentioned
-                const priceMatch = responseText.match(/\$(\d+)/);
-                if (priceMatch) {
-                    negotiation.negotiationState.lastOffer = parseInt(priceMatch[1]);
-                    negotiation.negotiationState.offersMade.push(parseInt(priceMatch[1]));
-                }
-
-                console.log('✅ Generated contextual response with tactic:', tacticToUse);
-                return responseText;
+            // Track the tactic used
+            if (!negotiation.negotiationState) {
+                negotiation.negotiationState = { tacticsUsed: [], offersMade: [], lastOffer: negotiation.userBudget };
             }
+            negotiation.negotiationState.tacticsUsed.push(tacticToUse);
+
+            // Track any price mentioned
+            const priceMatch = responseText.match(/\$(\d+)/);
+            if (priceMatch) {
+                negotiation.negotiationState.lastOffer = parseInt(priceMatch[1]);
+                negotiation.negotiationState.offersMade.push(parseInt(priceMatch[1]));
+            }
+
+            console.log('✅ Generated contextual response with tactic:', tacticToUse);
+            return responseText;
         } catch (error) {
             console.error('Error generating contextual response:', error);
         }
@@ -4089,27 +3975,12 @@ Reference if natural: "${propertyContext}"
 Generate ONLY the response message. No explanations. No "As an AI". Just the human-sounding negotiation message.
 `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 200,
-                    temperature: 0.7
-                })
+            const data = await this.postJSON('/api/negotiate/counter-offer', {
+                prompt,
+                conversationHistory: []
             });
-
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const negotiationResponse = data.choices[0].message.content.trim();
+            const negotiationResponse = (data.response || '').trim();
+            if (!negotiationResponse) throw new Error('Empty market-based response');
 
             // Update negotiation state with the tactic used and new offer
             if (!negotiation.negotiationState) {

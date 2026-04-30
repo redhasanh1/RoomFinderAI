@@ -28,7 +28,9 @@ const serviceStatus = {
 
 // Demo mode flag
 const DEMO_MODE = process.env.ENABLE_DEMO_MODE === 'true' || false;
-const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING === 'true' || true;
+const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING
+    ? process.env.ENABLE_ANONYMOUS_BROWSING === 'true'
+    : true;
 
 // Email configuration - Centralized for easy management
 const EMAIL_CONFIG = {
@@ -4872,6 +4874,653 @@ app.post('/api/ai-negotiator', async (req, res) => {
     }
 });
 
+// ========================================
+// SECURE AI NEGOTIATION PROXY ENDPOINTS
+// ========================================
+// These endpoints proxy OpenAI calls so API keys never touch the frontend
+
+// Helper: Sanitize user-controlled text before injecting into prompts
+function sanitizeForPrompt(text, maxLength = 500) {
+    if (!text) return '';
+    return String(text)
+        .replace(/["""]/g, "'")
+        .replace(/\n/g, ' ')
+        .replace(/\r/g, '')
+        .substring(0, maxLength)
+        .trim();
+}
+
+// Helper: Make OpenAI API call (centralized)
+async function callOpenAI({ messages, model = 'gpt-4', maxTokens = 300, temperature = 0.7 }) {
+    if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
+        throw new Error('OpenAI not configured');
+    }
+
+    const useModel = model === 'gpt-4' ? (config.OPENAI_MODEL || 'gpt-4') : 'gpt-3.5-turbo';
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+        },
+        body: JSON.stringify({
+            model: useModel,
+            messages,
+            max_tokens: maxTokens,
+            temperature,
+            presence_penalty: 0.1,
+            frequency_penalty: 0.1
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return {
+        content: data.choices[0].message.content.trim(),
+        tokensUsed: data.usage?.total_tokens || 0
+    };
+}
+
+// ========================================
+// OPENAI RATE LIMITING SYSTEM
+// ========================================
+const openAiRateLimitStore = new Map();
+const OPENAI_HOURLY_LIMIT = 100;
+const OPENAI_DAILY_LIMIT = 500;
+
+function getHourKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
+}
+
+function getDayKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+}
+
+function openAiRateLimitMiddleware(req, res, next) {
+    const userId = getUserId(req);
+    const hourKey = `openai-hour-${userId}-${getHourKey()}`;
+    const dayKey = `openai-day-${userId}-${getDayKey()}`;
+
+    const hourlyUsage = openAiRateLimitStore.get(hourKey) || 0;
+    const dailyUsage = openAiRateLimitStore.get(dayKey) || 0;
+
+    if (hourlyUsage >= OPENAI_HOURLY_LIMIT) {
+        return res.status(429).json({
+            error: 'Rate limit exceeded',
+            message: `Maximum ${OPENAI_HOURLY_LIMIT} AI requests per hour. Please wait before trying again.`,
+            retryAfter: 'next hour'
+        });
+    }
+
+    if (dailyUsage >= OPENAI_DAILY_LIMIT) {
+        return res.status(429).json({
+            error: 'Daily rate limit exceeded',
+            message: `Maximum ${OPENAI_DAILY_LIMIT} AI requests per day. Limit resets at midnight.`,
+            retryAfter: 'tomorrow'
+        });
+    }
+
+    openAiRateLimitStore.set(hourKey, hourlyUsage + 1);
+    openAiRateLimitStore.set(dayKey, dailyUsage + 1);
+
+    next();
+}
+
+// ========================================
+// AUTHENTICATION MIDDLEWARE
+// ========================================
+async function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token || token === 'null' || token === 'undefined') {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error || !user) {
+            return res.status(401).json({ error: 'Invalid or expired session' });
+        }
+        req.user = user;
+        req.userEmail = user.email;
+        next();
+    } catch (error) {
+        console.error('Auth middleware error:', error.message);
+        return res.status(401).json({ error: 'Authentication failed' });
+    }
+}
+
+// POST /api/negotiate/phase-message - Generate phase conversation message (GPT-4)
+app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { phase, context, messageHistory } = req.body;
+
+        if (!phase) {
+            return res.status(400).json({ error: 'Phase is required' });
+        }
+
+        const safeContext = {
+            ...context,
+            userName: sanitizeForPrompt(context?.userName, 100),
+            propertyTitle: sanitizeForPrompt(context?.propertyTitle, 200),
+            propertyFeature: sanitizeForPrompt(context?.propertyFeature, 200),
+            city: sanitizeForPrompt(context?.city, 100),
+            lastLandlordMessage: sanitizeForPrompt(context?.lastLandlordMessage, 500)
+        };
+
+        const systemPrompt = buildNegotiationSystemPrompt(phase, safeContext);
+        const messages = [{ role: 'system', content: systemPrompt }];
+
+        if (messageHistory && Array.isArray(messageHistory)) {
+            const recent = messageHistory.slice(-6);
+            for (const msg of recent) {
+                messages.push({
+                    role: msg.sender === 'ai' ? 'assistant' : 'user',
+                    content: sanitizeForPrompt(msg.content, 1000)
+                });
+            }
+        }
+
+        if (safeContext.lastLandlordMessage) {
+            messages.push({ role: 'user', content: safeContext.lastLandlordMessage });
+        }
+
+        const result = await callOpenAI({
+            messages,
+            model: 'gpt-4',
+            maxTokens: 250,
+            temperature: 0.8
+        });
+
+        res.json({ response: result.content, tokensUsed: result.tokensUsed });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/phase-message:', error.message);
+        res.status(500).json({ error: 'Failed to generate message', details: error.message });
+    }
+});
+
+// POST /api/negotiate/analyze-reply - Analyze landlord reply (GPT-3.5 - fast/cheap)
+app.post('/api/negotiate/analyze-reply', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { replyContent, negotiationState, listing } = req.body;
+
+        if (!replyContent) {
+            return res.status(400).json({ error: 'Reply content is required' });
+        }
+
+        const state = negotiationState || {};
+        const safeReply = sanitizeForPrompt(replyContent, 1000);
+        const safeListingTitle = sanitizeForPrompt(listing?.title, 200);
+
+        const prompt = `You are analyzing a landlord's reply in a rental negotiation.
+
+CONTEXT:
+- Property: ${safeListingTitle}
+- Our last offer: $${state.lastOffer || 'not yet made'}
+- Offers we've made: ${(state.offersMade || []).join(', ') || 'none yet'}
+- Listing price: $${listing?.price || 'unknown'}
+
+LANDLORD'S MESSAGE: "${safeReply}"
+
+Analyze and return JSON:
+{
+    "sentiment": "positive/neutral/negative",
+    "priceOffered": null or number,
+    "acceptsOffer": true/false,
+    "makesCounterOffer": true/false,
+    "shouldRespond": true/false,
+    "isFinalized": true/false,
+    "agreedPrice": null or number,
+    "responseStrategy": "accept/counter/negotiate/thank/clarify",
+    "suggestedResponse": "brief response if shouldRespond is true",
+    "negotiationPhase": "initial/bargaining/closing/rejected"
+}
+
+RULES:
+1. "sure","yes","ok","okay","sounds good","deal","fine","agreed" = ACCEPTANCE, isFinalized=true, agreedPrice=${state.lastOffer || 'last offer'}
+2. Any $ amount = makesCounterOffer=true, priceOffered=that amount
+3. "no","can't","too low","firm","fixed" = rejection, shouldRespond=true
+4. Don't assume rejection if they're discussing or asking questions
+5. Extract prices carefully - $ or number followed by "month"`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-3.5-turbo',
+            maxTokens: 300,
+            temperature: 0.1
+        });
+
+        try {
+            const analysis = JSON.parse(result.content);
+            res.json({ analysis, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({ analysis: { sentiment: 'neutral', shouldRespond: true, responseStrategy: 'clarify' }, tokensUsed: result.tokensUsed, parseError: true });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/analyze-reply:', error.message);
+        res.status(500).json({ error: 'Failed to analyze reply', details: error.message });
+    }
+});
+
+// POST /api/negotiate/counter-offer - Generate counter-offer message (GPT-4)
+app.post('/api/negotiate/counter-offer', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { prompt: userPrompt, conversationHistory } = req.body;
+
+        if (!userPrompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        const safePrompt = sanitizeForPrompt(userPrompt, 3000);
+        const messages = [{ role: 'system', content: safePrompt }];
+
+        if (conversationHistory && Array.isArray(conversationHistory)) {
+            for (const msg of conversationHistory.slice(-6)) {
+                messages.push({
+                    role: msg.role || 'user',
+                    content: sanitizeForPrompt(msg.content, 1000)
+                });
+            }
+        }
+
+        const result = await callOpenAI({
+            messages,
+            model: 'gpt-4',
+            maxTokens: 300,
+            temperature: 0.7
+        });
+
+        res.json({ response: result.content, tokensUsed: result.tokensUsed });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/counter-offer:', error.message);
+        res.status(500).json({ error: 'Failed to generate counter-offer', details: error.message });
+    }
+});
+
+// POST /api/negotiate/market-estimate - Get AI market data estimate (GPT-3.5)
+app.post('/api/negotiate/market-estimate', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { location, houseType, bedrooms } = req.body;
+
+        const safeLocation = sanitizeForPrompt(location, 200);
+        const safeType = sanitizeForPrompt(houseType, 50);
+
+        const prompt = `You are a real estate market analyst. Provide realistic rental market data for:
+- Location: ${safeLocation || 'General area'}
+- Property Type: ${safeType || 'Any'}
+- Bedrooms: ${bedrooms || 'Any'}
+
+Return realistic estimates in this JSON format:
+{
+    "average": 1200,
+    "median": 1150,
+    "min": 900,
+    "max": 1500,
+    "analysis": "Brief market analysis",
+    "negotiationTips": "Tips for negotiating in this market"
+}`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-3.5-turbo',
+            maxTokens: 300,
+            temperature: 0.3
+        });
+
+        try {
+            const marketData = JSON.parse(result.content);
+            res.json({ marketData: { ...marketData, count: 0, source: 'ai_estimate' }, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({
+                marketData: { average: 1200, median: 1150, min: 900, max: 1500, count: 0, source: 'fallback' },
+                tokensUsed: result.tokensUsed,
+                parseError: true
+            });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/market-estimate:', error.message);
+        res.status(500).json({ error: 'Failed to get market estimate', details: error.message });
+    }
+});
+
+// POST /api/negotiate/contextual-response - Generate tactical response (GPT-4)
+app.post('/api/negotiate/contextual-response', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { prompt: userPrompt } = req.body;
+
+        if (!userPrompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        const safePrompt = sanitizeForPrompt(userPrompt, 3000);
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: safePrompt }],
+            model: 'gpt-4',
+            maxTokens: 250,
+            temperature: 0.7
+        });
+
+        res.json({ response: result.content, tokensUsed: result.tokensUsed });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/contextual-response:', error.message);
+        res.status(500).json({ error: 'Failed to generate response', details: error.message });
+    }
+});
+
+// POST /api/negotiate/landlord-prediction - Predict landlord behavior (GPT-4)
+app.post('/api/negotiate/landlord-prediction', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { conversationHistory, listing, negotiationState } = req.body;
+
+        const safeHistory = (conversationHistory || []).slice(-10).map(m => ({
+            sender: m.sender,
+            content: sanitizeForPrompt(m.content, 500)
+        }));
+
+        const prompt = `Analyze this landlord's behavior in a rental negotiation and predict their likely minimum acceptable price.
+
+PROPERTY: ${sanitizeForPrompt(listing?.title, 200)} - Listed at $${listing?.price || 'unknown'}/month
+
+CONVERSATION HISTORY:
+${safeHistory.map(m => `${m.sender}: ${m.content}`).join('\n')}
+
+NEGOTIATION STATE:
+- Our offers so far: ${(negotiationState?.offersMade || []).join(', ') || 'none'}
+- Their counters so far: ${(negotiationState?.landlordCounters || []).join(', ') || 'none'}
+- Rejections: ${negotiationState?.offersRejected || 0}
+
+Analyze and return JSON:
+{
+    "predictedMinimum": number (their likely lowest acceptable price),
+    "flexibility": "high/moderate/low/none",
+    "confidence": 0.0 to 1.0,
+    "signals": ["list of behavioral signals detected"],
+    "recommendedNextOffer": number,
+    "strategy": "brief recommended strategy"
+}`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-4',
+            maxTokens: 400,
+            temperature: 0.3
+        });
+
+        try {
+            const prediction = JSON.parse(result.content);
+            res.json({ prediction, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({ prediction: null, tokensUsed: result.tokensUsed, parseError: true });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/landlord-prediction:', error.message);
+        res.status(500).json({ error: 'Failed to predict behavior', details: error.message });
+    }
+});
+
+// POST /api/negotiate/lease-review - Review lease document for red flags (GPT-4)
+app.post('/api/negotiate/lease-review', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { leaseText } = req.body;
+
+        if (!leaseText) {
+            return res.status(400).json({ error: 'Lease text is required' });
+        }
+
+        const safeText = sanitizeForPrompt(leaseText, 8000);
+
+        const prompt = `You are a tenant-side lease review assistant. Analyze this lease agreement and flag any concerning clauses, unusual terms, or red flags that a tenant should be aware of.
+
+LEASE TEXT:
+${safeText}
+
+Return a JSON analysis:
+{
+    "overallRating": "good/fair/concerning/problematic",
+    "flags": [
+        {
+            "severity": "high/medium/low",
+            "clause": "the problematic text",
+            "issue": "explanation of the issue",
+            "recommendation": "what the tenant should do"
+        }
+    ],
+    "summary": "brief overall assessment",
+    "negotiationPoints": ["list of terms worth negotiating"]
+}`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-4',
+            maxTokens: 800,
+            temperature: 0.2
+        });
+
+        try {
+            const review = JSON.parse(result.content);
+            res.json({ review, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({ review: { overallRating: 'unknown', flags: [], summary: result.content }, tokensUsed: result.tokensUsed });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/lease-review:', error.message);
+        res.status(500).json({ error: 'Failed to review lease', details: error.message });
+    }
+});
+
+// POST /api/rentcast/market-data - Proxy RentCast API calls (keeps key server-side)
+app.post('/api/rentcast/market-data', rentCastRateLimitMiddleware, async (req, res) => {
+    try {
+        const { city, state: stateCode, bedrooms, propertyType, zipCode } = req.body;
+
+        if (!config.RENTCAST_KEY) {
+            return res.status(503).json({ error: 'RentCast service not configured' });
+        }
+
+        const params = new URLSearchParams();
+        if (city) params.append('city', city);
+        if (stateCode) params.append('state', stateCode);
+        if (bedrooms) params.append('bedrooms', bedrooms);
+        if (propertyType) params.append('propertyType', propertyType);
+        if (zipCode) params.append('zipCode', zipCode);
+
+        const response = await fetch(`https://api.rentcast.io/v1/avm/rent/long-term?${params}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Api-Key': config.RENTCAST_KEY
+            }
+        });
+
+        if (!response.ok) {
+            return res.status(response.status).json({ error: 'RentCast API error', status: response.status });
+        }
+
+        // Increment usage after successful call
+        const userId = getUserId(req);
+        incrementRentCastUsage(userId);
+
+        const data = await response.json();
+        const stats = {
+            average: Math.round(data.rent || data.rentEstimate || 0),
+            median: Math.round(data.rent || data.rentEstimate || 0),
+            min: Math.round((data.rent || data.rentEstimate || 0) * 0.85),
+            max: Math.round((data.rent || data.rentEstimate || 0) * 1.15),
+            count: 1,
+            confidence: data.confidence || 'medium',
+            priceRange: data.priceRange || null,
+            source: 'rentcast'
+        };
+
+        res.json({ marketData: stats, rateLimitInfo: req.rateLimitInfo });
+
+    } catch (error) {
+        console.error('Error in /api/rentcast/market-data:', error.message);
+        res.status(500).json({ error: 'Failed to fetch market data', details: error.message });
+    }
+});
+
+// GET /api/negotiate/dashboard - Get user's negotiation analytics
+app.get('/api/negotiate/dashboard', requireAuth, async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+
+        const userEmail = req.userEmail;
+
+        const { data: negotiations, error } = await supabase
+            .from('ai_negotiations')
+            .select('*')
+            .eq('user_email', userEmail)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching negotiations:', error);
+            return res.status(500).json({ error: 'Failed to fetch negotiations' });
+        }
+
+        const stats = {
+            totalNegotiations: negotiations?.length || 0,
+            successful: (negotiations || []).filter(n => n.negotiation_status === 'completed' || n.negotiation_status === 'finalized').length,
+            active: (negotiations || []).filter(n => n.negotiation_status === 'active').length,
+            totalSavings: (negotiations || []).reduce((sum, n) => {
+                if (n.initial_price && n.final_price && n.final_price < n.initial_price) {
+                    return sum + (n.initial_price - n.final_price);
+                }
+                return sum;
+            }, 0),
+            averageSavingsPercent: 0,
+            negotiations: negotiations || []
+        };
+
+        if (stats.successful > 0) {
+            const savingsPercents = (negotiations || [])
+                .filter(n => n.initial_price && n.final_price && n.final_price < n.initial_price)
+                .map(n => ((n.initial_price - n.final_price) / n.initial_price) * 100);
+            stats.averageSavingsPercent = savingsPercents.length > 0
+                ? Math.round(savingsPercents.reduce((a, b) => a + b, 0) / savingsPercents.length)
+                : 0;
+        }
+
+        res.json(stats);
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/dashboard:', error.message);
+        res.status(500).json({ error: 'Failed to load dashboard' });
+    }
+});
+
+// POST /api/negotiate/record-tactic - Record tactic effectiveness for learning
+app.post('/api/negotiate/record-tactic', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { tactic, landlordEmotionalState, city, propertyType, success, priceMovement } = req.body;
+
+        if (!tactic || !supabase) {
+            return res.status(400).json({ error: 'Tactic name required' });
+        }
+
+        const { data, error } = await supabase
+            .from('negotiation_tactics_effectiveness')
+            .insert({
+                tactic: sanitizeForPrompt(tactic, 100),
+                landlord_emotional_state: sanitizeForPrompt(landlordEmotionalState, 50),
+                city: sanitizeForPrompt(city, 100),
+                property_type: sanitizeForPrompt(propertyType, 50),
+                success: !!success,
+                price_movement: priceMovement || 0
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error recording tactic:', error);
+            return res.status(500).json({ error: 'Failed to record tactic' });
+        }
+
+        res.json({ success: true, record: data });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/record-tactic:', error.message);
+        res.status(500).json({ error: 'Failed to record tactic' });
+    }
+});
+
+// GET /api/negotiate/tactic-effectiveness - Get tactic effectiveness data for learning
+app.get('/api/negotiate/tactic-effectiveness', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+
+        const { city, propertyType, landlordState } = req.query;
+
+        let query = supabase
+            .from('negotiation_tactics_effectiveness')
+            .select('tactic, success, price_movement, landlord_emotional_state, city, property_type');
+
+        if (city) query = query.eq('city', city);
+        if (propertyType) query = query.eq('property_type', propertyType);
+        if (landlordState) query = query.eq('landlord_emotional_state', landlordState);
+
+        const { data, error } = await query;
+
+        if (error) {
+            return res.status(500).json({ error: 'Failed to fetch effectiveness data' });
+        }
+
+        // Aggregate by tactic
+        const tacticStats = {};
+        (data || []).forEach(record => {
+            if (!tacticStats[record.tactic]) {
+                tacticStats[record.tactic] = { total: 0, successes: 0, avgPriceMovement: 0, movements: [] };
+            }
+            tacticStats[record.tactic].total++;
+            if (record.success) tacticStats[record.tactic].successes++;
+            if (record.price_movement) tacticStats[record.tactic].movements.push(record.price_movement);
+        });
+
+        // Calculate success rates
+        Object.keys(tacticStats).forEach(tactic => {
+            const stats = tacticStats[tactic];
+            stats.successRate = stats.total > 0 ? Math.round((stats.successes / stats.total) * 100) : 0;
+            stats.avgPriceMovement = stats.movements.length > 0
+                ? Math.round(stats.movements.reduce((a, b) => a + b, 0) / stats.movements.length)
+                : 0;
+            delete stats.movements;
+        });
+
+        res.json({ tacticEffectiveness: tacticStats, totalRecords: data?.length || 0 });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/tactic-effectiveness:', error.message);
+        res.status(500).json({ error: 'Failed to fetch tactic data' });
+    }
+});
+
 // API: Create notification for a user (bypasses RLS using service role)
 app.post('/api/create-notification', async (req, res) => {
     try {
@@ -6190,37 +6839,19 @@ app.get('/api/verify/service-status', (req, res) => {
 app.get('/api/config', (req, res) => {
     // Try to reinitialize Azure clients if they're not available
     reinitializeAzureClients();
-    console.log('📋 Config endpoint called - checking environment variables:');
-    console.log('- OPENAI_API_KEY:', config.OPENAI_API_KEY ? `Present (${config.OPENAI_API_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- OPENAI_ORG_ID:', config.OPENAI_ORG_ID ? `Present (${config.OPENAI_ORG_ID})` : 'MISSING');
-    console.log('- SUPABASE_URL:', config.SUPABASE_URL ? `Present (${config.SUPABASE_URL.substring(0, 30)}...)` : 'MISSING');
-    console.log('- SUPABASE_ANON_KEY:', config.SUPABASE_ANON_KEY ? `Present (${config.SUPABASE_ANON_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT})` : 'MISSING');
-    console.log('- AZURE_FACE_KEY:', config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_FACE_ENDPOINT:', config.AZURE_FACE_ENDPOINT ? `Present (${config.AZURE_FACE_ENDPOINT})` : 'MISSING');
-    console.log('- RENTCAST_KEY:', config.RENTCAST_KEY ? `Present (${config.RENTCAST_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('📋 Config endpoint called');
     
     const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
         GOOGLE_API_KEY: config.GOOGLE_API_KEY,
         SUPABASE_URL: config.SUPABASE_URL,
         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
-        OPENAI_API_KEY: config.OPENAI_API_KEY,
-        OPENAI_ORG_ID: config.OPENAI_ORG_ID,
         GOOGLE_OAUTH_CLIENT_ID: config.GOOGLE_OAUTH_CLIENT_ID,
         APPLE_CLIENT_ID: config.APPLE_CLIENT_ID,
-        OPENAI_MODEL: config.OPENAI_MODEL,
-        RENTCAST_KEY: config.RENTCAST_KEY,
         // Azure service status (without exposing keys)
         azureServicesAvailable: {
             documentIntelligence: !!documentClient,
             faceAPI: !!faceClient
-        },
-        // Add debug info about missing variables
-        _debug: {
-            missingVars: config.getMissingVars ? config.getMissingVars() : [],
-            isValid: config.isValid ? config.isValid() : false
         }
     };
     
