@@ -4,6 +4,30 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — listings.html polled `loadUserConversations` every 3s, hammering Supabase
+
+**Symptom:** browser console on `listings.html` flooded with `📬 loadUserConversations called` / `Querying ALL conversations first...` / `Checking conv:` lines every 3 seconds. On mobile this would drain battery; on free-tier Supabase this would torch the rate limit.
+
+**Root cause stack (worst → least):**
+1. A `setInterval(fn, 3000)` declared as a "polling fallback for real-time" — but the conditional check was abandoned with a comment "messageChannel is not in scope here, so we'll just start polling as fallback." It started polling **unconditionally**, after 10s, even though a healthy Supabase Realtime `panelChannel` subscription was set up right above it. Result: realtime + polling running in parallel.
+2. `loadUserConversations` issued an extra SELECT of "ALL conversations in DB" on every call (purely a `console.log` debugging aid, never used by the function).
+3. Per-iteration `console.log` for "Checking conv:", "Including conversation:", "Filtering conversations:" inside the filter loop — multiplied per conversation per poll.
+
+**Fix (`frontend/listings.html`):**
+- Removed the debug "all conversations" SELECT (one fewer query per call).
+- Stripped the per-iteration logs (kept only error logs).
+- In the Realtime `.subscribe(status)` callback, set `window.__panelRealtimeOk = true` on `SUBSCRIBED`. Polling start now gates on that flag — **if realtime is healthy, polling never runs**.
+- If polling does run (true fallback only), interval is now **30s instead of 3s**, and the interval body bails out early when `document.hidden` (tab in background) so mobile users don't burn battery.
+
+**Numbers (per user with one conversation):**
+- Before: ~4 Supabase queries every 3s = ~80 queries/minute, never paused.
+- After (realtime healthy): ~0 queries unless an event actually fires.
+- After (realtime down, fallback engaged): ~4 queries every 30s = ~8 queries/minute, **paused when tab is hidden**. 10× reduction even in the worst case.
+
+**Bigger follow-up to keep in mind:** the per-conversation unread-count loop still makes 2 queries per conversation (one for `conversation_reads`, one for `count(*) FROM messages`). For users with N conversations that's 2N round trips. Worth converting to a single aggregate query (a Postgres function returning `(conversation_id, unread_count)` rows) once N gets uncomfortable.
+
+---
+
 ## 2026-05-17 — Heart icons didn't restore the "favorited" state on listings.html
 
 **Symptom:** clicking the heart on a listing card saved it (visible on `favorites.html` / profile), but reloading `listings.html` showed every heart back in the outline/gray state — favorites weren't visually restored on revisit.
