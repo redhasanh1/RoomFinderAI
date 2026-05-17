@@ -3404,13 +3404,18 @@ Generate ONLY the message. No greetings, no signatures.
             await this.ensureAIUserExists();
 
             const senderEmail = 'ai-negotiator@roomfinder.com';
+            const fullContent = `🤖 AI Negotiator on behalf of ${userEmail}:\n\n${message}`;
+            const createdAt = new Date().toISOString();
+            let finalSenderEmail = senderEmail;
+            let finalContent = fullContent;
 
             const { error } = await this.supabase
                 .from('messages')
                 .insert({
                     conversation_id: conversationId,
                     sender_email: senderEmail,
-                    content: `🤖 AI Negotiator on behalf of ${userEmail}:\n\n${message}`
+                    content: fullContent,
+                    created_at: createdAt
                 });
 
             if (error) {
@@ -3418,12 +3423,15 @@ Generate ONLY the message. No greetings, no signatures.
 
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
+                finalSenderEmail = userEmail;
+                finalContent = `🤖 AI Negotiator:\n\n${message}`;
                 const { error: retryError } = await this.supabase
                     .from('messages')
                     .insert({
                         conversation_id: conversationId,
-                        sender_email: userEmail,
-                        content: `🤖 AI Negotiator:\n\n${message}`
+                        sender_email: finalSenderEmail,
+                        content: finalContent,
+                        created_at: createdAt
                     });
 
                 if (retryError) {
@@ -3433,6 +3441,33 @@ Generate ONLY the message. No greetings, no signatures.
             }
 
             console.log('✅ Sent negotiation message');
+
+            // Live broadcast on the same chat-{conversationId} channel the docked chat
+            // subscribes to in listings.html. Without this the landlord's screen has to
+            // wait for the postgres_changes path (500ms-2s) to surface the AI's reply.
+            // Fire-and-forget; the DB INSERT above is the source of truth.
+            try {
+                const ch = this.supabase.channel(`chat-${conversationId}`);
+                ch.subscribe((status) => {
+                    if (status !== 'SUBSCRIBED') return;
+                    ch.send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: {
+                            conversation_id: conversationId,
+                            sender_email: finalSenderEmail,
+                            content: finalContent,
+                            message_type: 'text',
+                            created_at: createdAt
+                        }
+                    }).finally(() => {
+                        // Short-lived channel; clean up after the send so we don't leak.
+                        setTimeout(() => { try { ch.unsubscribe(); } catch (e) {} }, 500);
+                    });
+                });
+            } catch (broadcastErr) {
+                console.warn('AI broadcast send failed (non-fatal):', broadcastErr);
+            }
 
             // Create notification for landlord in ai_chats table
             if (landlordEmail) {
