@@ -4076,19 +4076,68 @@ app.post('/api/analyze-property-photo', async (req, res) => {
 // FORWARD GEOCODING + CACHE (Google Maps -> listings.latitude/longitude)
 // ========================================
 
+// Single-address forward geocode via Google Maps. Returns { lat, lng } on success or
+// { error, error_message } on failure. REQUEST_DENIED with "Billing" in error_message
+// means the Google Cloud project hasn't enabled billing; the caller should switch to
+// Nominatim for the rest of the batch.
+async function geocodeViaGoogle(address) {
+    try {
+        const r = await axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`,
+            { timeout: 10000 }
+        );
+        if (r.data.status === 'OK' && r.data.results?.[0]) {
+            const loc = r.data.results[0].geometry.location;
+            return { lat: loc.lat, lng: loc.lng };
+        }
+        return { error: r.data.status || 'unknown', error_message: r.data.error_message || null };
+    } catch (e) {
+        return { error: 'http_error', error_message: e.message };
+    }
+}
+
+// Single-address forward geocode via OpenStreetMap Nominatim. Free, no key needed,
+// but caller MUST throttle to at most 1 request per second (Nominatim usage policy).
+async function geocodeViaNominatim(address) {
+    try {
+        const r = await axios.get(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
+            {
+                headers: {
+                    'User-Agent': 'RoomFinderAI/1.0 (property listing app)',
+                    'Accept-Language': 'en'
+                },
+                timeout: 10000
+            }
+        );
+        if (Array.isArray(r.data) && r.data[0]) {
+            const lat = parseFloat(r.data[0].lat);
+            const lng = parseFloat(r.data[0].lon);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+        }
+        return { error: 'no_results' };
+    } catch (e) {
+        return { error: 'http_error', error_message: e.message };
+    }
+}
+
 /**
  * POST /api/geocode/batch
  * Body: { ids: ["uuid1", "uuid2", ...] }
- * Response: { success: true, coords: { uuid1: { lat, lng, cached }, ... } }
+ * Response: { success: true, coords: { uuid1: { lat, lng, cached, source }, ... } }
  *
- * Per id: if the row already has latitude+longitude, returns them (cache hit, no
- * Google call). Otherwise geocodes street+city+postalCode+country via Google Maps,
- * writes the result back onto the row, and returns the coords. Bounded to 100 ids
- * per call. Requires SUPABASE_SERVICE_ROLE_KEY on the backend so RLS does not block
- * writes against rows owned by other users.
+ * Per id: if the row already has latitude+longitude, returns them (cache hit, zero
+ * upstream calls). Otherwise geocodes the row's address and writes coords back so
+ * subsequent loads are cache hits.
  *
- * Replaces the prior per-listing client-side Nominatim loop (rate-limited at
- * 1 req/s, the root cause of empty maps).
+ * Geocoder strategy: try Google Maps first (fast, accurate, but requires billing on
+ * the GCP project). If Google returns REQUEST_DENIED with a billing-related message,
+ * automatically fall back to Nominatim (free, public OSM, throttled to 1 req/s) for
+ * the remainder of this batch. Each row's response includes a `source` field so the
+ * caller can see which path was taken.
+ *
+ * Bounded to 100 ids per call. Requires SUPABASE_SERVICE_ROLE_KEY on the backend so
+ * RLS does not block writes against rows owned by other users.
  */
 app.post('/api/geocode/batch', async (req, res) => {
     console.log('📍 /api/geocode/batch called');
@@ -4105,7 +4154,7 @@ app.post('/api/geocode/batch', async (req, res) => {
             return res.status(503).json({ success: false, error: 'Supabase not initialized on backend' });
         }
         if (!GOOGLE_API_KEY) {
-            return res.status(503).json({ success: false, error: 'Google Maps API key not configured' });
+            console.warn('⚠️ GOOGLE_API_KEY not configured — falling back to Nominatim only (slower, 1 req/s).');
         }
         if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
             console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set — coord writes will be blocked by RLS for non-owner rows');
@@ -4140,10 +4189,12 @@ app.post('/api/geocode/batch', async (req, res) => {
         }
 
         const result = {};
+        let googleDenied = !GOOGLE_API_KEY;   // sticky: skip Google entirely if not configured or billing denied
+        let lastNominatimAt = 0;              // for the 1-req/s throttle
 
         for (const row of rows) {
             if (row.latitude != null && row.longitude != null) {
-                result[row.id] = { lat: row.latitude, lng: row.longitude, cached: true };
+                result[row.id] = { lat: row.latitude, lng: row.longitude, cached: true, source: 'cache' };
                 continue;
             }
 
@@ -4155,37 +4206,51 @@ app.post('/api/geocode/batch', async (req, res) => {
             }
             const address = parts.join(', ');
 
-            try {
-                const geocodeRes = await axios.get(
-                    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`,
-                    { timeout: 10000 }
-                );
-
-                if (geocodeRes.data.status !== 'OK' || !geocodeRes.data.results?.[0]) {
-                    console.warn(`⚠️ Geocode failed for ${row.id} (${address}):`, geocodeRes.data.status);
-                    result[row.id] = { error: geocodeRes.data.status || 'geocode_failed' };
-                    continue;
+            // Try Google first unless we already learned it's denied for this batch
+            let geo = null;
+            let source = null;
+            if (!googleDenied) {
+                geo = await geocodeViaGoogle(address);
+                if (geo.lat != null) {
+                    source = 'google';
+                } else if (geo.error === 'REQUEST_DENIED' && /bill/i.test(geo.error_message || '')) {
+                    console.warn(`⚠️ Google denied (billing not enabled). Falling back to Nominatim for the rest of this batch.`);
+                    googleDenied = true;
+                    geo = null;
+                } else if (geo.error && geo.error !== 'ZERO_RESULTS') {
+                    // Other Google error — log but still try Nominatim as a one-off fallback for this row
+                    console.warn(`⚠️ Google error for ${row.id}: ${geo.error} ${geo.error_message || ''}`);
+                    geo = null;
                 }
+            }
 
-                const loc = geocodeRes.data.results[0].geometry.location;
-                const lat = loc.lat;
-                const lng = loc.lng;
+            if (geo == null) {
+                // Nominatim path: enforce 1 req/s throttle
+                const sinceLast = Date.now() - lastNominatimAt;
+                if (sinceLast < 1100) await new Promise(r => setTimeout(r, 1100 - sinceLast));
+                lastNominatimAt = Date.now();
+                geo = await geocodeViaNominatim(address);
+                if (geo.lat != null) source = 'nominatim';
+            }
 
-                const { error: updateErr } = await supabase
-                    .from('listings')
-                    .update({ latitude: lat, longitude: lng, geocoded_at: new Date().toISOString() })
-                    .eq('id', row.id);
+            if (geo.lat == null) {
+                console.warn(`⚠️ Geocode failed for ${row.id} (${address}): ${geo.error}`);
+                result[row.id] = { error: geo.error || 'geocode_failed' };
+                continue;
+            }
 
-                if (updateErr) {
-                    console.error(`❌ Coord write failed for ${row.id}:`, updateErr.message);
-                    result[row.id] = { lat, lng, cached: false, writeError: updateErr.message };
-                } else {
-                    result[row.id] = { lat, lng, cached: false };
-                    console.log(`✅ Geocoded + cached ${row.id}: ${address} → (${lat}, ${lng})`);
-                }
-            } catch (geoErr) {
-                console.error(`❌ Geocode exception for ${row.id}:`, geoErr.message);
-                result[row.id] = { error: geoErr.message };
+            const { lat, lng } = geo;
+            const { error: updateErr } = await supabase
+                .from('listings')
+                .update({ latitude: lat, longitude: lng, geocoded_at: new Date().toISOString() })
+                .eq('id', row.id);
+
+            if (updateErr) {
+                console.error(`❌ Coord write failed for ${row.id}:`, updateErr.message);
+                result[row.id] = { lat, lng, cached: false, source, writeError: updateErr.message };
+            } else {
+                result[row.id] = { lat, lng, cached: false, source };
+                console.log(`✅ Geocoded + cached (${source}) ${row.id}: ${address} → (${lat}, ${lng})`);
             }
         }
 
