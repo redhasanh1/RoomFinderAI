@@ -4,6 +4,23 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — AI Negotiator parsed "6k to 7k" as $6,000 instead of $7,000
+
+User typed "6k to 7k" as their budget. The AI's natural-language reply correctly echoed "$6000 to $7000" (so the LLM understood the range), but the structured `criteria.price` from `/api/chat` came back as just `6000`. The frontend stored that as `userNeeds.maxPrice`, the Supabase search ran `lte('price', 6000)`, and the actual matching house at $6,375 fell off the "exact" results into the "similar listings" bucket with a useless "increase your budget above $6000" suggestion.
+
+Two failures stacked: OpenAI's structured extraction picked the lower bound when it should have used the upper, AND the manual fallback regex at `ai-chat.js:462` only matched `\d{1,5}` — no "k" suffix and no range awareness, so it would have hit the same wall.
+
+**Fix (`ai-chat.js`):**
+- Added `extractPriceFromMessage(message)` — a range-aware extractor that normalizes the message (strips `$` and `,`, lowercases), tries a range regex first (`X to/-/and Y` with optional `k` on either side), returns the MAX of that range. Falls back to single-value parsing with the same `k` suffix support.
+- Updated `extractManually` to use it (replaces the old narrow regex).
+- Augmented the OpenAI happy path: even when `/api/chat` returns a `criteria.price`, also run `extractPriceFromMessage(message)` on the raw user text — if the local extractor finds a higher number, use it. Defends against OpenAI under-grabbing on ranges.
+
+**Heuristic decision:** for a range like "5 to 7k" we always take the UPPER bound as max price. That matches normal usage — when someone says "5-7k" they mean "I'm willing to go up to 7k," not "filter strictly to 5k and below."
+
+**Pattern to remember:** for chat-driven filtering, never let a single number from the LLM override what the user's raw message says. Run a structured local pass over the message text alongside the LLM extraction and take the bound that's friendlier to the user (higher max, lower min). LLMs hallucinate bounds; regex doesn't.
+
+---
+
 ## 2026-05-17 — Live chat delivery via Supabase Realtime broadcast (sub-100ms)
 
 Even with the postgres_changes subscription + 5s delta poll, messages between two open chats lagged enough that the user had to click back into the conversation to see them. `postgres_changes` watches the WAL, parses every INSERT, and evaluates RLS per subscriber — that's 500ms-2s of overhead per message, every time. The poll was the floor at 5s. Neither felt instant.
