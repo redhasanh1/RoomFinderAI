@@ -415,67 +415,6 @@
 }
 
 /* =============================================================================
-   Dark Mode Support
-   ============================================================================= */
-
-@media (prefers-color-scheme: dark) {
-    .map-container {
-        background: #1f2937;
-    }
-    
-    .custom-popup .leaflet-popup-content-wrapper {
-        background: #374151;
-        border-color: #4b5563;
-    }
-    
-    .custom-popup .leaflet-popup-tip {
-        background: #374151;
-        border-color: #4b5563;
-    }
-    
-    .custom-popup .leaflet-popup-close-button {
-        color: #d1d5db;
-    }
-    
-    .custom-popup .leaflet-popup-close-button:hover {
-        background-color: #4b5563;
-        color: #f9fafb;
-    }
-    
-    .popup-content {
-        background: #374151;
-        color: #f9fafb;
-    }
-    
-    .popup-title {
-        color: #f9fafb;
-    }
-    
-    .popup-address {
-        color: #d1d5db;
-    }
-    
-    .popup-details {
-        color: #d1d5db;
-    }
-    
-    .map-error {
-        background: #451c1c;
-        color: #f87171;
-        border-color: #b91c1c;
-    }
-    
-    .map-loading {
-        background: rgba(55, 65, 81, 0.9);
-        color: #f9fafb;
-    }
-    
-    .map-loading-text {
-        color: #d1d5db;
-    }
-}
-
-/* =============================================================================
    Accessibility
    ============================================================================= */
 
