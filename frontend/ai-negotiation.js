@@ -3495,17 +3495,42 @@ Generate ONLY the message. No greetings, no signatures.
                     if (newMessage.sender_email !== 'ai-negotiator@roomfinder.com') {
                         console.log('📨 Processing reply from:', newMessage.sender_email);
                         console.log('📨 Looking for conversation:', newMessage.conversation_id);
-                        
+
                         const { data: conversation, error: convError } = await this.supabase
                             .from('conversations')
                             .select('*')
                             .eq('id', newMessage.conversation_id)
                             .maybeSingle();
-                            
+
                         if (convError) {
                             console.log('❌ Conversation lookup error:', convError.message);
                             return;
                         }
+
+                        // Dedup: only the TENANT'S browser should generate the AI's next
+                        // reply. Without this gate, every browser/tab subscribed to this
+                        // conversation (tenant tab + landlord tab + any duplicate session)
+                        // fires its own OpenAI call against the same landlord message →
+                        // N near-identical AI responses get spammed into the chat.
+                        // The AI Negotiator works on behalf of the tenant, so we ground
+                        // the gate on conversation.sender_email (the tenant).
+                        const meEmail = JSON.parse(localStorage.getItem('currentUser') || '{}')?.email?.toLowerCase();
+                        const tenantEmail = conversation?.sender_email?.toLowerCase();
+                        if (!meEmail || !tenantEmail || meEmail !== tenantEmail) {
+                            console.log('📨 Skipping AI response — this session is not the tenant for this negotiation', { me: meEmail, tenant: tenantEmail });
+                            return;
+                        }
+
+                        // Per-message lock: if we already started processing this exact
+                        // landlord message, skip. Cheap in-memory guard against the same
+                        // browser firing twice for any reason (re-subscribe, duplicate
+                        // INSERT events, etc.).
+                        if (!this._processedLandlordMessages) this._processedLandlordMessages = new Set();
+                        if (this._processedLandlordMessages.has(newMessage.id)) {
+                            console.log('📨 Already processed landlord message', newMessage.id, '— skipping duplicate');
+                            return;
+                        }
+                        this._processedLandlordMessages.add(newMessage.id);
                         
                         console.log('📨 Found conversation:', conversation);
                         
