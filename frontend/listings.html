@@ -2131,6 +2131,13 @@
             // Lazy load images for each listing card
             lazyLoadListingImages(listings);
 
+            // Restore favorite (heart) states on the freshly-rendered cards. Fire-and-
+            // forget — this runs in parallel with the map update below and doesn't block
+            // the user from seeing listings.
+            if (typeof loadFavoriteStates === 'function') {
+                loadFavoriteStates().catch(err => console.error('loadFavoriteStates failed:', err));
+            }
+
             // Update map with all listings
             console.log('📍 Updating map with', listings.length, 'listings...');
             await updateMap(listings);
@@ -5083,33 +5090,58 @@
         }
 
         async function loadFavoriteStates() {
+            // Background of the bug this fixes: the old version called GET
+            // /api/favorites/${currentUser.id}, but no such backend route exists. The
+            // working routes key on userEmail, not user.id. On top of that, the
+            // existing GET /api/favorites returns the FULL listing row for each
+            // favorite (a big payload + N extra SELECTs server-side), which is
+            // wasteful when all we need is a yes/no per visible card.
+            //
+            // /api/favorites/check is the optimal endpoint: send only the listing
+            // IDs currently rendered on this page, get back a {id: boolean} map.
+            // One round trip, one SELECT WHERE listing_id IN (...) on the backend,
+            // zero per-listing follow-up queries.
             const currentUser = await window.UniversalAuth.getCurrentUser();
-            
-            if (!currentUser || !currentUser.id) {
+
+            if (!currentUser || !currentUser.email) {
                 console.log('No authenticated user, skipping favorite states');
                 return;
             }
 
+            const buttons = document.querySelectorAll('.favorite-btn');
+            const listingIds = Array.from(buttons)
+                .map(b => b.getAttribute('data-listing-id'))
+                .filter(Boolean);
+
+            if (listingIds.length === 0) {
+                console.log('No favorite buttons rendered yet, skipping');
+                return;
+            }
+
             try {
-                const response = await fetch(`/api/favorites/${currentUser.id}`);
-                
-                if (response.ok) {
-                    const favorites = await response.json();
-                    const favoriteIds = new Set(favorites.map(fav => fav.listing_id));
-                    
-                    // Update heart button states
-                    document.querySelectorAll('.favorite-btn').forEach(button => {
-                        const listingId = button.getAttribute('data-listing-id');
-                        if (favoriteIds.has(listingId)) {
-                            button.setAttribute('data-favorited', 'true');
-                            button.setAttribute('title', 'Remove from favorites');
-                        }
-                    });
-                    
-                    console.log(`✅ Loaded ${favorites.length} favorite states`);
-                } else {
-                    console.log('Could not load favorite states');
+                const response = await fetch('/api/favorites/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ listingIds, userEmail: currentUser.email })
+                });
+
+                if (!response.ok) {
+                    console.warn('loadFavoriteStates: /api/favorites/check returned', response.status);
+                    return;
                 }
+
+                const favoriteMap = await response.json();
+                let matched = 0;
+                buttons.forEach(button => {
+                    const listingId = button.getAttribute('data-listing-id');
+                    if (favoriteMap[listingId] === true) {
+                        button.setAttribute('data-favorited', 'true');
+                        button.setAttribute('title', 'Remove from favorites');
+                        matched++;
+                    }
+                });
+
+                console.log(`✅ Restored ${matched} favorite states out of ${listingIds.length} visible listings`);
             } catch (error) {
                 console.error('Error loading favorite states:', error);
             }
