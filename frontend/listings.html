@@ -2630,6 +2630,24 @@
                     throw error;
                 }
 
+                // Live broadcast to anyone else subscribed to this conversation's channel.
+                // Bypasses the DB-watching postgres_changes pipeline entirely — sub-100ms
+                // delivery. Fire-and-forget; failures here don't matter because the DB
+                // INSERT is the source of truth and the delta-poll fallback catches up.
+                if (window.__currentChatChannel) {
+                    window.__currentChatChannel.send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: {
+                            conversation_id: currentConversationId,
+                            sender_email: currentUser.email,
+                            content: messageContent,
+                            message_type: 'text',
+                            created_at: timestamp
+                        }
+                    }).catch(err => console.warn('broadcast send failed (non-fatal):', err));
+                }
+
                 // Create notification for landlord in AI negotiations section
                 await createNotificationForLandlord(currentUser, messageContent);
             }
@@ -3456,7 +3474,48 @@
             console.log('🔄 Loading messages for conversation:', conversationId);
             console.log('📊 Supabase client status:', !!supabase);
             console.log('👤 Current user status:', !!localStorage.getItem('currentUser'));
-            
+
+            // ===== Broadcast subscription =====
+            // Sub-100ms live delivery via Supabase Realtime broadcast (one ephemeral
+            // channel per conversation, NO DB involvement on the receive side). This
+            // sits alongside the existing postgres_changes listener and the 5s delta
+            // poll — all three append paths share lastSeenMessageAt as the dedup
+            // watermark so the same message never double-renders, regardless of
+            // which path delivers it first.
+            try {
+                if (window.__currentChatChannel) {
+                    await window.__currentChatChannel.unsubscribe();
+                    window.__currentChatChannel = null;
+                }
+            } catch (e) { /* ignore */ }
+
+            const broadcastCh = supabase.channel(`chat-${conversationId}`);
+            broadcastCh.on('broadcast', { event: 'new_message' }, ({ payload }) => {
+                if (!payload || payload.conversation_id !== conversationId) return;
+                const me = JSON.parse(localStorage.getItem('currentUser'));
+                const isMine = payload.sender_email?.toLowerCase() === me?.email?.toLowerCase();
+                if (lastSeenMessageAt && payload.created_at && payload.created_at <= lastSeenMessageAt) return;
+                if (payload.created_at) lastSeenMessageAt = payload.created_at;
+                if (isMine) return; // sender already appended optimistically
+                const container = document.getElementById('chatMessages');
+                if (!container) return;
+                const msgEl = document.createElement('div');
+                msgEl.className = 'message received';
+                const msgP = document.createElement('p');
+                msgP.textContent = payload.content || '';
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-timestamp';
+                timeDiv.textContent = new Date(payload.created_at || Date.now()).toLocaleTimeString();
+                msgEl.appendChild(msgP);
+                msgEl.appendChild(timeDiv);
+                container.appendChild(msgEl);
+                container.scrollTop = container.scrollHeight;
+            });
+            broadcastCh.subscribe((status) => {
+                console.log('📡 BROADCAST channel', `chat-${conversationId}`, status);
+            });
+            window.__currentChatChannel = broadcastCh;
+
             try {
                 const { data: messages, error } = await supabase
                     .from('messages')
@@ -5837,6 +5896,23 @@
                             });
 
                             if (error) throw error;
+
+                            // Mirror the live-broadcast path used by sendTextMessage so the
+                            // fallback sender also delivers sub-100ms to the receiving side.
+                            if (window.__currentChatChannel) {
+                                window.__currentChatChannel.send({
+                                    type: 'broadcast',
+                                    event: 'new_message',
+                                    payload: {
+                                        conversation_id: currentConversationId,
+                                        sender_email: currentUser.email,
+                                        content: messageContent,
+                                        message_type: 'text',
+                                        created_at: msgTimestamp
+                                    }
+                                }).catch(err => console.warn('broadcast send failed (non-fatal):', err));
+                            }
+
                             chatInput.value = '';
                             console.log('Message sent successfully');
                         } catch (err) {
