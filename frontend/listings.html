@@ -968,9 +968,11 @@
                 return false;
             }
 
-            // Check if container is visible
+            // Container is hidden whenever the page is in Grid View (the default).
+            // That's expected — initMap will be called again when the user toggles to
+            // Map View. Logged at info level to avoid looking like an error.
             if (mapContainer && mapContainer.classList.contains('hidden')) {
-                console.warn('⚠️ Map container is still hidden, aborting initialization');
+                console.log('🗺️ initMap: container hidden (Grid View) — deferring init');
                 return false;
             }
 
@@ -1139,7 +1141,10 @@
             if (!map || !markerClusterGroup) {
                 console.log('Map not ready, initializing...');
                 if (!initMap()) {
-                    console.error('❌ Failed to initialize map');
+                    // Most common reason: user is on Grid View, container is hidden, so
+                    // initMap intentionally bails. The view toggle will re-call updateMap
+                    // once the map is visible — no need to surface this as an error.
+                    console.log('🗺️ updateMap deferred: map not visible yet (will render when Map View toggles)');
                     return;
                 }
                 await new Promise(resolve => setTimeout(resolve, 1000));
