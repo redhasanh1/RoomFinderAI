@@ -3715,28 +3715,16 @@
 
             console.log('✅ Messaging panel setup complete');
 
-            // Load user's conversations
+            // Load user's conversations.
+            // Was previously logging like a debugger AND issuing an extra "ALL
+            // conversations" SELECT on every call (purely diagnostic). Stripped
+            // to one indexed SELECT + the per-conversation unread counts below.
             async function loadUserConversations() {
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                console.log('📬 loadUserConversations called');
-                console.log('📬 currentUser:', currentUser);
-                if (!currentUser || !currentUser.email) {
-                    console.log('📬 No currentUser, returning');
-                    return;
-                }
+                if (!currentUser || !currentUser.email) return;
 
                 const userEmail = currentUser.email;
-                console.log('📬 Querying ALL conversations first...');
 
-                // First get ALL conversations to debug
-                const { data: allConvs, error: allError } = await supabase
-                    .from('conversations')
-                    .select('id, sender_email, receiver_email, listing_id')
-                    .limit(20);
-                console.log('📬 ALL conversations in DB:', allConvs, 'error:', allError?.message);
-
-                // Now query for this user
-                console.log('📬 Querying conversations for user:', userEmail);
                 const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
@@ -3745,8 +3733,6 @@
                     `)
                     .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`)
                     .order('created_at', { ascending: false });
-
-                console.log('📬 User conversations result:', { count: conversations?.length, error: error?.message, conversations });
 
                 if (error) {
                     console.error('Error loading conversations:', error);
@@ -3778,28 +3764,18 @@
                     conversationsWithUnread.push(conv);
                 }
 
-                // Filter conversations to include those where current user is a participant
-                // (relaxed check - don't require both users to be in profiles)
+                // Filter conversations to include those where current user is a participant.
+                // The .or() filter on Supabase should already guarantee this, but we keep a
+                // case-insensitive client-side check as a belt-and-suspenders against data
+                // inserted with mixed casing. No per-iteration logs (was the worst offender).
                 const filteredConversations = [];
                 const userEmailLower = currentUser.email.toLowerCase();
-                console.log('📬 Filtering conversations. User email:', userEmailLower, 'Total conversations:', conversationsWithUnread.length);
                 for (const conv of conversationsWithUnread) {
-                    // Check if current user is a participant (case-insensitive)
                     const senderLower = conv.sender_email?.toLowerCase();
                     const receiverLower = conv.receiver_email?.toLowerCase();
-                    const isParticipant = senderLower === userEmailLower || receiverLower === userEmailLower;
-                    console.log('📬 Checking conv:', conv.id, 'sender:', senderLower, 'receiver:', receiverLower, 'isParticipant:', isParticipant);
-
-                    if (isParticipant) {
-                        // Apply local read status - if conversation was marked as read locally, keep it as 0
-                        if (locallyReadConversations.has(conv.id)) {
-                            console.log('🔒 Preserving local read status for conversation:', conv.id);
-                            conv.unread_count = 0;
-                        }
+                    if (senderLower === userEmailLower || receiverLower === userEmailLower) {
+                        if (locallyReadConversations.has(conv.id)) conv.unread_count = 0;
                         filteredConversations.push(conv);
-                        console.log('✅ Including conversation:', conv.id, 'between', conv.sender_email, 'and', conv.receiver_email);
-                    } else {
-                        console.log('⚠️ Skipping conversation (not a participant):', conv.id);
                     }
                 }
 
@@ -3980,6 +3956,13 @@
                 })
                 .subscribe((status) => {
                     console.log('📱 PANEL SUBSCRIPTION STATUS:', status);
+                    // Track whether realtime is actually working; the polling fallback below
+                    // is gated on this flag so we don't double up with realtime + polling.
+                    if (status === 'SUBSCRIBED') {
+                        window.__panelRealtimeOk = true;
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        window.__panelRealtimeOk = false;
+                    }
                 });
 
             // Initialize
@@ -3995,26 +3978,32 @@
             // Update global reference when conversations are loaded
             window.globalUserConversations = globalUserConversations;
 
-            // FALLBACK: Polling for updates if real-time fails
+            // FALLBACK: Polling for updates only if Supabase Realtime fails to subscribe.
+            // The panelChannel subscribe callback sets window.__panelRealtimeOk; we check
+            // it before turning polling on. Slow interval (30s) + tab-visibility check so
+            // mobile devices don't burn battery in the background — was 3s + always-on,
+            // which spammed ~4 queries every 3 seconds even when realtime was healthy.
             let pollingInterval;
             function startPolling() {
-                console.log('🔄 Starting polling fallback (every 3 seconds)');
+                console.log('🔄 Starting polling fallback (every 30 seconds, paused when tab hidden)');
                 pollingInterval = setInterval(() => {
+                    if (document.hidden) return;
                     if (currentConversationId) {
                         loadMessages(currentConversationId);
                     }
                     loadUserConversations();
-                    // Also refresh AI notifications
                     if (currentMessagingTab === 'aiNotifications') {
                         loadAINotifications();
                     }
-                }, 3000);
+                }, 30000);
             }
 
-            // Start polling if real-time doesn't work after 10 seconds
-            // Note: messageChannel is not in scope here, so we'll just start polling as fallback
             setTimeout(() => {
-                console.log('⚠️ Starting fallback polling for messages');
+                if (window.__panelRealtimeOk) {
+                    console.log('✅ Realtime subscription active; skipping polling fallback');
+                    return;
+                }
+                console.log('⚠️ Realtime not ready after 10s; starting fallback polling');
                 startPolling();
             }, 10000);
         }
