@@ -1823,11 +1823,28 @@
                             default: orderColumn = 'created_at'; ascending = false;
                         }
 
-                        const { data, error } = await supabase
+                        let { data, error } = await supabase
                             .from('listings')
                             .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at, latitude, longitude')
                             .order(orderColumn, { ascending: ascending })
                             .limit(50);
+
+                        // Fallback if latitude/longitude columns aren't in the schema yet
+                        // (PostgreSQL error 42703 = undefined column). Apply
+                        // database/migrations/add_listings_coordinates.sql in the
+                        // Supabase SQL editor to flip on the cached-coords fast path.
+                        const isLatLngMissing = error && (
+                            error.code === '42703' ||
+                            /column[^.]*\.(latitude|longitude)[^.]* does not exist/i.test(error.message || '')
+                        );
+                        if (isLatLngMissing) {
+                            console.warn('⚠️ listings.latitude/longitude columns not present — falling back to legacy SELECT. Map will geocode via backend on every load until migration is applied.');
+                            ({ data, error } = await supabase
+                                .from('listings')
+                                .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
+                                .order(orderColumn, { ascending: ascending })
+                                .limit(50));
+                        }
 
                         const queryTime = Date.now() - startTime;
                         console.log('📊 Query completed in', queryTime, 'ms');
