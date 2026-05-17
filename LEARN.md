@@ -4,6 +4,26 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — auth.users / public.profiles data drift (orphan signups)
+
+Follow-up on the forgot-password investigation: when Hasan saw "Email already registered" for `cryptocoins0@yahoo.com` but the same email returned the silent-200 from `/api/send-reset-code`, it pointed at a deeper data-model split.
+
+**Audit (via service-role direct SQL through the management API):**
+- `auth.users`: 16 rows
+- `public.users`: 1 row (basically unused)
+- `public.profiles`: 10 rows
+- `auth.users` without a matching `public.profiles` by email: **11 of 16** — the orphan rate was huge, not a one-off.
+
+The orphans are users whose signup landed in Supabase Auth but never reached `public.profiles` — possibly mid-flight signup failures, or signups via a path that didn't include the profile insert. Every one of them gets locked out: signup blocks ("already registered"), forgot-password silently 200s ("if an account exists…"), no recovery.
+
+**Permanent fix (`database/migrations/auth_user_creates_profile.sql`):** added a trigger on `auth.users AFTER INSERT` that inserts a matching `public.profiles` row (`SECURITY DEFINER`, `WHERE NOT EXISTS` to stay idempotent). And a one-time backfill: every existing orphan got a profile row inserted, dropping the orphan count from 11 → 0 and surfacing `cryptocoins0@yahoo.com` into `profiles` so forgot-password can find it.
+
+**Why `profile.user_id` is left NULL on auto-created rows:** `profiles.user_id` is a FK to `public.users.id`, but `public.users` is nearly empty and we can't safely fabricate rows in it from a trigger without bigger schema decisions. The `/api/send-reset-code` handler only matches by email, so a null user_id doesn't break recovery. The data-model cleanup (consolidating to one users table) is a separate bigger task — flagging as a follow-up.
+
+**One detail to remember:** when sending DDL through the Supabase Management API (`POST /v1/projects/{ref}/database/query`), `$$ ... $$` function bodies inside a PowerShell **double-quoted** here-string get partially eaten by shell variable expansion. Use `@' ... '@` (single-quoted here-string) and Postgres `$func$ ... $func$` tagged dollar quotes to be safe.
+
+---
+
 ## 2026-05-17 — Forgot-password emails not arriving (TWO root causes stacked)
 
 A user (Hasan testing with `cryptocoins0@yahoo.com`) hit "Send Reset Code", UI said "We've sent a 6-digit code to ..." but nothing ever arrived. Diagnosis required hitting live infra; both findings would have stalled email delivery on their own.
