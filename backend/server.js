@@ -3723,35 +3723,46 @@ app.post('/api/reset-password', async (req, res) => {
                 const authUser = authUsers?.find(u => u.email === email);
                 
                 if (authUser) {
-                    // Update password in Supabase Auth (this will replace the old password)
+                    // Update password AND mark the email as confirmed in Supabase Auth.
+                    // email_confirm: true is critical for users who signed up but never
+                    // confirmed their email (auth.users.email_confirmed_at = NULL). Without
+                    // this, Supabase rejects every subsequent signInWithPassword with
+                    // "Email not confirmed" and the user stays locked out even though the
+                    // password was reset. The verified 6-digit code is proof enough that
+                    // they own the email — same semantic as clicking a confirmation link.
                     const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
                         authUser.id,
-                        { password: newPassword }
+                        { password: newPassword, email_confirm: true }
                     );
-                    
+
                     if (authUpdateError) {
                         console.error('❌ Failed to update password in Supabase Auth:', authUpdateError);
                         return res.status(500).json({ error: 'Failed to update password in authentication system' });
                     }
-                    
-                    console.log('✅ Password updated in Supabase Auth for:', email);
+
+                    console.log('✅ Password updated + email confirmed in Supabase Auth for:', email);
                 } else {
-                    console.log('⚠️ User not found in Supabase Auth, updating profiles table only');
-                    
-                    // Update password in profiles table as fallback
-                    const { error: updateError } = await supabase
-                        .from('profiles')
-                        .update({ 
-                            password: hashedPassword
-                        })
-                        .eq('email', email);
-                    
-                    if (updateError) {
-                        console.error('❌ Failed to update password in profiles:', updateError);
+                    console.log('⚠️ User not found in Supabase Auth — profiles.password is the only store for this account');
+                }
+
+                // Always also keep profiles.password in sync. If the user is auth-less,
+                // this is the primary password store — failure must surface as 500. If the
+                // user IS in auth.users, this is defense-in-depth (login's bcrypt fallback
+                // path); a sync failure here is logged but not fatal because Supabase Auth
+                // remains authoritative.
+                const { error: profileUpdateError } = await supabase
+                    .from('profiles')
+                    .update({ password: hashedPassword })
+                    .eq('email', email);
+
+                if (profileUpdateError) {
+                    if (!authUser) {
+                        console.error('❌ Failed to update password in profiles (no auth fallback):', profileUpdateError);
                         return res.status(500).json({ error: 'Failed to update password' });
                     }
-                    
-                    console.log('✅ Password updated in profiles table for:', email);
+                    console.warn('⚠️ profiles.password sync failed (auth.users still authoritative):', profileUpdateError.message);
+                } else {
+                    console.log('✅ profiles.password synced for:', email);
                 }
                 
                 // Also update in-memory if user exists there (replace old password)

@@ -4,6 +4,22 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Password reset succeeded, then login failed with "Email not confirmed"
+
+After `/api/reset-password` returned 200 and the green "Password Reset Successfully" page appeared, users with `auth.users.email_confirmed_at = NULL` couldn't log in. Supabase Auth's `signInWithPassword` rejects unconfirmed accounts before checking the password at all.
+
+The mismatch lived in `backend/server.js:3727` — the admin update call only passed `{ password: newPassword }`. So the new password landed but the email-confirmation flag stayed null. Especially common for the 11 backfilled orphans from this morning's `auth.users → profiles` trigger (they were in auth.users since 2025-08-05 with `email_confirmed_at` perpetually null).
+
+**Fix:**
+- Pass `email_confirm: true` alongside the password to `supabase.auth.admin.updateUserById`. Supabase Auth treats this as "force-mark the user's current email as confirmed" — semantically identical to them clicking a confirmation link, which is exactly what verifying the 6-digit reset code amounts to.
+- Restructured the reset flow so `profiles.password` is **always** synced after the auth.users update too. The old code's if/else made the two stores exclusive: if the user was in auth.users, the profile-password column was never updated. That broke login's fallback bcrypt path if Supabase Auth ever became unreachable. Now the sync is unconditional, with severity tiered: when the user is auth-less, profile-sync failure is a 500 (it's the only store); when auth.users is the authoritative path, sync failure is a `console.warn` and the request still returns success.
+
+**Pattern to remember:** anywhere a password-reset (or magic-link, or email-verify-by-code) flow proves the user owns an email by some out-of-band method, the handler should **also** set the email-confirmed flag at write time. Forgetting it leaves the user technically authenticatable but bureaucratically locked out — and the failure is invisible from the reset side, only surfacing on the next login attempt.
+
+**One more sanity rule from this session:** for ANY auth flow that has a "you just confirmed something" moment, the test isn't "did the write succeed" — it's "can the user actually log in now?" Always do the end-to-end login as part of the reset's verification.
+
+---
+
 ## 2026-05-17 — `delivered` ≠ inboxed: Yahoo silently drops resend emails
 
 After the sender swap (Track 1 from the prior fix) the *first* reset email landed and was opened (Brevo `opened` event confirmed). The Resend button fired a fresh `POST /api/send-reset-code` within two minutes — Brevo logged a clean `requests`→`delivered` pair, the browser showed "New code sent" — and the email never reached Yahoo inbox or spam. Hasan confirmed both folders.
