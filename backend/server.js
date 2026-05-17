@@ -4111,10 +4111,28 @@ app.post('/api/geocode/batch', async (req, res) => {
             console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set — coord writes will be blocked by RLS for non-owner rows');
         }
 
-        const { data: rows, error: fetchErr } = await supabase
+        let { data: rows, error: fetchErr } = await supabase
             .from('listings')
             .select('id, street, city, postalCode, country, latitude, longitude')
             .in('id', ids);
+
+        // Fallback if latitude/longitude columns aren't in the schema yet (pg 42703).
+        // Geocode still runs and returns coords; cache writes will fail per-row and
+        // surface as writeError in the response — caller treats it as a cache miss.
+        const latLngMissing = fetchErr && (
+            fetchErr.code === '42703' ||
+            /column[^.]*\.(latitude|longitude)[^.]* does not exist/i.test(fetchErr.message || '')
+        );
+        if (latLngMissing) {
+            console.warn('⚠️ listings.latitude/longitude columns not present — geocoding without cache. Apply database/migrations/add_listings_coordinates.sql.');
+            ({ data: rows, error: fetchErr } = await supabase
+                .from('listings')
+                .select('id, street, city, postalCode, country')
+                .in('id', ids));
+            if (rows) {
+                for (const r of rows) { r.latitude = null; r.longitude = null; }
+            }
+        }
 
         if (fetchErr) {
             console.error('❌ Supabase fetch error:', fetchErr);
