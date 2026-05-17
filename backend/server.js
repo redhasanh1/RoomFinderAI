@@ -3565,9 +3565,14 @@ app.post('/api/send-reset-code', async (req, res) => {
         }
         
         if (!user) {
-            // Don't reveal if user exists or not for security
-            return res.json({ 
-                message: 'If an account exists with this email, a reset code will be sent.',
+            // Anti-enumeration: still return 200 so we don't leak whether the email
+            // is registered, BUT soften the copy so users who typo'd or aren't signed
+            // up don't think their email is on its way and end up staring at an inbox.
+            // The defensive log makes the silent path visible in Railway logs — was
+            // invisible before, easy to miss when triaging "no email arrived" reports.
+            console.log('🔕 send-reset-code: no profile/user for email, returning silent 200:', email);
+            return res.json({
+                message: "If this email is registered, a 6-digit code is on its way. Didn't get it? Check spam, or make sure you signed up with this address.",
                 sessionId: uuidv4()
             });
         }
