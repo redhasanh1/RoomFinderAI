@@ -109,10 +109,11 @@
 .chat-modal {
     position: fixed;
     z-index: var(--z-modal);
-    right: 1rem;
-    /* bottom: 6rem clears the #messageToggleBtn (sits at bottom-8 + 56px tall ≈ 88px)
-       with a small gap, so the chat bubble doesn't sit on top of the toggle button. */
-    bottom: 6rem;
+    /* Bubble sits on the SAME bottom row as #messageToggleBtn but pushed to its left.
+       The toggle button is ~64px wide at right-8 (32px) — total ~96px of right-edge
+       real estate. right: 6.5rem (104px) leaves an 8px gap between bubble and button. */
+    right: 6.5rem;
+    bottom: 1rem;
     width: auto;
     height: auto;
     background: transparent;
@@ -505,11 +506,12 @@
         max-height: 95vh;
     }
 
-    /* Phones: chat spans the bottom edge but still sits above the floating toggle
-       button (~80px area: bottom-6 + 56px). 5.5rem = 88px gives an 8px gap. */
+    /* Phones: bubble sits to the LEFT of the toggle button on the same bottom row.
+       Toggle button is at right-6 (24px) + ~56px wide = ~80px right-edge real estate;
+       right: 5.5rem (88px) gives an 8px gap. The bubble narrows to fit. */
     .chat-modal {
-        right: 0.5rem;
-        bottom: 5.5rem;
+        right: 5.5rem;
+        bottom: 1rem;
         left: 0.5rem;
     }
 
