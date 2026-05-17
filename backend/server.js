@@ -32,16 +32,19 @@ const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING
     ? process.env.ENABLE_ANONYMOUS_BROWSING === 'true'
     : true;
 
-// Email configuration - Centralized for easy management
+// Email configuration - Centralized for easy management.
+// SENDER_EMAIL must be a verified sender in the active Brevo account (see Brevo
+// dashboard → Senders, Domains & dedicated IPs). `humblewoslayer@gmail.com` is
+// the current account's verified sender (id=1, name="roomfinderai"). The previous
+// value (wilmahenning01@gmail.com) was rejected by Brevo with "sender is not valid"
+// on every send, silently swallowing every reset email — see LEARN.md 2026-05-17.
+// Longer term: own a sender domain so we stop sending FROM @gmail.com.
 const EMAIL_CONFIG = {
-    // Use wilmahenning01@gmail.com as it's authorized in Brevo
-    // This prevents delivery issues due to SPF/DKIM/DMARC checks
-    SENDER_EMAIL: "wilmahenning01@gmail.com",
+    SENDER_EMAIL: "humblewoslayer@gmail.com",
     SENDER_NAME: "RoomFinderAI",
     PRIMARY_RECIPIENT: "roomfinderai@gmail.com",
-    BACKUP_RECIPIENT: "wilmahenning01@gmail.com",  // Backup to ensure delivery
-    // Set to true to send to both recipients, false for primary only
-    USE_BACKUP_RECIPIENT: false  // Disabled to avoid spam folder issues
+    BACKUP_RECIPIENT: "humblewoslayer@gmail.com",
+    USE_BACKUP_RECIPIENT: false
 };
 
 // Load config with error handling
