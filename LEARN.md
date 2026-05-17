@@ -4,6 +4,24 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Brevo silently rejects sends when sender isn't verified
+
+After regenerating the Brevo API key and redeploying, `/api/send-reset-code` returned 200 `"Reset code sent to your email"` and the handler logs said `✅ Password reset email sent successfully`. Inbox stayed empty. The handler looks like it succeeded, but the email never left Brevo.
+
+The truth was in `GET https://api.brevo.com/v3/smtp/statistics/events?email=…&limit=20`. Every send logged a `requests` event followed immediately by an `error` event:
+
+> "Sending has been rejected because the sender you used **wilmahenning01@gmail.com is not valid**. Validate your sender or authenticate your domain"
+
+So the API accepted the request (hence the 200), then Brevo's send pipeline rejected it because `EMAIL_CONFIG.SENDER_EMAIL` was a `@gmail.com` address that wasn't on the active Brevo account's verified-senders list. The new account (under `humblewoslayer@gmail.com`) had its own sender (also `humblewoslayer@gmail.com`, id=1, name `roomfinderai`) — but no longer wilma. The dead key from before this had probably been issued under a different Brevo account that still had wilma verified.
+
+**Fix:** changed `backend/server.js:36-45` `SENDER_EMAIL` and `BACKUP_RECIPIENT` from `wilmahenning01@gmail.com` to `humblewoslayer@gmail.com` (the verified sender on the active account). One commit, one Railway redeploy, sends started getting `delivered` events instead of `error`.
+
+**Pattern to remember:** when Brevo returns 200 to the API call but no email arrives, **don't trust the request-side response** — hit the **events log** endpoint (`/v3/smtp/statistics/events`). The events log distinguishes between "the API accepted your request" (`requests`), "Brevo's pipeline rejected it" (`error`), "the recipient mail server got it" (`delivered`), "they bounced it" (`bounced`), and so on. Status 200 on `POST /v3/smtp/email` is a *queueing* confirmation, not a *delivery* confirmation. We almost re-broke the whole investigation by trusting the 200.
+
+Also: `GET /v3/senders` lists the verified senders for the current key's account. Always check it before assuming a hard-coded sender is valid — it's a one-call read that tells you exactly which addresses Brevo will accept.
+
+---
+
 ## 2026-05-17 — auth.users / public.profiles data drift (orphan signups)
 
 Follow-up on the forgot-password investigation: when Hasan saw "Email already registered" for `cryptocoins0@yahoo.com` but the same email returned the silent-200 from `/api/send-reset-code`, it pointed at a deeper data-model split.
