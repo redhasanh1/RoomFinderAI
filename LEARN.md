@@ -4,6 +4,26 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Forgot-password emails not arriving (TWO root causes stacked)
+
+A user (Hasan testing with `cryptocoins0@yahoo.com`) hit "Send Reset Code", UI said "We've sent a 6-digit code to ..." but nothing ever arrived. Diagnosis required hitting live infra; both findings would have stalled email delivery on their own.
+
+**Cause 1 — Email not registered.** Queried `profiles?email=eq.cryptocoins0@yahoo.com` via the publishable key: zero rows. The handler at `backend/server.js:3528-3611` looks up the email in `profiles` then in-memory `users`, and when neither has it, returns a *silent 200* with the anti-enumeration message `"If an account exists with this email, a reset code will be sent."` — no code is generated, no Brevo call is made. The frontend at `forgot-password.html:236-279` treats any 200 as success and advances to the "Enter Reset Code" step. So unregistered emails got a confidently-successful UI with zero email actually queued.
+
+**Cause 2 — Brevo API key disabled on Railway.** Pulled the live `BREVO_API_KEY` from the Railway production env via the project token and hit `https://api.brevo.com/v3/account` with it: Brevo returned **401 "API Key is not enabled"**. So even if a registered user had requested a reset, the `sendPasswordResetEmail` axios call at `backend/server.js:1819` would have failed and the handler would have returned 500. The frontend would have shown an error toast — different failure mode, same outcome (no email).
+
+**Fix code-side (committed):**
+- Softened the no-user 200 response copy and matching `forgot-password.html` description so users who typo'd or aren't signed up don't keep staring at their inbox. Still returns 200 (no enumeration leak) but the body and the page both say "If this email is registered..." with a nudge to check spam or signup state.
+- Added `console.log('🔕 send-reset-code: no profile/user for email, returning silent 200:', email)` so the previously-invisible silent-200 path now shows up in Railway logs when triaging "no email arrived."
+
+**Fix infra-side (NOT code, requires Brevo dashboard):**
+- Re-enable the disabled `xkeysib-1d…` API key, OR generate a new SMTP API key and replace the `BREVO_API_KEY` value on Railway production. Whoever does it should also confirm `wilmahenning01@gmail.com` (the hard-coded `EMAIL_CONFIG.SENDER_EMAIL` at `backend/server.js:39`) is still verified in Brevo → Senders & IP, otherwise sends will 4xx with a sender-verification error.
+- The startup probe `testBrevoApiKey()` at `backend/server.js:87-118` will log `✅ Brevo API key is valid` (with account email) on healthy startup, or `🚨 BREVO_API_KEY appears to be invalid or expired` if it's still broken. Look for that line after redeploy to confirm.
+
+**Yahoo footnote.** Even with a healthy key, transactional mail to `@yahoo.com` lands in spam aggressively unless the sender domain has SPF/DKIM/DMARC configured. If real users on Yahoo continue not receiving emails, the next move is to add a verified sender domain in Brevo with DNS records — not another code change.
+
+---
+
 ## 2026-05-17 — Both bubble sides landed on the right + Realtime alone wasn't reliable
 
 After the first chat fix, Hasan reported: "the other person's message shows on the right side as well." Two layered bugs.
