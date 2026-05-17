@@ -4,6 +4,28 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Live chat delivery via Supabase Realtime broadcast (sub-100ms)
+
+Even with the postgres_changes subscription + 5s delta poll, messages between two open chats lagged enough that the user had to click back into the conversation to see them. `postgres_changes` watches the WAL, parses every INSERT, and evaluates RLS per subscriber — that's 500ms-2s of overhead per message, every time. The poll was the floor at 5s. Neither felt instant.
+
+**Switched to Supabase Realtime `broadcast` mode** for live delivery alongside (not replacing) the existing paths:
+
+- **Send-side:** after the DB INSERT in both `sendTextMessage` (line 2605) and the fallback `sendChatMessage` (line 5788), publish on `supabase.channel('chat-{conversationId}').send({ type: 'broadcast', event: 'new_message', payload: {...} })`. Fire-and-forget; the DB INSERT remains the source of truth so a broadcast failure is non-fatal.
+- **Receive-side:** at the top of `loadMessages` (line 3455), unsubscribe from any prior chat channel, then subscribe to the current conversation's `chat-{id}` broadcast channel. Handler appends a `.message.received` node and bumps `lastSeenMessageAt`. Stored on `window.__currentChatChannel` for the next subscribe to clean up.
+
+Latency went from 500ms-2s (postgres_changes) to ~30-150ms (direct WebSocket pub-sub, no DB involvement on the receive). The DB write happens in parallel for persistence; old messages still load via `SELECT` on conversation open.
+
+**Three delivery paths now coexist, all dedup'd by `lastSeenMessageAt`:**
+1. `broadcast` — sub-100ms, fires when both clients have the same chat open
+2. `postgres_changes` (existing) — fallback if broadcast isn't subscribed yet (e.g. timing race during chat open)
+3. 5s delta poll (existing) — safety net if Realtime is completely down
+
+**Why broadcast over postgres_changes for chat:** postgres_changes does heavy work (WAL parsing, RLS eval per subscriber) on every message. Broadcast is a thin pub-sub layer — no DB, no per-row policy check, scales linearly with active rooms instead of with total message volume. Persistence is still in Postgres; broadcast is purely the delivery channel. This is the recommended Supabase pattern for chat.
+
+**Cost / infra impact:** zero. Same Supabase plan, same DB, no new services.
+
+---
+
 ## 2026-05-17 — Password reset succeeded, then login failed with "Email not confirmed"
 
 After `/api/reset-password` returned 200 and the green "Password Reset Successfully" page appeared, users with `auth.users.email_confirmed_at = NULL` couldn't log in. Supabase Auth's `signInWithPassword` rejects unconfirmed accounts before checking the password at all.
