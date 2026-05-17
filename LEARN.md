@@ -4,6 +4,24 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — `delivered` ≠ inboxed: Yahoo silently drops resend emails
+
+After the sender swap (Track 1 from the prior fix) the *first* reset email landed and was opened (Brevo `opened` event confirmed). The Resend button fired a fresh `POST /api/send-reset-code` within two minutes — Brevo logged a clean `requests`→`delivered` pair, the browser showed "New code sent" — and the email never reached Yahoo inbox or spam. Hasan confirmed both folders.
+
+`delivered` is an SMTP-level event: Yahoo's edge server replied `250 OK` to the `DATA` command and the message was accepted into Yahoo's pipeline. After that, Yahoo's content/policy filters can silently discard before inbox or spam touch the message. Two compounding factors here:
+
+1. **SPF mismatch.** `From: humblewoslayer@gmail.com` over Brevo's relays. The SPF record at `gmail.com` authorizes only Google's IPs as senders for `gmail.com`, so Yahoo sees SPF-fail and slides toward quarantine.
+2. **Near-duplicate within 2 minutes.** Identical sender + identical subject (`"Reset your RoomFinderAI password"`) to the same recipient. Yahoo's dedup-style filter clamps down harder on the second message.
+
+**Real fix** is Track 2 — a custom sender domain (`mail.roomfinderai.com`) with SPF/DKIM/DMARC at the registrar. Hasan didn't have DNS access in this session so deferred. The two-line code stopgap shipped today:
+
+- **Subject variation per send** in `sendPasswordResetEmail()` (`backend/server.js:1768`): the subject now appends a `(H:MM AM/PM)` timestamp, so two consecutive resets have distinct subjects. Defeats both filter-side dedup and inbox-side threading.
+- **60s client cooldown on the Resend button** (`forgot-password.html:365+`): after a successful resend, the button locks for 60 seconds with a visible countdown (`Resend code in 60s` → … → re-enable). Prevents users from triggering rapid duplicates and keeps each send at a gap Yahoo treats as fresh. On error the button restores immediately so retries aren't blocked.
+
+**Pattern to remember:** Brevo's API returning 200 says the request was accepted. Brevo's `requests`+`delivered` event log says the recipient SMTP server accepted at protocol level. **Neither says "the user sees this in their inbox."** When users report missing mail despite green Brevo events, the answer is almost always at the recipient's content filter, and the diagnostic is: did delivery happen? (yes — Brevo `delivered`). Then the problem is post-delivery quarantine — there's nothing to fix on the sender side except reputation (sender domain + DKIM + rate hygiene). For high-stakes mail (password resets), always own your sender domain.
+
+---
+
 ## 2026-05-17 — Brevo silently rejects sends when sender isn't verified
 
 After regenerating the Brevo API key and redeploying, `/api/send-reset-code` returned 200 `"Reset code sent to your email"` and the handler logs said `✅ Password reset email sent successfully`. Inbox stayed empty. The handler looks like it succeeded, but the email never left Brevo.

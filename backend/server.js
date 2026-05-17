@@ -1765,7 +1765,13 @@ async function sendPasswordResetEmail(email, code, firstName) {
                 email: email,
                 name: firstName || 'User'
             }],
-            subject: "Reset your RoomFinderAI password",
+            // Append a short timestamp so each send has a distinct subject. Without
+            // this, Yahoo's anti-spam filter dedups near-identical messages from the
+            // same sender within a few minutes and silently drops the second one
+            // (a real "delivered but inboxed nowhere" failure mode we hit on resend).
+            // Once we move to a real sender domain + SPF/DKIM the dedup heuristic
+            // bites less, but keeping the variation is still useful.
+            subject: `Reset your RoomFinderAI password (${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })})`,
             htmlContent: `
                 <!DOCTYPE html>
                 <html>
