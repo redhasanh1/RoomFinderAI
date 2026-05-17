@@ -4,6 +4,20 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Both bubble sides landed on the right + Realtime alone wasn't reliable
+
+After the first chat fix, Hasan reported: "the other person's message shows on the right side as well." Two layered bugs.
+
+**Bug A — `margin-left/right: auto` doesn't right/left-align shrink-to-fit blocks.** `.message.sent` had `margin-left: auto` and `.message.received` had `margin-right: auto`. Auto margins absorb remaining space only when an element has a *defined* width. The message bubbles have `max-width: 80%` but no `width` — so the element's actual width is shrink-to-fit, and `auto` margins resolve to 0. Net effect: both sides hugged the start edge. **Fix:** made `.chat-messages` `display: flex; flex-direction: column;` and switched the bubbles to `align-self: flex-end` / `flex-start`. Bonus: also tightened bubble radius/padding for a more iMessage-like silhouette.
+
+**Bug B — case-sensitive sender comparison.** Both `loadMessages` and the Realtime handler did `message.sender_email === currentUser.email`. Stored email casing drifts (signup vs OAuth vs legacy rows), so a `User@Foo.com` row would never match the current `user@foo.com` user, and every message ended up classified as the "other party." **Fix:** `.toLowerCase()` on both sides of the comparison everywhere it appears (text-message render, file-message render, Realtime handler, delta poll).
+
+**Bug C — Realtime alone left users in the cold when the subscription silently failed.** Added a **delta-poll fallback**: a 5s `setInterval` that queries `messages WHERE conversation_id = current AND created_at > lastSeenMessageAt`. The watermark is seeded by `loadMessages` and advanced by both the Realtime handler and the poll, so the two paths never double-render. Most polls touch zero rows (cheap). The poll skips when `document.hidden` so background tabs don't drain battery. If Realtime delivers first, the poll finds nothing. If Realtime breaks, the poll catches up within 5s.
+
+**Known limitation to revisit:** the incremental append paths (Realtime + poll) only render text messages. File messages still wait for the next `loadMessages` cycle. Worth DRY-ing into a shared `appendMessageToChat(message, currentUser)` helper that mirrors `loadMessages`'s render logic for `message_type:'file'` once it matters.
+
+---
+
 ## 2026-05-17 — Chat live receive, files button gated to landlord, white receiver bubbles
 
 Three small bugs piled into the docked chat:

@@ -2287,6 +2287,12 @@
         // Chat Functionality
         let currentConversationId = null;
         let currentListing = null;
+        // ISO timestamp of the newest message we've already rendered in the open
+        // conversation. Both the Realtime handler and the delta-poll fallback use
+        // this to dedup, so messages can never double-render even when Realtime
+        // and polling both deliver the same row.
+        let lastSeenMessageAt = null;
+        let messagePollInterval = null;
 
         // Global chat system status tracking
         let chatSystemStatus = {
@@ -2781,10 +2787,18 @@
                         // which would clear-and-reload the whole conversation (expensive
                         // and races against optimistic send-side appends). Skip when the
                         // message is from the current user; the send handler already
-                        // appended it locally and we'd otherwise double-render.
+                        // appended it locally and we'd otherwise double-render. Email
+                        // comparison is case-insensitive — stored casings drift between
+                        // signup/OAuth/legacy rows.
                         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                         const chatMessagesContainer = document.getElementById('chatMessages');
-                        if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
+                        const isMine = payload.new.sender_email?.toLowerCase() === currentUser?.email?.toLowerCase();
+                        // Always advance the watermark so the delta poll won't refetch
+                        // this row, even when we skipped the append (own message echo).
+                        if (payload.new.created_at && (!lastSeenMessageAt || payload.new.created_at > lastSeenMessageAt)) {
+                            lastSeenMessageAt = payload.new.created_at;
+                        }
+                        if (chatMessagesContainer && !isMine) {
                             const msgEl = document.createElement('div');
                             msgEl.className = 'message received';
                             const msgP = document.createElement('p');
@@ -2809,6 +2823,49 @@
                         console.error('⏰ Subscription timed out');
                     }
                 });
+
+            // Delta poll fallback for the open conversation. Runs every 5s regardless
+            // of whether Realtime is reporting SUBSCRIBED — we trust whichever path
+            // delivers first, and lastSeenMessageAt prevents double-rendering. The
+            // query is bounded by `created_at > lastSeenMessageAt`, so 99% of polls
+            // touch zero rows and cost almost nothing. Skipped while tab is hidden.
+            if (!messagePollInterval) {
+                messagePollInterval = setInterval(async () => {
+                    if (document.hidden) return;
+                    if (!currentConversationId || !lastSeenMessageAt) return;
+                    try {
+                        const { data, error } = await supabase
+                            .from('messages')
+                            .select('*')
+                            .eq('conversation_id', currentConversationId)
+                            .gt('created_at', lastSeenMessageAt)
+                            .order('created_at', { ascending: true });
+                        if (error || !data || data.length === 0) return;
+                        const container = document.getElementById('chatMessages');
+                        if (!container) return;
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        const myEmailLower = currentUser?.email?.toLowerCase();
+                        for (const msg of data) {
+                            if (msg.created_at > lastSeenMessageAt) lastSeenMessageAt = msg.created_at;
+                            // Own messages are appended optimistically on send — skip echoes.
+                            if (msg.sender_email?.toLowerCase() === myEmailLower) continue;
+                            const msgEl = document.createElement('div');
+                            msgEl.className = 'message received';
+                            const msgP = document.createElement('p');
+                            msgP.textContent = msg.content || '';
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-timestamp';
+                            timeDiv.textContent = new Date(msg.created_at).toLocaleTimeString();
+                            msgEl.appendChild(msgP);
+                            msgEl.appendChild(timeDiv);
+                            container.appendChild(msgEl);
+                        }
+                        container.scrollTop = container.scrollHeight;
+                    } catch (e) {
+                        console.warn('Message delta-poll error:', e);
+                    }
+                }, 5000);
+            }
 
             // Mark chat system as successfully initialized
             chatSystemStatus.isInitialized = true;
@@ -3425,23 +3482,21 @@
                 
                 chatMessagesContainer.innerHTML = '';
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const myEmailLower = currentUser?.email?.toLowerCase();
                 console.log('👤 Current user for message display:', currentUser?.email);
 
                 messages.forEach((message, index) => {
-                    console.log(`💬 Processing message ${index + 1}:`, {
-                        sender: message.sender_email,
-                        content: message.content?.substring(0, 50) + '...',
-                        type: message.message_type,
-                        timestamp: message.created_at
-                    });
-                    
                     const messageElement = document.createElement('div');
-                    messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
+                    // Case-insensitive sender check: emails sometimes get stored with
+                    // mixed casing (e.g. signup vs OAuth flows). A strict === made
+                    // EVERYTHING land on one side (whichever the user's casing matched).
+                    const isMine = message.sender_email?.toLowerCase() === myEmailLower;
+                    messageElement.className = `message ${isMine ? 'sent' : 'received'}`;
                     
                     // Handle different message types
                     let messageContent;
                     if (message.message_type === 'file' && message.file_url) {
-                        const isOwner = message.sender_email === currentUser.email;
+                        const isOwner = isMine;
                         messageContent = `
                             <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                                 <div class="flex items-center space-x-2">
@@ -3466,6 +3521,10 @@
                 });
 
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                // Seed the delta-poll watermark from the newest message just rendered.
+                if (messages.length > 0) {
+                    lastSeenMessageAt = messages[messages.length - 1].created_at;
+                }
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
                 
             } catch (error) {
