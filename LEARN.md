@@ -4,6 +4,22 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Chat window covered the whole screen instead of docking bottom-right
+
+**Symptom:** opening a conversation on `listings.html` slammed a fullscreen modal with a blurred backdrop over the listings. Users couldn't see the listing they were chatting about.
+
+**Root cause:** `.chat-modal` and the generic `.modal` selector were grouped in `modules/css/components.css` (`.modal, .chat-modal { position:fixed; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(4px); }`). They share *most* properties — but they shouldn't share *positioning*. Same for `.modal-content, .chat-modal-content` in the responsive media queries.
+
+**Fix (`frontend/modules/css/components.css`):**
+- Unbundled `.modal` from `.chat-modal` in the base rule. `.modal` still goes fullscreen with backdrop (used by listing-details / generic dialogs). `.chat-modal` is now a bottom-right anchored bubble: `position:fixed; right:1rem; bottom:1rem; pointer-events:none` with no backdrop and no blur.
+- `.chat-modal-content` is a fixed 360 × 70vh box (max 560px tall, 360px min), flex-column for header / messages / input. Override rules inside `.chat-modal-content` strip the inner `.chat-messages` `min-height: 300px; max-height: 400px` so the messages area flexes within the bubble.
+- `.chat-header` now gets a small gradient bar (`#667eea → #764ba2`) like Messenger to give it a clear top affordance.
+- Mobile (`max-width: 480px`): bubble docks to the bottom edge with 0.5rem side margins so users can still see the listings above.
+
+**Side-effect to watch:** other modals using `.modal` keep their previous behavior — the unbundling didn't touch their rules. If any code was relying on `.chat-modal` having the same fullscreen overlay as `.modal` (e.g., to click outside to close), that click-outside path now does nothing because there's no backdrop element to click. The × close button still works.
+
+---
+
 ## 2026-05-17 — listings.html polled `loadUserConversations` every 3s, hammering Supabase
 
 **Symptom:** browser console on `listings.html` flooded with `📬 loadUserConversations called` / `Querying ALL conversations first...` / `Checking conv:` lines every 3 seconds. On mobile this would drain battery; on free-tier Supabase this would torch the rate limit.
