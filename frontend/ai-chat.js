@@ -348,8 +348,15 @@ class AIChatHandler {
                 this.saveConversationHistory();
             }
 
-            // Handle extracted criteria
+            // Handle extracted criteria. Augment OpenAI's price with a local range-aware
+            // pass — OpenAI often grabs just the lower bound of a range like "6k to 7k"
+            // and we want to search up to the MAX the user is willing to pay.
             if (chatResponse.criteria) {
+                const localMax = this.extractPriceFromMessage(message);
+                if (localMax && (!chatResponse.criteria.price || localMax > chatResponse.criteria.price)) {
+                    console.log('💰 Augmenting OpenAI budget with local range max:', localMax, '(OpenAI had:', chatResponse.criteria.price, ')');
+                    chatResponse.criteria.price = localMax;
+                }
                 this.handleExtractedData(chatResponse.criteria, chatResponse.response);
             }
 
@@ -453,19 +460,45 @@ class AIChatHandler {
         return chatResponse.criteria;
     }
 
+    // Range-aware budget extractor. Returns the MAX of any range expressed in the
+    // message, with `k` suffix support. Returns null if no plausible number found.
+    // Handles: "6k to 7k", "6000-7000", "$6,000 to $7,500", "between 5 and 7k",
+    //          "around 1500", "$6k", "max 7500". For ranges we use MAX because
+    //          when a user says "5 to 7k" they mean "willing to pay up to 7k".
+    extractPriceFromMessage(message) {
+        if (!message) return null;
+        const normalized = String(message).replace(/[$,]/g, '').toLowerCase();
+
+        // Range: two numbers connected by to/-/–/—/or/and/until/through, optional k on either
+        const range = normalized.match(/(\d+(?:\.\d+)?)\s*(k)?\s*(?:to|-|–|—|or|and|until|through)\s*(\d+(?:\.\d+)?)\s*(k)?/);
+        if (range) {
+            const useK = range[2] === 'k' || range[4] === 'k';
+            const a = parseFloat(range[1]) * (useK ? 1000 : 1);
+            const b = parseFloat(range[3]) * (useK ? 1000 : 1);
+            const max = Math.max(a, b);
+            if (max > 100) return max;
+        }
+
+        // Single value with optional intent prefix and optional k suffix
+        const single = normalized.match(/(?:under|below|max|up\s*to|for|at|around|about|near|roughly)?\s*(\d+(?:\.\d+)?)\s*(k)?/);
+        if (single) {
+            const value = parseFloat(single[1]) * (single[2] === 'k' ? 1000 : 1);
+            if (value > 100) return value;
+        }
+
+        return null;
+    }
+
     // Manual extraction fallback
     extractManually(message) {
         console.log('Using manual extraction for:', message);
         const result = {};
-        
-        // Extract price
-        const priceMatch = message.match(/(?:under|below|max|up to|for|at|around)?\s*\$?(\d{1,5})/i);
-        if (priceMatch) {
-            const extractedPrice = Number(priceMatch[1]);
-            if (extractedPrice > 100) {
-                result.price = extractedPrice;
-                console.log('💰 Extracted price:', extractedPrice);
-            }
+
+        // Extract price (range-aware, k-suffix-aware)
+        const extracted = this.extractPriceFromMessage(message);
+        if (extracted) {
+            result.price = extracted;
+            console.log('💰 Extracted price:', extracted);
         }
         
         // Extract city - international cities
