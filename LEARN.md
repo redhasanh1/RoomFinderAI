@@ -4,6 +4,20 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Map View only populated after a manual Refresh click
+
+**Symptom:** even with the coords cache fully populated, the map showed zero pinpoints on first load of listings.html. Markers only appeared after the user clicked the Refresh button.
+
+**Root cause:** `displayListings()` calls `updateMap(listings)` immediately after fetching, but at that moment `mapContainer` still has the `hidden` class (the page boots in Grid View). `initMap()` short-circuits when the container is hidden (line ~972), so `updateMap` runs against a non-initialized map. Then `setViewMode('map')` (the Map View toggle handler) tries `window.currentListings` to populate markers after the container becomes visible — but **nothing in the code ever assigns to `window.currentListings`**, so that fallback was effectively dead. Clicking Refresh ran `displayListings(true)` *with the map container now visible*, which is why it worked then and only then.
+
+**Fix (in `frontend/listings.html`):**
+1. In `displayListings()`, assign `window.currentListings = listings` right after the fetch succeeds. This makes the cached-listings fast path actually function.
+2. In the `setViewMode('map')` map-init callback, if `window.currentListings` is empty or missing, call `fetchListings()` inline before `updateMap()`. Belt-and-suspenders so the map populates even if the user toggles to Map View before the initial grid render finishes.
+
+**Smell to remember:** `if (window.foo)` reads with no corresponding writes are a classic dead-fallback pattern. Grep for the read AND the write before trusting a "lazy init via global" path.
+
+---
+
 ## 2026-05-17 — Google Maps Geocoding gated by billing; added Nominatim fallback
 
 **Symptom (follow-up to the map fix below):** after applying the migration and wiring the service role key into Railway, `/api/geocode/batch` returned `REQUEST_DENIED` for every listing. Hitting the Google Geocoding API directly with our `GOOGLE_API_KEY` returned `error_message: "You must enable Billing on the Google Cloud Project"`. The key is valid, but the GCP project that owns it never had billing enabled. (The free tier is generous — 40k geocodes/month — but Google still requires a billing account on file.)

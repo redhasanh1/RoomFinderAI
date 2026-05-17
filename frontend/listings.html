@@ -2014,6 +2014,11 @@
                 return;
             }
 
+            // Cache listings on window so the map toggle can re-render without refetching.
+            // setViewMode('map') reads window.currentListings — without this assignment the
+            // map only populated after a manual Refresh click.
+            window.currentListings = listings;
+
             console.log('📋 Fetched listings:', listings);
 
             // NOW clear container (after successful fetch)
@@ -5413,12 +5418,26 @@
                 if (typeof initMap === 'function') {
                     // Use requestAnimationFrame to ensure DOM is fully rendered
                     requestAnimationFrame(() => {
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             console.log('Initializing map after container is fully visible...');
                             initMap();
-                            // Also update markers if listings exist
-                            if (typeof updateMap === 'function' && window.currentListings) {
-                                setTimeout(() => updateMap(window.currentListings), 200);
+                            // Update markers. Use cached listings if available, otherwise
+                            // refetch — guarantees the map populates the first time the user
+                            // toggles to Map View, even if no prior fetch ran on this page.
+                            if (typeof updateMap === 'function') {
+                                let listings = window.currentListings;
+                                if (!listings || listings.length === 0) {
+                                    console.log('🔄 No cached listings; fetching for map view...');
+                                    try {
+                                        listings = await fetchListings();
+                                        if (listings && listings.length) window.currentListings = listings;
+                                    } catch (e) {
+                                        console.error('❌ Map-view listings fetch failed:', e);
+                                    }
+                                }
+                                if (listings && listings.length) {
+                                    setTimeout(() => updateMap(listings), 200);
+                                }
                             }
                         }, 150); // Delay for DOM reflow
                     });
