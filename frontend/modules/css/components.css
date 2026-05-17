@@ -259,10 +259,11 @@
 }
 
 .message.received {
-    background-color: white;
+    /* iMessage-style: light grey fill, no border. The grey is the affordance
+       on its own; adding a border on top looks like a generic chat app. */
+    background-color: #e9e9eb;
     color: var(--color-gray-800);
     margin-right: auto;
-    border: 1px solid var(--color-gray-200);
     border-bottom-left-radius: 0.25rem;
 }
 
