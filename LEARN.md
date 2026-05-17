@@ -4,6 +4,20 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Heart icons didn't restore the "favorited" state on listings.html
+
+**Symptom:** clicking the heart on a listing card saved it (visible on `favorites.html` / profile), but reloading `listings.html` showed every heart back in the outline/gray state — favorites weren't visually restored on revisit.
+
+**Root cause:** `loadFavoriteStates()` was calling `GET /api/favorites/${currentUser.id}` — an endpoint that doesn't exist. The backend has `GET /api/favorites?userEmail=...` (returns full listing rows for every favorite, expensive) and `POST /api/favorites/check` (returns just `{listing_id: bool}` for a set of IDs, cheap), but no `/api/favorites/:userId` route. So every `loadFavoriteStates` call silently 404'd. Separately, even when working, the function was only called from the auth-init code path; clicking the page's Refresh button re-rendered cards without re-running the state restore.
+
+**Fix (in `frontend/listings.html`):**
+1. Rewrote `loadFavoriteStates` to use `POST /api/favorites/check`. Collects the listing IDs of currently rendered `.favorite-btn` elements, sends them in one POST with `userEmail`, gets back a `{listingId: boolean}` map, flips the `data-favorited` attribute on matches. One round trip, one indexed SELECT on the backend, zero per-listing follow-up queries.
+2. Call `loadFavoriteStates()` from inside `displayListings()` after the cards render, in addition to the existing auth-init call. Fire-and-forget (not awaited), so it runs alongside the map update.
+
+**Why `/api/favorites/check` over `GET /api/favorites`:** the GET path loops `data.length` Supabase queries to fetch full listing details for every favorite — even ones not currently on screen. For our use case (just paint hearts on what's visible), `check` is dramatically less work both client- and server-side.
+
+---
+
 ## 2026-05-17 — Map View only populated after a manual Refresh click
 
 **Symptom:** even with the coords cache fully populated, the map showed zero pinpoints on first load of listings.html. Markers only appeared after the user clicked the Refresh button.
