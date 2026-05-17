@@ -4,6 +4,24 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — AI Negotiator sent 2-3 near-duplicate replies per landlord message
+
+When the landlord answered, the tenant saw 2-3 slightly-rephrased AI replies sent on their behalf within seconds of each other — each a separate OpenAI call landing in the chat thread. Embarrassing.
+
+**Root cause:** the `setupMessageListener` at `ai-negotiation.js:3480` opens a Supabase Realtime postgres_changes subscription on the entire `messages` table. *Every* browser tab/session running the AI Negotiator subscribes (tenant tab, landlord tab if they're also on the site, any duplicate session). When a landlord INSERT fires, **all subscribed sessions** see it and run the OpenAI generation locally — each gets its own slightly-different reply and each one calls `sendNegotiationMessage` which inserts to `messages`. N subscribers = N AI replies.
+
+**Fix in the handler at the top:**
+1. **Gate by participant role.** The AI Negotiator runs on the tenant's behalf, so only the tenant's session should generate the next reply. Compare `localStorage.currentUser.email` (case-insensitive) against `conversation.sender_email` (which is the tenant by convention). If they don't match, bail.
+2. **Per-message in-memory lock.** Even on the tenant's own session, the same INSERT can fire twice (re-subscribe, browser tab refocus, Supabase delivers a row twice on reconnect). Keep a `Set` of processed `newMessage.id` values on the instance and bail if already processed. Cheap, in-memory, no DB write.
+
+**Cache-buster bumped** on `ai-negotiator.html` so all browsers pick up the new file. Pattern: anytime we ship a behavior change to `ai-chat.js` or `ai-negotiation.js`, bump the `?v=` string in the script tag in the same commit. Without it, even a hard refresh can serve stale JS because of aggressive caching.
+
+**Open follow-up (separate fix):** AI Negotiator chat UI updates via `ai_chats` table postgres_changes — same 500ms-2s lag pattern we just resolved with broadcast for the listings chat. Same pattern would apply here. Punt to a separate change so this commit stays scoped to the dedup.
+
+**Pattern to remember:** any client-side Realtime handler that *writes* on event MUST be gated to a single owner per conversation/document, or it'll fire N times. The publish side is global by default — you scope it client-side.
+
+---
+
 ## 2026-05-17 — AI Negotiator parsed "6k to 7k" as $6,000 instead of $7,000
 
 User typed "6k to 7k" as their budget. The AI's natural-language reply correctly echoed "$6000 to $7000" (so the LLM understood the range), but the structured `criteria.price` from `/api/chat` came back as just `6000`. The frontend stored that as `userNeeds.maxPrice`, the Supabase search ran `lte('price', 6000)`, and the actual matching house at $6,375 fell off the "exact" results into the "similar listings" bucket with a useless "increase your budget above $6000" suggestion.
