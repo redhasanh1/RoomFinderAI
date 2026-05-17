@@ -1127,7 +1127,11 @@
             };
         }
 
-        // Update Map with Listings - Simplified and More Reliable
+        // Update Map with Listings.
+        // Coords source of truth = listings.latitude/longitude in the DB (populated
+        // by /api/geocode/batch). Anything missing both columns is sent to the
+        // backend in a single batch; the backend caches the result onto the row so
+        // subsequent loads skip geocoding entirely. No more per-listing Nominatim.
         async function updateMap(listings) {
             console.log('🗺️ Starting updateMap with', listings.length, 'listings');
 
@@ -1138,81 +1142,82 @@
                     console.error('❌ Failed to initialize map');
                     return;
                 }
-                // Wait for map to be ready
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
-            // ADDED: Ensure map size is correct before updating markers
             if (map) {
                 map.invalidateSize();
                 console.log('🔄 Map size invalidated before marker update');
             }
 
-            // Clear existing markers
-            console.log('Clearing existing markers...');
             markerClusterGroup.clearLayers();
             markers = [];
             const validCoordinates = [];
             let successfulMarkers = 0;
 
-            console.log('Processing listings for markers...');
-            
-            for (let i = 0; i < listings.length; i++) {
-                const listing = listings[i];
-                console.log(`\n📍 Processing listing ${i + 1}/${listings.length}:`, listing.title);
-                
-                const location = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
-                console.log('Full address:', location);
-                
-                if (!listing.street || !listing.city) {
-                    console.warn('⚠️ Listing missing required address components:', listing);
-                    // Still try to geocode with available data
+            // Partition: rows with cached coords vs rows that still need geocoding
+            const ready = [];
+            const needsGeocode = [];
+            for (const listing of listings) {
+                if (typeof listing.latitude === 'number' && typeof listing.longitude === 'number') {
+                    ready.push({ listing, lat: listing.latitude, lng: listing.longitude });
+                } else if (listing.id) {
+                    needsGeocode.push(listing);
                 }
+            }
+            console.log(`📊 Cached coords: ${ready.length}, need backend geocode: ${needsGeocode.length}`);
 
+            // Fetch any missing coords in ONE round trip; backend writes the
+            // results back to the row so this stays a one-time cost per listing.
+            if (needsGeocode.length > 0) {
                 try {
-                    // Get coordinates (this function now always returns coordinates)
-                    const coords = await geocodeLocation(location);
-                    console.log('Got coordinates:', coords);
-
-                    if (coords && !isNaN(coords.lat) && !isNaN(coords.lon)) {
-                        // Create simple, reliable marker
-                        const marker = L.marker([coords.lat, coords.lon], {
-                            title: listing.title
-                        });
-
-                        // Create simple popup
-                        const popupContent = `
-                            <div style="min-width: 200px; font-family: Arial, sans-serif;">
-                                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">${listing.title}</h3>
-                                <div style="color: #059669; font-weight: bold; font-size: 18px; margin-bottom: 6px;">$${listing.price.toLocaleString()}/mo</div>
-                                <div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">${location}</div>
-                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
-                                    ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
-                                </div>
-                                <a href="listing_details.html?id=${listing.id}" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
-                            </div>
-                        `;
-
-                        marker.bindPopup(popupContent, { maxWidth: 250 });
-                        
-                        // Add to cluster group
-                        markerClusterGroup.addLayer(marker);
-                        markers.push(marker);
-                        validCoordinates.push([coords.lat, coords.lon]);
-                        successfulMarkers++;
-                        
-                        console.log(`✅ Added marker ${successfulMarkers} for:`, listing.title, 'at', [coords.lat, coords.lon]);
+                    const response = await fetch('/api/geocode/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: needsGeocode.map(l => l.id) })
+                    });
+                    if (response.ok) {
+                        const json = await response.json();
+                        const coords = json.coords || {};
+                        for (const listing of needsGeocode) {
+                            const c = coords[listing.id];
+                            if (c && typeof c.lat === 'number' && typeof c.lng === 'number') {
+                                ready.push({ listing, lat: c.lat, lng: c.lng });
+                            } else {
+                                console.warn(`⚠️ No coords for "${listing.title}" (${listing.id}):`, c?.error || 'unknown');
+                            }
+                        }
+                        console.log(`✅ Backend returned coords for ${Object.keys(coords).length} listings`);
                     } else {
-                        console.error('❌ Invalid coordinates for:', listing.title);
+                        console.error('❌ /api/geocode/batch responded with HTTP', response.status);
                     }
-                } catch (error) {
-                    console.error('❌ Error processing listing:', listing.title, error);
+                } catch (err) {
+                    console.error('❌ Failed to call /api/geocode/batch:', err);
                 }
+            }
 
-                // Small delay between geocoding requests
-                if (i < listings.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
+            // Drop markers for everything we have coords for
+            for (const { listing, lat, lng } of ready) {
+                const location = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
+                const marker = L.marker([lat, lng], { title: listing.title });
+
+                const popupContent = `
+                    <div style="min-width: 200px; font-family: Arial, sans-serif;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">${listing.title}</h3>
+                        <div style="color: #059669; font-weight: bold; font-size: 18px; margin-bottom: 6px;">$${listing.price.toLocaleString()}/mo</div>
+                        <div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">${location}</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
+                            ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
+                        </div>
+                        <a href="listing_details.html?id=${listing.id}" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent, { maxWidth: 250 });
+                markerClusterGroup.addLayer(marker);
+                markers.push(marker);
+                validCoordinates.push([lat, lng]);
+                successfulMarkers++;
             }
 
             console.log(`\n🎯 Map update complete! Successfully added ${successfulMarkers} markers out of ${listings.length} listings`);
@@ -1820,7 +1825,7 @@
 
                         const { data, error } = await supabase
                             .from('listings')
-                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
+                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at, latitude, longitude')
                             .order(orderColumn, { ascending: ascending })
                             .limit(50);
 

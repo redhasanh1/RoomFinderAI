@@ -4073,6 +4073,113 @@ app.post('/api/analyze-property-photo', async (req, res) => {
 });
 
 // ========================================
+// FORWARD GEOCODING + CACHE (Google Maps -> listings.latitude/longitude)
+// ========================================
+
+/**
+ * POST /api/geocode/batch
+ * Body: { ids: ["uuid1", "uuid2", ...] }
+ * Response: { success: true, coords: { uuid1: { lat, lng, cached }, ... } }
+ *
+ * Per id: if the row already has latitude+longitude, returns them (cache hit, no
+ * Google call). Otherwise geocodes street+city+postalCode+country via Google Maps,
+ * writes the result back onto the row, and returns the coords. Bounded to 100 ids
+ * per call. Requires SUPABASE_SERVICE_ROLE_KEY on the backend so RLS does not block
+ * writes against rows owned by other users.
+ *
+ * Replaces the prior per-listing client-side Nominatim loop (rate-limited at
+ * 1 req/s, the root cause of empty maps).
+ */
+app.post('/api/geocode/batch', async (req, res) => {
+    console.log('📍 /api/geocode/batch called');
+
+    try {
+        const { ids } = req.body || {};
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'Body must be { ids: [uuid, ...] }' });
+        }
+        if (ids.length > 100) {
+            return res.status(400).json({ success: false, error: 'Max 100 ids per batch' });
+        }
+        if (!supabase) {
+            return res.status(503).json({ success: false, error: 'Supabase not initialized on backend' });
+        }
+        if (!GOOGLE_API_KEY) {
+            return res.status(503).json({ success: false, error: 'Google Maps API key not configured' });
+        }
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set — coord writes will be blocked by RLS for non-owner rows');
+        }
+
+        const { data: rows, error: fetchErr } = await supabase
+            .from('listings')
+            .select('id, street, city, postalCode, country, latitude, longitude')
+            .in('id', ids);
+
+        if (fetchErr) {
+            console.error('❌ Supabase fetch error:', fetchErr);
+            return res.status(500).json({ success: false, error: fetchErr.message });
+        }
+
+        const result = {};
+
+        for (const row of rows) {
+            if (row.latitude != null && row.longitude != null) {
+                result[row.id] = { lat: row.latitude, lng: row.longitude, cached: true };
+                continue;
+            }
+
+            const parts = [row.street, row.city, row.postalCode, row.country].filter(Boolean);
+            if (parts.length === 0) {
+                console.warn(`⚠️ Listing ${row.id} has no address components, skipping`);
+                result[row.id] = { error: 'no_address' };
+                continue;
+            }
+            const address = parts.join(', ');
+
+            try {
+                const geocodeRes = await axios.get(
+                    `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`,
+                    { timeout: 10000 }
+                );
+
+                if (geocodeRes.data.status !== 'OK' || !geocodeRes.data.results?.[0]) {
+                    console.warn(`⚠️ Geocode failed for ${row.id} (${address}):`, geocodeRes.data.status);
+                    result[row.id] = { error: geocodeRes.data.status || 'geocode_failed' };
+                    continue;
+                }
+
+                const loc = geocodeRes.data.results[0].geometry.location;
+                const lat = loc.lat;
+                const lng = loc.lng;
+
+                const { error: updateErr } = await supabase
+                    .from('listings')
+                    .update({ latitude: lat, longitude: lng, geocoded_at: new Date().toISOString() })
+                    .eq('id', row.id);
+
+                if (updateErr) {
+                    console.error(`❌ Coord write failed for ${row.id}:`, updateErr.message);
+                    result[row.id] = { lat, lng, cached: false, writeError: updateErr.message };
+                } else {
+                    result[row.id] = { lat, lng, cached: false };
+                    console.log(`✅ Geocoded + cached ${row.id}: ${address} → (${lat}, ${lng})`);
+                }
+            } catch (geoErr) {
+                console.error(`❌ Geocode exception for ${row.id}:`, geoErr.message);
+                result[row.id] = { error: geoErr.message };
+            }
+        }
+
+        res.json({ success: true, coords: result });
+
+    } catch (error) {
+        console.error('❌ /api/geocode/batch error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ========================================
 // REVERSE GEOCODING (OpenStreetMap Nominatim)
 // ========================================
 
