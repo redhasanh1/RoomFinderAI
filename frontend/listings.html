@@ -2777,20 +2777,26 @@
                     console.log('Message conversation ID:', payload.new.conversation_id);
                     
                     if (currentConversationId && currentConversationId === payload.new.conversation_id) {
-                        console.log('✅ Message is for current conversation!');
-                        
-                        // Reload messages to ensure we get the latest
-                        loadMessages(currentConversationId);
-                        
-                        // Also try instant append for better UX
+                        // Incremental append. Deliberately NOT calling loadMessages(),
+                        // which would clear-and-reload the whole conversation (expensive
+                        // and races against optimistic send-side appends). Skip when the
+                        // message is from the current user; the send handler already
+                        // appended it locally and we'd otherwise double-render.
                         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                         const chatMessagesContainer = document.getElementById('chatMessages');
-                        
                         if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
-                            console.log('🚀 Adding message instantly to UI');
+                            const msgEl = document.createElement('div');
+                            msgEl.className = 'message received';
+                            const msgP = document.createElement('p');
+                            msgP.textContent = payload.new.content || '';
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-timestamp';
+                            timeDiv.textContent = new Date(payload.new.created_at || Date.now()).toLocaleTimeString();
+                            msgEl.appendChild(msgP);
+                            msgEl.appendChild(timeDiv);
+                            chatMessagesContainer.appendChild(msgEl);
+                            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
                         }
-                    } else {
-                        console.log('❌ Message not for current conversation');
                     }
                 })
                 .subscribe((status) => {
@@ -3350,17 +3356,13 @@
             try {
                 await loadMessages(conversation.id);
                 
-                // Show file upload button only for listing owners
+                // Both parties (landlord + tenant) can send files. We still record
+                // isCurrentUserLandlord because other code paths read that flag for
+                // unrelated permissions, but the button itself is no longer gated.
                 const fileUploadBtn = document.getElementById('fileUploadBtn');
                 isCurrentUserLandlord = currentUser.email === listing.user_email;
                 if (fileUploadBtn) {
-                    if (isCurrentUserLandlord) {
-                        fileUploadBtn.classList.remove('hidden');
-                        console.log('📎 File upload enabled for listing owner (landlord)');
-                    } else {
-                        fileUploadBtn.classList.add('hidden');
-                        console.log('📎 File upload disabled for non-owner (tenant)');
-                    }
+                    fileUploadBtn.classList.remove('hidden');
                 }
                 console.log('🏠 User role:', isCurrentUserLandlord ? 'Landlord' : 'Tenant');
                 
@@ -4046,6 +4048,12 @@
             
             await loadMessages(conversationId);
             document.getElementById('chatModal').classList.add('active');
+
+            // Always surface the 📎 Files button on the docked bubble. startConversation()
+            // sets this for fresh-from-listing flows; this is the existing-conversation
+            // counterpart so the button doesn't stay hidden from a prior session's state.
+            const fileUploadBtn = document.getElementById('fileUploadBtn');
+            if (fileUploadBtn) fileUploadBtn.classList.remove('hidden');
             
             // Update database in background (don't wait)
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));

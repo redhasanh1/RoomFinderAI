@@ -4,6 +4,20 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Chat live receive, files button gated to landlord, white receiver bubbles
+
+Three small bugs piled into the docked chat:
+
+1. **Receiver messages didn't appear until refresh.** The Realtime `messageChannel` subscription (listings.html:2768) correctly detected when a new message belonged to the open conversation, but its handler called `loadMessages(currentConversationId)` (full clear + reload) AND had a dead `console.log('🚀 Adding message instantly to UI')` line under which the actual DOM append was never written. The full-reload path raced against the send handler's optimistic append and frequently lost the new message. **Fix:** in the Realtime handler, build a single `.message.received` DOM node from the payload and `appendChild` it (skipping when `payload.new.sender_email === currentUser.email` to avoid double-rendering the user's own send). No more `loadMessages` from realtime.
+
+2. **`📎 Files` button only visible to listing owners.** `startConversation()` had an explicit `if (isCurrentUserLandlord) { ...remove hidden } else { ...add hidden }` gate (lines ~3354-3364). Worse, `openConversationInModal()` — the path that fires when you click an existing conversation in the panel — never touched the button at all, so its visibility leaked across sessions. **Fix:** unconditionally `classList.remove('hidden')` on `fileUploadBtn` in both entry points. The upload pipeline behind it (file picker → Supabase Storage `chat-documents` bucket → message row with `message_type:'file'`) was already wired end-to-end, just gated for no good reason.
+
+3. **Receiver bubbles were white with a grey border.** Reads as a generic chat app. **Fix:** changed `.message.received` in `frontend/modules/css/components.css` from `background:white; border:1px solid gray-200` to `background:#e9e9eb` (iMessage iOS grey) with the border dropped entirely. Sender bubble (`.message.sent`) untouched — it was already correctly colored.
+
+**Pattern to remember:** when you see a dead `console.log(...)` like "🚀 Adding message instantly to UI" with no actual DOM/state code under it, that's almost always an abandoned implementation. The surrounding fallback (`loadMessages` here) is what's actually running and probably wasn't designed to carry the full load — re-evaluate before adding more around it.
+
+---
+
 ## 2026-05-17 — Chat window covered the whole screen instead of docking bottom-right
 
 **Symptom:** opening a conversation on `listings.html` slammed a fullscreen modal with a blurred backdrop over the listings. Users couldn't see the listing they were chatting about.
