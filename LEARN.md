@@ -4,6 +4,26 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — Supabase Realtime channels are global by name + a second landlord-reply path
+
+Two things bit us in the same investigation:
+
+**(1)** Error: `cannot add postgres_changes callbacks for realtime:conversation_X after subscribe()`. Source: `setupConversationAutoReply` in `ai-chat.js:1279` was called twice for the same `conversationId` after the user kicked off a second negotiation attempt on the same listing. Supabase's Realtime client maintains a global map keyed by channel name. `supabase.channel('conversation_X')` on the second call **returns the already-subscribed instance**, and `.on('postgres_changes', ...)` after `.subscribe()` is illegal. Fix: idempotency guard at the top of `setupConversationAutoReply` — bail if `this.autoReplyChannels.has(conversationId)`.
+
+**(2)** During the trace I discovered there are **two completely independent code paths** handling landlord replies in the AI Negotiator flow:
+- `setupMessageListener` in `ai-negotiation.js:3480` — global subscription on the `messages` table
+- `setupConversationAutoReply` in `ai-chat.js:1279` — per-conversation subscription
+
+Both call `handleLandlordReplyWithPhases` (an OpenAI call) and `sendNegotiationMessage`. The deterministic-UUID dedup (shipped earlier the same day) only worked when both call sites passed `respondsToMessageId` to `sendNegotiationMessage` — but `handleLandlordAutoReply` (the `ai-chat.js` path) was passing only 5 args, so its INSERT got a random UUID and never collided with the other path's deterministic one. User-visible duplicates leaked through despite the dedup.
+
+Fix: pass `landlordMessage.id` as the 6th arg from `ai-chat.js:1342`. Now both paths construct the same UUID for the AI response → Postgres PK uniqueness rejects the slower one → exactly one INSERT lands no matter how many parallel paths fired.
+
+**Pattern to remember:** when introducing a dedup token (deterministic id, claim row, etc.), **grep for every call site** of the function the token gates, not just the one you intended to fix. A second untouched call site nullifies the dedup completely.
+
+**Open follow-up:** the two landlord-reply paths are functionally redundant. Consolidate to a single owner (probably moving response generation to the backend so there's exactly one server-side worker). Dedup makes the current state user-safe but burns ~2× OpenAI quota per reply.
+
+---
+
 ## 2026-05-17 — AI Negotiator sent 2-3 near-duplicate replies per landlord message
 
 When the landlord answered, the tenant saw 2-3 slightly-rephrased AI replies sent on their behalf within seconds of each other — each a separate OpenAI call landing in the chat thread. Embarrassing.
