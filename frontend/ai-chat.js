@@ -1277,6 +1277,19 @@ class AIChatHandler {
 
     // Set up auto-reply for landlord responses
     setupConversationAutoReply(conversationId, negotiationId, listing) {
+        // Idempotency: Supabase's Realtime client tracks channels globally by name. If
+        // we call .channel('conversation_X') a second time, we get back the ALREADY
+        // SUBSCRIBED instance — calling .on('postgres_changes', ...) on it then throws
+        // "cannot add postgres_changes callbacks ... after subscribe()". Bail early
+        // when we've already wired this conversation. The autoReplyChannels Map is
+        // populated below at the same time the subscription is created, so it's the
+        // authoritative "already subscribed" signal.
+        if (!this.autoReplyChannels) this.autoReplyChannels = new Map();
+        if (this.autoReplyChannels.has(conversationId)) {
+            console.log('🔔 Auto-reply already set up for', conversationId, '— skipping duplicate subscription');
+            return;
+        }
+
         console.log('🔔 Setting up auto-reply listener for conversation:', conversationId);
 
         // Subscribe to new messages in this conversation
@@ -1337,14 +1350,20 @@ class AIChatHandler {
 
                 await new Promise(resolve => setTimeout(resolve, delay));
 
-                // Send the response
+                // Send the response. Pass landlordMessage.id as respondsToMessageId so
+                // sendNegotiationMessage uses the deterministic UUID for the INSERT.
+                // Without this, the parallel setupMessageListener path computes the
+                // dedup UUID but this path uses a random one, so both paths' INSERTs
+                // succeed — user sees duplicates. With it, both paths collide on the
+                // same primary key and Postgres rejects the slower one with 23505.
                 const userName = this.currentUser?.firstName || this.currentUser?.email?.split('@')[0] || 'Tenant';
                 const sent = await this.negotiationEngine.sendNegotiationMessage(
                     conversationId,
                     response.message,
                     this.currentUser.email,
                     listing.user_email,
-                    listing.title
+                    listing.title,
+                    landlordMessage.id
                 );
 
                 if (sent) {
