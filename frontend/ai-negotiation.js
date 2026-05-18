@@ -18,6 +18,14 @@ class AINegotiator {
     // HUMAN-LIKE CONVERSATION PHASE SYSTEM
     // ========================================
 
+    // Single source of truth for closing signals. Used by both
+    // detectPhaseTransition (landlord-side detection) and the post-response
+    // check (AI-side detection: if the AI itself just said "YES. Deal." we
+    // lock CLOSING so the next turn doesn't drift back into discovery
+    // questions). Expanding this regex was the fix for the "ok deal → AI
+    // asked about the neighborhood" bug.
+    CLOSING_SIGNALS_RE = /\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|call it (a )?day|when can you|let.?s do it|i.?ll take it|we.?ll take it|deal|agreed|sold|sounds good|works for me|that works|fine by me|happy with that)\b/i;
+
     // Conversation phases - mimics natural human-to-landlord flow
     CONVERSATION_PHASES = {
         INTRODUCTION: {
@@ -117,7 +125,9 @@ class AINegotiator {
                 has_parking: null,
                 pets_allowed: null,
                 landlord_said_yes_to_meet: false,
-                landlord_offered_closing: false
+                landlord_offered_closing: false,
+                landlord_last_named_price: null,  // most recent $X landlord mentioned
+                agreed_price: null               // set on numeric convergence
             },
             // alreadyAsked: simple set of topic keys we've already asked about.
             // The system prompt sees this and is instructed to NOT repeat.
@@ -191,6 +201,20 @@ class AINegotiator {
         if (dep && /deposit/.test(t) && !facts.deposit_amount) {
             facts.deposit_amount = parseInt(dep[1], 10);
         }
+
+        // Landlord's most recent named price (for numeric convergence on close).
+        // Captures "$5600", "5,600", "5600 a month", etc. Bounded to plausible
+        // monthly rent range so we don't trip on "I've lived here 4 months".
+        const priceMatches = text.match(/\$?\s*(\d{1,3}(?:[,]\d{3})+|\d{3,5})(?:\.\d{1,2})?/g);
+        if (priceMatches) {
+            for (const raw of priceMatches) {
+                const n = parseFloat(raw.replace(/[$,\s]/g, ''));
+                if (n >= 500 && n <= 50000) {
+                    facts.landlord_last_named_price = n;
+                    break; // first plausible number wins
+                }
+            }
+        }
     }
 
     // Returns flags for tone classification + closing detection. Independent
@@ -198,7 +222,7 @@ class AINegotiator {
     // needing to inspect facts.
     extractIntentFromLandlordMessage(text) {
         const t = String(text || '').toLowerCase();
-        const closing = /\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|call it (a )?day|when can you|let.?s do it|i.?ll take it|we.?ll take it)\b/i.test(t);
+        const closing = this.CLOSING_SIGNALS_RE.test(t);
         const frustrated = /(idgaf|wtf|stop|yes or no|just (say|tell)|\bfuck|done with|annoying|stop asking)/i.test(t);
         return { closing, frustrated };
     }
@@ -298,8 +322,7 @@ class AINegotiator {
         }
 
         // CLOSING signal trumps everything — landlord wants to wrap up.
-        const closingSignals = /\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|call it (a )?day|when can you|let.?s do it|i.?ll take it|we.?ll take it)\b/i;
-        if (closingSignals.test(message)) {
+        if (this.CLOSING_SIGNALS_RE.test(message)) {
             console.log('🔒 LANDLORD SIGNALED CLOSING — locking phase to CLOSING (terminal).');
             return 'CLOSING';
         }
@@ -749,6 +772,27 @@ Write 2-3 sentences negotiating naturally.`
             if (conversationState.facts.pets_allowed != null) conversationState.alreadyAsked.add('pets');
             if (conversationState.facts.listing_held_months != null) conversationState.alreadyAsked.add('duration');
 
+            // Numeric convergence check: if the landlord just named a price
+            // that matches a price the AI offered in its prior turn (within
+            // $50 tolerance), the deal is mutually accepted in numbers even
+            // if neither side wrote the word "deal". Locks CLOSING.
+            if (conversationState.facts.landlord_last_named_price && conversationState.currentPhase !== 'CLOSING') {
+                const lastAi = (conversationState.messageHistory || []).slice().reverse().find(m => m.sender === 'ai');
+                if (lastAi) {
+                    const aiPriceMatch = String(lastAi.content || '').match(/\$?\s*(\d{1,3}(?:,\d{3})+|\d{3,5})(?:\.\d{1,2})?/);
+                    if (aiPriceMatch) {
+                        const aiPrice = parseFloat(aiPriceMatch[1].replace(/,/g, ''));
+                        const landlordPrice = conversationState.facts.landlord_last_named_price;
+                        if (aiPrice >= 500 && Math.abs(aiPrice - landlordPrice) < 50) {
+                            console.log(`🤝 Numeric convergence at ~$${landlordPrice} (AI prior: $${aiPrice}). Locking CLOSING.`);
+                            conversationState.currentPhase = 'CLOSING';
+                            conversationState.facts.agreed_price = landlordPrice;
+                            conversationState.phaseHistory.push('CLOSING');
+                        }
+                    }
+                }
+            }
+
             // Detect phase transition
             const newPhase = this.detectPhaseTransition(
                 landlordMessage,
@@ -791,6 +835,21 @@ Write 2-3 sentences negotiating naturally.`
             // as shared so future prompts know not to repeat them.
             if (conversationState.currentPhase === 'QUALIFICATION') {
                 conversationState.alreadySharedCredentials = true;
+            }
+
+            // Closing detection on the AI's OWN response. The bug we just hit:
+            // AI said "YES. Deal." but the next landlord message ("ok deal")
+            // came in while phase was still ACTIVE_NEGOTIATION, so the AI
+            // produced a rapport-style reply ("what's the neighborhood like?").
+            // By inspecting our own output for closing intent right after
+            // validateAndRepair, we lock CLOSING *before* the next inbound
+            // message arrives — its handler then renders a calm confirmation
+            // instead of restarting discovery.
+            if (this.CLOSING_SIGNALS_RE.test(responseMessage) && conversationState.currentPhase !== 'CLOSING') {
+                console.log('🔒 AI itself signaled acceptance — locking phase to CLOSING.');
+                conversationState.currentPhase = 'CLOSING';
+                conversationState.phaseHistory.push('CLOSING');
+                conversationState.facts.landlord_said_yes_to_meet = true;
             }
 
             // Record our response

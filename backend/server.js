@@ -5236,6 +5236,8 @@ function summarizeFacts(facts) {
     if (facts.proposed_meet_date) parts.push(`landlord proposed meeting: ${facts.proposed_meet_date}`);
     if (facts.deposit_amount) parts.push(`deposit: $${facts.deposit_amount}`);
     if (facts.landlord_offered_closing) parts.push('landlord wants to CLOSE');
+    if (facts.landlord_last_named_price) parts.push(`landlord last named: $${facts.landlord_last_named_price}`);
+    if (facts.agreed_price) parts.push(`AGREED PRICE: $${facts.agreed_price}`);
     return parts.length ? parts.join('; ') : '(none yet)';
 }
 
@@ -5252,10 +5254,19 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
     const lastLandlordMessage = context.lastLandlordMessage || '';
 
     if (phase === 'CLOSING') {
+        // If the deal is already verbally accepted (numeric convergence OR
+        // both sides used closing words), shift the prompt from "agree" to
+        // "confirm next steps" — this is the bug fix for the AI asking
+        // "what's the neighborhood like?" after both sides said "deal".
+        const agreedPrice = facts?.agreed_price;
+        const dealClosedHint = agreedPrice
+            ? `\nDEAL ALREADY VERBALLY ACCEPTED at $${agreedPrice}/month. Do NOT renegotiate the price. Just confirm logistics: meeting time, deposit, or "see you ${facts.proposed_meet_date || 'then'}".`
+            : '';
+
         return `You are closing a rental deal. The landlord is ready to sign and JUST signaled it.
 
 LANDLORD JUST SAID: "${lastLandlordMessage}"
-KNOWN FACTS: ${factsSummary}
+KNOWN FACTS: ${factsSummary}${dealClosedHint}
 
 HARD RULES — VIOLATION OF ANY RULE = IMMEDIATE REJECTION:
 - Reply in 12 words or fewer.
@@ -5263,7 +5274,9 @@ HARD RULES — VIOLATION OF ANY RULE = IMMEDIATE REJECTION:
 - If they propose a time/place/day: reply "Yes, that works. See you ${facts?.proposed_meet_date || 'then'}." or equivalent confirmation.
 - If they ask yes/no: answer YES.
 - No emojis. No "Hey there!". No filler. Sound calm and direct.
-- DO NOT pitch credentials. DO NOT ask about laundry/parking/duration — already known or no longer relevant.
+- DO NOT pitch credentials. DO NOT ask about laundry/parking/duration/neighborhood — already known or no longer relevant.
+- DO NOT reintroduce discovery topics like the neighborhood, the apartment layout, or anything unrelated to closing.
+${agreedPrice ? `- Price ($${agreedPrice}) is FINAL. Do not negotiate it again or restate it as an offer.` : ''}
 
 Write the confirmation message now.`;
     }

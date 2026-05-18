@@ -4,6 +4,28 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — AI Negotiator: detect mutual close from BOTH sides, not just landlord
+
+Replay from a real negotiation: landlord says "can we meet at 5,600 a month?", the AI replies "YES. Deal.", landlord follows up with "ok deal", and the AI's next message was "Honestly, sounds good! What's the neighborhood like?" — full rapport-style reset on top of an already-closed deal.
+
+Three problems compounded:
+
+1. **The closing-signal regex was missing bare-word agreement keywords.** It had `done deal`, `let's do it`, `meet`, `deposit`, etc. but not standalone `deal`, `agreed`, `sold`, `sounds good`, `works for me`. The landlord's "ok deal" never tripped the CLOSING ratchet.
+2. **The closing detector only inspected the LANDLORD's message, never the AI's own response.** When the AI wrote "YES. Deal." that was the moment the deal closed — but the state machine wasn't listening on that side, so phase stayed in ACTIVE_NEGOTIATION and the next prompt was generated as a regular negotiation message.
+3. **No numeric-convergence safety net.** Even if neither side wrote the word "deal," the moment landlord names a price equal to one the AI just offered, the deal is mutually accepted. Pure keyword matching misses this; price matching catches it.
+
+**Fix (in `frontend/ai-negotiation.js` + a small prompt tweak in `backend/server.js`):**
+
+- Extracted the closing-signals regex into a class field `CLOSING_SIGNALS_RE` (single source of truth, used by both `detectPhaseTransition` for landlord-side and the new post-response check for AI-side). Expanded the keyword list: `deal | agreed | sold | sounds good | works for me | that works | fine by me | happy with that`. Avoided bare `ok` (too noisy).
+- Added a post-`validateAndRepair` check in `handleLandlordReplyWithPhases`: if the AI's own final message matches `CLOSING_SIGNALS_RE`, lock phase to CLOSING immediately so the NEXT inbound landlord message hits a phase-locked prompt and renders a confirmation instead of restarting discovery.
+- Added `landlord_last_named_price` to the `facts` object and a numeric-convergence check: if the landlord names a price within $50 of one the AI offered in a prior turn, the deal is converged → lock CLOSING + set `facts.agreed_price`. The CLOSING system prompt now sees `AGREED PRICE: $X` in its KNOWN FACTS block and shifts from "agree to a price" to "confirm logistics: meeting time, deposit, address."
+
+**Pattern to remember:** for any phase-locked state machine driven by external messages, run the same detector against your own outbound messages too. The moment YOU emit a state-transitioning signal, the state should flip — waiting for the other side's next message to "confirm" creates a window where you'll produce another message in the wrong state and embarrass yourself.
+
+Cache-buster: `?v=20260517-close-the-deal`.
+
+---
+
 ## 2026-05-17 — AI Negotiator chat history now persists across sessions
 
 User exited `ai-negotiator.html` and returned — chat was gone. The save/load functions in `frontend/ai-chat.js:1384-1396` were both `return;` stubs with the comment "Disabled - table doesn't exist." Confirmed via Supabase Management API that `public.ai_chat_history` indeed didn't exist. The intent was there, the table just never got provisioned.
