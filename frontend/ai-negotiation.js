@@ -3558,7 +3558,7 @@ Generate ONLY the message. No greetings, no signatures.
 
                         // Per-message lock: if we already started processing this exact
                         // landlord message, skip. Cheap in-memory guard against the same
-                        // browser firing twice for any reason (re-subscribe, duplicate
+                        // INSTANCE firing twice for any reason (re-subscribe, duplicate
                         // INSERT events, etc.).
                         if (!this._processedLandlordMessages) this._processedLandlordMessages = new Set();
                         if (this._processedLandlordMessages.has(newMessage.id)) {
@@ -3566,6 +3566,28 @@ Generate ONLY the message. No greetings, no signatures.
                             return;
                         }
                         this._processedLandlordMessages.add(newMessage.id);
+
+                        // DB-level lock across instances: another AINegotiator instance
+                        // (different tab, different page in the same browser, etc.) has
+                        // its own _processedLandlordMessages Set, so the in-memory gate
+                        // can't catch cross-instance duplicates. Check Postgres for an
+                        // existing AI reply timestamped after this landlord message — if
+                        // any session already responded, we don't generate another.
+                        try {
+                            const { data: alreadyResponded } = await this.supabase
+                                .from('messages')
+                                .select('id')
+                                .eq('conversation_id', newMessage.conversation_id)
+                                .eq('sender_email', 'ai-negotiator@roomfinder.com')
+                                .gt('created_at', newMessage.created_at)
+                                .limit(1);
+                            if (alreadyResponded && alreadyResponded.length > 0) {
+                                console.log('📨 AI already responded in DB for this landlord message — another session won the race, skipping');
+                                return;
+                            }
+                        } catch (lockErr) {
+                            console.warn('⚠️ DB dedup check failed (proceeding anyway):', lockErr.message);
+                        }
                         
                         console.log('📨 Found conversation:', conversation);
                         
