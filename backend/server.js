@@ -5221,9 +5221,79 @@ async function requireAuth(req, res, next) {
 }
 
 // POST /api/negotiate/phase-message - Generate phase conversation message (GPT-4)
+// Format the structured facts memory into a 1-2 line summary the prompt can
+// include cheaply (vs sending the entire raw chat history every turn).
+function summarizeFacts(facts) {
+    if (!facts) return '(none yet)';
+    const parts = [];
+    if (facts.listing_held_months != null) parts.push(`landlord has had place for ${facts.listing_held_months} months`);
+    if (facts.has_laundry === true) parts.push('laundry: yes');
+    else if (facts.has_laundry === false) parts.push('laundry: no');
+    if (facts.has_parking === true) parts.push('parking: yes');
+    else if (facts.has_parking === false) parts.push('parking: no');
+    if (facts.pets_allowed === true) parts.push('pets: allowed');
+    else if (facts.pets_allowed === false) parts.push('pets: NOT allowed');
+    if (facts.proposed_meet_date) parts.push(`landlord proposed meeting: ${facts.proposed_meet_date}`);
+    if (facts.deposit_amount) parts.push(`deposit: $${facts.deposit_amount}`);
+    if (facts.landlord_offered_closing) parts.push('landlord wants to CLOSE');
+    return parts.length ? parts.join('; ') : '(none yet)';
+}
+
+// Phase-locked / tone-locked system prompt. CLOSING and FRUSTRATED override
+// the regular per-phase prompt entirely; other phases use the existing prompt
+// builder but prepend the structured-memory summary. This is the prompt
+// engineering that prevents the AI from re-asking already-answered questions
+// and from cheerfully spamming a hostile landlord.
+function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alreadySharedCredentials, context }) {
+    const factsSummary = summarizeFacts(facts);
+    const askedSummary = Array.isArray(alreadyAsked) && alreadyAsked.length
+        ? alreadyAsked.join(', ')
+        : 'nothing yet';
+    const lastLandlordMessage = context.lastLandlordMessage || '';
+
+    if (phase === 'CLOSING') {
+        return `You are closing a rental deal. The landlord is ready to sign and JUST signaled it.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}
+
+HARD RULES — VIOLATION OF ANY RULE = IMMEDIATE REJECTION:
+- Reply in 12 words or fewer.
+- DO NOT ask any questions. Zero. None.
+- If they propose a time/place/day: reply "Yes, that works. See you ${facts?.proposed_meet_date || 'then'}." or equivalent confirmation.
+- If they ask yes/no: answer YES.
+- No emojis. No "Hey there!". No filler. Sound calm and direct.
+- DO NOT pitch credentials. DO NOT ask about laundry/parking/duration — already known or no longer relevant.
+
+Write the confirmation message now.`;
+    }
+
+    if (tone === 'FRUSTRATED') {
+        return `The landlord is hostile or annoyed. Repair the conversation and close immediately.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}
+
+HARD RULES:
+- Open with a 3-word apology max ("My bad — sorry.").
+- Then move straight to closing intent ("I'm in. When can we meet?").
+- 15 words TOTAL maximum.
+- No emojis. No exclamation points. No "Hey there!". No filler.
+- DO NOT pitch credentials again. DO NOT ask discovery questions.
+
+Write the damage-control reply now.`;
+    }
+
+    // Default: reuse the existing per-phase prompt builder but prepend our
+    // structured-memory summary so the AI literally cannot ask about a fact
+    // we already know or re-ask a question we've already asked.
+    const memoryHeader = `\n\nSTRUCTURED MEMORY (use this, DO NOT re-ask):\n- KNOWN FACTS: ${factsSummary}\n- ALREADY ASKED: ${askedSummary}\n- CREDENTIALS SHARED: ${alreadySharedCredentials ? 'YES — DO NOT repeat them' : 'no — okay to mention once if natural'}\n\nHARD RULES:\n- First sentence: acknowledge the landlord's last reply specifically.\n- Then ask AT MOST ONE new question that is NOT in ALREADY ASKED.\n- Never re-ask a topic in KNOWN FACTS.\n- Under 35 words.\n`;
+    return buildNegotiationSystemPrompt(phase, context) + memoryHeader;
+}
+
 app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, res) => {
     try {
-        const { phase, context, messageHistory } = req.body;
+        const { phase, context, messageHistory, tone, facts, alreadyAsked, alreadySharedCredentials } = req.body;
 
         if (!phase) {
             return res.status(400).json({ error: 'Phase is required' });
@@ -5238,11 +5308,31 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             lastLandlordMessage: sanitizeForPrompt(context?.lastLandlordMessage, 500)
         };
 
-        const systemPrompt = buildNegotiationSystemPrompt(phase, safeContext);
+        // New phase-locked prompt when the frontend sends the structured fields;
+        // falls back to the legacy prompt path for old clients that haven't been
+        // updated yet (no tone/facts in the request body).
+        const hasStructuredFields = tone != null || facts != null || Array.isArray(alreadyAsked);
+        const systemPrompt = hasStructuredFields
+            ? buildPhaseLockedSystemPrompt({
+                phase,
+                tone,
+                facts: facts || {},
+                alreadyAsked: alreadyAsked || [],
+                alreadySharedCredentials: !!alreadySharedCredentials,
+                context: safeContext
+            })
+            : buildNegotiationSystemPrompt(phase, safeContext);
+
         const messages = [{ role: 'system', content: systemPrompt }];
 
-        if (messageHistory && Array.isArray(messageHistory)) {
-            const recent = messageHistory.slice(-6);
+        // In CLOSING/FRUSTRATED we DON'T send the chat history — the prompt has
+        // everything it needs from KNOWN FACTS + the last landlord message, and
+        // the history is the main source of "repeat your credentials again"
+        // hallucinations. For other phases, pass last 4 (down from 6) for the
+        // model to stay grounded without ballooning tokens.
+        const shouldIncludeHistory = !(phase === 'CLOSING' || tone === 'FRUSTRATED');
+        if (shouldIncludeHistory && messageHistory && Array.isArray(messageHistory)) {
+            const recent = messageHistory.slice(-4);
             for (const msg of recent) {
                 messages.push({
                     role: msg.sender === 'ai' ? 'assistant' : 'user',
@@ -5255,14 +5345,20 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             messages.push({ role: 'user', content: safeContext.lastLandlordMessage });
         }
 
+        // Tighter generation knobs in locked modes: lower max_tokens makes the
+        // model physically unable to ramble; lower temperature reduces the
+        // chance it improvises a question we explicitly forbade.
+        const maxTokens = (phase === 'CLOSING') ? 60 : (tone === 'FRUSTRATED') ? 80 : 250;
+        const temperature = (phase === 'CLOSING' || tone === 'FRUSTRATED') ? 0.3 : 0.8;
+
         const result = await callOpenAI({
             messages,
             model: 'gpt-4',
-            maxTokens: 250,
-            temperature: 0.8
+            maxTokens,
+            temperature
         });
 
-        res.json({ response: result.content, tokensUsed: result.tokensUsed });
+        res.json({ response: result.content, tokensUsed: result.tokensUsed, phase, tone });
 
     } catch (error) {
         console.error('Error in /api/negotiate/phase-message:', error.message);

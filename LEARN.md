@@ -4,6 +4,39 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — AI Negotiator: phase-locked engine + structured fact memory
+
+The negotiator ran against a real landlord and bombed: re-pitched credentials four times, asked "is there laundry?" five seconds after the landlord said "4 months and laundry is available," ignored "we can meet tomorrow for the deposit" with another rapport question, and stayed cheerful while the landlord typed "stop fucking asking questions". The transcript was a stack of failures, not a single bug.
+
+**Root causes mapped to the code:**
+- Phases (`CONVERSATION_PHASES` in `frontend/ai-negotiation.js:22`) auto-progressed forward but had no terminal lock. `ACTIVE_NEGOTIATION` was the last phase and didn't *prohibit* discovery questions. Closing signals from the landlord (meet/deposit/sign/tomorrow) never short-circuited the discovery script.
+- The full raw `messageHistory` array was pumped into the OpenAI prompt on every turn (`backend/server.js:5244-5251`). The AI re-derived "what does the landlord care about" each call instead of being told. Result: it asked questions whose answers were already in the history, because the prompt put no structure on them.
+- A `negotiation.memory` object existed (`landlordConcerns`, `topicsDiscussed`, `rapportLevel`...) but was orphaned — `buildPhaseContext` never read it. Compute without consumers.
+- Tone was detected (`getToneProfile:1236`) but only tweaked tactic *selection* — the system prompt itself didn't change shape under hostility, so the AI kept its cheerful "Hey there! 😄" register against a furious landlord.
+- There was no output validator. The model could spit out three trailing questions in CLOSING mode and they'd ship unchanged.
+
+**The fix — four layers, all default-on:**
+
+1. **Structured fact memory.** `conversationState.facts` carries typed, monotonically-growing fields (`listing_held_months`, `has_laundry`, `proposed_meet_date`, etc.). `extractFactsFromLandlordMessage` is a pure JS regex pass — runs before any LLM call. Once a fact is set, it never gets cleared, so the AI literally cannot forget. `conversationState.alreadyAsked` is a `Set` of topics we've put a question on; `alreadySharedCredentials` flips once after the QUALIFICATION pitch.
+
+2. **Forward-only phase lock.** Added `CLOSING` to `CONVERSATION_PHASES`. `detectPhaseTransition` now checks a closing-signals regex FIRST — `meet|deposit|sign|lease|tomorrow|address|move in|done deal|I'll take it` etc. Any hit → immediate jump to `CLOSING`, which is terminal (can't downgrade). Parallel `tone` axis tracks `NEUTRAL | ENGAGED | FRUSTRATED`; FRUSTRATED is **sticky** so apologetic mode doesn't unset because the landlord typed one calm word.
+
+3. **Phase-locked system prompts (backend).** `/api/negotiate/phase-message` now accepts `{ tone, facts, alreadyAsked, alreadySharedCredentials }`. The new `buildPhaseLockedSystemPrompt` ignores the legacy generator entirely for `CLOSING` (≤12 words, **DO NOT ask questions**, "Yes, that works") and `FRUSTRATED` (3-word apology, ≤15 words, no emojis). Other phases use the existing builder but get a `STRUCTURED MEMORY` header so the prompt sees what's known and what's been asked. Chat history is **omitted entirely** in CLOSING/FRUSTRATED (it's the main hallucination source for "repeat credentials"). max_tokens drops to 60/80 in locked modes — model can't ramble even if the prompt fails. temperature drops to 0.3.
+
+4. **Output validator (frontend).** `validateAndRepair` post-processes the model's response. In CLOSING: strips trailing questions, hard-replaces with `"Yes, that works. See you ${facts.proposed_meet_date || 'then'}."` if the model emitted any `?`. Caps at 15 words. In FRUSTRATED tone: strips all emojis and replaces multi-question/long replies with `"Sorry about that. I'm in — let's meet."`. Also gates the cheerful `addHumanVariations` filler so it doesn't run in either locked mode.
+
+**Token budget** (estimate): the legacy path sent ~10K tokens per 8-message negotiation; the structured-memory path is ~1.5-2K because the bulky chat history is replaced by a 1-2 line `KNOWN FACTS:` summary. Roughly 5× cheaper, and the response quality is *higher* because the model is given exactly the structured signal it was previously meant to derive from raw text.
+
+**Patterns to remember:**
+- LLMs hallucinate when the prompt asks them to do bookkeeping that the application should be doing. Extract facts in code, not in the prompt.
+- A "phase machine" without a *terminal lock* and *forward-only ratchet* is just a list of suggestions — the model will downgrade itself back into discovery questions if the previous prompt suggested it.
+- Tone detection that only feeds tactic selection is half the work. The system prompt must change shape under hostility.
+- Output validation is a strict net, not a polite filter — when the model violates a hard constraint (questions in CLOSING), replace the whole message, don't trim around the edges.
+
+**Cache-buster:** `?v=20260517-phase-locked` on `ai-negotiator.html`.
+
+---
+
 ## 2026-05-17 — Supabase Realtime channels are global by name + a second landlord-reply path
 
 Two things bit us in the same investigation:
