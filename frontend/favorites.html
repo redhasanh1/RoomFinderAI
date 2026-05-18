@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>RoomFinderAI - Favorites</title>
+
+    <!-- Google AdSense -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5195773691165769"
+         crossorigin="anonymous"></script>
+
+    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
+    <script src="universal-auth-protection.js"></script>
+
+    <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="universal-auth-manager.js"></script>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
+    <!-- Unified CSS System - No Inline Styles -->
+    <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
+</head>
+<body>
+    <!-- Header -->
+    <header id="header" class="fixed top-0 w-full premium-header z-50">
+        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
+            <!-- Mobile Layout -->
+            <div class="flex items-center justify-between w-full md:w-auto">
+                <a href="index.html" class="text-xl md:text-2xl font-bold gradient-text font-display" style="text-decoration: none;">RoomFinderAI</a>
+
+                <!-- Mobile Menu Button -->
+                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
+            </div>
+
+            <!-- Desktop Navigation -->
+            <div class="desktop-nav hidden md:flex items-center space-x-8">
+                <a href="index.html" class="nav-item">Home</a>
+                <a href="roommate-matching.html" class="nav-item">RoomPal</a>
+                <a href="listings.html" class="nav-item">Listings</a>
+
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
+                        Browse <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="browse-dropdown">
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
+                        Tools <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="tools-dropdown">
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Help</a>
+                    </div>
+                </div>
+
+                <div class="dropdown">
+                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
+                        About <span class="dropdown-arrow">▼</span>
+                    </button>
+                    <div class="dropdown-menu" id="about-dropdown">
+                        <a href="index.html#about" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Desktop Auth -->
+            <div id="authSection" class="desktop-auth hidden md:block">
+                <!-- Profile icon will be loaded here by JS -->
+            </div>
+        </nav>
+
+        <!-- Mobile Navigation Menu -->
+        <div class="mobile-menu" id="mobile-menu">
+            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
+            <div class="mobile-menu-content">
+                <div class="mobile-menu-header">
+                    <a href="index.html" class="text-lg font-bold gradient-text font-display" style="text-decoration: none;">RoomFinderAI</a>
+                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                </div>
+
+                <div class="mobile-menu-items">
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">Home</a>
+                    <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()">My Profile</a>
+                    <a href="favorites.html" class="mobile-menu-item active" onclick="closeMobileMenu()">Favorites</a>
+                    <a href="roommate-matching.html" class="mobile-menu-item" onclick="closeMobileMenu()">RoomPal</a>
+                    <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Listings</a>
+                    <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                    <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                    <button onclick="performLogout()" class="mobile-menu-item auth-item">Logout</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 py-8 mt-24">
+        <!-- Page Header -->
+        <div class="glass-card p-6 sm:p-8 mb-8 fade-in">
+            <div class="flex items-center justify-between flex-wrap gap-4">
+                <div class="flex items-center gap-3">
+                    <svg class="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                    </svg>
+                    <div>
+                        <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">My Favorites</h1>
+                        <p id="favoritesSubtitle" class="text-sm text-gray-600 mt-1">Loading your saved listings…</p>
+                    </div>
+                </div>
+                <a href="listings.html" class="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm font-semibold">Browse Listings</a>
+            </div>
+        </div>
+
+        <!-- Auth-required state -->
+        <section id="authRequired" class="hidden bg-white rounded-xl shadow-xl p-8 text-center">
+            <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c0-1.1.9-2 2-2s2 .9 2 2v2H8v-2c0-1.1.9-2 2-2zm-7 4h14v6H5v-6z"/>
+            </svg>
+            <p class="text-gray-700 text-lg font-semibold">Sign in to see your favorites</p>
+            <p class="text-gray-500 text-sm mt-2">Saved listings are tied to your account so they're there on every device.</p>
+            <a href="login.html" class="inline-block mt-5 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Sign In</a>
+        </section>
+
+        <!-- Favorites list -->
+        <section id="favoritesSection" class="bg-white rounded-xl shadow-xl p-6 sm:p-8">
+            <div id="favoritesContainer" class="space-y-3">
+                <div class="text-center py-12">
+                    <div class="inline-block w-8 h-8 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                    <p class="text-gray-500 mt-3">Loading favorites…</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        const FALLBACK_THUMB = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iODAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0iI2YzZjRmNiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTIiIGZpbGw9IiM2NjcyODAiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5ObyBJbWFnZTwvdGV4dD48L3N2Zz4=';
+
+        function getCurrentUser() {
+            try {
+                return JSON.parse(localStorage.getItem('currentUser')) || null;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        function viewListing(id) {
+            window.location.href = `listing_details.html?id=${id}`;
+        }
+
+        function renderEmpty() {
+            const subtitle = document.getElementById('favoritesSubtitle');
+            if (subtitle) subtitle.textContent = '0 saved listings';
+            document.getElementById('favoritesContainer').innerHTML = `
+                <div class="text-center py-12">
+                    <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                    <p class="text-gray-500 text-lg">No saved listings yet</p>
+                    <p class="text-gray-400 text-sm mt-2">Click the heart icon on any listing to save it here.</p>
+                    <a href="listings.html" class="inline-block mt-4 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors">Browse Listings</a>
+                </div>
+            `;
+        }
+
+        function renderFavorites(favorites) {
+            const subtitle = document.getElementById('favoritesSubtitle');
+            if (subtitle) subtitle.textContent = `${favorites.length} saved listing${favorites.length === 1 ? '' : 's'}`;
+
+            const container = document.getElementById('favoritesContainer');
+            container.innerHTML = favorites.map(fav => {
+                const listingData = fav.listing || fav.listings || fav;
+                const title = listingData.title || listingData.name || 'Untitled Listing';
+                const price = listingData.price || 0;
+                const location = [listingData.street, listingData.city].filter(Boolean).join(', ') || 'No location';
+                const savedDate = fav.saved_at || fav.created_at
+                    ? new Date(fav.saved_at || fav.created_at).toLocaleDateString()
+                    : 'Recently';
+                const bedrooms = listingData.bedrooms != null ? listingData.bedrooms : '?';
+                const houseType = listingData.house_type || listingData.type || 'Property';
+                const listingId = listingData.id || fav.listing_id;
+
+                let imageUrl = FALLBACK_THUMB;
+                if (listingData.media && Array.isArray(listingData.media) && listingData.media.length > 0 && listingData.media[0].url) {
+                    imageUrl = listingData.media[0].url;
+                }
+
+                return `
+                <div data-fav-row="${listingId}" class="flex items-center gap-4 p-4 bg-gray-50 rounded-xl hover:bg-gray-100 cursor-pointer transition-all hover:shadow-md" onclick="viewListing('${listingId}')">
+                    <img src="${imageUrl}" alt="${title}" class="w-20 h-20 rounded-lg object-cover flex-shrink-0" onerror="this.src='${FALLBACK_THUMB}'">
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-semibold text-gray-900 truncate">${title}</h4>
+                        <p class="text-blue-600 font-bold">$${Number(price).toLocaleString()}/month</p>
+                        <p class="text-sm text-gray-600 truncate">${location}</p>
+                        <p class="text-xs text-gray-400">${bedrooms} bed ${houseType} • Saved: ${savedDate}</p>
+                    </div>
+                    <button onclick="event.stopPropagation(); unsaveListing('${listingId}', this)" class="flex-shrink-0 p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors" title="Remove from favorites">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                    </button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderError(message) {
+            document.getElementById('favoritesContainer').innerHTML = `
+                <div class="text-center py-12 text-red-500">
+                    <p class="font-semibold">Couldn't load your favorites</p>
+                    <p class="text-sm text-gray-500 mt-2">${message || 'Please try again.'}</p>
+                    <button onclick="loadFavorites()" class="mt-4 bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition-colors">Retry</button>
+                </div>
+            `;
+        }
+
+        async function loadFavorites() {
+            const user = getCurrentUser();
+            if (!user || !user.email) {
+                document.getElementById('favoritesSection').classList.add('hidden');
+                document.getElementById('authRequired').classList.remove('hidden');
+                const subtitle = document.getElementById('favoritesSubtitle');
+                if (subtitle) subtitle.textContent = 'Sign in to see your saved listings.';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/favorites?userEmail=${encodeURIComponent(user.email)}`);
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                const favorites = await response.json();
+                if (!Array.isArray(favorites) || favorites.length === 0) {
+                    renderEmpty();
+                } else {
+                    renderFavorites(favorites);
+                }
+            } catch (error) {
+                console.error('Error loading favorites:', error);
+                renderError(error.message);
+            }
+        }
+
+        async function unsaveListing(listingId, buttonEl) {
+            const user = getCurrentUser();
+            if (!user || !user.email) {
+                alert('Please sign in to manage favorites.');
+                return;
+            }
+
+            const row = document.querySelector(`[data-fav-row="${listingId}"]`);
+            if (row) {
+                row.style.opacity = '0.5';
+                row.style.pointerEvents = 'none';
+            }
+
+            try {
+                const response = await fetch(`/api/favorites/${listingId}?userEmail=${encodeURIComponent(user.email)}`, {
+                    method: 'DELETE'
+                });
+                if (!response.ok) {
+                    throw new Error(`Server returned ${response.status}`);
+                }
+                if (row) row.remove();
+
+                const remaining = document.querySelectorAll('[data-fav-row]').length;
+                if (remaining === 0) {
+                    renderEmpty();
+                } else {
+                    const subtitle = document.getElementById('favoritesSubtitle');
+                    if (subtitle) subtitle.textContent = `${remaining} saved listing${remaining === 1 ? '' : 's'}`;
+                }
+            } catch (error) {
+                console.error('Error unsaving listing:', error);
+                if (row) {
+                    row.style.opacity = '';
+                    row.style.pointerEvents = '';
+                }
+                alert('Failed to remove from favorites. Please try again.');
+            }
+        }
+
+        function performLogout() {
+            try {
+                localStorage.removeItem('currentUser');
+                localStorage.removeItem('authToken');
+                localStorage.removeItem('users');
+                localStorage.removeItem('currentUser_backup');
+                localStorage.removeItem('currentUser_backup_2');
+                localStorage.removeItem('currentUser_emergency');
+            } catch (e) {}
+            window.location.href = 'index.html?t=' + Date.now();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof window.UniversalAuth !== 'undefined') {
+                window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+            }
+            loadFavorites();
+        });
+    </script>
+</body>
+</html>

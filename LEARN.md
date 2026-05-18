@@ -4,6 +4,20 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-18 — Favorites: the data was fine the whole time, the page didn't exist
+
+Hasan reported "make sure when I like a listing it actually goes into my account and stays there." Sounded like a persistence bug, so the first instinct was to verify the DB. Did that — `public.favorites` had three rows for `connorwilson365@yahoo.com` including a click from minutes earlier; POST, DELETE and the `/api/favorites/check` endpoint all worked; the `loadFavoriteStates` rewire correctly repainted the red hearts on revisit.
+
+So why did Hasan think it was broken? Because every nav link on the site (`listings.html:470`, `profile.html:112`) pointed to `favorites.html` — a file that did not exist. Click a heart, listing saves, open the menu → "❤️ Favorites" → 404. From the user's seat, the listing "didn't save" because there was no place to see that it had. The actual saved-listings UI was buried inside the profile page as a section, reachable only by going to profile.html and scrolling down.
+
+Fix: created `frontend/favorites.html` as a standalone page. Reuses the existing `GET /api/favorites?userEmail=…` endpoint and the render shape from `profile.html:914-1015`, plus a local `unsaveListing` that hits `DELETE /api/favorites/:listingId?userEmail=…` and removes the row from the DOM with a revert-on-failure path. No backend changes, no DB migration, no new endpoints.
+
+Lesson worth keeping: when a user says "my data isn't being saved," check both the data path *and* the user's path to seeing the data. Persistence layer can be perfectly correct while the surface that proves it is missing entirely. Also: every nav link in the codebase is an implicit promise that the destination exists — broken links rot quietly because nobody clicks their own links during dev.
+
+(Bonus note: the plan's secondary fix — reordering `toggleFavorite` in `listings.html:5128-5210` to flip `data-favorited` only after `response.ok` — turned out to be moot. Re-reading the code, the attribute flip already happens inside `if (response.ok)`. Plan written from memory was wrong about the current state; verified before editing, so no churn.)
+
+---
+
 ## 2026-05-17 — AI Negotiator: detect mutual close from BOTH sides, not just landlord
 
 Replay from a real negotiation: landlord says "can we meet at 5,600 a month?", the AI replies "YES. Deal.", landlord follows up with "ok deal", and the AI's next message was "Honestly, sounds good! What's the neighborhood like?" — full rapport-style reset on top of an already-closed deal.
