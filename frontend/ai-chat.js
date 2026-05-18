@@ -1381,18 +1381,67 @@ class AIChatHandler {
         }
     }
 
-    // Load conversation history from Supabase
+    // Load conversation history from Supabase on page init. Fetches the user's
+    // single row from public.ai_chat_history and replays each message into the
+    // chat panel using displayMessage (UI-only — no history push, no save
+    // round-trip). The _replaying flag suppresses saveConversationHistory()
+    // calls while we're restoring, so we don't re-upsert the messages we just
+    // loaded back to Supabase.
     async loadConversationHistory() {
-        // Disabled - table doesn't exist in database
-        // Each session starts fresh
-        return;
+        if (!this.currentUser?.email || !this.supabase) return;
+        try {
+            const { data, error } = await this.supabase
+                .from('ai_chat_history')
+                .select('messages')
+                .eq('user_email', this.currentUser.email)
+                .maybeSingle();
+            if (error) {
+                console.warn('loadConversationHistory query error:', error.message);
+                return;
+            }
+            if (!data || !Array.isArray(data.messages) || data.messages.length === 0) return;
+
+            this._replaying = true;
+            for (const msg of data.messages) {
+                if (!msg || typeof msg.content !== 'string') continue;
+                const sender = msg.role === 'assistant' ? 'AI'
+                             : msg.role === 'user'      ? 'You'
+                             : (msg.role || 'AI');
+                const align  = msg.role === 'user' ? 'right' : 'left';
+                this.displayMessage(sender, msg.content, align);
+                this.conversationHistory.push({ role: msg.role, content: msg.content });
+            }
+            this._replaying = false;
+            console.log(`✅ Restored ${data.messages.length} message(s) from history for ${this.currentUser.email}`);
+        } catch (e) {
+            console.warn('loadConversationHistory exception:', e.message);
+            this._replaying = false;
+        }
     }
 
-    // Save conversation history to Supabase
+    // Save conversation history to Supabase. Throttled (500ms debounce) because
+    // appendMessage fires save on every message; without the throttle a quick
+    // burst (e.g. system showing five welcome messages on page load) would
+    // produce N upserts. Capped at the last 200 messages so the row can't grow
+    // unbounded. No-op if the user isn't logged in.
     async saveConversationHistory() {
-        // Disabled - table doesn't exist in database
-        // Chat history is stored in memory only during session
-        return;
+        if (!this.currentUser?.email || !this.supabase) return;
+        clearTimeout(this._saveTimer);
+        this._saveTimer = setTimeout(async () => {
+            try {
+                const payload = {
+                    user_email: this.currentUser.email,
+                    messages: (this.conversationHistory || []).slice(-200),
+                    updated_at: new Date().toISOString()
+                };
+                const { error } = await this.supabase
+                    .from('ai_chat_history')
+                    .upsert(payload, { onConflict: 'user_email' });
+                if (error) console.warn('saveConversationHistory upsert failed:', error.message);
+            } catch (e) {
+                console.warn('saveConversationHistory exception:', e.message);
+            }
+        }, 500);
     }
 
     // Clear conversation history
@@ -1458,14 +1507,17 @@ class AIChatHandler {
         // Display the message
         this.displayMessage(sender, message, align, isTypingIndicator);
 
-        // Save to history and localStorage (skip typing indicators)
+        // Save to history (skip typing indicators).
         if (!isTypingIndicator) {
             // Map display names to OpenAI-compatible roles
             const role = sender.toLowerCase() === 'you' ? 'user' :
                         sender.toLowerCase() === 'ai' ? 'assistant' :
                         sender.toLowerCase();
             this.conversationHistory.push({ role: role, content: message });
-            this.saveConversationHistory();
+            // Don't fire save while we're restoring messages from Supabase —
+            // loadConversationHistory pushed them already and an echo upsert
+            // is pure waste + an unnecessary throttled write.
+            if (!this._replaying) this.saveConversationHistory();
         }
     }
 
