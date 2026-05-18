@@ -4,6 +4,24 @@ Running notes on bugs we hit, what worked, what didn't, and what to remember nex
 
 ---
 
+## 2026-05-17 — AI Negotiator chat history now persists across sessions
+
+User exited `ai-negotiator.html` and returned — chat was gone. The save/load functions in `frontend/ai-chat.js:1384-1396` were both `return;` stubs with the comment "Disabled - table doesn't exist." Confirmed via Supabase Management API that `public.ai_chat_history` indeed didn't exist. The intent was there, the table just never got provisioned.
+
+**Fix:**
+
+1. **New table `public.ai_chat_history`** (`database/migrations/add_ai_chat_history.sql`) — one row per user, JSONB array of messages. PK is `user_email` so writes are a single upsert and reads are a single PK lookup. RLS gates by Supabase Auth's `auth.jwt() ->> 'email'` claim. Idempotent migration uses `CREATE ... IF NOT EXISTS` + `DROP POLICY IF EXISTS` instead of `DO $$ ... $$` blocks (the latter mangles when sent through the Management API's JSON body — `$$` in PL/pgSQL inside a JSON-encoded string blew up the parser the first time I tried).
+
+2. **Re-implemented `saveConversationHistory` and `loadConversationHistory`** in `ai-chat.js`. Save is **debounced 500ms** because `appendMessage` calls it on every message — a burst of 5 messages now produces 1 upsert instead of 5. History is **capped client-side at the last 200 messages** so the row can't grow unbounded.
+
+3. **Replay flag** (`this._replaying`) — when `loadConversationHistory` re-renders historical messages on page load, it calls `displayMessage` directly (UI-only, no `appendMessage` round-trip) AND pushes to `conversationHistory` manually. The flag exists for a second-order case: any code that calls `appendMessage` during replay would otherwise trigger the throttled save and re-upsert the messages we just loaded. With the guard, replay is pure UI work.
+
+4. **Existing call path was already correct** — `init(user)` already awaited `loadConversationHistory()`; `appendMessage()` already called `saveConversationHistory()`. The two stubs were the only blocker. Once they did real work, everything just worked.
+
+**Pattern to remember:** when you find a function with a `return;` stub and a comment like "disabled — table doesn't exist," the fix is rarely "delete the function." Usually the call sites are already wired up correctly and just need the function to do its job. Check the call sites first; nine times out of ten it's a one-line code change + a migration.
+
+---
+
 ## 2026-05-17 — AI Negotiator: phase-locked engine + structured fact memory
 
 The negotiator ran against a real landlord and bombed: re-pitched credentials four times, asked "is there laundry?" five seconds after the landlord said "4 months and laundry is available," ignored "we can meet tomorrow for the deposit" with another rapport question, and stayed cheerful while the landlord typed "stop fucking asking questions". The transcript was a stack of failures, not a single bug.
