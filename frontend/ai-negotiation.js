@@ -67,6 +67,18 @@ class AINegotiator {
             maxMessages: 10,
             description: 'Actual price negotiation',
             noPricing: false
+        },
+        // Terminal lock. Entered when the landlord signals readiness to close
+        // ("meet", "deposit", "sign", "tomorrow"...). Once here, the AI is
+        // forbidden from asking new discovery questions or pitching credentials
+        // again — see detectPhaseTransition + validateAndRepair.
+        CLOSING: {
+            name: 'CLOSING',
+            order: 7,
+            minMessages: 1,
+            maxMessages: 99,
+            description: 'Landlord ready to sign — confirm/schedule only',
+            noPricing: false
         }
     };
 
@@ -88,10 +100,142 @@ class AINegotiator {
             currentOffer: null,
             landlordCounterOffer: null,
             agreedPrice: null,
-            propertyFeature: this.extractPropertyFeature(listing)
+            propertyFeature: this.extractPropertyFeature(listing),
+            // --- Phase-locked emotional engine state ---
+            // Tone tracks the landlord's mood. NEUTRAL by default. Goes
+            // FRUSTRATED on hostility keywords and is STICKY (doesn't unset
+            // just because the landlord typed one calm word in between).
+            tone: 'NEUTRAL',
+            // facts: monotonically-growing structured memory. Once we set a
+            // field from a landlord answer, we never overwrite it back to null,
+            // so the AI literally cannot "forget" and re-ask.
+            facts: {
+                listing_held_months: null,    // e.g. "4 months" -> 4
+                deposit_amount: null,         // numeric
+                proposed_meet_date: null,     // "tomorrow", "saturday", etc.
+                has_laundry: null,            // null = unknown, true/false = answered
+                has_parking: null,
+                pets_allowed: null,
+                landlord_said_yes_to_meet: false,
+                landlord_offered_closing: false
+            },
+            // alreadyAsked: simple set of topic keys we've already asked about.
+            // The system prompt sees this and is instructed to NOT repeat.
+            alreadyAsked: new Set(),
+            // alreadySharedCredentials: once we've pitched "stable job,
+            // landlord can vouch" once, never again.
+            alreadySharedCredentials: false
         };
         this.conversationStates.set(negotiationId, state);
         return state;
+    }
+
+    // ===== Phase-locked emotional engine helpers =====
+
+    // Pure local extraction (no LLM call). Reads a landlord message and
+    // monotonically updates the facts object. Once a fact is set, this never
+    // overwrites it back to null — so the AI can't undo what it already knows.
+    extractFactsFromLandlordMessage(text, facts) {
+        if (!text || !facts) return;
+        const t = String(text).toLowerCase();
+
+        // Duration: "4 months", "for 6 months", "4 mionths" (typo-tolerant via simple digit+word)
+        const monthsMatch = t.match(/(\d+)\s*m[io]+nth/);
+        if (monthsMatch && facts.listing_held_months == null) {
+            facts.listing_held_months = parseInt(monthsMatch[1], 10);
+        }
+
+        // Laundry: explicit yes/no signals
+        if (facts.has_laundry == null) {
+            if (/(laundry|washer|wash[\/ ]?dry|dryer)\b.*(yes|available|in[- ]?unit|on site|onsite|there is|we have)/i.test(text)
+                || /(yes|available|in[- ]?unit|on site|onsite|there is|we have).*(laundry|washer)/i.test(text)
+                || /\blaundry\b/i.test(t) && /\b(is|available|yes|yep|yeah|sure)\b/i.test(t)) {
+                facts.has_laundry = true;
+            } else if (/no\s+laundry|laundry.*not|don.?t have laundry/i.test(t)) {
+                facts.has_laundry = false;
+            }
+        }
+
+        // Parking
+        if (facts.has_parking == null) {
+            if (/\b(parking|garage|spot)\b.*\b(yes|available|included|free|on[- ]?site|yep|yeah)\b/i.test(t)) {
+                facts.has_parking = true;
+            } else if (/no\s+parking|parking.*not|don.?t have parking/i.test(t)) {
+                facts.has_parking = false;
+            }
+        }
+
+        // Pets
+        if (facts.pets_allowed == null) {
+            if (/\b(pet|dog|cat)s?\s+(are\s+)?(ok|fine|allowed|welcome|yes)\b/i.test(t)) {
+                facts.pets_allowed = true;
+            } else if (/no\s+pets?|pets?.*not allowed/i.test(t)) {
+                facts.pets_allowed = false;
+            }
+        }
+
+        // Closing signals — landlord proposes meet/deposit/etc.
+        const meetDate = t.match(/\b(tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next week|this week|this weekend)\b/);
+        if (meetDate && !facts.proposed_meet_date) {
+            facts.proposed_meet_date = meetDate[1];
+        }
+        if (/\b(meet|see you|come by|stop by|swing by)\b/i.test(t)) {
+            facts.landlord_offered_closing = true;
+        }
+        if (/\b(deposit|sign|lease|done deal|call it (a )?day|when can you|move in)\b/i.test(t)) {
+            facts.landlord_offered_closing = true;
+        }
+
+        // Deposit amount
+        const dep = t.match(/\$(\d{2,5})/);
+        if (dep && /deposit/.test(t) && !facts.deposit_amount) {
+            facts.deposit_amount = parseInt(dep[1], 10);
+        }
+    }
+
+    // Returns flags for tone classification + closing detection. Independent
+    // of facts so the prompt builder can switch shape on these without
+    // needing to inspect facts.
+    extractIntentFromLandlordMessage(text) {
+        const t = String(text || '').toLowerCase();
+        const closing = /\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|call it (a )?day|when can you|let.?s do it|i.?ll take it|we.?ll take it)\b/i.test(t);
+        const frustrated = /(idgaf|wtf|stop|yes or no|just (say|tell)|\bfuck|done with|annoying|stop asking)/i.test(t);
+        return { closing, frustrated };
+    }
+
+    // Post-OpenAI safety net. The prompt does the heavy lifting; this validator
+    // catches model violations (trailing questions in CLOSING, emojis when
+    // landlord is hostile) and either trims or hard-replaces with a sane fallback.
+    validateAndRepair(rawResponse, { phase, tone, facts }) {
+        if (!rawResponse) return rawResponse;
+        let out = String(rawResponse).trim();
+
+        if (phase === 'CLOSING') {
+            const hasQuestion = /\?/.test(out);
+            if (hasQuestion) {
+                console.warn('🛡️ Validator: AI emitted question(s) in CLOSING. Replacing with fallback.');
+                return facts?.proposed_meet_date
+                    ? `Yes, that works. See you ${facts.proposed_meet_date}.`
+                    : `Yes, that works. See you then.`;
+            }
+            const words = out.split(/\s+/);
+            if (words.length > 15) {
+                console.warn('🛡️ Validator: AI exceeded 15-word cap in CLOSING. Truncating.');
+                return words.slice(0, 12).join(' ').replace(/[.!?,]*$/, '') + '.';
+            }
+        }
+
+        if (tone === 'FRUSTRATED') {
+            // Strip all emoji ranges
+            out = out.replace(/[\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{1F900}-\u{1F9FF}]/gu, '').trim();
+            const words = out.split(/\s+/);
+            if (words.length > 15 || /\?/.test(out)) {
+                console.warn('🛡️ Validator: AI rambled or asked questions during FRUSTRATED tone. Replacing with damage-control fallback.');
+                return `Sorry about that. I'm in — let's meet.`;
+            }
+        }
+
+        return out;
     }
 
     // Get conversation state
@@ -137,11 +281,28 @@ class AINegotiator {
         return features[Math.floor(Math.random() * Math.min(features.length, 5))];
     }
 
-    // Detect when to transition to next phase based on landlord's response
+    // Detect when to transition to next phase based on landlord's response.
+    // CLOSING is a TERMINAL LOCK — once entered, can never downgrade. The
+    // closing-signal regex below (meet, deposit, sign, tomorrow, address,
+    // "let's do it", "I'll take it"...) trumps every other phase rule. This
+    // is the single most important behavior fix: it stops the AI from asking
+    // discovery questions after the landlord has offered to close the deal.
     detectPhaseTransition(landlordMessage, currentPhase, conversationState) {
         const message = (landlordMessage || '').toLowerCase();
         const messageCount = conversationState.phaseMessageCount || 0;
         const phaseConfig = this.CONVERSATION_PHASES[currentPhase];
+
+        // FORWARD-ONLY: once locked into CLOSING, stay there.
+        if (currentPhase === 'CLOSING') {
+            return 'CLOSING';
+        }
+
+        // CLOSING signal trumps everything — landlord wants to wrap up.
+        const closingSignals = /\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|call it (a )?day|when can you|let.?s do it|i.?ll take it|we.?ll take it)\b/i;
+        if (closingSignals.test(message)) {
+            console.log('🔒 LANDLORD SIGNALED CLOSING — locking phase to CLOSING (terminal).');
+            return 'CLOSING';
+        }
 
         // Skip to PRICE_INTRODUCTION if landlord brings up price/money
         const priceKeywords = /\$\d+|price|rent|budget|cost|afford|monthly|per month|how much|offer/i;
@@ -270,20 +431,33 @@ class AINegotiator {
         const currentPhase = phase || conversationState.currentPhase;
         const context = this.buildPhaseContext(conversationState);
 
-        console.log(`🎭 Generating ${currentPhase} phase message`);
+        console.log(`🎭 Generating ${currentPhase} phase message (tone: ${conversationState.tone || 'NEUTRAL'})`);
 
         try {
             const data = await this.postJSON('/api/negotiate/phase-message', {
                 phase: currentPhase,
                 context,
+                // Phase-locked engine fields. Backend builds a tighter prompt
+                // off these instead of relying on raw history. Sent alongside
+                // messageHistory for backwards compat — backend will prefer
+                // the structured fields when present.
+                tone: conversationState.tone || 'NEUTRAL',
+                facts: conversationState.facts || {},
+                alreadyAsked: [...(conversationState.alreadyAsked || [])],
+                alreadySharedCredentials: !!conversationState.alreadySharedCredentials,
                 messageHistory: conversationState.messageHistory || []
             });
 
             let message = (data.response || '').trim();
             if (!message) throw new Error('Empty phase-message response');
 
-            // Add human variations
-            message = this.addHumanVariations(message);
+            // Skip "human variations" (random cheerful fillers, ":)", "Thanks!")
+            // when we're closing or repairing — they read as gaslighting on top
+            // of an angry/finalizing landlord.
+            const suppressVariations = currentPhase === 'CLOSING' || conversationState.tone === 'FRUSTRATED';
+            if (!suppressVariations) {
+                message = this.addHumanVariations(message);
+            }
 
             console.log(`✅ Generated ${currentPhase} message:`, message);
             return message;
@@ -543,6 +717,38 @@ Write 2-3 sentences negotiating naturally.`
                 timestamp: new Date()
             });
 
+            // Backfill phase-locked state for negotiations that were created
+            // before this engine existed (e.g. reconstructed from activeNegotiations).
+            if (!conversationState.facts) conversationState.facts = {
+                listing_held_months: null, deposit_amount: null, proposed_meet_date: null,
+                has_laundry: null, has_parking: null, pets_allowed: null,
+                landlord_said_yes_to_meet: false, landlord_offered_closing: false
+            };
+            if (!conversationState.alreadyAsked) conversationState.alreadyAsked = new Set();
+            if (conversationState.alreadySharedCredentials == null) conversationState.alreadySharedCredentials = false;
+            if (!conversationState.tone) conversationState.tone = 'NEUTRAL';
+
+            // Pre-filter pass over the landlord message — extracts structured
+            // facts (laundry available, duration, meet date...) and detects
+            // tone signals. This runs BEFORE any LLM call so the prompt
+            // builder downstream can switch shape based on the result.
+            this.extractFactsFromLandlordMessage(landlordMessage, conversationState.facts);
+            const intent = this.extractIntentFromLandlordMessage(landlordMessage);
+            // Tone is STICKY on frustration: once the landlord swore at us, we
+            // stay in damage-control mode even if their next message is calm.
+            if (intent.frustrated) {
+                conversationState.tone = 'FRUSTRATED';
+                console.log('😡 Landlord frustration detected — tone locked to FRUSTRATED.');
+            } else if (intent.closing && conversationState.tone !== 'FRUSTRATED') {
+                conversationState.tone = 'ENGAGED';
+            }
+            // Best-effort: record what the landlord just answered so the AI
+            // doesn't re-ask. Topics align with the facts fields we extract.
+            if (conversationState.facts.has_laundry != null) conversationState.alreadyAsked.add('laundry');
+            if (conversationState.facts.has_parking != null) conversationState.alreadyAsked.add('parking');
+            if (conversationState.facts.pets_allowed != null) conversationState.alreadyAsked.add('pets');
+            if (conversationState.facts.listing_held_months != null) conversationState.alreadyAsked.add('duration');
+
             // Detect phase transition
             const newPhase = this.detectPhaseTransition(
                 landlordMessage,
@@ -569,7 +775,23 @@ Write 2-3 sentences negotiating naturally.`
             }
 
             // Generate response for current phase
-            const responseMessage = await this.generatePhaseMessage(conversationState);
+            const rawResponse = await this.generatePhaseMessage(conversationState);
+
+            // Post-OpenAI validator: hard-replaces violations even if the LLM
+            // ignored the prompt rules (questions in CLOSING, emojis when
+            // FRUSTRATED, etc.). Cheap safety net behind the prompt itself.
+            const responseMessage = this.validateAndRepair(rawResponse, {
+                phase: conversationState.currentPhase,
+                tone: conversationState.tone,
+                facts: conversationState.facts
+            });
+
+            // Once we've actually shipped a phase response (especially in
+            // QUALIFICATION which is the credentials pitch), mark credentials
+            // as shared so future prompts know not to repeat them.
+            if (conversationState.currentPhase === 'QUALIFICATION') {
+                conversationState.alreadySharedCredentials = true;
+            }
 
             // Record our response
             conversationState.messageHistory.push({
