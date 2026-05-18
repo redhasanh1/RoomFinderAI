@@ -3398,7 +3398,20 @@ Generate ONLY the message. No greetings, no signatures.
     }
 
     // Send negotiation message and notify landlord
-    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null) {
+    // Build a deterministic UUID v5 from a string. Two browsers/tabs computing this
+    // with the same input produce the EXACT same UUID — used below as the AI
+    // response's primary key so Postgres' uniqueness constraint hard-stops races.
+    async _deterministicUUID(input) {
+        const data = new TextEncoder().encode(`roomfinder-ai-response:${input}`);
+        const hashBuf = await crypto.subtle.digest('SHA-1', data);
+        const bytes = new Uint8Array(hashBuf);
+        bytes[6] = (bytes[6] & 0x0f) | 0x50;  // version 5
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;  // RFC 4122 variant
+        const hex = Array.from(bytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join('');
+        return `${hex.substring(0,8)}-${hex.substring(8,12)}-${hex.substring(12,16)}-${hex.substring(16,20)}-${hex.substring(20,32)}`;
+    }
+
+    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null, respondsToMessageId = null) {
         try {
             // Ensure AI user exists first
             await this.ensureAIUserExists();
@@ -3409,14 +3422,35 @@ Generate ONLY the message. No greetings, no signatures.
             let finalSenderEmail = senderEmail;
             let finalContent = fullContent;
 
+            // If we know which landlord message we're responding to, derive a deterministic
+            // primary key for THIS AI reply. Two tabs/sessions racing the same OpenAI call
+            // will both compute the same uuid; Postgres' PK uniqueness ensures only one
+            // INSERT wins. The loser gets 23505 and bails — never a duplicate user-visible
+            // message, no matter how many sessions raced.
+            const insertPayload = {
+                conversation_id: conversationId,
+                sender_email: senderEmail,
+                content: fullContent,
+                created_at: createdAt
+            };
+            if (respondsToMessageId) {
+                try {
+                    insertPayload.id = await this._deterministicUUID(respondsToMessageId);
+                } catch (e) {
+                    console.warn('Could not derive deterministic id (proceeding without dedup):', e.message);
+                }
+            }
+
             const { error } = await this.supabase
                 .from('messages')
-                .insert({
-                    conversation_id: conversationId,
-                    sender_email: senderEmail,
-                    content: fullContent,
-                    created_at: createdAt
-                });
+                .insert(insertPayload);
+
+            // 23505 = unique_violation = another session already inserted the same AI
+            // response for this landlord message. We've definitively lost the race. Bail.
+            if (error?.code === '23505') {
+                console.log('📨 Lost dedup race — another session already responded to this landlord message. Skipping.');
+                return false;
+            }
 
             if (error) {
                 console.error('Error sending negotiation message with AI email:', error);
@@ -3677,13 +3711,16 @@ Generate ONLY the message. No greetings, no signatures.
                                     console.log(`⏳ Waiting ${delay}ms before responding...`);
                                     await new Promise(resolve => setTimeout(resolve, delay));
 
-                                    // Send the phased response
+                                    // Send the phased response. Pass newMessage.id as the
+                                    // dedup key — the AI's INSERT will use a deterministic
+                                    // UUID derived from it, and the DB enforces uniqueness.
                                     await this.sendNegotiationMessage(
                                         conversation.id,
                                         response.message,
                                         conversation.sender_email,
                                         listing.user_email,
-                                        listing.title
+                                        listing.title,
+                                        newMessage.id
                                     );
                                     console.log(`✅ [PHASED v2] Sent ${response.phase} response`);
                                 }
