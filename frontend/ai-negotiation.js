@@ -52,21 +52,26 @@ class AINegotiator {
             description: 'Share tenant background naturally',
             noPricing: true
         },
-        AVAILABILITY_DISCUSSION: {
-            name: 'AVAILABILITY_DISCUSSION',
-            order: 4,
-            minMessages: 1,
-            maxMessages: 1,
-            description: 'Discuss move-in, lease terms',
-            noPricing: false // Can mention if asked
-        },
+        // PRICE_INTRODUCTION now precedes AVAILABILITY_DISCUSSION. Real-world
+        // negotiation: confirm rent terms before scheduling a viewing — otherwise
+        // the tenant burns leverage by agreeing to meet without ever haggling.
+        // (Previously this was reversed; the AI kept jumping to "Sunday works!"
+        // without ever discussing price.)
         PRICE_INTRODUCTION: {
             name: 'PRICE_INTRODUCTION',
-            order: 5,
+            order: 4,
             minMessages: 1,
             maxMessages: 1,
             description: 'Bring up budget naturally',
             noPricing: false
+        },
+        AVAILABILITY_DISCUSSION: {
+            name: 'AVAILABILITY_DISCUSSION',
+            order: 5,
+            minMessages: 1,
+            maxMessages: 1,
+            description: 'Discuss move-in, lease terms — only AFTER price is touched',
+            noPricing: false // Can mention if asked
         },
         ACTIVE_NEGOTIATION: {
             name: 'ACTIVE_NEGOTIATION',
@@ -231,9 +236,30 @@ class AINegotiator {
     // catches model violations (trailing questions in CLOSING, emojis when
     // landlord is hostile, agreeing to a day outside the tenant's availability)
     // and either trims or hard-replaces with a sane fallback.
-    validateAndRepair(rawResponse, { phase, tone, facts, tenantGoals }) {
+    validateAndRepair(rawResponse, { phase, tone, facts, tenantGoals, messageHistory }) {
         if (!rawResponse) return rawResponse;
         let out = String(rawResponse).trim();
+
+        // Phase-agnostic check: never agree to a meeting day until price has
+        // been raised at least once. Skipping price negotiation is the single
+        // biggest failure mode of the auto-negotiator — landlord says
+        // "sunday?", AI says "works for me!", and rent never gets discussed.
+        // If the AI tries to confirm a viewing day with no prior price touch,
+        // rewrite the reply to make a price probe first.
+        const hist = Array.isArray(messageHistory) ? messageHistory : [];
+        const priceMentionedAi = hist.some(m => m && (m.sender === 'ai' || m.sender === 'assistant') && /\$\s*\d/.test(String(m.content || '')));
+        const priceMentionedLandlord = !!(facts && facts.landlord_last_named_price);
+        const priceTouched = priceMentionedAi || priceMentionedLandlord;
+        const dayInReply = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight)\b/i.test(out);
+        const meetingAffirm = /\b(works|sounds good|that works|see you|let.?s meet|let.?s do|will do|of course|absolutely)\b/i.test(out);
+        const phaseSafe = phase !== 'CLOSING' && phase !== 'ACTIVE_NEGOTIATION'; // in CLOSING the deal may already be done; ACTIVE means price is already on the table
+        if (!priceTouched && dayInReply && meetingAffirm && phaseSafe) {
+            console.warn(`🛡️ Validator: AI affirmed a meeting (${out.slice(0, 60)}) before price was discussed. Rewriting to price-probe first.`);
+            const lp = facts?.landlord_last_named_price; // most likely null here
+            return lp
+                ? `That could work — quick first though, is $${lp} firm or is there any wiggle room? Want to make sure we're aligned before locking it in.`
+                : `That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.`;
+        }
 
         // Phase-agnostic check: tenant said they can only meet on certain days.
         // If the AI confirms/affirms a different day, replace with a polite
@@ -382,17 +408,13 @@ class AINegotiator {
                 }
             },
             QUALIFICATION: {
-                nextPhase: 'AVAILABILITY_DISCUSSION',
+                // Go to PRICE first, not AVAILABILITY. We never want to schedule
+                // a viewing before the rent has been raised — burns negotiation
+                // leverage. AVAILABILITY is now AFTER price negotiation.
+                nextPhase: 'PRICE_INTRODUCTION',
                 conditions: () => {
                     const positiveResponse = /sounds good|great|perfect|stable|reliable|good tenant/i.test(message);
                     return messageCount >= 1 || positiveResponse;
-                }
-            },
-            AVAILABILITY_DISCUSSION: {
-                nextPhase: 'PRICE_INTRODUCTION',
-                conditions: () => {
-                    const discussedAvailability = /available|move.?in|when|date|lease|month/i.test(message);
-                    return messageCount >= 1 || discussedAvailability;
                 }
             },
             PRICE_INTRODUCTION: {
@@ -400,6 +422,15 @@ class AINegotiator {
                 conditions: () => {
                     const priceDiscussion = /\$\d+|counter|offer|agree|deal|accept|firm|flexible|negotiate/i.test(message);
                     return priceDiscussion;
+                }
+            },
+            // Reached only after ACTIVE_NEGOTIATION progresses (landlord
+            // mentions move-in / scheduling, or the deal is essentially set).
+            AVAILABILITY_DISCUSSION: {
+                nextPhase: 'CLOSING',
+                conditions: () => {
+                    const closing = /meet|see you|come by|stop by|swing by|sunday|monday|tuesday|wednesday|thursday|friday|saturday|tomorrow/i.test(message);
+                    return messageCount >= 1 || closing;
                 }
             },
             ACTIVE_NEGOTIATION: {
@@ -670,9 +701,30 @@ Write 2-3 sentences negotiating naturally.`
     }
 
     // Start conversation with introduction (new human-like flow) - v2
-    async startHumanLikeConversation(listing, userBudget, userEmail, userName = null) {
+    async startHumanLikeConversation(listing, userBudget, userEmail, userName = null, conversationId = null) {
         try {
             console.log('🚀 [HUMAN-LIKE v2] Starting phased conversation for:', listing.title);
+
+            // Defense-in-depth idempotency: even if a caller bypassed the
+            // ai-chat.js guard, if a prior AI-authored message already exists
+            // in this conversation, do NOT generate a fresh intro. This is
+            // the last line of defense against duplicate intros.
+            if (conversationId) {
+                try {
+                    const { data: priorAi } = await this.supabase
+                        .from('messages')
+                        .select('id')
+                        .eq('conversation_id', conversationId)
+                        .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%Sent via RoomFinder AI%,content.ilike.%AI Negotiator on behalf%')
+                        .limit(1);
+                    if (priorAi && priorAi.length > 0) {
+                        console.log('🛡️ startHumanLikeConversation: AI message already exists for conversation', conversationId, '— skipping intro generation.');
+                        return { message: null, negotiationId: null, phase: 'INTRODUCTION', skipped: true };
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Pre-check inside startHumanLikeConversation failed (non-fatal):', e?.message || e);
+                }
+            }
 
             // Create negotiation ID
             const negotiationId = `neg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -864,13 +916,15 @@ Write 2-3 sentences negotiating naturally.`
 
             // Post-OpenAI validator: hard-replaces violations even if the LLM
             // ignored the prompt rules (questions in CLOSING, emojis when
-            // FRUSTRATED, agreeing to a day outside tenant availability).
+            // FRUSTRATED, agreeing to a day outside tenant availability,
+            // agreeing to meet before price was even discussed).
             // Cheap safety net behind the prompt itself.
             const responseMessage = this.validateAndRepair(rawResponse, {
                 phase: conversationState.currentPhase,
                 tone: conversationState.tone,
                 facts: conversationState.facts,
-                tenantGoals: tenantGoalsForValidator
+                tenantGoals: tenantGoalsForValidator,
+                messageHistory: conversationState.messageHistory
             });
 
             // Once we've actually shipped a phase response (especially in
@@ -3741,7 +3795,13 @@ Generate ONLY the message. No greetings, no signatures.
             await this.ensureAIUserExists();
 
             const senderEmail = 'ai-negotiator@roomfinder.com';
-            const fullContent = `🤖 AI Negotiator on behalf of ${userEmail}:\n\n${message}`;
+            // Disclosure as a small footer rather than a loud header. The
+            // landlord still sees the message is AI-assisted (regulatory /
+            // transparency intact), but the body reads first — which is what
+            // determines whether the landlord engages seriously. The earlier
+            // "🤖 AI Negotiator on behalf of …:" header was disclosing it on
+            // every message and crushing negotiation effectiveness.
+            const fullContent = `${message}\n\n— Sent via RoomFinder AI on behalf of ${userEmail}`;
             const createdAt = new Date().toISOString();
             let finalSenderEmail = senderEmail;
             let finalContent = fullContent;
@@ -3782,7 +3842,7 @@ Generate ONLY the message. No greetings, no signatures.
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
                 finalSenderEmail = userEmail;
-                finalContent = `🤖 AI Negotiator:\n\n${message}`;
+                finalContent = `${message}\n\n— Sent via RoomFinder AI`;
                 const { error: retryError } = await this.supabase
                     .from('messages')
                     .insert({
@@ -3963,7 +4023,7 @@ Generate ONLY the message. No greetings, no signatures.
                                 .from('messages')
                                 .select('*')
                                 .eq('conversation_id', conversation.id)
-                                .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%AI Negotiator on behalf%')
+                                .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%Sent via RoomFinder AI%,content.ilike.%AI Negotiator on behalf%')
                                 .limit(5);
                             
                             if (aiMessages && aiMessages.length > 0) {

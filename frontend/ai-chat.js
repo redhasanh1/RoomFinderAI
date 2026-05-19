@@ -227,8 +227,14 @@ class AIChatHandler {
                 senderLabel = 'Tenant';
             }
 
-            // Check if this is an AI message on behalf of tenant
-            if (message.content && message.content.includes('AI Negotiator on behalf of')) {
+            // Check if this is an AI message on behalf of tenant.
+            // Detect both the new footer format ("— Sent via RoomFinder AI")
+            // and the legacy header ("AI Negotiator on behalf of") so older
+            // messages still classify correctly.
+            if (message.content && (
+                message.content.includes('Sent via RoomFinder AI') ||
+                message.content.includes('AI Negotiator on behalf of')
+            )) {
                 senderLabel = 'AI Negotiator';
             }
 
@@ -1203,6 +1209,11 @@ class AIChatHandler {
 
     // Start negotiation for a specific listing - HUMAN-LIKE PHASED APPROACH
     async startNegotiationForListing(listing) {
+        // DEBUG: log the call stack so we can pin down WHICH caller is firing
+        // the duplicate intro path. Three intros ~60s apart were still
+        // appearing after the earlier idempotency fix; this trace identifies
+        // the leaking caller in production. Remove once root cause is fixed.
+        console.log('📍 startNegotiationForListing called for listing', listing?.id, '— stack:\n', new Error().stack);
         try {
             this.appendMessage('AI', `Starting conversation with landlord for "${listing.title}"...`, 'left');
 
@@ -1300,14 +1311,22 @@ class AIChatHandler {
                 return;
             }
             try {
+                // BUGFIX: the earlier version of this guard filtered by
+                // `sender_email = this.currentUser.email` (the tenant), but
+                // AI messages are inserted with sender_email
+                // 'ai-negotiator@roomfinder.com' — so the filter never matched
+                // an existing AI intro and the guard NEVER triggered. We now
+                // match either the AI sender OR the disclosure footer/legacy
+                // header in the message body, so any prior AI-authored message
+                // in this conversation blocks re-introduction.
                 const { data: existingAiMessages } = await this.supabase
                     .from('messages')
-                    .select('id, sender_email')
+                    .select('id, sender_email, content')
                     .eq('conversation_id', conversationId)
-                    .eq('sender_email', this.currentUser.email)
+                    .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%Sent via RoomFinder AI%,content.ilike.%AI Negotiator on behalf%')
                     .limit(1);
                 if (existingAiMessages && existingAiMessages.length > 0) {
-                    console.log('🛡️ Conversation', conversationId, 'already has an AI-authored message — skipping intro generation (likely a page reload).');
+                    console.log('🛡️ Conversation', conversationId, 'already has an AI-authored message — skipping intro generation (likely a page reload or re-entry).');
                     this.sentIntroConversations.add(conversationId);
                     this.activeConversationId = conversationId;
                     this.activeListing = listing;
@@ -1327,13 +1346,28 @@ class AIChatHandler {
                 const budget = this.userNeeds.maxPrice || listing.price * 0.85; // Default to 85% of listing price
                 const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
 
-                // Start with introduction phase (NO pricing)
+                // Start with introduction phase (NO pricing). Pass conversationId
+                // so the engine can run its own DB-level dedup check as a
+                // belt-and-suspenders guard.
                 const conversationData = await this.negotiationEngine.startHumanLikeConversation(
                     listing,
                     budget,
                     this.currentUser.email,
-                    userName
+                    userName,
+                    conversationId
                 );
+
+                // If the engine determined an AI message already exists in this
+                // conversation, treat it as a re-entry: set up the auto-reply
+                // listener but skip the intro send.
+                if (conversationData && conversationData.skipped) {
+                    console.log('🛡️ Engine skipped intro generation (already exists). Setting up listener only.');
+                    this.sentIntroConversations.add(conversationId);
+                    this.activeConversationId = conversationId;
+                    this.activeListing = listing;
+                    this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                    return;
+                }
 
                 if (conversationData && conversationData.message) {
                     // Store the negotiation ID for tracking
