@@ -5500,6 +5500,39 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
         if (!priceTouched) {
             console.log('🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.');
             const askPrice = (context && context.listingPrice) ? `the $${context.listingPrice}` : 'the rent';
+            // If we've already probed once before (look at messageHistory for
+            // earlier "is X firm" patterns from us) and got no $ in response,
+            // STOP probing and ANCHOR with a specific number. The landlord may
+            // be deliberately vague — anchoring is how you break the deadlock.
+            const tenantTargetRent = (context && context.userBudget) ? Number(context.userBudget) : 0;
+            const probedBefore = Array.isArray(context && context.messageHistory)
+                ? false  // we don't get messageHistory passed here; rely on facts.alreadyAsked instead
+                : false;
+            // Heuristic: if any previous fact suggests we've been around this
+            // block once already (no landlord price still, multiple closing-attempts),
+            // anchor at target_rent.
+            const shouldAnchor = tenantTargetRent > 0 && context && (
+                (Array.isArray(context.tenantOffersMade) && context.tenantOffersMade.length > 0) ||
+                (typeof context.priceProbesSent === 'number' && context.priceProbesSent >= 1)
+            );
+
+            if (shouldAnchor) {
+                return `The landlord keeps dodging a concrete rent number. Stop asking — ANCHOR with your own number.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}${goalsBlock}
+
+HARD RULES:
+- Reply in under 35 words.
+- Acknowledge their flexibility.
+- Then state YOUR target as a concrete number: $${tenantTargetRent}/month. Frame it as what you can comfortably do.
+- Ask if that works for them.
+- DO NOT keep asking "is X firm" — you've done that already, no answer.
+- Example: "Appreciate the flexibility — to be straight, I was hoping to land at $${tenantTargetRent}/month. Is that workable on your end?"
+
+Write the anchor reply now.`;
+            }
+
             return `The landlord is trying to wrap things up, but you haven't discussed rent yet. Push back politely with a price probe FIRST.
 
 LANDLORD JUST SAID: "${lastLandlordMessage}"
@@ -5595,6 +5628,23 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             city: sanitizeForPrompt(context?.city, 100),
             lastLandlordMessage: sanitizeForPrompt(context?.lastLandlordMessage, 500)
         };
+
+        // Count how many price probes the AI has already sent in this convo
+        // ("is the rent firm" / "any wiggle room"). After 1 unanswered probe,
+        // the prompt swaps to "anchor at target" mode instead of looping the
+        // same question.
+        if (Array.isArray(messageHistory)) {
+            const probeRe = /\b(is (the )?(\$\d+|rent|price)? ?(firm|negotiable|flexible)|any (room|wiggle|flexibility)|wiggle room|firm at)\b/i;
+            safeContext.priceProbesSent = messageHistory.filter(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') && probeRe.test(String(m.content || ''))
+            ).length;
+            // Count concrete tenant offers already made too (for the same anchor logic).
+            safeContext.tenantOffersMade = messageHistory.filter(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') &&
+                /\$\s*\d/.test(String(m.content || '')) &&
+                /\b(how about|could (we|you) do|i can (do|stretch|commit)|propose|more in my range|land at|meet (in )?(the )?middle)\b/i.test(String(m.content || ''))
+            ).map(m => m.content);
+        }
 
         // Defensively sanitize free-text fields inside tenantGoals so a
         // malicious client can't smuggle prompt-injection text via the panel.
