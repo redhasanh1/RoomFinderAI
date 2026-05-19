@@ -339,6 +339,7 @@ class AIChatHandler {
         if (g.meeting_format?.length) lines.push(`• Meeting format: ${g.meeting_format.map(f => f.replace('_', ' ')).join(', ')}`);
         if (g.movein_date) lines.push(`• Move-in date: ${g.movein_date}${g.movein_flexibility ? ' (' + g.movein_flexibility + ')' : ''}`);
         if (g.lease_length) lines.push(`• Lease length: ${g.lease_length}`);
+        if (g.monthly_budget) lines.push(`• Monthly budget: $${g.monthly_budget}/mo`);
         if (g.target_reduction) lines.push(`• Target reduction: $${g.target_reduction}/month off asking`);
         const concessions = [g.ask_utilities_included && 'utilities included', g.ask_lower_deposit && 'lower deposit', g.ask_first_month_free && 'first month free'].filter(Boolean);
         if (concessions.length) lines.push(`• Concessions to ask for: ${concessions.join(', ')}`);
@@ -372,12 +373,25 @@ class AIChatHandler {
             return;
         }
 
-        // Intent intercept: "what parameters/goals/preferences/settings do we
-        // have set" — reply with the locked-in goals deterministically.
-        // No LLM call, so the list-back is guaranteed correct every time.
+        // Pre-fill maxPrice from locked-in monthly_budget so the chat doesn't
+        // ask "what's your budget?" when the user already set one in the panel.
+        try {
+            const _g = (typeof window.getTenantGoals === 'function') ? window.getTenantGoals() : {};
+            if (_g.monthly_budget && !this.userNeeds.maxPrice) {
+                this.userNeeds.maxPrice = Number(_g.monthly_budget);
+                this.requiredFields.budget = Number(_g.monthly_budget);
+                console.log('💰 Prefilled max price from locked goals:', _g.monthly_budget);
+            }
+        } catch (_) { /* non-fatal */ }
+
+        // Intent intercept: any reference to parameters/goals/preferences/
+        // settings — even a STATEMENT like "I locked in parameters" — counts
+        // as wanting to see or work with the goals. Broadened from earlier
+        // (which required BOTH a goal keyword AND a question word) because
+        // statements without question words were falling through to the LLM
+        // and getting generic "what city?" replies.
         const goalKeyword = /\b(parameter|goal|preference|setting|criteria|negotiation goal|lock(ed)?[\s-]?in)s?\b/i;
-        const askWord = /\b(what|show|tell|list|see|view|which|recite|repeat|do you|do we|have we|is there|am i|are my|are our)\b/i;
-        if (goalKeyword.test(message) && askWord.test(message)) {
+        if (goalKeyword.test(message)) {
             console.log('🎯 Goals intent intercepted — replying with locked-in goals locally.');
             const reply = this.formatLockedGoalsForChat();
             this.appendMessage('AI', reply, 'left');

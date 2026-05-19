@@ -4587,7 +4587,10 @@ app.post('/api/chat', async (req, res) => {
         if (tenantGoals && typeof tenantGoals === 'object' && Object.keys(tenantGoals).length > 0 && typeof summarizeGoals === 'function') {
             const summary = summarizeGoals(tenantGoals);
             if (summary) {
-                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.\n`;
+                const budgetRule = tenantGoals.monthly_budget
+                    ? `\nDO NOT ask the user for their monthly budget — they already set $${tenantGoals.monthly_budget}/mo above. Use that number. If you must confirm, frame it as "so you're looking around $${tenantGoals.monthly_budget}/month, right?" — never "what's your monthly budget?".`
+                    : '';
+                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.${budgetRule}\n`;
                 console.log('🎯 /api/chat: forwarding tenant goals to system prompt.');
             }
         }
@@ -5289,6 +5292,7 @@ function summarizeGoals(goals) {
     if (moveinBits.length) lines.push(`- move-in: ${moveinBits.join('; ')}`);
 
     const priceBits = [];
+    if (goals.monthly_budget) priceBits.push(`max budget $${goals.monthly_budget}/month`);
     if (goals.target_reduction) priceBits.push(`$${goals.target_reduction}/month below asking`);
     if (goals.ask_utilities_included) priceBits.push('ask for utilities included');
     if (goals.ask_lower_deposit) priceBits.push('ask for lower deposit');
