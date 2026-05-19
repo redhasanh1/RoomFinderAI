@@ -4810,9 +4810,27 @@ function buildNegotiationSystemPrompt(phase = 'INTRODUCTION', context = {}) {
     const propertyTitle = context.propertyTitle || 'your place';
     const propertyFeature = context.propertyFeature || 'the layout';
     const city = context.city || 'the area';
-    const userBudget = context.userBudget || 1500;
-    const listingPrice = context.listingPrice || userBudget;
+    const goals = context.tenantGoals || {};
+    // Treat the goals panel's target_reduction as authoritative for the price
+    // floor. If the user didn't set one, fall back to the legacy userBudget.
+    const listingPrice = context.listingPrice || context.userBudget || 1500;
+    const userBudget = goals.target_reduction
+        ? Math.max(0, listingPrice - Number(goals.target_reduction))
+        : (context.userBudget || listingPrice);
     const lastLandlordMessage = context.lastLandlordMessage || '';
+
+    // Pre-render hints for the phase prompts below.
+    const availableDaysHint = Array.isArray(goals.available_days) && goals.available_days.length
+        ? goals.available_days.join('/')
+        : '';
+    const leaseHint = goals.lease_length
+        ? (goals.lease_length === 'm2m' ? 'month-to-month' : goals.lease_length.replace('mo', '-month'))
+        : '';
+    const concessionAsks = [
+        goals.ask_utilities_included && 'utilities included',
+        goals.ask_lower_deposit && 'lower deposit',
+        goals.ask_first_month_free && 'first month free or move-in incentive'
+    ].filter(Boolean).join(', ');
 
     const basePersonality = `You are a REAL PERSON - a working professional looking for a rental. You are NOT an AI assistant. You are a genuine tenant reaching out to a landlord.
 
@@ -4931,21 +4949,25 @@ Generate a natural message that shares your background. Can acknowledge budget r
 CURRENT PHASE: LOGISTICS (Availability)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
+${goals.movein_date ? `YOUR DESIRED MOVE-IN: ${goals.movein_date}${goals.movein_flexibility ? ` (${goals.movein_flexibility})` : ''}` : ''}
+${leaseHint ? `YOUR LEASE PREFERENCE: ${leaseHint}` : ''}
+${availableDaysHint ? `YOU CAN ONLY MEET ON: ${availableDaysHint}` : ''}
 
 YOUR GOAL: Discuss practical stuff - when you can move in, lease terms, maybe schedule a viewing.
 
 WHAT TO DO:
 - Respond naturally to their message
 - Mention when you'd want to move in
-- Ask about lease length if relevant
-- Maybe suggest meeting to see the place
-- Show flexibility where you can
+- Ask about lease length if relevant${leaseHint ? ` (you'd prefer ${leaseHint})` : ''}
+- Maybe suggest meeting to see the place${availableDaysHint ? ` — but ONLY propose ${availableDaysHint}, never another day` : ''}
+- Show flexibility where you can${availableDaysHint ? ' EXCEPT on which day you meet' : ''}
+
+${availableDaysHint ? `IF THE LANDLORD PROPOSES A DAY NOT IN [${availableDaysHint}]: politely counter with one that is. Never agree to a day outside your availability.` : ''}
 
 EXAMPLE THINGS TO SAY:
-- "I'm looking to move by [timeframe], would that work?"
-- "Is the 12-month lease firm or would you consider longer?"
-- "Would love to see the place in person if you're free sometime"
-- "I'm pretty flexible on the exact move-in date"
+- "I'm looking to move by ${goals.movein_date || '[timeframe]'}, would that work?"
+- ${leaseHint ? `"I was hoping for a ${leaseHint} lease - is that something you'd consider?"` : '"Is the 12-month lease firm or would you consider longer?"'}
+- ${availableDaysHint ? `"Would love to see the place — could we do ${availableDaysHint.split('/')[0]}?"` : '"Would love to see the place in person if you\'re free sometime"'}
 
 This is the bridge phase - if it feels natural, you can start transitioning to price in your next message.
 
@@ -4959,8 +4981,10 @@ LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
 YOUR GOAL: Bring up the price topic naturally - not as a demand, but as "figuring out if this works for both of us."
 
-YOUR BUDGET: Around $${userBudget}/month
+YOUR TARGET RENT: Around $${userBudget}/month${goals.target_reduction ? ` (that's $${goals.target_reduction} below the asking $${listingPrice})` : ''}
 LISTING PRICE: $${listingPrice}/month
+${concessionAsks ? `EXTRAS TO ASK FOR (alongside lower rent, where natural): ${concessionAsks}` : ''}
+${leaseHint ? `LEVERAGE: offer a ${leaseHint} commitment if it helps swing the price.` : ''}
 
 WHAT TO DO:
 - Respond to what they said
@@ -4989,10 +5013,12 @@ CURRENT PHASE: NEGOTIATING (Active)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
-YOUR BUDGET: Around $${userBudget}/month
+YOUR TARGET RENT: ~$${userBudget}/month${goals.target_reduction ? ` (target reduction: $${goals.target_reduction} off the asking $${listingPrice})` : ''}
 LISTING PRICE: $${listingPrice}/month
 ${context.currentOffer ? `YOUR LAST OFFER: $${context.currentOffer}/month` : ''}
 ${context.landlordCounterOffer ? `THEIR COUNTER: $${context.landlordCounterOffer}/month` : ''}
+${concessionAsks ? `VALUE-ADDS YOU CAN TRADE FOR PRICE: ${concessionAsks}` : ''}
+${leaseHint ? `LEVERAGE YOU CAN OFFER: ${leaseHint} commitment.` : ''}
 
 YOUR GOAL: Work toward a price that works for both of you. You can negotiate now, but still sound human.
 
@@ -5220,6 +5246,58 @@ async function requireAuth(req, res, next) {
 }
 
 // POST /api/negotiate/phase-message - Generate phase conversation message (GPT-4)
+
+// Format tenant-side negotiation goals (set via the Goals panel on
+// /ai-negotiator) into a compact prompt block. Returns an empty string when
+// no goals are set so the prompt stays clean for users who skip the panel.
+function summarizeGoals(goals) {
+    if (!goals || typeof goals !== 'object') return '';
+    const lines = [];
+
+    const days = Array.isArray(goals.available_days) ? goals.available_days : [];
+    const times = Array.isArray(goals.available_time) ? goals.available_time : [];
+    const fmts = Array.isArray(goals.meeting_format) ? goals.meeting_format : [];
+    if (days.length || times.length || fmts.length) {
+        const parts = [];
+        if (days.length) parts.push(`only ${days.join('/')}`);
+        if (times.length) parts.push(times.join('/'));
+        if (fmts.length) parts.push(fmts.map(f => f.replace('_', '-')).join(' or ') + ' ok');
+        lines.push(`- meet on: ${parts.join('; ')}`);
+    }
+
+    const moveinBits = [];
+    if (goals.movein_date) moveinBits.push(`target ${goals.movein_date}`);
+    if (goals.movein_flexibility) moveinBits.push(goals.movein_flexibility.replace('weeks', ' weeks'));
+    if (goals.lease_length) moveinBits.push(`${goals.lease_length} lease`);
+    if (moveinBits.length) lines.push(`- move-in: ${moveinBits.join('; ')}`);
+
+    const priceBits = [];
+    if (goals.target_reduction) priceBits.push(`$${goals.target_reduction}/month below asking`);
+    if (goals.ask_utilities_included) priceBits.push('ask for utilities included');
+    if (goals.ask_lower_deposit) priceBits.push('ask for lower deposit');
+    if (goals.ask_first_month_free) priceBits.push('ask for first month free / move-in incentive');
+    if (priceBits.length) lines.push(`- price goal: ${priceBits.join('; ')}`);
+
+    const aboutBits = [];
+    if (goals.employment) aboutBits.push(goals.employment.replace('_', ' '));
+    if (goals.income_confidence) aboutBits.push(`${goals.income_confidence} income`);
+    if (goals.pets) aboutBits.push(goals.pets === 'none' ? 'no pets' : `has ${goals.pets}`);
+    if (goals.non_smoker) aboutBits.push('non-smoker');
+    if (goals.occupants) aboutBits.push(`${goals.occupants} occupant${Number(goals.occupants) > 1 ? 's' : ''}`);
+    if (aboutBits.length) lines.push(`- about tenant: ${aboutBits.join(', ')}`);
+
+    if (Array.isArray(goals.must_haves) && goals.must_haves.length) {
+        lines.push(`- must-have: ${goals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}`);
+    }
+
+    const styleBits = [];
+    if (goals.tone) styleBits.push(`${goals.tone} tone`);
+    if (goals.assertiveness) styleBits.push(`${goals.assertiveness} assertiveness`);
+    if (styleBits.length) lines.push(`- style: ${styleBits.join(', ')}`);
+
+    return lines.length ? lines.join('\n') : '';
+}
+
 // Format the structured facts memory into a 1-2 line summary the prompt can
 // include cheaply (vs sending the entire raw chat history every turn).
 function summarizeFacts(facts) {
@@ -5245,12 +5323,27 @@ function summarizeFacts(facts) {
 // builder but prepend the structured-memory summary. This is the prompt
 // engineering that prevents the AI from re-asking already-answered questions
 // and from cheerfully spamming a hostile landlord.
-function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alreadySharedCredentials, context }) {
+function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alreadySharedCredentials, tenantGoals, context }) {
     const factsSummary = summarizeFacts(facts);
     const askedSummary = Array.isArray(alreadyAsked) && alreadyAsked.length
         ? alreadyAsked.join(', ')
         : 'nothing yet';
     const lastLandlordMessage = context.lastLandlordMessage || '';
+    const goalsSummary = summarizeGoals(tenantGoals);
+
+    // Hard rules synthesized from tenant goals — surfaced even in CLOSING so
+    // the AI doesn't accidentally agree to a meeting day the tenant flagged
+    // unavailable, or to a price above the tenant's stated target.
+    const goalRules = [];
+    if (tenantGoals && Array.isArray(tenantGoals.available_days) && tenantGoals.available_days.length) {
+        goalRules.push(`- If the landlord proposes a meeting day NOT in [${tenantGoals.available_days.join(', ')}], politely counter-propose one that is — do not agree.`);
+    }
+    if (tenantGoals && tenantGoals.target_reduction && context && context.listingPrice) {
+        const targetRent = Math.max(0, Number(context.listingPrice) - Number(tenantGoals.target_reduction));
+        goalRules.push(`- Tenant's target rent is ~$${targetRent}/month (~$${tenantGoals.target_reduction} below the asking $${context.listingPrice}). Push back if the landlord names a number higher than that without value in return.`);
+    }
+    const goalRulesBlock = goalRules.length ? `\n\nGOAL-DRIVEN RULES:\n${goalRules.join('\n')}\n` : '';
+    const goalsBlock = goalsSummary ? `\n\nTENANT GOALS (your client set these — honor them):\n${goalsSummary}\n` : '';
 
     if (phase === 'CLOSING') {
         // If the deal is already verbally accepted (numeric convergence OR
@@ -5265,7 +5358,7 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
         return `You are closing a rental deal. The landlord is ready to sign and JUST signaled it.
 
 LANDLORD JUST SAID: "${lastLandlordMessage}"
-KNOWN FACTS: ${factsSummary}${dealClosedHint}
+KNOWN FACTS: ${factsSummary}${dealClosedHint}${goalsBlock}${goalRulesBlock}
 
 HARD RULES — VIOLATION OF ANY RULE = IMMEDIATE REJECTION:
 - Reply in 12 words or fewer.
@@ -5284,7 +5377,7 @@ Write the confirmation message now.`;
         return `The landlord is hostile or annoyed. Repair the conversation and close immediately.
 
 LANDLORD JUST SAID: "${lastLandlordMessage}"
-KNOWN FACTS: ${factsSummary}
+KNOWN FACTS: ${factsSummary}${goalsBlock}${goalRulesBlock}
 
 HARD RULES:
 - Open with a 3-word apology max ("My bad — sorry.").
@@ -5299,13 +5392,13 @@ Write the damage-control reply now.`;
     // Default: reuse the existing per-phase prompt builder but prepend our
     // structured-memory summary so the AI literally cannot ask about a fact
     // we already know or re-ask a question we've already asked.
-    const memoryHeader = `\n\nSTRUCTURED MEMORY (use this, DO NOT re-ask):\n- KNOWN FACTS: ${factsSummary}\n- ALREADY ASKED: ${askedSummary}\n- CREDENTIALS SHARED: ${alreadySharedCredentials ? 'YES — DO NOT repeat them' : 'no — okay to mention once if natural'}\n\nHARD RULES:\n- First sentence: acknowledge the landlord's last reply specifically.\n- Then ask AT MOST ONE new question that is NOT in ALREADY ASKED.\n- Never re-ask a topic in KNOWN FACTS.\n- Under 35 words.\n`;
-    return buildNegotiationSystemPrompt(phase, context) + memoryHeader;
+    const memoryHeader = `\n\nSTRUCTURED MEMORY (use this, DO NOT re-ask):\n- KNOWN FACTS: ${factsSummary}\n- ALREADY ASKED: ${askedSummary}\n- CREDENTIALS SHARED: ${alreadySharedCredentials ? 'YES — DO NOT repeat them' : 'no — okay to mention once if natural'}${goalsBlock}${goalRulesBlock}\n\nHARD RULES:\n- First sentence: acknowledge the landlord's last reply specifically.\n- Then ask AT MOST ONE new question that is NOT in ALREADY ASKED.\n- Never re-ask a topic in KNOWN FACTS.\n- Under 35 words.\n`;
+    return buildNegotiationSystemPrompt(phase, Object.assign({}, context, { tenantGoals })) + memoryHeader;
 }
 
 app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, res) => {
     try {
-        const { phase, context, messageHistory, tone, facts, alreadyAsked, alreadySharedCredentials } = req.body;
+        const { phase, context, messageHistory, tone, facts, alreadyAsked, alreadySharedCredentials, tenantGoals } = req.body;
 
         if (!phase) {
             return res.status(400).json({ error: 'Phase is required' });
@@ -5320,10 +5413,24 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             lastLandlordMessage: sanitizeForPrompt(context?.lastLandlordMessage, 500)
         };
 
+        // Defensively sanitize free-text fields inside tenantGoals so a
+        // malicious client can't smuggle prompt-injection text via the panel.
+        const safeGoals = (tenantGoals && typeof tenantGoals === 'object') ? {
+            ...tenantGoals,
+            employment: sanitizeForPrompt(tenantGoals.employment, 50),
+            income_confidence: sanitizeForPrompt(tenantGoals.income_confidence, 50),
+            pets: sanitizeForPrompt(tenantGoals.pets, 50),
+            tone: sanitizeForPrompt(tenantGoals.tone, 50),
+            assertiveness: sanitizeForPrompt(tenantGoals.assertiveness, 50),
+            movein_flexibility: sanitizeForPrompt(tenantGoals.movein_flexibility, 50),
+            lease_length: sanitizeForPrompt(tenantGoals.lease_length, 50),
+            movein_date: sanitizeForPrompt(tenantGoals.movein_date, 30)
+        } : {};
+
         // New phase-locked prompt when the frontend sends the structured fields;
         // falls back to the legacy prompt path for old clients that haven't been
         // updated yet (no tone/facts in the request body).
-        const hasStructuredFields = tone != null || facts != null || Array.isArray(alreadyAsked);
+        const hasStructuredFields = tone != null || facts != null || Array.isArray(alreadyAsked) || (tenantGoals && Object.keys(tenantGoals).length);
         const systemPrompt = hasStructuredFields
             ? buildPhaseLockedSystemPrompt({
                 phase,
@@ -5331,6 +5438,7 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
                 facts: facts || {},
                 alreadyAsked: alreadyAsked || [],
                 alreadySharedCredentials: !!alreadySharedCredentials,
+                tenantGoals: safeGoals,
                 context: safeContext
             })
             : buildNegotiationSystemPrompt(phase, safeContext);

@@ -456,6 +456,14 @@ class AINegotiator {
 
         console.log(`🎭 Generating ${currentPhase} phase message (tone: ${conversationState.tone || 'NEUTRAL'})`);
 
+        // Pull tenant goals from the page panel (if present). When this script
+        // runs on a page without the goals panel (e.g. embedded usage), the
+        // helper is undefined and we ship an empty object — backend treats it
+        // as "no goals set" and uses the legacy behavior.
+        const tenantGoals = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+
         try {
             const data = await this.postJSON('/api/negotiate/phase-message', {
                 phase: currentPhase,
@@ -468,6 +476,7 @@ class AINegotiator {
                 facts: conversationState.facts || {},
                 alreadyAsked: [...(conversationState.alreadyAsked || [])],
                 alreadySharedCredentials: !!conversationState.alreadySharedCredentials,
+                tenantGoals,
                 messageHistory: conversationState.messageHistory || []
             });
 
