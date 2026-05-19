@@ -666,7 +666,13 @@
                                 </svg>
                             </button>
                         </div>
-                        <div class="flex justify-end mt-2">
+                        <div class="flex justify-between items-center mt-2">
+                            <span id="ngActiveBadge" class="hidden text-xs font-medium text-green-700 inline-flex items-center gap-1">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Using negotiation goals to find the best option
+                            </span>
                             <p id="charCount" class="text-xs text-gray-400">0/500</p>
                         </div>
                     </div>
@@ -2236,7 +2242,18 @@
             window.refreshTenantGoalsForUser = function () {
                 goals = loadGoals();
                 applyToDom();
+                syncActiveBadge();
             };
+
+            // Toggle the green "Using negotiation goals…" badge in the chat
+            // input footer. Visibility tracks `_lockedAt` — the badge is the
+            // chat-side mirror of the panel header's "🔒 Locked in" state.
+            function syncActiveBadge() {
+                const badge = document.getElementById('ngActiveBadge');
+                if (!badge) return;
+                if (goals && goals._lockedAt) badge.classList.remove('hidden');
+                else badge.classList.add('hidden');
+            }
 
             // Reset all goals: clear storage for current key + reset in-memory + re-render.
             window.clearTenantGoals = function () {
@@ -2245,6 +2262,7 @@
                 try { localStorage.removeItem(DEFAULT_KEY); } catch (_) { /* ignore */ }
                 goals = emptyGoals();
                 applyToDom();
+                syncActiveBadge();
             };
 
             // Lock in: explicit "I'm done configuring — use this set" action.
@@ -2259,9 +2277,10 @@
                 try { localStorage.setItem(DEFAULT_KEY, payload); } catch (_) { /* ignore */ }
                 console.log('🔒 Tenant negotiation goals locked in:', goals);
                 refreshSummaries();
+                syncActiveBadge();
                 const confirmEl = document.getElementById('ngLockInConfirm');
                 if (confirmEl) {
-                    confirmEl.textContent = '✅ Goals locked in. Next AI message will use them.';
+                    confirmEl.textContent = '✅ The negotiator will use these now.';
                     setTimeout(() => { if (confirmEl) confirmEl.textContent = ''; }, 4000);
                 }
             };
@@ -2281,6 +2300,9 @@
             }
 
             applyToDom();
+            // Sync the chat-footer badge once on load so it reflects any
+            // previously-locked goals restored from localStorage.
+            syncActiveBadge();
         })();
     </script>
 </body>
