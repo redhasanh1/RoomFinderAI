@@ -28,7 +28,11 @@ const SUPABASE_ANON = process.env.SUPABASE_ANON || '';
 
 const args = parseArgs(process.argv.slice(2));
 const ITERATIONS = Math.max(1, Number(args.iterations || 1));
-const CONCURRENCY = Math.max(1, Number(args.concurrency || 3));
+// Default to fully sequential (one convo at a time). Production has a 100/hr
+// rate limit per origin, so parallelism doesn't actually let us do more
+// work — it just fails faster with 429s. Override with --concurrency N
+// only if you're confident you're under the hourly cap.
+const CONCURRENCY = Math.max(1, Number(args.concurrency || 1));
 const MAX_TURNS = Math.max(4, Number(args.maxTurns || 12));
 
 // Tenant goal "templates" — the harness rotates through these so we test
