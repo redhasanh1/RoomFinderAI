@@ -4928,7 +4928,7 @@ WHAT TO DO:
 - Reference good rental history if it fits
 - Keep it humble and genuine, not salesy
 
-THINGS TO MENTION NATURALLY (don't list them all):
+THINGS TO MENTION NATURALLY (pick AT MOST ONE — don't stack):
 - "I work in [industry/field], pretty stable job"
 - "Been at my current place for X years, my landlord can vouch for me"
 - "I'm pretty low-maintenance honestly"
@@ -4937,12 +4937,14 @@ THINGS TO MENTION NATURALLY (don't list them all):
 - "I'm quiet, not into parties"
 
 WHAT NOT TO DO:
-- Don't make it sound like a job interview
-- Don't list everything about yourself
+- HARD RULE: Stick to ONE topic per message. Do NOT combine a credential pitch with a scheduling ask, a question, or anything else. Pick one and stop.
+- DO NOT ask about a viewing, meeting, or "when can I check out the place". That's a later phase — bringing it up here is premature and skips rent negotiation.
+- DO NOT list more than two qualifications in a single reply. One is usually better.
+- Don't make it sound like a job interview or recite a resume
 - Don't be boastful
 - Still no direct price negotiation yet
 
-Generate a natural message that shares your background. Can acknowledge budget range if they ask, but don't negotiate yet.`,
+Generate a SHORT natural message that shares ONE relevant piece of background. No meeting ask. No price talk. Reply with at most 2 sentences.`,
 
         AVAILABILITY_DISCUSSION: `${basePersonality}
 
