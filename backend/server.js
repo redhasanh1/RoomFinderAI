@@ -5138,26 +5138,30 @@ ${leaseHint ? `LEVERAGE YOU CAN OFFER: ${leaseHint} commitment.` : ''}
 
 YOUR GOAL: Work toward a price that works for both of you. You can negotiate now, but still sound human.
 
+${context.landlordCounterOffer && context.landlordCounterOffer > userBudget + 50 ? `HARDEST RULE (highest priority — this is the biggest leak we see):
+The landlord just countered at $${context.landlordCounterOffer} but your target is ~$${userBudget}. You MUST NOT accept this counter. Make a counter of your own — propose somewhere between your last offer ($${context.currentOffer || userBudget}) and their counter, but NOT just rubber-stamp their number. Example: "I hear you on $${context.landlordCounterOffer}, but $${Math.round((userBudget + context.landlordCounterOffer) / 2)} is more in my range — could we land there?" Do not say "yes that works" / "deal" / "sounds good" to their counter while it's still above your target.` : ''}
+
 NEGOTIATION APPROACH:
 - Acknowledge their position genuinely
 - Explain your constraints honestly (not as tactics)
-- Make reasonable counter-offers
-- Be willing to meet in the middle
+- Make reasonable counter-offers — propose a SPECIFIC NUMBER, not just "could you come down"
+- Be willing to meet in the middle, but make THEM come down too
 - Express genuine interest in making this work
 
 GOOD NEGOTIATION PHRASES:
-- "I hear you. Let me see if I can stretch to $X..."
-- "That's a bit above what I was hoping, but I really want this place. Could you do $X?"
-- "I totally understand. What if we met somewhere in the middle?"
+- "I hear you. Could you do $X?" (where X is between your offer and their counter)
+- "That's still a bit above what I was hoping. What about $X — I can commit to a longer lease."
+- "I totally understand. What if we met in the middle at $X?"
 - "Would $X work for you? I can commit to [value-add: longer lease, immediate move-in, etc.]"
 
 WHAT NOT TO DO:
+- DO NOT accept the landlord's counter on the first try if it's significantly above your target. Always counter back at least once with your own number.
 - Don't say "My final offer is..." unless you mean it
 - Don't be aggressive or confrontational
 - Don't use formal negotiation language
 - Don't threaten to walk away (unless genuine)
 
-Generate a natural negotiation response. Sound like a real person trying to make a deal work.`,
+Generate a natural negotiation response with a SPECIFIC counter-offer number when there's still daylight between you and the landlord. Sound like a real person trying to make a deal work.`,
 
         COUNTER_OFFER: `${basePersonality}
 
@@ -5673,6 +5677,23 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             if (!priceTouched && dayInReply && meetingAffirm && phaseSafe) {
                 console.warn(`🛡️ Backend validator: AI affirmed meeting before price was discussed. Rewriting (phase=${phase}).`);
                 safeResponse = `That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.`;
+            }
+
+            // Second validator: in ACTIVE_NEGOTIATION (or CLOSING), if the AI
+            // tries to accept an above-target counter without making its own
+            // counter first, rewrite to a counter. Harness at N=100 showed
+            // 71% of post-iter5 deals settled too high — the AI rubber-stamps
+            // the landlord's first counter when the landlord makes one.
+            const tenantTargetRent = (safeContext && safeContext.userBudget) ? Number(safeContext.userBudget) : 0;
+            const landlordCounter = facts?.landlord_last_named_price || (safeContext && Number(safeContext.landlordCounterOffer)) || 0;
+            const tooHigh = tenantTargetRent > 0 && landlordCounter > 0 && (landlordCounter - tenantTargetRent) > 75;
+            const acceptanceWord = /\b(yes,? that works|sounds (good|great)|deal|done|works for me|happy with that|i.?ll take it|let.?s do (it|that))\b/i.test(safeResponse);
+            const counterWord = /\b(could|how about|what (about|if)|would|propose|how does|stretch to|meet (in )?(the )?middle)\b/i.test(safeResponse);
+            const aiNamedPrice = /\$\s*\d/.test(safeResponse);
+            if (tooHigh && acceptanceWord && !counterWord && !aiNamedPrice && phase !== 'INTRODUCTION' && phase !== 'RAPPORT_BUILDING' && phase !== 'QUALIFICATION') {
+                const midpoint = Math.round((tenantTargetRent + landlordCounter) / 2);
+                console.warn(`🛡️ Backend validator: AI accepted $${landlordCounter} but target was $${tenantTargetRent}. Rewriting to counter at $${midpoint}.`);
+                safeResponse = `I hear you on $${landlordCounter}, but $${midpoint} is more in my range. Could we land there?`;
             }
         } catch (validatorErr) {
             console.warn('Backend response validator threw (non-fatal):', validatorErr?.message || validatorErr);
