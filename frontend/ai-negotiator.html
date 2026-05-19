@@ -14,6 +14,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="/frontend/notifications.js?v=20260129b"></script>
+    <script src="/frontend/js/notification-manager.js?v=20260519a"></script>
     <script src="/frontend/ai-chat.js?v=20260517-close-the-deal"></script>
     <script src="/frontend/ai-negotiation.js?v=20260517-close-the-deal"></script>
     <script type="module" src="/frontend/chat-system.js?v=20260129b"></script>
@@ -2224,6 +2225,13 @@
 
             // ----- Public API for ai-negotiation.js -----
             window.getTenantGoals = function () {
+                // Hard gate: goals are not "active" until the user clicks the
+                // 🔒 Lock in negotiation goals button. The chat-footer badge
+                // already tracks _lockedAt; this makes the backend payload
+                // match the badge so the promise is truthful (no badge → no
+                // goals sent).
+                if (!goals || !goals._lockedAt) return {};
+
                 // Strip empty fields so the backend prompt stays tight.
                 // Internal-only fields (prefixed with _) never go over the wire.
                 const out = {};

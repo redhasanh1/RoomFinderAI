@@ -527,7 +527,9 @@ class AINegotiator {
         if (Object.keys(tenantGoals).length > 0) {
             console.log('🎯 Sending negotiation goals:', tenantGoals);
         } else {
-            console.log('🎯 Sending no negotiation goals (panel is empty).');
+            // Goals helper returned empty — either the panel has no values,
+            // OR the user hasn't clicked the 🔒 Lock in button yet.
+            console.log('🎯 No goals sent (panel empty OR Lock-in not clicked yet).');
         }
 
         try {
@@ -807,6 +809,28 @@ Write 2-3 sentences negotiating naturally.`
     async handleLandlordReplyWithPhases(landlordMessage, negotiationId, listing) {
         try {
             console.log('💬 Processing landlord reply for phased conversation');
+
+            // Fire a browser notification when a landlord replies while the
+            // tab is in the background. Reuses the existing Web Push system
+            // (notification-manager.js). Skipped silently if permission
+            // hasn't been granted or the user is actively focused on the page.
+            try {
+                if (typeof window !== 'undefined'
+                    && window.notificationManager
+                    && typeof window.notificationManager.sendLocalNotification === 'function'
+                    && typeof document !== 'undefined'
+                    && document.hidden) {
+                    const listingTitle = listing?.title || 'a listing';
+                    const preview = String(landlordMessage || '').slice(0, 90);
+                    window.notificationManager.sendLocalNotification(
+                        `Landlord replied: ${listingTitle}`,
+                        preview,
+                        { tag: `negotiator-${negotiationId}`, requireInteraction: false }
+                    );
+                }
+            } catch (notifyErr) {
+                console.warn('Landlord-reply notification failed (non-fatal):', notifyErr?.message || notifyErr);
+            }
 
             // Get conversation state
             let conversationState = this.getConversationState(negotiationId);
