@@ -165,7 +165,11 @@ async function runConversation({ iter, listing, goals, persona }) {
     let currentOffer = null;
     let landlordCounterOffer = null;
     const tenantGoals = Object.assign({}, goals, { monthly_budget: listing.price > 2500 ? Math.round(listing.price * 1.1) : 0 });
-    const closingRe = /\b(deal|sold|agreed|sounds good|works for me|that works|fine by me|happy with that|let.?s do it|let.?s meet|come by|stop by|sign|deposit|i.?ll take it|we.?ll take it|see you)\b/i;
+    // Strong closing signals only — explicit deal/transaction language, not
+    // generic affirmation. Tightened from earlier ("works for me" was matching
+    // "street parking works for me" and forcing premature CLOSING in convos
+    // that were still in RAPPORT/QUALIFICATION).
+    const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (mon|tues|wed|thur|fri|sat|sun)|let.?s sign|done deal)\b/i;
     let closingTurnsSeen = 0;       // increments every loop while phase === 'CLOSING'
     const issues = [];
 
@@ -213,7 +217,10 @@ async function runConversation({ iter, listing, goals, persona }) {
         // counter-offers as "deals closed at landlord's price." If the tenant
         // is still actively negotiating (asking "is X firm?", proposing a
         // counter "$X is more my range"), keep looping.
-        const tenantIsAccepting = /\b(yes,? that works|sounds good|sounds great|deal\b|done deal|works for me|let.?s do it|i.?ll take it|happy with that|see you (mon|tues|wed|thur|fri|sat|sun))/i.test(tenantMsg);
+        // Tightened: a tenant ACCEPTING needs strong commit language, not
+        // generic affirmations that may be answering a property question
+        // ("yes parking works for me" ≠ "accepting the deal").
+        const tenantIsAccepting = /\b(deal\b|done deal|i.?ll take it|let.?s do (it|that)|let.?s sign|happy to (sign|move forward)|see you (mon|tues|wed|thur|fri|sat|sun))\b/i.test(tenantMsg);
         const tenantIsCountering = /\b(could (we|you)|how about|what (about|if)|more in my range|stretch to|meet (in )?(the )?middle|firm|wiggle|flexibility|any room|is the .* firm)\b/i.test(tenantMsg) || /\?/.test(tenantMsg);
         if (phase === 'CLOSING') {
             closingTurnsSeen++;
