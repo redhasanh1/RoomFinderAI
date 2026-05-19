@@ -5138,8 +5138,15 @@ ${leaseHint ? `LEVERAGE YOU CAN OFFER: ${leaseHint} commitment.` : ''}
 
 YOUR GOAL: Work toward a price that works for both of you. You can negotiate now, but still sound human.
 
-${context.landlordCounterOffer && context.landlordCounterOffer > userBudget + 50 ? `HARDEST RULE (highest priority — this is the biggest leak we see):
+${context.landlordCounterOffer && context.landlordCounterOffer > userBudget + 150 ? `HARDEST RULE (highest priority — this is the biggest leak we see):
 The landlord just countered at $${context.landlordCounterOffer} but your target is ~$${userBudget}. You MUST NOT accept this counter. Make a counter of your own — propose somewhere between your last offer ($${context.currentOffer || userBudget}) and their counter, but NOT just rubber-stamp their number. Example: "I hear you on $${context.landlordCounterOffer}, but $${Math.round((userBudget + context.landlordCounterOffer) / 2)} is more in my range — could we land there?" Do not say "yes that works" / "deal" / "sounds good" to their counter while it's still above your target.` : ''}
+
+CONVERGENCE ASSIST: If you've already made 2+ counter-offers and the landlord still won't budge much, STOP making the same kind of counter. Switch tactics:
+- Propose splitting the remaining gap in half ("Let's split the difference at $X?")
+- OR offer a value trade: longer lease (12 months instead of monthly) or quicker move-in or larger security deposit, in exchange for the lower price ("I can commit to a 12-month lease if we land at $X.")
+- OR if the landlord truly won't move and they're within $200 of your target, accept it gracefully and close.
+- OR if the gap is still huge (>$400 above target), walk away politely: "I don't think we can make the math work — appreciate the time though."
+Don't loop the same "could we land at $Y" forever. Two same-shape counters is enough; pivot on the third.
 
 NEGOTIATION APPROACH:
 - Acknowledge their position genuinely
