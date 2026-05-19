@@ -5481,6 +5481,17 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
     const goalRulesBlock = goalRules.length ? `\n\nGOAL-DRIVEN RULES:\n${goalRules.join('\n')}\n` : '';
     const goalsBlock = goalsSummary ? `\n\nTENANT GOALS (your client set these — honor them):\n${goalsSummary}\n` : '';
 
+    // Day-availability rule — shared across ALL closing-phase branches (main
+    // accept, price-probe override, anchor override). Previous version only
+    // included this in the main accept branch, so when the price-probe
+    // override re-routed the prompt, tenants accepted days outside their
+    // available_days. Refactor: compute once here.
+    const _availDays = Array.isArray(tenantGoals?.available_days) ? tenantGoals.available_days : [];
+    const _availDaysStr = _availDays.join(', ');
+    const sharedDayRule = _availDays.length
+        ? `\n- AVAILABILITY: You can ONLY meet on [${_availDaysStr}]. If the landlord proposes any other day, politely counter-propose ${_availDays[0]}. NEVER say "works for me" / "sounds good" / "see you {day}" to a day outside [${_availDaysStr}].`
+        : '';
+
     // Diagnostic log: if a user reports "the goals aren't working", a single
     // Railway log line confirms whether the prompt actually saw them this turn.
     if (goalsSummary) {
@@ -5527,7 +5538,7 @@ HARD RULES:
 - Acknowledge their flexibility.
 - Then state YOUR target as a concrete number: $${tenantTargetRent}/month. Frame it as what you can comfortably do.
 - Ask if that works for them.
-- DO NOT keep asking "is X firm" — you've done that already, no answer.
+- DO NOT keep asking "is X firm" — you've done that already, no answer.${sharedDayRule}
 - Example: "Appreciate the flexibility — to be straight, I was hoping to land at $${tenantTargetRent}/month. Is that workable on your end?"
 
 Write the anchor reply now.`;
@@ -5542,9 +5553,9 @@ HARD RULES:
 - Reply in under 30 words.
 - Acknowledge their meeting suggestion (e.g. "That could work…").
 - Then ask ONE direct price question — is ${askPrice} firm? Is there any wiggle room?
-- DO NOT confirm a meeting day yet — make it conditional on the price conversation.
+- DO NOT confirm a meeting day yet — make it conditional on the price conversation.${sharedDayRule}
 - No emojis. No "Hey there!". No filler.
-- Example: "${context && context.proposed_meet_date ? context.proposed_meet_date : 'Sunday'} could work, but quick first — is ${askPrice} firm or any room there? Want to be aligned before locking a time."
+- Example: "${_availDays.length ? _availDays[0].charAt(0).toUpperCase() + _availDays[0].slice(1) : 'Sunday'} could work, but quick first — is ${askPrice} firm or any room there? Want to be aligned before locking a time."
 
 Write the price-probe reply now.`;
         }
