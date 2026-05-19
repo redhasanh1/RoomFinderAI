@@ -197,6 +197,23 @@ async function runConversation({ iter, listing, goals, persona }) {
         });
         const tenantMsg = String(tenantResp?.response || '').trim();
         if (!tenantMsg) { issues.push('empty_tenant_response'); break; }
+
+        // Defensive dedup: if this tenant message is near-identical to the
+        // PREVIOUS tenant message, we're stuck in a loop (the existing
+        // closing-detection break paths somehow missed). Terminate
+        // immediately. Catches "Yes, that works. See you Monday." repeated
+        // 3+ times when the AI converges to a single canned reply.
+        const priorTenant = lastMessageOfSender(messageHistory, 'ai');
+        if (priorTenant && messageHistory.length >= 2) {
+            const norm = s => String(s || '').toLowerCase().replace(/[^\w$ ]/g, '').slice(0, 40);
+            if (norm(priorTenant) === norm(tenantMsg)) {
+                if (!facts.agreed_price) facts.agreed_price = facts.landlord_last_named_price || currentOffer || null;
+                messageHistory.push({ sender: 'ai', content: tenantMsg, phase });
+                if (phase !== 'CLOSING') phase = 'CLOSING';
+                break;
+            }
+        }
+
         messageHistory.push({ sender: 'ai', content: tenantMsg, phase });
 
         // Extract any $ amount the tenant just offered — but ONLY treat it as
