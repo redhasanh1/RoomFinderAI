@@ -4587,10 +4587,21 @@ app.post('/api/chat', async (req, res) => {
         if (tenantGoals && typeof tenantGoals === 'object' && Object.keys(tenantGoals).length > 0 && typeof summarizeGoals === 'function') {
             const summary = summarizeGoals(tenantGoals);
             if (summary) {
-                const budgetRule = tenantGoals.monthly_budget
-                    ? `\nDO NOT ask the user for their monthly budget — they already set $${tenantGoals.monthly_budget}/mo above. Use that number. If you must confirm, frame it as "so you're looking around $${tenantGoals.monthly_budget}/month, right?" — never "what's your monthly budget?".`
-                    : '';
-                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.${budgetRule}\n`;
+                const rules = [];
+                if (tenantGoals.monthly_budget) {
+                    rules.push(`DO NOT ask the user for their monthly budget — they already set $${tenantGoals.monthly_budget}/mo above. Use that number. If you must confirm, frame it as "so you're looking around $${tenantGoals.monthly_budget}/month, right?" — never "what's your monthly budget?".`);
+                }
+                if (Array.isArray(tenantGoals.must_haves) && tenantGoals.must_haves.length) {
+                    rules.push(`DO NOT ask the user about preferences or must-haves — they already listed: ${tenantGoals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}. Acknowledge them ("I'll prioritize listings with X and Y") instead of re-asking.`);
+                }
+                if (tenantGoals.pets && tenantGoals.pets !== 'none') {
+                    rules.push(`DO NOT ask if the user has pets — they told you (${tenantGoals.pets}). Acknowledge it ("I'll focus on pet-friendly places") instead of re-asking.`);
+                }
+                if (tenantGoals.employment) {
+                    rules.push(`DO NOT ask about employment status — they're ${tenantGoals.employment.replace(/_/g, ' ')}.`);
+                }
+                const rulesBlock = rules.length ? '\n\n' + rules.map(r => '- ' + r).join('\n') : '';
+                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.${rulesBlock}\n`;
                 console.log('🎯 /api/chat: forwarding tenant goals to system prompt.');
             }
         }
@@ -4682,6 +4693,16 @@ Examples:
                 aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
             } catch (e) {
                 console.log('⚠️ Could not parse criteria JSON:', e.message);
+            }
+        }
+
+        // Fall back to locked-in goals when the LLM didn't extract a value
+        // from the user's natural-language message. Prevents the chat from
+        // looping "what's your budget?" when the user has it set in the panel.
+        if (tenantGoals && typeof tenantGoals === 'object') {
+            if (!extractedCriteria.price && tenantGoals.monthly_budget) {
+                extractedCriteria.price = Number(tenantGoals.monthly_budget);
+                console.log('🎯 /api/chat: filled criteria.price from goals.monthly_budget:', extractedCriteria.price);
             }
         }
 
