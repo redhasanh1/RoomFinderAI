@@ -3834,7 +3834,11 @@ Generate ONLY the message. No greetings, no signatures.
             // determines whether the landlord engages seriously. The earlier
             // "🤖 AI Negotiator on behalf of …:" header was disclosing it on
             // every message and crushing negotiation effectiveness.
-            const fullContent = `${message}\n\n— Sent via RoomFinder AI on behalf of ${userEmail}`;
+            // Disclosure as a fully-separated footer paragraph. The em-dash
+            // divider line ("———") on its own row, with blank lines above and
+            // below, makes the footer read as a distinct signature block
+            // rather than a trailing sentence on the message body.
+            const fullContent = `${message}\n\n———\n\nSent via RoomFinder AI on behalf of ${userEmail}`;
             const createdAt = new Date().toISOString();
             let finalSenderEmail = senderEmail;
             let finalContent = fullContent;
@@ -3875,7 +3879,7 @@ Generate ONLY the message. No greetings, no signatures.
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
                 finalSenderEmail = userEmail;
-                finalContent = `${message}\n\n— Sent via RoomFinder AI`;
+                finalContent = `${message}\n\n———\n\nSent via RoomFinder AI`;
                 const { error: retryError } = await this.supabase
                     .from('messages')
                     .insert({
