@@ -240,8 +240,13 @@ async function runConversation({ iter, listing, goals, persona }) {
             }
             if (closingTurnsSeen >= 4) {
                 // Hard stop after 4 CLOSING turns to prevent infinite loops.
-                // Don't pin agreed_price — convo timed out without convergence.
-                issues.push('closed_without_acceptance');
+                // Only flag as "closed without acceptance" if no price has
+                // converged — if numeric convergence already pinned an
+                // agreed_price, the deal effectively did close (the bots
+                // just didn't say "I'll take it" explicitly).
+                if (!facts.agreed_price) {
+                    issues.push('closed_without_acceptance');
+                }
                 break;
             }
         }
