@@ -166,10 +166,12 @@ async function runConversation({ iter, listing, goals, persona }) {
     let landlordCounterOffer = null;
     const tenantGoals = Object.assign({}, goals, { monthly_budget: listing.price > 2500 ? Math.round(listing.price * 1.1) : 0 });
     // Middle-ground closing detection: catches real closing language
-    // (let's meet Monday, see you Saturday, sign the lease, deal at $X) but
-    // does NOT catch generic affirmations ("works for me" answering "is parking
-    // ok?"). Iter 7 went too tight; iter 8 walks it back.
-    const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (mon|tues|wed|thur|fri|sat|sun)|let.?s meet (mon|tues|wed|thur|fri|sat|sun|on)|let.?s sign|done deal|come (sign|by saturday|by sunday|by monday|by tuesday|by wednesday|by thursday|by friday))\b/i;
+    // (let's meet Monday, see you Saturday/this weekend, sign the lease,
+    // deal at $X) but does NOT catch generic affirmations ("works for me"
+    // answering "is parking ok?"). Iter 7 went too tight; iter 8 walks it
+    // back; iter 9 adds "this weekend" / "next week" / "then" — common
+    // closing in the harness convos that the day-only regex missed.
+    const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (this weekend|next week|then|tomorrow|mon|tues|wed|thur|fri|sat|sun)|let.?s meet (this weekend|next week|mon|tues|wed|thur|fri|sat|sun|on)|let.?s sign|done deal|come (sign|by saturday|by sunday|by monday|by tuesday|by wednesday|by thursday|by friday))\b/i;
     let closingTurnsSeen = 0;       // increments every loop while phase === 'CLOSING'
     const issues = [];
 
@@ -219,8 +221,10 @@ async function runConversation({ iter, listing, goals, persona }) {
         // counter "$X is more my range"), keep looping.
         // Tightened: a tenant ACCEPTING needs strong commit language, not
         // generic affirmations that may be answering a property question
-        // ("yes parking works for me" ≠ "accepting the deal").
-        const tenantIsAccepting = /\b(deal\b|done deal|i.?ll take it|let.?s do (it|that)|let.?s sign|happy to (sign|move forward)|see you (mon|tues|wed|thur|fri|sat|sun))\b/i.test(tenantMsg);
+        // ("yes parking works for me" ≠ "accepting the deal"). Also catches
+        // "see you this weekend" / "see you then" — common closing phrasings
+        // the day-name-only regex missed.
+        const tenantIsAccepting = /\b(deal\b|done deal|i.?ll take it|let.?s do (it|that)|let.?s sign|happy to (sign|move forward)|see you (this weekend|next week|then|tomorrow|mon|tues|wed|thur|fri|sat|sun))\b/i.test(tenantMsg);
         const tenantIsCountering = /\b(could (we|you)|how about|what (about|if)|more in my range|stretch to|meet (in )?(the )?middle|firm|wiggle|flexibility|any room|is the .* firm)\b/i.test(tenantMsg) || /\?/.test(tenantMsg);
         if (phase === 'CLOSING') {
             closingTurnsSeen++;
