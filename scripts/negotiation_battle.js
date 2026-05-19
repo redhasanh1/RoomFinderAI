@@ -199,9 +199,22 @@ async function runConversation({ iter, listing, goals, persona }) {
         if (!tenantMsg) { issues.push('empty_tenant_response'); break; }
         messageHistory.push({ sender: 'ai', content: tenantMsg, phase });
 
-        // Extract any $ amount the tenant just offered.
+        // Extract any $ amount the tenant just offered — but ONLY treat it as
+        // an actual offer if it's framed as a commitment, not a reference to
+        // the landlord's price in a question. "is the $3050 firm?" mentions
+        // landlord's number but isn't a counter; "$2822 is more in my range"
+        // IS a counter. Earlier bug: harness pinned agreed_price = listing
+        // price when tenant repeated landlord's number in a probe.
         const t$ = findFirstPrice(tenantMsg, { min: 100, max: 50000 });
-        if (t$ != null) currentOffer = t$;
+        if (t$ != null) {
+            const isCommitment = /\b(could (we|you) do|how about|i can (do|stretch|commit)|what about|propose|land at|more in my range|meet (in )?(the )?middle|i.?m at|my (budget|range|target|comfortable) (is|around))\b/i.test(tenantMsg);
+            const isReference = /\b(is (the|this|that)? ?\$?[\d,]+ firm|any (room|wiggle|flexibility)|firm at|wiggle room)\b/i.test(tenantMsg);
+            // Treat as currentOffer only if it's a commitment AND not just
+            // referencing the landlord's existing price.
+            if (isCommitment && !isReference && t$ !== facts.landlord_last_named_price) {
+                currentOffer = t$;
+            }
+        }
 
         // Phase-locked credential pitch sticks once any QUALIFICATION turn happened.
         if (phase === 'QUALIFICATION') alreadySharedCredentials = true;
