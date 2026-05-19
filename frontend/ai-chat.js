@@ -1364,6 +1364,54 @@ class AIChatHandler {
         }
     }
 
+    // Out-of-band landlord notification after the AI's intro lands. Fires
+    // two channels in parallel — in-app notification row (so the landlord
+    // sees it in their notifications panel next time they open the site)
+    // and a Brevo email (so they get pinged even when offline). Both
+    // fire-and-forget; failures only log warnings.
+    _notifyLandlordOfIntro(listing, message) {
+        const landlordEmail = listing?.user_email;
+        if (!landlordEmail || !this.currentUser?.email) return;
+        const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
+        const listingTitle = listing.title || 'your listing';
+        const truncated = String(message || '').slice(0, 120);
+
+        // Fire and forget — don't block the chat UI.
+        (async () => {
+            // 1. In-app notification row via the SECURITY DEFINER RPC.
+            try {
+                const { error } = await this.supabase.rpc('create_notification', {
+                    recipient_email: landlordEmail,
+                    notification_title: `New inquiry: ${listingTitle}`,
+                    notification_content: `New message from ${userName} (${this.currentUser.email})\n\nProperty: ${listingTitle}\n\nMessage: "${truncated}"\n\nReply in the chat to continue the conversation.`
+                });
+                if (error) console.warn('⚠️ create_notification RPC failed (non-fatal):', error.message);
+                else console.log('🔔 In-app notification created for landlord:', landlordEmail);
+            } catch (e) {
+                console.warn('⚠️ create_notification threw (non-fatal):', e?.message || e);
+            }
+
+            // 2. Brevo email (works even when landlord is offline).
+            try {
+                const r = await fetch('/api/message-landlord', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        listingId: listing.id,
+                        landlordEmail,
+                        message,
+                        userEmail: this.currentUser.email,
+                        userName
+                    })
+                });
+                if (!r.ok) console.warn('⚠️ /api/message-landlord returned', r.status);
+                else console.log('📧 Landlord email queued for listing:', listing.id);
+            } catch (e) {
+                console.warn('⚠️ /api/message-landlord threw (non-fatal):', e?.message || e);
+            }
+        })();
+    }
+
     // Start negotiation for a specific listing - HUMAN-LIKE PHASED APPROACH
     async startNegotiationForListing(listing) {
         // DEBUG: log the call stack so we can pin down WHICH caller is firing
@@ -1553,6 +1601,12 @@ class AIChatHandler {
 
                         // Set up auto-reply listener for this conversation
                         this.setupConversationAutoReply(conversationId, conversationData.negotiationId, listing);
+
+                        // Fan out landlord notifications so they actually know
+                        // someone reached out — the real-time message listener
+                        // only fires while the landlord is on the site. Both
+                        // channels are fire-and-forget; failures don't block.
+                        this._notifyLandlordOfIntro(listing, conversationData.message);
                     } else {
                         this.appendMessage('AI', `Failed to send message to landlord`, 'left');
                     }
@@ -1581,6 +1635,7 @@ class AIChatHandler {
                 this.sentIntroConversations.add(conversationId);
                 this.appendMessage('AI', `Sent message to landlord for "${listing.title}"`, 'left');
                 this.appendMessage('AI', `Message: "${message}"`, 'left');
+                this._notifyLandlordOfIntro(listing, message);
             }
         } catch (error) {
             console.error('Conversation error:', error);
