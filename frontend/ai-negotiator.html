@@ -365,6 +365,231 @@
             </div>
 
             <div class="max-w-4xl mx-auto space-y-8">
+            <!-- Negotiation Goals Panel -->
+            <div class="w-full">
+                <div class="glass-card p-5" id="negotiationGoalsPanel">
+                    <style>
+                        .ng-chip { display:inline-flex; align-items:center; padding:6px 12px; margin:3px 4px 3px 0; border-radius:999px; font-size:13px; line-height:1; background:#f3f4f6; color:#374151; border:1px solid #e5e7eb; cursor:pointer; user-select:none; transition: all .15s; }
+                        .ng-chip:hover { background:#e5e7eb; }
+                        .ng-chip[aria-pressed="true"] { background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border-color:transparent; }
+                        .ng-section { border-top:1px solid #e5e7eb; }
+                        .ng-section:first-of-type { border-top:none; }
+                        .ng-section-header { display:flex; align-items:center; justify-content:space-between; width:100%; padding:12px 0; cursor:pointer; background:transparent; border:none; text-align:left; }
+                        .ng-section-header h4 { font-weight:600; color:#1f2937; font-size:14px; }
+                        .ng-section-summary { font-size:12px; color:#6b7280; margin-left:8px; flex:1; text-align:right; padding-right:8px; }
+                        .ng-arrow { transition: transform .2s; color:#9ca3af; font-size:11px; }
+                        .ng-section.open .ng-arrow { transform: rotate(90deg); }
+                        .ng-section-body { display:none; padding:4px 0 14px; }
+                        .ng-section.open .ng-section-body { display:block; }
+                        .ng-field { margin-bottom:10px; }
+                        .ng-field-label { font-size:12px; font-weight:500; color:#4b5563; margin-bottom:4px; display:block; }
+                        .ng-input, .ng-select { width:100%; max-width:240px; padding:6px 10px; border:1px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; }
+                        .ng-checkrow { display:flex; align-items:center; gap:6px; font-size:13px; color:#374151; padding:3px 0; }
+                        .ng-checkrow input { width:14px; height:14px; }
+                        .ng-row { display:flex; flex-wrap:wrap; gap:14px; }
+                        .ng-row .ng-field { flex:1; min-width:160px; }
+                    </style>
+
+                    <button type="button" class="ng-section-header" id="ngMasterToggle" style="border-bottom:1px solid #e5e7eb; padding-bottom:10px;">
+                        <h4 style="font-size:16px; color:#111827;">🎯 Your Negotiation Goals</h4>
+                        <span class="ng-section-summary" id="ngMasterSummary" style="text-align:right;">Click to set preferences</span>
+                        <span class="ng-arrow" id="ngMasterArrow">▶</span>
+                    </button>
+
+                    <div id="ngMasterBody" style="display:none; padding-top:6px;">
+
+                        <!-- 1. Meeting & viewing -->
+                        <div class="ng-section open" data-ng-section="meeting">
+                            <button type="button" class="ng-section-header" onclick="ngToggleSection('meeting')">
+                                <h4>Meeting & viewing</h4>
+                                <span class="ng-section-summary" id="ngSummary-meeting"></span>
+                                <span class="ng-arrow">▶</span>
+                            </button>
+                            <div class="ng-section-body">
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Available days</label>
+                                    <div data-ng-chips="available_days">
+                                        <span class="ng-chip" data-value="mon">Mon</span>
+                                        <span class="ng-chip" data-value="tue">Tue</span>
+                                        <span class="ng-chip" data-value="wed">Wed</span>
+                                        <span class="ng-chip" data-value="thu">Thu</span>
+                                        <span class="ng-chip" data-value="fri">Fri</span>
+                                        <span class="ng-chip" data-value="sat">Sat</span>
+                                        <span class="ng-chip" data-value="sun">Sun</span>
+                                    </div>
+                                </div>
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Time of day</label>
+                                    <div data-ng-chips="available_time">
+                                        <span class="ng-chip" data-value="morning">Morning</span>
+                                        <span class="ng-chip" data-value="afternoon">Afternoon</span>
+                                        <span class="ng-chip" data-value="evening">Evening</span>
+                                    </div>
+                                </div>
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Meeting format</label>
+                                    <div data-ng-chips="meeting_format">
+                                        <span class="ng-chip" data-value="in_person">In-person tour</span>
+                                        <span class="ng-chip" data-value="video">Video call</span>
+                                        <span class="ng-chip" data-value="phone">Phone</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Move-in & lease -->
+                        <div class="ng-section" data-ng-section="movein">
+                            <button type="button" class="ng-section-header" onclick="ngToggleSection('movein')">
+                                <h4>Move-in & lease</h4>
+                                <span class="ng-section-summary" id="ngSummary-movein"></span>
+                                <span class="ng-arrow">▶</span>
+                            </button>
+                            <div class="ng-section-body">
+                                <div class="ng-row">
+                                    <div class="ng-field">
+                                        <label class="ng-field-label">Desired move-in date</label>
+                                        <input type="date" class="ng-input" data-ng-input="movein_date">
+                                    </div>
+                                    <div class="ng-field">
+                                        <label class="ng-field-label">Flexibility</label>
+                                        <select class="ng-select" data-ng-input="movein_flexibility">
+                                            <option value="">— pick one —</option>
+                                            <option value="exact">Exact date</option>
+                                            <option value="1week">± 1 week</option>
+                                            <option value="2weeks">± 2 weeks</option>
+                                            <option value="flexible">Flexible</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Lease length</label>
+                                    <div data-ng-chips="lease_length" data-ng-single="1">
+                                        <span class="ng-chip" data-value="6mo">6 months</span>
+                                        <span class="ng-chip" data-value="12mo">12 months</span>
+                                        <span class="ng-chip" data-value="m2m">Month-to-month</span>
+                                        <span class="ng-chip" data-value="flexible">Flexible</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Price goals -->
+                        <div class="ng-section" data-ng-section="price">
+                            <button type="button" class="ng-section-header" onclick="ngToggleSection('price')">
+                                <h4>Price goals</h4>
+                                <span class="ng-section-summary" id="ngSummary-price"></span>
+                                <span class="ng-arrow">▶</span>
+                            </button>
+                            <div class="ng-section-body">
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Target reduction per month ($)</label>
+                                    <input type="number" min="0" step="25" placeholder="e.g. 200" class="ng-input" data-ng-input="target_reduction">
+                                </div>
+                                <label class="ng-checkrow"><input type="checkbox" data-ng-input="ask_utilities_included"> Ask for utilities included</label>
+                                <label class="ng-checkrow"><input type="checkbox" data-ng-input="ask_lower_deposit"> Ask for lower deposit</label>
+                                <label class="ng-checkrow"><input type="checkbox" data-ng-input="ask_first_month_free"> Ask for first month free / move-in incentive</label>
+                            </div>
+                        </div>
+
+                        <!-- 4. About me -->
+                        <div class="ng-section" data-ng-section="about">
+                            <button type="button" class="ng-section-header" onclick="ngToggleSection('about')">
+                                <h4>About me (AI may mention these)</h4>
+                                <span class="ng-section-summary" id="ngSummary-about"></span>
+                                <span class="ng-arrow">▶</span>
+                            </button>
+                            <div class="ng-section-body">
+                                <div class="ng-row">
+                                    <div class="ng-field">
+                                        <label class="ng-field-label">Employment</label>
+                                        <select class="ng-select" data-ng-input="employment">
+                                            <option value="">— skip —</option>
+                                            <option value="employed">Employed full-time</option>
+                                            <option value="student">Student</option>
+                                            <option value="self_employed">Self-employed</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="ng-field">
+                                        <label class="ng-field-label">Income / credit</label>
+                                        <select class="ng-select" data-ng-input="income_confidence">
+                                            <option value="">— skip —</option>
+                                            <option value="strong">Strong / well above rent</option>
+                                            <option value="average">Comfortably covers rent</option>
+                                            <option value="building">Building credit / co-signer</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="ng-row">
+                                    <div class="ng-field">
+                                        <label class="ng-field-label">Pets</label>
+                                        <select class="ng-select" data-ng-input="pets">
+                                            <option value="">— skip —</option>
+                                            <option value="none">No pets</option>
+                                            <option value="cat">Cat(s)</option>
+                                            <option value="dog">Dog(s)</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="ng-field">
+                                        <label class="ng-field-label">Occupants</label>
+                                        <input type="number" min="1" max="10" placeholder="1" class="ng-input" data-ng-input="occupants">
+                                    </div>
+                                </div>
+                                <label class="ng-checkrow"><input type="checkbox" data-ng-input="non_smoker"> Non-smoker</label>
+                            </div>
+                        </div>
+
+                        <!-- 5. Must-haves -->
+                        <div class="ng-section" data-ng-section="musthave">
+                            <button type="button" class="ng-section-header" onclick="ngToggleSection('musthave')">
+                                <h4>Must-haves (deal breakers)</h4>
+                                <span class="ng-section-summary" id="ngSummary-musthave"></span>
+                                <span class="ng-arrow">▶</span>
+                            </button>
+                            <div class="ng-section-body">
+                                <div data-ng-chips="must_haves">
+                                    <span class="ng-chip" data-value="parking">Parking</span>
+                                    <span class="ng-chip" data-value="in_unit_laundry">In-unit laundry</span>
+                                    <span class="ng-chip" data-value="pet_friendly">Pet-friendly</span>
+                                    <span class="ng-chip" data-value="furnished">Furnished</span>
+                                    <span class="ng-chip" data-value="dishwasher">Dishwasher</span>
+                                    <span class="ng-chip" data-value="accessible">Accessible</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 6. Style -->
+                        <div class="ng-section" data-ng-section="style">
+                            <button type="button" class="ng-section-header" onclick="ngToggleSection('style')">
+                                <h4>Negotiation style</h4>
+                                <span class="ng-section-summary" id="ngSummary-style"></span>
+                                <span class="ng-arrow">▶</span>
+                            </button>
+                            <div class="ng-section-body">
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Tone</label>
+                                    <div data-ng-chips="tone" data-ng-single="1">
+                                        <span class="ng-chip" data-value="friendly">Friendly</span>
+                                        <span class="ng-chip" data-value="professional">Professional</span>
+                                        <span class="ng-chip" data-value="firm">Firm</span>
+                                    </div>
+                                </div>
+                                <div class="ng-field">
+                                    <label class="ng-field-label">Assertiveness</label>
+                                    <div data-ng-chips="assertiveness" data-ng-single="1">
+                                        <span class="ng-chip" data-value="low">Low</span>
+                                        <span class="ng-chip" data-value="medium">Medium</span>
+                                        <span class="ng-chip" data-value="high">High</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
             <!-- Chat Interface - Main Negotiator -->
             <div class="w-full">
                 <div class="glass-card flex flex-col" style="height: 600px;">
@@ -1787,6 +2012,209 @@
         window.openListingPopup = openListingPopup;
         window.closeListingPopup = closeListingPopup;
         window.contactLandlordFromPopup = contactLandlordFromPopup;
+    </script>
+
+    <!-- ======================================================
+         Negotiation Goals panel: load/save + chip + summary wiring.
+         Exposes window.getTenantGoals() for ai-negotiation.js to read
+         on every backend request, and window.setTenantGoalsFromEmail()
+         so we can re-key storage when the user signs in.
+         ====================================================== -->
+    <script>
+        (function () {
+            const STORAGE_PREFIX = 'tenantGoals:';
+            const DEFAULT_KEY = STORAGE_PREFIX + '__default__';
+
+            // Goals shape — kept flat for cheap JSON over the wire.
+            function emptyGoals() {
+                return {
+                    available_days: [],
+                    available_time: [],
+                    meeting_format: [],
+                    movein_date: '',
+                    movein_flexibility: '',
+                    lease_length: '',
+                    target_reduction: 0,
+                    ask_utilities_included: false,
+                    ask_lower_deposit: false,
+                    ask_first_month_free: false,
+                    employment: '',
+                    income_confidence: '',
+                    pets: '',
+                    occupants: '',
+                    non_smoker: false,
+                    must_haves: [],
+                    tone: '',
+                    assertiveness: ''
+                };
+            }
+
+            function storageKey() {
+                try {
+                    const u = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                    if (u && u.email) return STORAGE_PREFIX + u.email.toLowerCase();
+                } catch (_) { /* ignore */ }
+                return DEFAULT_KEY;
+            }
+
+            function loadGoals() {
+                try {
+                    const raw = localStorage.getItem(storageKey());
+                    if (!raw) return emptyGoals();
+                    return Object.assign(emptyGoals(), JSON.parse(raw));
+                } catch (_) {
+                    return emptyGoals();
+                }
+            }
+
+            function saveGoals(goals) {
+                try {
+                    localStorage.setItem(storageKey(), JSON.stringify(goals));
+                } catch (_) { /* quota / disabled — non-fatal */ }
+            }
+
+            let goals = loadGoals();
+
+            // ----- Apply current goals into the DOM (on load) -----
+            function applyToDom() {
+                document.querySelectorAll('[data-ng-chips]').forEach(group => {
+                    const field = group.getAttribute('data-ng-chips');
+                    const single = group.getAttribute('data-ng-single') === '1';
+                    const current = goals[field];
+                    group.querySelectorAll('.ng-chip').forEach(chip => {
+                        const v = chip.getAttribute('data-value');
+                        const on = single ? current === v : Array.isArray(current) && current.includes(v);
+                        chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+                    });
+                });
+                document.querySelectorAll('[data-ng-input]').forEach(el => {
+                    const field = el.getAttribute('data-ng-input');
+                    const val = goals[field];
+                    if (el.type === 'checkbox') el.checked = !!val;
+                    else el.value = val == null ? '' : val;
+                });
+                refreshSummaries();
+            }
+
+            // ----- Chip click handler -----
+            document.querySelectorAll('[data-ng-chips]').forEach(group => {
+                const field = group.getAttribute('data-ng-chips');
+                const single = group.getAttribute('data-ng-single') === '1';
+                group.addEventListener('click', e => {
+                    const chip = e.target.closest('.ng-chip');
+                    if (!chip) return;
+                    const v = chip.getAttribute('data-value');
+                    if (single) {
+                        goals[field] = goals[field] === v ? '' : v;
+                        group.querySelectorAll('.ng-chip').forEach(c => c.setAttribute('aria-pressed', c.getAttribute('data-value') === goals[field] ? 'true' : 'false'));
+                    } else {
+                        const arr = Array.isArray(goals[field]) ? goals[field].slice() : [];
+                        const idx = arr.indexOf(v);
+                        if (idx >= 0) arr.splice(idx, 1); else arr.push(v);
+                        goals[field] = arr;
+                        chip.setAttribute('aria-pressed', arr.includes(v) ? 'true' : 'false');
+                    }
+                    saveGoals(goals);
+                    refreshSummaries();
+                });
+            });
+
+            // ----- Input/select/checkbox change handler -----
+            document.querySelectorAll('[data-ng-input]').forEach(el => {
+                const field = el.getAttribute('data-ng-input');
+                const handler = () => {
+                    if (el.type === 'checkbox') goals[field] = el.checked;
+                    else if (el.type === 'number') goals[field] = el.value === '' ? '' : Number(el.value);
+                    else goals[field] = el.value;
+                    saveGoals(goals);
+                    refreshSummaries();
+                };
+                el.addEventListener('change', handler);
+                el.addEventListener('input', handler);
+            });
+
+            // ----- Collapsible sections -----
+            window.ngToggleSection = function (key) {
+                const sec = document.querySelector(`[data-ng-section="${key}"]`);
+                if (sec) sec.classList.toggle('open');
+            };
+
+            // Master toggle (the whole goals card)
+            document.getElementById('ngMasterToggle').addEventListener('click', () => {
+                const body = document.getElementById('ngMasterBody');
+                const arrow = document.getElementById('ngMasterArrow');
+                const open = body.style.display !== 'none';
+                body.style.display = open ? 'none' : 'block';
+                arrow.style.transform = open ? 'rotate(0deg)' : 'rotate(90deg)';
+            });
+
+            // ----- Section summary builders -----
+            function refreshSummaries() {
+                const sum = (id, text) => {
+                    const el = document.getElementById(id);
+                    if (el) el.textContent = text || '';
+                };
+
+                const days = (goals.available_days || []).map(d => d[0].toUpperCase() + d.slice(1)).join(', ');
+                const times = (goals.available_time || []).join(', ');
+                const fmts = (goals.meeting_format || []).map(f => f.replace('_', ' ')).join(', ');
+                sum('ngSummary-meeting', [days, times, fmts].filter(Boolean).join(' · '));
+
+                const moveinBits = [];
+                if (goals.movein_date) moveinBits.push(goals.movein_date);
+                if (goals.movein_flexibility) moveinBits.push(goals.movein_flexibility);
+                if (goals.lease_length) moveinBits.push(goals.lease_length);
+                sum('ngSummary-movein', moveinBits.join(' · '));
+
+                const priceBits = [];
+                if (goals.target_reduction) priceBits.push(`-$${goals.target_reduction}/mo`);
+                if (goals.ask_utilities_included) priceBits.push('utilities');
+                if (goals.ask_lower_deposit) priceBits.push('lower deposit');
+                if (goals.ask_first_month_free) priceBits.push('move-in incentive');
+                sum('ngSummary-price', priceBits.join(' · '));
+
+                const aboutBits = [];
+                if (goals.employment) aboutBits.push(goals.employment.replace('_', ' '));
+                if (goals.income_confidence) aboutBits.push(goals.income_confidence + ' income');
+                if (goals.pets) aboutBits.push(goals.pets === 'none' ? 'no pets' : goals.pets);
+                if (goals.occupants) aboutBits.push(goals.occupants + ' occupant' + (Number(goals.occupants) > 1 ? 's' : ''));
+                if (goals.non_smoker) aboutBits.push('non-smoker');
+                sum('ngSummary-about', aboutBits.join(' · '));
+
+                sum('ngSummary-musthave', (goals.must_haves || []).map(m => m.replace(/_/g, ' ')).join(', '));
+
+                const styleBits = [];
+                if (goals.tone) styleBits.push(goals.tone);
+                if (goals.assertiveness) styleBits.push(goals.assertiveness + ' assertiveness');
+                sum('ngSummary-style', styleBits.join(' · '));
+
+                // Master summary
+                const anySet = [days, times, fmts, goals.movein_date, goals.lease_length, goals.target_reduction, goals.tone].some(v => v && v !== '' && v !== 0);
+                sum('ngMasterSummary', anySet ? 'Goals set — click to edit' : 'Click to set preferences');
+            }
+
+            // ----- Public API for ai-negotiation.js -----
+            window.getTenantGoals = function () {
+                // Strip empty fields so the backend prompt stays tight.
+                const out = {};
+                Object.keys(goals).forEach(k => {
+                    const v = goals[k];
+                    if (Array.isArray(v)) { if (v.length) out[k] = v; }
+                    else if (typeof v === 'number') { if (v) out[k] = v; }
+                    else if (typeof v === 'boolean') { if (v) out[k] = v; }
+                    else if (v != null && v !== '') { out[k] = v; }
+                });
+                return out;
+            };
+
+            // Re-key storage when the user logs in after the page loaded with no session.
+            window.refreshTenantGoalsForUser = function () {
+                goals = loadGoals();
+                applyToDom();
+            };
+
+            applyToDom();
+        })();
     </script>
 </body>
 </html>
