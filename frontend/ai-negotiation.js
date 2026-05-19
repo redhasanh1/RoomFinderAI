@@ -521,6 +521,15 @@ class AINegotiator {
             ? window.getTenantGoals()
             : {};
 
+        // Round-trip visibility: log what we're sending so the user can verify
+        // in dev tools that the goals panel is actually being applied. Pairs
+        // with the backend's "🎯 Negotiation goals applied:" log line.
+        if (Object.keys(tenantGoals).length > 0) {
+            console.log('🎯 Sending negotiation goals:', tenantGoals);
+        } else {
+            console.log('🎯 Sending no negotiation goals (panel is empty).');
+        }
+
         try {
             const data = await this.postJSON('/api/negotiate/phase-message', {
                 phase: currentPhase,

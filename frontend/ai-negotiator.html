@@ -590,9 +590,13 @@
                             </div>
                         </div>
 
-                        <div style="display:flex; justify-content:flex-end; padding-top:10px; border-top:1px solid #e5e7eb; margin-top:6px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid #e5e7eb; margin-top:6px; gap:12px;">
                             <button type="button" id="ngResetAll" style="background:none; border:none; color:#6b7280; font-size:12px; cursor:pointer; text-decoration:underline;">Reset all</button>
+                            <button type="button" id="ngLockIn" style="background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
+                                🔒 Lock in negotiation goals
+                            </button>
                         </div>
+                        <p id="ngLockInConfirm" style="font-size:12px; color:#059669; margin:6px 0 0; text-align:right; min-height:16px;"></p>
 
                     </div>
                 </div>
@@ -2198,14 +2202,27 @@
 
                 // Master summary
                 const anySet = [days, times, fmts, goals.movein_date, goals.lease_length, goals.target_reduction, goals.tone].some(v => v && v !== '' && v !== 0);
-                sum('ngMasterSummary', anySet ? 'Goals set — click to edit' : 'Click to set preferences');
+                let masterText;
+                if (goals._lockedAt) {
+                    const dt = new Date(goals._lockedAt);
+                    const hh = String(dt.getHours()).padStart(2, '0');
+                    const mm = String(dt.getMinutes()).padStart(2, '0');
+                    masterText = `🔒 Locked in — AI will use these (${hh}:${mm})`;
+                } else if (anySet) {
+                    masterText = 'Goals set — click to edit, then Lock in';
+                } else {
+                    masterText = 'Click to set preferences';
+                }
+                sum('ngMasterSummary', masterText);
             }
 
             // ----- Public API for ai-negotiation.js -----
             window.getTenantGoals = function () {
                 // Strip empty fields so the backend prompt stays tight.
+                // Internal-only fields (prefixed with _) never go over the wire.
                 const out = {};
                 Object.keys(goals).forEach(k => {
+                    if (k.startsWith('_')) return;
                     const v = goals[k];
                     if (Array.isArray(v)) { if (v.length) out[k] = v; }
                     else if (typeof v === 'number') { if (v) out[k] = v; }
@@ -2224,9 +2241,35 @@
             // Reset all goals: clear storage for current key + reset in-memory + re-render.
             window.clearTenantGoals = function () {
                 try { localStorage.removeItem(storageKey()); } catch (_) { /* ignore */ }
+                // Also clear the default key in case auth was async at first save.
+                try { localStorage.removeItem(DEFAULT_KEY); } catch (_) { /* ignore */ }
                 goals = emptyGoals();
                 applyToDom();
             };
+
+            // Lock in: explicit "I'm done configuring — use this set" action.
+            // Writes the current in-memory goals to BOTH the email-keyed and
+            // the default storage keys (covers the async-auth edge case where
+            // earlier chips wrote to one key and later chips to the other),
+            // stamps a _lockedAt timestamp, and shows confirmation feedback.
+            window.lockTenantGoals = function () {
+                goals._lockedAt = new Date().toISOString();
+                const payload = JSON.stringify(goals);
+                try { localStorage.setItem(storageKey(), payload); } catch (_) { /* ignore */ }
+                try { localStorage.setItem(DEFAULT_KEY, payload); } catch (_) { /* ignore */ }
+                console.log('🔒 Tenant negotiation goals locked in:', goals);
+                refreshSummaries();
+                const confirmEl = document.getElementById('ngLockInConfirm');
+                if (confirmEl) {
+                    confirmEl.textContent = '✅ Goals locked in. Next AI message will use them.';
+                    setTimeout(() => { if (confirmEl) confirmEl.textContent = ''; }, 4000);
+                }
+            };
+
+            const lockBtn = document.getElementById('ngLockIn');
+            if (lockBtn) {
+                lockBtn.addEventListener('click', () => window.lockTenantGoals());
+            }
 
             const resetBtn = document.getElementById('ngResetAll');
             if (resetBtn) {
