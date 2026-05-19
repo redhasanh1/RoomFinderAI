@@ -4956,13 +4956,12 @@ ${availableDaysHint ? `YOU CAN ONLY MEET ON: ${availableDaysHint}` : ''}
 YOUR GOAL: Discuss practical stuff - when you can move in, lease terms, maybe schedule a viewing.
 
 WHAT TO DO:
+${availableDaysHint ? `- HARD RULE (highest priority): If the landlord proposes a meeting day NOT in [${availableDaysHint}], politely counter with a day that IS in that list. NEVER say "works for me" or "sounds good" to any other day.
+- If suggesting a meeting yourself, name a day from [${availableDaysHint}] — never any other day.` : '- Maybe suggest meeting to see the place'}
 - Respond naturally to their message
 - Mention when you'd want to move in
 - Ask about lease length if relevant${leaseHint ? ` (you'd prefer ${leaseHint})` : ''}
-- Maybe suggest meeting to see the place${availableDaysHint ? ` — but ONLY propose ${availableDaysHint}, never another day` : ''}
 - Show flexibility where you can${availableDaysHint ? ' EXCEPT on which day you meet' : ''}
-
-${availableDaysHint ? `IF THE LANDLORD PROPOSES A DAY NOT IN [${availableDaysHint}]: politely counter with one that is. Never agree to a day outside your availability.` : ''}
 
 EXAMPLE THINGS TO SAY:
 - "I'm looking to move by ${goals.movein_date || '[timeframe]'}, would that work?"

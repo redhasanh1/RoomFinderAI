@@ -34,6 +34,14 @@ class AIChatHandler {
         this.requirementsComplete = false;
         this.listingSelectionMode = false;
         this.currentViewedListing = null;
+
+        // Per-AIChat-instance memory of which conversations already had an
+        // intro message sent. Without this, multiple entry paths
+        // (manual Contact, startNegotiationsForAllListings, post-affirmation
+        // auto-trigger) each re-fire generatePhaseMessage('INTRODUCTION')
+        // and the landlord receives 2-3 near-duplicate "Hey saw your listing"
+        // messages back-to-back.
+        this.sentIntroConversations = new Set();
     }
 
     // Initialize the chat system
@@ -1203,6 +1211,42 @@ class AIChatHandler {
                 console.log('✅ Created new conversation with ID:', conversationId);
             }
 
+            // Idempotency guard — don't re-send an intro for a conversation
+            // that already has one. Two checks:
+            //   1. In-memory Set: catches re-entry within the same page session
+            //      (e.g. user clicks Contact twice, or post-affirmation handler
+            //      re-fires for an already-introduced listing).
+            //   2. DB history scan: catches re-entry across page reloads —
+            //      if an AI-authored message already exists in this conversation,
+            //      we're rejoining an existing chat and must not send a fresh intro.
+            if (this.sentIntroConversations.has(conversationId)) {
+                console.log('🛡️ Intro already sent for conversation', conversationId, '— skipping generation, just ensuring auto-reply listener is up.');
+                this.activeConversationId = conversationId;
+                this.activeListing = listing;
+                this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                return;
+            }
+            try {
+                const { data: existingAiMessages } = await this.supabase
+                    .from('messages')
+                    .select('id, sender_email')
+                    .eq('conversation_id', conversationId)
+                    .eq('sender_email', this.currentUser.email)
+                    .limit(1);
+                if (existingAiMessages && existingAiMessages.length > 0) {
+                    console.log('🛡️ Conversation', conversationId, 'already has an AI-authored message — skipping intro generation (likely a page reload).');
+                    this.sentIntroConversations.add(conversationId);
+                    this.activeConversationId = conversationId;
+                    this.activeListing = listing;
+                    this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                    return;
+                }
+            } catch (historyCheckErr) {
+                // Non-fatal — if the history check itself fails we fall through
+                // to the normal path. Better to risk a rare dup than a missing intro.
+                console.warn('⚠️ History check before intro failed (non-fatal):', historyCheckErr?.message || historyCheckErr);
+            }
+
             // Step 3: Use HUMAN-LIKE phased conversation approach
             if (this.negotiationEngine) {
                 console.log('🎭 [NEW CODE v2] Starting human-like phased conversation - NO PRICING IN FIRST MESSAGE');
@@ -1235,6 +1279,10 @@ class AIChatHandler {
                     );
 
                     if (sent) {
+                        // Mark as sent BEFORE the UI messages so a re-entry that
+                        // races with this branch sees the flag immediately.
+                        this.sentIntroConversations.add(conversationId);
+
                         this.appendMessage('AI', `Reached out to the landlord for "${listing.title}"`, 'left');
                         this.appendMessage('AI', `Sent: "${conversationData.message}"`, 'left');
                         this.appendMessage('AI', `I'll continue the conversation naturally when they reply - building rapport before discussing price.`, 'left');
@@ -1266,6 +1314,7 @@ class AIChatHandler {
                     return;
                 }
 
+                this.sentIntroConversations.add(conversationId);
                 this.appendMessage('AI', `Sent message to landlord for "${listing.title}"`, 'left');
                 this.appendMessage('AI', `Message: "${message}"`, 'left');
             }
