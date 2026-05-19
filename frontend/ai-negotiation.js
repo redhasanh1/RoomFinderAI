@@ -229,10 +229,36 @@ class AINegotiator {
 
     // Post-OpenAI safety net. The prompt does the heavy lifting; this validator
     // catches model violations (trailing questions in CLOSING, emojis when
-    // landlord is hostile) and either trims or hard-replaces with a sane fallback.
-    validateAndRepair(rawResponse, { phase, tone, facts }) {
+    // landlord is hostile, agreeing to a day outside the tenant's availability)
+    // and either trims or hard-replaces with a sane fallback.
+    validateAndRepair(rawResponse, { phase, tone, facts, tenantGoals }) {
         if (!rawResponse) return rawResponse;
         let out = String(rawResponse).trim();
+
+        // Phase-agnostic check: tenant said they can only meet on certain days.
+        // If the AI confirms/affirms a different day, replace with a polite
+        // counter-proposal. The prompt rules ask for this too, but GPT-4 often
+        // loses the rule against the phase template's "maybe suggest meeting"
+        // soft guidance, so a deterministic rewrite is the only reliable fix.
+        const avail = Array.isArray(tenantGoals?.available_days) ? tenantGoals.available_days : [];
+        if (avail.length) {
+            const SHORT = { mon:'monday', tue:'tuesday', wed:'wednesday', thu:'thursday', fri:'friday', sat:'saturday', sun:'sunday' };
+            const availFull = avail.map(d => SHORT[d] || String(d).toLowerCase());
+            const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+            const lower = out.toLowerCase();
+            const mentioned = DAYS.find(d => new RegExp(`\\b${d}\\b`).test(lower));
+            const affirms = mentioned && /\b(works|sounds good|sure,? yes|that works|deal|let.?s do|see you|let.?s meet|let.?s plan|absolutely|of course|will do|i can(?:'?| ?)? do)\b/i.test(out);
+            const counters = mentioned && /\binstead\b|\bcould we (?:do|meet)\b|\binstead of\b/i.test(out);
+            if (mentioned && affirms && !counters && !availFull.includes(mentioned)) {
+                const askCap = availFull[0].charAt(0).toUpperCase() + availFull[0].slice(1);
+                const propCap = mentioned.charAt(0).toUpperCase() + mentioned.slice(1);
+                const altList = availFull.length === 1
+                    ? availFull[0]
+                    : availFull.slice(0, -1).join(', ') + ' or ' + availFull[availFull.length - 1];
+                console.warn(`🛡️ Validator: AI affirmed ${mentioned} — outside tenant availability [${availFull.join(',')}]. Replacing with counter.`);
+                return `${propCap} could work, but I'm actually only free on ${altList}. Any chance we could do ${askCap} instead?`;
+            }
+        }
 
         if (phase === 'CLOSING') {
             const hasQuestion = /\?/.test(out);
@@ -830,13 +856,21 @@ Write 2-3 sentences negotiating naturally.`
             // Generate response for current phase
             const rawResponse = await this.generatePhaseMessage(conversationState);
 
+            // Re-read goals at validation time too, so a goal set DURING the
+            // chat takes effect on the very next reply (not the one after).
+            const tenantGoalsForValidator = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+                ? window.getTenantGoals()
+                : {};
+
             // Post-OpenAI validator: hard-replaces violations even if the LLM
             // ignored the prompt rules (questions in CLOSING, emojis when
-            // FRUSTRATED, etc.). Cheap safety net behind the prompt itself.
+            // FRUSTRATED, agreeing to a day outside tenant availability).
+            // Cheap safety net behind the prompt itself.
             const responseMessage = this.validateAndRepair(rawResponse, {
                 phase: conversationState.currentPhase,
                 tone: conversationState.tone,
-                facts: conversationState.facts
+                facts: conversationState.facts,
+                tenantGoals: tenantGoalsForValidator
             });
 
             // Once we've actually shipped a phase response (especially in
