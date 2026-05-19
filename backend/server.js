@@ -4992,11 +4992,13 @@ LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 ${goals.movein_date ? `YOUR DESIRED MOVE-IN: ${goals.movein_date}${goals.movein_flexibility ? ` (${goals.movein_flexibility})` : ''}` : ''}
 ${leaseHint ? `YOUR LEASE PREFERENCE: ${leaseHint}` : ''}
 ${availableDaysHint ? `YOU CAN ONLY MEET ON: ${availableDaysHint}` : ''}
+${(!context.currentOffer && !context.landlordCounterOffer) ? `PRICE HAS NOT BEEN DISCUSSED YET. The landlord and you have not exchanged any $ amounts. You MUST raise rent before agreeing to a meeting time.` : ''}
 
 YOUR GOAL: Discuss practical stuff - when you can move in, lease terms, maybe schedule a viewing.
 
 WHAT TO DO:
-${availableDaysHint ? `- HARD RULE (highest priority): If the landlord proposes a meeting day NOT in [${availableDaysHint}], politely counter with a day that IS in that list. NEVER say "works for me" or "sounds good" to any other day.
+${(!context.currentOffer && !context.landlordCounterOffer) ? `- HARDEST RULE (highest priority): Price has not been touched. Do NOT agree to a meeting day yet — even if it's in your available days. Counter with: "Monday could work — quick first though, is the $${listingPrice} firm or any wiggle room? Want to make sure we're aligned before locking in a time."` : ''}
+${availableDaysHint ? `- HARD RULE: If the landlord proposes a meeting day NOT in [${availableDaysHint}], politely counter with a day that IS in that list. NEVER say "works for me" or "sounds good" to any other day.
 - If suggesting a meeting yourself, name a day from [${availableDaysHint}] — never any other day.` : '- Maybe suggest meeting to see the place'}
 - Respond naturally to their message
 - Mention when you'd want to move in
