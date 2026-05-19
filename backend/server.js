@@ -5477,6 +5477,34 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
     }
 
     if (phase === 'CLOSING') {
+        // SAFETY GATE: phase locked to CLOSING but no price was ever
+        // discussed (landlord didn't name a number, AI didn't offer one).
+        // This happens when the landlord eagerly proposes "let's meet
+        // Saturday" off the bat and the closing-signals regex jumps phase
+        // before any rent talk. Without this gate the AI rubber-stamps
+        // the meeting and burns the entire negotiation lever. Push back
+        // to PRICE_INTRODUCTION semantics instead.
+        const priceTouched = !!(facts?.landlord_last_named_price)
+            || !!(context && (context.currentOffer || context.landlordCounterOffer));
+        if (!priceTouched) {
+            console.log('🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.');
+            const askPrice = (context && context.listingPrice) ? `the $${context.listingPrice}` : 'the rent';
+            return `The landlord is trying to wrap things up, but you haven't discussed rent yet. Push back politely with a price probe FIRST.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}${goalsBlock}
+
+HARD RULES:
+- Reply in under 30 words.
+- Acknowledge their meeting suggestion (e.g. "That could work…").
+- Then ask ONE direct price question — is ${askPrice} firm? Is there any wiggle room?
+- DO NOT confirm a meeting day yet — make it conditional on the price conversation.
+- No emojis. No "Hey there!". No filler.
+- Example: "${context && context.proposed_meet_date ? context.proposed_meet_date : 'Sunday'} could work, but quick first — is ${askPrice} firm or any room there? Want to be aligned before locking a time."
+
+Write the price-probe reply now.`;
+        }
+
         // If the deal is already verbally accepted (numeric convergence OR
         // both sides used closing words), shift the prompt from "agree" to
         // "confirm next steps" — this is the bug fix for the AI asking
@@ -5636,7 +5664,12 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             const priceTouched = aiPriceMentioned || landlordPriceMentioned;
             const dayInReply = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight|this weekend)\b/i.test(safeResponse);
             const meetingAffirm = /\b(works|sounds good|that works|see you|let.?s meet|let.?s do|will do|of course|absolutely)\b/i.test(safeResponse);
-            const phaseSafe = phase !== 'CLOSING' && phase !== 'ACTIVE_NEGOTIATION';
+            // Validator fires in any phase EXCEPT ACTIVE_NEGOTIATION (price is
+            // already on the table there by definition). Specifically includes
+            // CLOSING because the harness showed 56% of CLOSING-phase replies
+            // affirming a meeting without price ever having been touched —
+            // the closing-signals regex jumps phase too eagerly.
+            const phaseSafe = phase !== 'ACTIVE_NEGOTIATION';
             if (!priceTouched && dayInReply && meetingAffirm && phaseSafe) {
                 console.warn(`🛡️ Backend validator: AI affirmed meeting before price was discussed. Rewriting (phase=${phase}).`);
                 safeResponse = `That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.`;
