@@ -5684,15 +5684,29 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             // counter first, rewrite to a counter. Harness at N=100 showed
             // 71% of post-iter5 deals settled too high — the AI rubber-stamps
             // the landlord's first counter when the landlord makes one.
+            //
+            // IMPORTANT: only fire ONCE per conversation. The harness showed
+            // identical "I hear you on $X, but $Y is more in my range" rewrites
+            // on every turn — validator was fighting the prompt. After we've
+            // rewritten once, the AI has been "primed" and should be trusted
+            // to close naturally. Also accept landlord offers within $150 of
+            // target — at that point fighting harder costs more than it saves.
             const tenantTargetRent = (safeContext && safeContext.userBudget) ? Number(safeContext.userBudget) : 0;
             const landlordCounter = facts?.landlord_last_named_price || (safeContext && Number(safeContext.landlordCounterOffer)) || 0;
-            const tooHigh = tenantTargetRent > 0 && landlordCounter > 0 && (landlordCounter - tenantTargetRent) > 75;
+            const gap = (tenantTargetRent > 0 && landlordCounter > 0) ? landlordCounter - tenantTargetRent : 0;
+            const tooHigh = gap > 150; // raised from 75 — within $150 of target is "close enough"
             const acceptanceWord = /\b(yes,? that works|sounds (good|great)|deal|done|works for me|happy with that|i.?ll take it|let.?s do (it|that))\b/i.test(safeResponse);
             const counterWord = /\b(could|how about|what (about|if)|would|propose|how does|stretch to|meet (in )?(the )?middle)\b/i.test(safeResponse);
             const aiNamedPrice = /\$\s*\d/.test(safeResponse);
-            if (tooHigh && acceptanceWord && !counterWord && !aiNamedPrice && phase !== 'INTRODUCTION' && phase !== 'RAPPORT_BUILDING' && phase !== 'QUALIFICATION') {
+            // Check if we've already issued this rewrite template earlier in the convo —
+            // if so, trust the AI to close instead of forcing another identical counter.
+            const validatorAlreadyFired = Array.isArray(messageHistory) && messageHistory.some(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') &&
+                /\bmore in my range\b.*could we land there/i.test(String(m.content || '')));
+            if (tooHigh && acceptanceWord && !counterWord && !aiNamedPrice && !validatorAlreadyFired
+                && phase !== 'INTRODUCTION' && phase !== 'RAPPORT_BUILDING' && phase !== 'QUALIFICATION') {
                 const midpoint = Math.round((tenantTargetRent + landlordCounter) / 2);
-                console.warn(`🛡️ Backend validator: AI accepted $${landlordCounter} but target was $${tenantTargetRent}. Rewriting to counter at $${midpoint}.`);
+                console.warn(`🛡️ Backend validator (1x): AI accepted $${landlordCounter} but target was $${tenantTargetRent}. Counter at $${midpoint}.`);
                 safeResponse = `I hear you on $${landlordCounter}, but $${midpoint} is more in my range. Could we land there?`;
             }
         } catch (validatorErr) {
