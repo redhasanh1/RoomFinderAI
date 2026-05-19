@@ -5622,7 +5622,30 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
             temperature
         });
 
-        res.json({ response: result.content, tokensUsed: result.tokensUsed, phase, tone });
+        // Backend-side validator: catch the AI agreeing to a meeting day before
+        // any price was discussed. Mirrors the frontend validator so callers
+        // that bypass the frontend (mobile app, test harness) get the same
+        // protection. The negotiation_battle harness surfaced this leak at
+        // 46% of conversations at N=50, even with strengthened phase prompts.
+        let safeResponse = String(result.content || '').trim();
+        try {
+            const recentHistory = Array.isArray(messageHistory) ? messageHistory : [];
+            const aiPriceMentioned = recentHistory.some(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') && /\$\s*\d/.test(String(m.content || '')));
+            const landlordPriceMentioned = !!(facts && facts.landlord_last_named_price);
+            const priceTouched = aiPriceMentioned || landlordPriceMentioned;
+            const dayInReply = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight|this weekend)\b/i.test(safeResponse);
+            const meetingAffirm = /\b(works|sounds good|that works|see you|let.?s meet|let.?s do|will do|of course|absolutely)\b/i.test(safeResponse);
+            const phaseSafe = phase !== 'CLOSING' && phase !== 'ACTIVE_NEGOTIATION';
+            if (!priceTouched && dayInReply && meetingAffirm && phaseSafe) {
+                console.warn(`🛡️ Backend validator: AI affirmed meeting before price was discussed. Rewriting (phase=${phase}).`);
+                safeResponse = `That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.`;
+            }
+        } catch (validatorErr) {
+            console.warn('Backend response validator threw (non-fatal):', validatorErr?.message || validatorErr);
+        }
+
+        res.json({ response: safeResponse, tokensUsed: result.tokensUsed, phase, tone });
 
     } catch (error) {
         console.error('Error in /api/negotiate/phase-message:', error.message);
