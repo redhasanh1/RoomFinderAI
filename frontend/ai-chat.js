@@ -322,6 +322,39 @@ class AIChatHandler {
         }
     }
 
+    // Build a deterministic markdown list of the user's locked-in negotiation
+    // goals. Used by the intent-intercept in processMessage so questions like
+    // "what parameters do we have set" always get a reliable list-back,
+    // independent of LLM whims.
+    formatLockedGoalsForChat() {
+        const g = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+        if (!g || Object.keys(g).length === 0) {
+            return "You haven't locked in any negotiation goals yet. Open the **🎯 Your Negotiation Goals** panel above, set what matters to you, then click **🔒 Lock in negotiation goals** to activate them.";
+        }
+        const lines = ['Here are your locked-in negotiation goals:'];
+        if (g.available_days?.length) lines.push(`• Meeting days: ${g.available_days.map(d => d[0].toUpperCase() + d.slice(1)).join(', ')}`);
+        if (g.available_time?.length) lines.push(`• Time of day: ${g.available_time.join(', ')}`);
+        if (g.meeting_format?.length) lines.push(`• Meeting format: ${g.meeting_format.map(f => f.replace('_', ' ')).join(', ')}`);
+        if (g.movein_date) lines.push(`• Move-in date: ${g.movein_date}${g.movein_flexibility ? ' (' + g.movein_flexibility + ')' : ''}`);
+        if (g.lease_length) lines.push(`• Lease length: ${g.lease_length}`);
+        if (g.target_reduction) lines.push(`• Target reduction: $${g.target_reduction}/month off asking`);
+        const concessions = [g.ask_utilities_included && 'utilities included', g.ask_lower_deposit && 'lower deposit', g.ask_first_month_free && 'first month free'].filter(Boolean);
+        if (concessions.length) lines.push(`• Concessions to ask for: ${concessions.join(', ')}`);
+        if (g.employment) lines.push(`• Employment: ${g.employment.replace('_', ' ')}`);
+        if (g.income_confidence) lines.push(`• Income: ${g.income_confidence}`);
+        if (g.pets) lines.push(`• Pets: ${g.pets === 'none' ? 'none' : g.pets}`);
+        if (g.non_smoker) lines.push('• Non-smoker: yes');
+        if (g.occupants) lines.push(`• Occupants: ${g.occupants}`);
+        if (g.must_haves?.length) lines.push(`• Must-haves: ${g.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}`);
+        if (g.tone) lines.push(`• Tone: ${g.tone}`);
+        if (g.assertiveness) lines.push(`• Assertiveness: ${g.assertiveness}`);
+        lines.push('');
+        lines.push('Edit anything in the panel above; the lock automatically clears when you change something, so re-click **🔒 Lock in** to re-activate.');
+        return lines.join('\n');
+    }
+
     // Process user message
     async processMessage(message) {
         console.log('🔄 Processing user message:', message);
@@ -336,6 +369,20 @@ class AIChatHandler {
 
         // Check if this is a negotiation response first
         if (this.checkForNegotiationResponse(message)) {
+            return;
+        }
+
+        // Intent intercept: "what parameters/goals/preferences/settings do we
+        // have set" — reply with the locked-in goals deterministically.
+        // No LLM call, so the list-back is guaranteed correct every time.
+        const goalKeyword = /\b(parameter|goal|preference|setting|criteria|negotiation goal|lock(ed)?[\s-]?in)s?\b/i;
+        const askWord = /\b(what|show|tell|list|see|view|which|recite|repeat|do you|do we|have we|is there|am i|are my|are our)\b/i;
+        if (goalKeyword.test(message) && askWord.test(message)) {
+            console.log('🎯 Goals intent intercepted — replying with locked-in goals locally.');
+            const reply = this.formatLockedGoalsForChat();
+            this.appendMessage('AI', reply, 'left');
+            this.conversationHistory.push({ role: 'assistant', content: reply });
+            this.saveConversationHistory();
             return;
         }
 
@@ -385,6 +432,15 @@ class AIChatHandler {
     // Call the backend AI chat endpoint
     async callAIChatEndpoint(message) {
         try {
+            // Forward the user's locked-in negotiation goals so the AI can
+            // answer follow-up questions like "do I have pets listed?" or
+            // "what's my tone set to?" naturally. The deterministic
+            // list-back is handled by the intent-intercept in processMessage;
+            // this covers natural-language follow-ups the regex misses.
+            const tenantGoals = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+                ? window.getTenantGoals()
+                : {};
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -393,7 +449,8 @@ class AIChatHandler {
                 body: JSON.stringify({
                     message: message,
                     conversationHistory: this.conversationHistory.slice(-10),
-                    userEmail: this.currentUser?.email
+                    userEmail: this.currentUser?.email,
+                    tenantGoals
                 })
             });
 

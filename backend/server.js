@@ -4560,7 +4560,7 @@ app.post('/api/chat', async (req, res) => {
     console.log('💬 AI Chat endpoint called');
 
     try {
-        const { message, conversationHistory, userEmail } = req.body;
+        const { message, conversationHistory, userEmail, tenantGoals } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -4578,8 +4578,22 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
+        // If the caller forwarded locked-in negotiation goals, prepend them to
+        // the system prompt so the AI can answer follow-up questions about
+        // the user's settings. The deterministic "list back" is handled
+        // client-side; this block covers natural-language follow-ups (e.g.
+        // "do I have pets listed?", "what's my tone set to?").
+        let goalsBlock = '';
+        if (tenantGoals && typeof tenantGoals === 'object' && Object.keys(tenantGoals).length > 0 && typeof summarizeGoals === 'function') {
+            const summary = summarizeGoals(tenantGoals);
+            if (summary) {
+                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.\n`;
+                console.log('🎯 /api/chat: forwarding tenant goals to system prompt.');
+            }
+        }
+
         // Build the system prompt for conversational rental assistant
-        const systemPrompt = `You are a friendly and helpful rental assistant for RoomFinderAI. Your name is "Negotiator" and you help users find rental properties and negotiate better prices.
+        const systemPrompt = `You are a friendly and helpful rental assistant for RoomFinderAI. Your name is "Negotiator" and you help users find rental properties and negotiate better prices.${goalsBlock}
 
 YOUR CAPABILITIES:
 - Help users search for rental properties by understanding their needs
