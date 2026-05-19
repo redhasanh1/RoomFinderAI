@@ -865,7 +865,52 @@ class AIChatHandler {
             });
         }
         
-        return listings || [];
+        // Post-search filter: drop listings whose title+description text
+        // EXPLICITLY excludes a locked-in must-have or the user's pets.
+        // Best-effort because listings have no structured amenity columns;
+        // we only drop on negative language (e.g. "no pets", "no parking",
+        // "unfurnished") — never on absence of positive mention. So
+        // listings with thin descriptions just pass through.
+        const goalsForFilter = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+        const filterResult = this._filterByGoals(listings || [], goalsForFilter);
+        if (filterResult.droppedCount > 0) {
+            console.log(`🎯 Goals post-filter: dropped ${filterResult.droppedCount} listings (${filterResult.reasons.join(', ')})`);
+        }
+        this._lastSearchGoalsApplied = { goals: goalsForFilter, droppedCount: filterResult.droppedCount, reasons: filterResult.reasons };
+        return filterResult.kept;
+    }
+
+    // Build exclusion regexes from the user's locked-in goals. Each entry is
+    // { re, reason } — if `re` matches a listing's title+description, the
+    // listing is dropped (we treat it as an explicit incompatibility with
+    // the user's must-haves / pets).
+    _buildGoalExclusions(goals) {
+        const ex = [];
+        const m = new Set(Array.isArray(goals?.must_haves) ? goals.must_haves : []);
+        if (m.has('in_unit_laundry')) ex.push({ re: /no\s+(in.?unit\s+)?(laundry|washer)\b/i, reason: 'excludes in-unit laundry' });
+        if (m.has('parking'))         ex.push({ re: /no\s+parking\b|street parking only\b/i, reason: 'excludes parking' });
+        if (m.has('pet_friendly') || (goals?.pets && goals.pets !== 'none')) {
+            ex.push({ re: /no\s+pets?\b|no\s+dogs?\b|no\s+cats?\b|pet[- ]?free\b/i, reason: 'no pets allowed' });
+        }
+        if (m.has('furnished'))       ex.push({ re: /unfurnished\b/i, reason: 'unfurnished' });
+        if (m.has('dishwasher'))      ex.push({ re: /no\s+dishwasher\b/i, reason: 'no dishwasher' });
+        return ex;
+    }
+
+    _filterByGoals(listings, goals) {
+        const exclusions = this._buildGoalExclusions(goals || {});
+        if (!exclusions.length) return { kept: listings, droppedCount: 0, reasons: [] };
+        const reasons = new Set();
+        const kept = listings.filter(l => {
+            const t = `${l.title || ''} ${l.description || ''}`.toLowerCase();
+            for (const ex of exclusions) {
+                if (ex.re.test(t)) { reasons.add(ex.reason); return false; }
+            }
+            return true;
+        });
+        return { kept, droppedCount: listings.length - kept.length, reasons: [...reasons] };
     }
 
     // Update left sidebar with matching listings
@@ -982,6 +1027,47 @@ class AIChatHandler {
             
             // Show found listings with numbered selection
             this.appendMessage('AI', `Found ${this.matchingListings.length} matching listing(s)!`, 'left');
+
+            // Transparency: show the user which goals were applied to the
+            // search filter, which were applied as a post-filter on listing
+            // descriptions, and which are queued for the negotiation
+            // conversation. Answers the "does this take into account
+            // everything?" question explicitly.
+            try {
+                const appliedGoals = this._lastSearchGoalsApplied?.goals || {};
+                if (Object.keys(appliedGoals).length > 0) {
+                    const searchFilters = [];
+                    if (this.userNeeds.preferredLocation) searchFilters.push(this.userNeeds.preferredLocation);
+                    if (this.userNeeds.houseType)        searchFilters.push(this.userNeeds.houseType.toLowerCase());
+                    if (this.userNeeds.maxPrice)         searchFilters.push(`under $${this.userNeeds.maxPrice}/mo`);
+                    if (this.userNeeds.bedrooms)         searchFilters.push(`${this.userNeeds.bedrooms}BR`);
+
+                    const goalsForSearch = [];
+                    if (appliedGoals.must_haves?.length) goalsForSearch.push(`must-haves: ${appliedGoals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}`);
+                    if (appliedGoals.pets && appliedGoals.pets !== 'none') goalsForSearch.push(`pet-friendly (${appliedGoals.pets})`);
+
+                    const goalsForNegotiation = [];
+                    if (appliedGoals.target_reduction) goalsForNegotiation.push(`target $${appliedGoals.target_reduction}/mo reduction`);
+                    if (appliedGoals.lease_length)     goalsForNegotiation.push(`${appliedGoals.lease_length} lease`);
+                    if (appliedGoals.available_days?.length) goalsForNegotiation.push('meeting days');
+                    if (appliedGoals.tone || appliedGoals.assertiveness) goalsForNegotiation.push('tone / assertiveness');
+                    if (appliedGoals.ask_utilities_included || appliedGoals.ask_lower_deposit || appliedGoals.ask_first_month_free) goalsForNegotiation.push('concession asks');
+
+                    const lines = [];
+                    if (searchFilters.length) lines.push(`🔎 Search filters applied: ${searchFilters.join(' · ')}`);
+                    if (goalsForSearch.length) {
+                        const dropped = this._lastSearchGoalsApplied?.droppedCount || 0;
+                        const droppedNote = dropped > 0 ? ` (dropped ${dropped} listing${dropped > 1 ? 's' : ''} that explicitly excluded them)` : '';
+                        lines.push(`🎯 Filtered out listings that explicitly exclude: ${goalsForSearch.join(', ')}${droppedNote}`);
+                    }
+                    if (goalsForNegotiation.length) {
+                        lines.push(`💬 The AI will also leverage these during landlord negotiation: ${goalsForNegotiation.join(', ')}`);
+                    }
+                    if (lines.length) this.appendMessage('AI', lines.join('\n'), 'left');
+                }
+            } catch (e) {
+                console.warn('Goals transparency message failed (non-fatal):', e?.message || e);
+            }
 
             // Update the left sidebar with matching listings
             this.updateSidebarWithListings(this.matchingListings);
