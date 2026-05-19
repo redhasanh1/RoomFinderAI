@@ -644,6 +644,40 @@ class AIChatHandler {
         return { complete: true };
     }
 
+    // Run the same filters as findMatchingListings but scoped to the
+    // current user's own listings. Used to surface "your own listing matched
+    // but is hidden" instead of a confusing silent "no matches" — the search
+    // self-excludes own listings (you can't negotiate with yourself), but
+    // the user has a right to know when their own inventory matched.
+    // Returns { count, firstHit:{title, price, city, house_type, bedrooms, id} } or null.
+    async _checkUserOwnedMatches() {
+        if (!this.currentUser?.email) return null;
+        const needs = this.userNeeds || {};
+        if (!needs.preferredLocation && !needs.maxPrice && !needs.houseType) return null;
+        try {
+            let q = this.supabase
+                .from('listings')
+                .select('id, title, city, price, house_type, bedrooms')
+                .eq('user_email', this.currentUser.email);
+            if (needs.preferredLocation) {
+                const loc = needs.preferredLocation.trim().toLowerCase();
+                q = q.or(`city.ilike.*${loc}*,street.ilike.*${loc}*,title.ilike.*${loc}*,country.ilike.*${loc}*`);
+            }
+            if (needs.houseType) q = q.eq('house_type', needs.houseType);
+            if (needs.maxPrice) q = q.lte('price', needs.maxPrice);
+            const { data, error } = await q.limit(5);
+            if (error) {
+                console.warn('⚠️ own-match check query failed (non-fatal):', error.message);
+                return null;
+            }
+            if (!data || data.length === 0) return null;
+            return { count: data.length, firstHit: data[0] };
+        } catch (e) {
+            console.warn('⚠️ own-match check threw (non-fatal):', e?.message || e);
+            return null;
+        }
+    }
+
     // Search for matching listings in Supabase
     async findMatchingListings() {
         console.log('🔍 Starting search with criteria:', this.userNeeds);
@@ -657,7 +691,14 @@ class AIChatHandler {
         
         let appliedFilters = [];
         let hasSpecificCriteria = false;
-        
+
+        // Pre-flight: did any of the user's OWN listings match these filters?
+        // We run this BEFORE applying the .neq() exclusion below so we can
+        // tell the user "your own listing matched but was hidden" instead of
+        // silently returning empty. Result is stashed on `this._lastSearchOwnMatch`
+        // and consumed by `searchAndMessage` and `handleNoMatches`.
+        this._lastSearchOwnMatch = await this._checkUserOwnedMatches();
+
         // Step 1: Exclude user's own listings
         if (this.currentUser?.email) {
             query = query.neq('user_email', this.currentUser.email);
@@ -902,6 +943,14 @@ class AIChatHandler {
                 this.appendMessage('AI', `...and ${this.matchingListings.length - 5} more listings available.`, 'left');
             }
 
+            // Transparency footer: if the user's own listings ALSO matched but
+            // were filtered out of negotiation targets, let them know — silent
+            // exclusion was the bug we're fixing.
+            if (this._lastSearchOwnMatch && this._lastSearchOwnMatch.count > 0) {
+                const ct = this._lastSearchOwnMatch.count;
+                this.appendMessage('AI', `📌 Note: ${ct} of your own listing${ct > 1 ? 's' : ''} also matched and ${ct > 1 ? 'were' : 'was'} hidden (you can't negotiate with yourself).`, 'left');
+            }
+
             // Ask user to select a listing to view
             this.appendMessage('AI', 'Click "View Details" on any listing to see more information.', 'left');
 
@@ -923,30 +972,60 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) extracted.push(`Location: ${this.userNeeds.preferredLocation}`);
         if (this.userNeeds.maxPrice) extracted.push(`Max Price: $${this.userNeeds.maxPrice}`);
         if (this.userNeeds.houseType) extracted.push(`Type: ${this.userNeeds.houseType}`);
-        
+
         this.appendMessage('AI', `❌ No exact matches found. I searched for: ${extracted.join(', ')}`, 'left');
-        
-        // Try to find similar listings with your actual database schema
+
+        // Special case: the user's OWN listings actually matched the criteria,
+        // but were hidden by the self-exclusion filter. Tell them — this is
+        // the bug fix for "I have this listing already, why doesn't it show up".
+        if (this._lastSearchOwnMatch && this._lastSearchOwnMatch.count > 0) {
+            const ct = this._lastSearchOwnMatch.count;
+            const own = this._lastSearchOwnMatch.firstHit || {};
+            const ownTitle = own.title || 'Your listing';
+            const ownPrice = own.price ? ` ($${own.price}/mo)` : '';
+            const otherN = ct - 1;
+            const others = otherN > 0 ? ` (and ${otherN} other${otherN > 1 ? 's' : ''})` : '';
+            this.appendMessage('AI', `📌 Your own listing **"${ownTitle}"**${ownPrice}${others} matches your search — but it's hidden here because you can't negotiate with yourself.`, 'left');
+            this.appendMessage('AI', `💡 To work with it, search from a different account, or open it directly from your dashboard / My Listings.`, 'left');
+            this.negotiationState = 'idle';
+            return;
+        }
+
+        // No own-listing match either. Try to find similar listings from other
+        // users — but apply the SAME location/price/type filters this time
+        // (the previous version ignored them, which is why the user saw
+        // Toronto results when searching for LA).
         let query = this.supabase
             .from('listings')
             .select('*')
             .neq('user_email', this.currentUser?.email || '')
             .limit(10);
 
-        // Show any available listings since we don't have all filtering options
+        if (this.userNeeds.preferredLocation) {
+            const loc = this.userNeeds.preferredLocation.trim().toLowerCase();
+            query = query.or(`city.ilike.*${loc}*,street.ilike.*${loc}*,title.ilike.*${loc}*,country.ilike.*${loc}*`);
+        }
+        if (this.userNeeds.houseType) {
+            query = query.eq('house_type', this.userNeeds.houseType);
+        }
+        // For "similar" we relax price: show listings up to 20% over budget so
+        // results aren't an exact replay of the empty primary search.
+        if (this.userNeeds.maxPrice) {
+            query = query.lte('price', Math.round(this.userNeeds.maxPrice * 1.2));
+        }
+
         const { data: similarListings } = await query.order('updated_at', { ascending: false });
-        
+
         if (similarListings?.length > 0) {
             const criteria = [];
             if (this.userNeeds.houseType) criteria.push(this.userNeeds.houseType.toLowerCase());
             if (this.userNeeds.preferredLocation) criteria.push(`in ${this.userNeeds.preferredLocation}`);
-            if (this.userNeeds.maxPrice) criteria.push(`under $${this.userNeeds.maxPrice}`);
-            
-            this.appendMessage('AI', `I searched for: ${criteria.join(' + ')}. Here are similar listings:`, 'left');
-            
+            if (this.userNeeds.maxPrice) criteria.push(`up to ~$${Math.round(this.userNeeds.maxPrice * 1.2)}`);
+
+            this.appendMessage('AI', `Here are similar listings (${criteria.join(' + ')}):`, 'left');
+
             let shownCount = 0;
             for (const listing of similarListings.slice(0, 5)) {
-                // Display with your actual database schema
                 const titleText = listing.title || 'Untitled Property';
                 const cityText = listing.city || 'City not specified';
                 const streetText = listing.street ? ` - ${listing.street}` : '';
@@ -954,25 +1033,19 @@ class AIChatHandler {
                 const typeText = listing.house_type ? ` (${listing.house_type})` : '';
                 this.appendMessage('AI', `📋 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
                 shownCount++;
-                
                 if (shownCount >= 3) break;
             }
-            
-            if (shownCount === 0) {
-                this.appendMessage('AI', 'No suitable listings found in the database. Try creating a listing or contact an administrator to add listings in your preferred location.', 'left');
-            } else {
-                const suggestions = [];
-                if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
-                if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
-                
-                if (suggestions.length > 0) {
-                    this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
-                }
+
+            const suggestions = [];
+            if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
+            if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or relax the location filter`);
+            if (suggestions.length > 0) {
+                this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
             }
         } else {
-            this.appendMessage('AI', 'No listings found in database. The database may be empty or all listings are from your account.', 'left');
+            this.appendMessage('AI', 'No matching listings in the database — try a different city, a higher budget, or a different property type.', 'left');
         }
-        
+
         this.negotiationState = 'idle';
     }
 
