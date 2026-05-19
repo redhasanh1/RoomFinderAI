@@ -3708,28 +3708,21 @@ app.post('/api/reset-password', async (req, res) => {
                 }
                 
                 console.log('🔄 Attempting to update password for:', email);
-                
-                // Now we have service role key, so we can update Supabase Auth password
-                const hashedPassword = await bcrypt.hash(newPassword, 10);
-                
-                // First, find the user in Supabase Auth
+
+                // Find the user in Supabase Auth
                 const { data: { users: authUsers }, error: listError } = await supabase.auth.admin.listUsers();
-                
+
                 if (listError) {
                     console.error('❌ Failed to list users in Supabase Auth:', listError);
                     return res.status(500).json({ error: 'Failed to access user accounts' });
                 }
-                
+
                 const authUser = authUsers?.find(u => u.email === email);
-                
+
                 if (authUser) {
-                    // Update password AND mark the email as confirmed in Supabase Auth.
-                    // email_confirm: true is critical for users who signed up but never
-                    // confirmed their email (auth.users.email_confirmed_at = NULL). Without
-                    // this, Supabase rejects every subsequent signInWithPassword with
-                    // "Email not confirmed" and the user stays locked out even though the
-                    // password was reset. The verified 6-digit code is proof enough that
-                    // they own the email — same semantic as clicking a confirmation link.
+                    // email_confirm: true ensures users who signed up but never confirmed
+                    // can sign in immediately — the verified 6-digit code is proof of email
+                    // ownership, equivalent to clicking a confirmation link.
                     const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
                         authUser.id,
                         { password: newPassword, email_confirm: true }
@@ -3737,41 +3730,47 @@ app.post('/api/reset-password', async (req, res) => {
 
                     if (authUpdateError) {
                         console.error('❌ Failed to update password in Supabase Auth:', authUpdateError);
-                        return res.status(500).json({ error: 'Failed to update password in authentication system' });
+                        return res.status(500).json({ error: 'Failed to update password: ' + authUpdateError.message });
                     }
 
                     console.log('✅ Password updated + email confirmed in Supabase Auth for:', email);
                 } else {
-                    console.log('⚠️ User not found in Supabase Auth — profiles.password is the only store for this account');
-                }
+                    // Legacy profile with no auth.users row — provision one now, reusing
+                    // the existing profile.id so listings/favorites/etc. that FK to it
+                    // stay linked to the same user.
+                    console.log('🆕 Provisioning Supabase Auth user for legacy profile:', email);
+                    const { error: createError } = await supabase.auth.admin.createUser({
+                        id: profile.id,
+                        email,
+                        password: newPassword,
+                        email_confirm: true,
+                        user_metadata: {
+                            first_name: profile.first_name,
+                            last_name: profile.last_name
+                        }
+                    });
 
-                // Always also keep profiles.password in sync. If the user is auth-less,
-                // this is the primary password store — failure must surface as 500. If the
-                // user IS in auth.users, this is defense-in-depth (login's bcrypt fallback
-                // path); a sync failure here is logged but not fatal because Supabase Auth
-                // remains authoritative.
-                const { error: profileUpdateError } = await supabase
-                    .from('profiles')
-                    .update({ password: hashedPassword })
-                    .eq('email', email);
-
-                if (profileUpdateError) {
-                    if (!authUser) {
-                        console.error('❌ Failed to update password in profiles (no auth fallback):', profileUpdateError);
-                        return res.status(500).json({ error: 'Failed to update password' });
+                    if (createError) {
+                        console.warn('⚠️ createUser with profile.id failed, retrying with fresh UUID:', createError.message);
+                        const { data: created, error: retryError } = await supabase.auth.admin.createUser({
+                            email,
+                            password: newPassword,
+                            email_confirm: true,
+                            user_metadata: {
+                                first_name: profile.first_name,
+                                last_name: profile.last_name
+                            }
+                        });
+                        if (retryError) {
+                            console.error('❌ Failed to provision Supabase Auth user:', retryError);
+                            return res.status(500).json({ error: 'Failed to update password: ' + retryError.message });
+                        }
+                        console.log('✅ Provisioned new auth.users entry (fresh UUID) for legacy account:', email, created?.user?.id);
+                    } else {
+                        console.log('✅ Provisioned Supabase Auth user with existing profile.id for:', email);
                     }
-                    console.warn('⚠️ profiles.password sync failed (auth.users still authoritative):', profileUpdateError.message);
-                } else {
-                    console.log('✅ profiles.password synced for:', email);
                 }
-                
-                // Also update in-memory if user exists there (replace old password)
-                const user = users.find(u => u.email === email);
-                if (user) {
-                    user.password = hashedPassword;
-                    console.log('✅ In-memory password also updated for:', email);
-                }
-                
+
             } catch (dbError) {
                 console.error('Database update error:', dbError);
                 return res.status(500).json({ error: 'Failed to update password' });
