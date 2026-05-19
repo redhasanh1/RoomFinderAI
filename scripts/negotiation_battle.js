@@ -161,7 +161,8 @@ async function runConversation({ iter, listing, goals, persona }) {
     let currentOffer = null;
     let landlordCounterOffer = null;
     const tenantGoals = Object.assign({}, goals, { monthly_budget: listing.price > 2500 ? Math.round(listing.price * 1.1) : 0 });
-    const closingRe = /\b(deal|sold|agreed|sounds good|works for me|that works|fine by me|happy with that|let.?s do it|let.?s meet|come by|stop by|sign|deposit|i.?ll take it|we.?ll take it)\b/i;
+    const closingRe = /\b(deal|sold|agreed|sounds good|works for me|that works|fine by me|happy with that|let.?s do it|let.?s meet|come by|stop by|sign|deposit|i.?ll take it|we.?ll take it|see you)\b/i;
+    let closingTurnsSeen = 0;       // increments every loop while phase === 'CLOSING'
     const issues = [];
 
     // Turn loop. Always start with a tenant (AI Negotiator) message.
@@ -201,9 +202,37 @@ async function runConversation({ iter, listing, goals, persona }) {
         }
 
         // ---------- LANDLORD TURN ----------
-        if (phase === 'CLOSING' && (facts.agreed_price || tenantMsg.match(/\b(deal|sold)\b/i))) {
-            // Both sides verbally closed — terminate.
-            break;
+        // Termination logic: a conversation is REALLY closed only when the
+        // tenant's most recent message is an actual ACCEPT — not a counter or
+        // a probe. Earlier version terminated on any CLOSING-phase entry with
+        // a named price, which made the harness wrongly label perfectly good
+        // counter-offers as "deals closed at landlord's price." If the tenant
+        // is still actively negotiating (asking "is X firm?", proposing a
+        // counter "$X is more my range"), keep looping.
+        const tenantIsAccepting = /\b(yes,? that works|sounds good|sounds great|deal\b|done deal|works for me|let.?s do it|i.?ll take it|happy with that|see you (mon|tues|wed|thur|fri|sat|sun))/i.test(tenantMsg);
+        const tenantIsCountering = /\b(could (we|you)|how about|what (about|if)|more in my range|stretch to|meet (in )?(the )?middle|firm|wiggle|flexibility|any room|is the .* firm)\b/i.test(tenantMsg) || /\?/.test(tenantMsg);
+        if (phase === 'CLOSING') {
+            closingTurnsSeen++;
+            if (tenantIsAccepting && !tenantIsCountering) {
+                // Real close: pin agreed price from the last named price.
+                if (!facts.agreed_price) {
+                    facts.agreed_price = facts.landlord_last_named_price || currentOffer || null;
+                }
+                break;
+            }
+            if (closingTurnsSeen >= 3 && tenantIsAccepting) {
+                // Allow one extra back-and-forth in CLOSING if tenant is mid-counter, then terminate.
+                if (!facts.agreed_price) {
+                    facts.agreed_price = currentOffer || facts.landlord_last_named_price || null;
+                }
+                break;
+            }
+            if (closingTurnsSeen >= 4) {
+                // Hard stop after 4 CLOSING turns to prevent infinite loops.
+                // Don't pin agreed_price — convo timed out without convergence.
+                issues.push('closed_without_acceptance');
+                break;
+            }
         }
         const landlordResp = await postJSON(`${SITE}/api/landlord-simulator`, {
             messageHistory: messageHistory.map(m => ({ sender: m.sender, content: m.content })),
