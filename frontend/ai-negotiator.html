@@ -487,6 +487,10 @@
                             </button>
                             <div class="ng-section-body">
                                 <div class="ng-field">
+                                    <label class="ng-field-label">Monthly budget ($)</label>
+                                    <input type="number" min="0" step="50" placeholder="e.g. 1800" class="ng-input" data-ng-input="monthly_budget">
+                                </div>
+                                <div class="ng-field">
                                     <label class="ng-field-label">Target reduction per month ($)</label>
                                     <input type="number" min="0" step="25" placeholder="e.g. 200" class="ng-input" data-ng-input="target_reduction">
                                 </div>
@@ -2053,6 +2057,7 @@
                     movein_date: '',
                     movein_flexibility: '',
                     lease_length: '',
+                    monthly_budget: '',
                     target_reduction: 0,
                     ask_utilities_included: false,
                     ask_lower_deposit: false,
@@ -2200,6 +2205,7 @@
                 sum('ngSummary-movein', moveinBits.join(' · '));
 
                 const priceBits = [];
+                if (goals.monthly_budget) priceBits.push(`max $${goals.monthly_budget}/mo`);
                 if (goals.target_reduction) priceBits.push(`-$${goals.target_reduction}/mo`);
                 if (goals.ask_utilities_included) priceBits.push('utilities');
                 if (goals.ask_lower_deposit) priceBits.push('lower deposit');
@@ -2222,7 +2228,7 @@
                 sum('ngSummary-style', styleBits.join(' · '));
 
                 // Master summary
-                const anySet = [days, times, fmts, goals.movein_date, goals.lease_length, goals.target_reduction, goals.tone].some(v => v && v !== '' && v !== 0);
+                const anySet = [days, times, fmts, goals.movein_date, goals.lease_length, goals.monthly_budget, goals.target_reduction, goals.tone].some(v => v && v !== '' && v !== 0);
                 let masterText;
                 if (goals._lockedAt) {
                     const dt = new Date(goals._lockedAt);
