@@ -86,3 +86,4 @@ RoomFinderAI-IOS/Source/RoomFinderAI/Config/Secrets.swift
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
+scripts/_results/

@@ -4555,6 +4555,80 @@ app.post('/api/ai-negotiate', async (req, res) => {
     }
 });
 
+// API: Landlord simulator — INTERNAL TESTING ONLY. Used by
+// scripts/negotiation_battle.js to drive the landlord side of an end-to-end
+// negotiation harness. Wraps OpenAI gpt-3.5-turbo with a landlord persona so
+// we can stress-test the AI Negotiator without a real human on the other end.
+// Not exposed in any UI; safe to remove if the testing harness is retired.
+app.post('/api/landlord-simulator', async (req, res) => {
+    try {
+        if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
+            return res.status(503).json({ error: 'AI service not available' });
+        }
+        const { messageHistory = [], listing = {}, persona = 'realistic' } = req.body;
+        const listingTitle = sanitizeForPrompt(listing.title, 200) || 'the place';
+        const listingPrice = Number(listing.price) || 2000;
+        const listingCity = sanitizeForPrompt(listing.city, 100) || 'town';
+
+        const personaText = ({
+            firm:        'You are a no-nonsense landlord who rarely budges on price. Hold firm. Counter at most $50 below asking.',
+            flexible:    'You are a flexible landlord. You can come down 10-15% if the tenant seems solid.',
+            chatty:      'You are friendly and chatty. You answer property questions thoroughly. You can budge ~5-10% on rent.',
+            realistic:   'You are a realistic landlord. Sometimes hold firm, sometimes counter, accept solid offers at or near asking. Be human.'
+        })[persona] || 'You are a realistic landlord.';
+
+        const systemPrompt = `${personaText}
+
+YOU OWN: "${listingTitle}" in ${listingCity}, listed at $${listingPrice}/month.
+
+RULES:
+- Reply in 1-2 short sentences, like texting back.
+- No emojis. No formal letter language.
+- Don't give away the place for free — negotiate.
+- If the tenant proposes a meeting day, accept or counter naturally.
+- If they ask about the place, answer briefly (laundry/parking/pets — pick a realistic answer for this listing).
+- If they push hard on price, you can come down a bit OR hold firm.
+- When you're ready to close, use words like "deal", "sounds good", "let's meet [day]".
+- Do not break character. Do not mention being AI.`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...(Array.isArray(messageHistory) ? messageHistory.slice(-10) : []).map(m => ({
+                // In the harness, the AI Negotiator's messages are the "tenant"
+                // (user role from landlord's POV), landlord's prior replies are
+                // "assistant" (landlord-sim's POV).
+                role: m.sender === 'landlord' ? 'assistant' : 'user',
+                content: sanitizeForPrompt(String(m.content || ''), 800)
+            }))
+        ];
+
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages,
+                max_tokens: 90,
+                temperature: 0.85
+            })
+        });
+        if (!openaiResponse.ok) {
+            const errorData = await openaiResponse.json().catch(() => ({}));
+            return res.status(502).json({ error: 'landlord-simulator upstream error', details: errorData });
+        }
+        const data = await openaiResponse.json();
+        const reply = String(data.choices?.[0]?.message?.content || '').trim();
+        res.json({ reply, tokensUsed: data.usage?.total_tokens || 0 });
+    } catch (error) {
+        console.error('Error in /api/landlord-simulator:', error.message);
+        res.status(500).json({ error: 'landlord-simulator failed', details: error.message });
+    }
+});
+
 // API: General AI Chat endpoint for conversational rental assistant
 app.post('/api/chat', async (req, res) => {
     console.log('💬 AI Chat endpoint called');
