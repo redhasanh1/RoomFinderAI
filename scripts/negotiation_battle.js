@@ -33,7 +33,7 @@ const ITERATIONS = Math.max(1, Number(args.iterations || 1));
 // work — it just fails faster with 429s. Override with --concurrency N
 // only if you're confident you're under the hourly cap.
 const CONCURRENCY = Math.max(1, Number(args.concurrency || 1));
-const MAX_TURNS = Math.max(4, Number(args.maxTurns || 12));
+const MAX_TURNS = Math.max(4, Number(args.maxTurns || 18));
 
 // Tenant goal "templates" — the harness rotates through these so we test
 // the negotiator under varied conditions (Mon-only / pet-friendly / etc).
@@ -165,11 +165,11 @@ async function runConversation({ iter, listing, goals, persona }) {
     let currentOffer = null;
     let landlordCounterOffer = null;
     const tenantGoals = Object.assign({}, goals, { monthly_budget: listing.price > 2500 ? Math.round(listing.price * 1.1) : 0 });
-    // Strong closing signals only — explicit deal/transaction language, not
-    // generic affirmation. Tightened from earlier ("works for me" was matching
-    // "street parking works for me" and forcing premature CLOSING in convos
-    // that were still in RAPPORT/QUALIFICATION).
-    const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (mon|tues|wed|thur|fri|sat|sun)|let.?s sign|done deal)\b/i;
+    // Middle-ground closing detection: catches real closing language
+    // (let's meet Monday, see you Saturday, sign the lease, deal at $X) but
+    // does NOT catch generic affirmations ("works for me" answering "is parking
+    // ok?"). Iter 7 went too tight; iter 8 walks it back.
+    const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (mon|tues|wed|thur|fri|sat|sun)|let.?s meet (mon|tues|wed|thur|fri|sat|sun|on)|let.?s sign|done deal|come (sign|by saturday|by sunday|by monday|by tuesday|by wednesday|by thursday|by friday))\b/i;
     let closingTurnsSeen = 0;       // increments every loop while phase === 'CLOSING'
     const issues = [];
 
