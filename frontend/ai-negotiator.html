@@ -2115,6 +2115,16 @@
                 refreshSummaries();
             }
 
+            // Any edit after a Lock-in must invalidate the lock — otherwise the
+            // green "using negotiation goals" badge keeps promising the AI is
+            // using a frozen set while the actual payload silently includes
+            // the new edit. Invalidating forces a re-click of Lock-in.
+            function invalidateLockIfEditing() {
+                if (goals._lockedAt) {
+                    delete goals._lockedAt;
+                }
+            }
+
             // ----- Chip click handler -----
             document.querySelectorAll('[data-ng-chips]').forEach(group => {
                 const field = group.getAttribute('data-ng-chips');
@@ -2133,8 +2143,10 @@
                         goals[field] = arr;
                         chip.setAttribute('aria-pressed', arr.includes(v) ? 'true' : 'false');
                     }
+                    invalidateLockIfEditing();
                     saveGoals(goals);
                     refreshSummaries();
+                    syncActiveBadge();
                 });
             });
 
@@ -2145,8 +2157,10 @@
                     if (el.type === 'checkbox') goals[field] = el.checked;
                     else if (el.type === 'number') goals[field] = el.value === '' ? '' : Number(el.value);
                     else goals[field] = el.value;
+                    invalidateLockIfEditing();
                     saveGoals(goals);
                     refreshSummaries();
+                    syncActiveBadge();
                 };
                 el.addEventListener('change', handler);
                 el.addEventListener('input', handler);
