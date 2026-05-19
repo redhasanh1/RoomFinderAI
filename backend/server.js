@@ -5267,8 +5267,10 @@ function summarizeGoals(goals) {
 
     const moveinBits = [];
     if (goals.movein_date) moveinBits.push(`target ${goals.movein_date}`);
-    if (goals.movein_flexibility) moveinBits.push(goals.movein_flexibility.replace('weeks', ' weeks'));
-    if (goals.lease_length) moveinBits.push(`${goals.lease_length} lease`);
+    const FLEX_LABEL = { exact: 'exact date', '1week': '± 1 week', '2weeks': '± 2 weeks', flexible: 'flexible' };
+    if (goals.movein_flexibility) moveinBits.push(FLEX_LABEL[goals.movein_flexibility] || goals.movein_flexibility);
+    const LEASE_LABEL = { '6mo': '6-month', '12mo': '12-month', m2m: 'month-to-month', flexible: 'flexible' };
+    if (goals.lease_length) moveinBits.push(`${LEASE_LABEL[goals.lease_length] || goals.lease_length} lease`);
     if (moveinBits.length) lines.push(`- move-in: ${moveinBits.join('; ')}`);
 
     const priceBits = [];
@@ -5338,12 +5340,24 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
     if (tenantGoals && Array.isArray(tenantGoals.available_days) && tenantGoals.available_days.length) {
         goalRules.push(`- If the landlord proposes a meeting day NOT in [${tenantGoals.available_days.join(', ')}], politely counter-propose one that is — do not agree.`);
     }
-    if (tenantGoals && tenantGoals.target_reduction && context && context.listingPrice) {
-        const targetRent = Math.max(0, Number(context.listingPrice) - Number(tenantGoals.target_reduction));
-        goalRules.push(`- Tenant's target rent is ~$${targetRent}/month (~$${tenantGoals.target_reduction} below the asking $${context.listingPrice}). Push back if the landlord names a number higher than that without value in return.`);
+    if (tenantGoals && tenantGoals.target_reduction) {
+        // Coerce defensively — listing.price can be "$1,500", 1500, or null.
+        // Number("$1,500") is NaN and would render "~$NaN/month" in the prompt.
+        const lp = Number(String(context?.listingPrice ?? '').replace(/[^\d.]/g, ''));
+        const tr = Number(tenantGoals.target_reduction);
+        if (Number.isFinite(lp) && lp > 0 && Number.isFinite(tr) && tr > 0) {
+            const targetRent = Math.max(0, lp - tr);
+            goalRules.push(`- Tenant's target rent is ~$${targetRent}/month (~$${tr} below the asking $${lp}). Push back if the landlord names a number higher than that without value in return.`);
+        }
     }
     const goalRulesBlock = goalRules.length ? `\n\nGOAL-DRIVEN RULES:\n${goalRules.join('\n')}\n` : '';
     const goalsBlock = goalsSummary ? `\n\nTENANT GOALS (your client set these — honor them):\n${goalsSummary}\n` : '';
+
+    // Diagnostic log: if a user reports "the goals aren't working", a single
+    // Railway log line confirms whether the prompt actually saw them this turn.
+    if (goalsSummary) {
+        console.log('🎯 Negotiation goals applied:', { phase, tone, goals: goalsSummary.replace(/\n/g, ' | '), rules: goalRules.length });
+    }
 
     if (phase === 'CLOSING') {
         // If the deal is already verbally accepted (numeric convergence OR
@@ -5355,16 +5369,29 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
             ? `\nDEAL ALREADY VERBALLY ACCEPTED at $${agreedPrice}/month. Do NOT renegotiate the price. Just confirm logistics: meeting time, deposit, or "see you ${facts.proposed_meet_date || 'then'}".`
             : '';
 
+        // Tenant's available days override the default "agree to any proposed day"
+        // rule. Without this, the CLOSING prompt's later rules drown out the
+        // earlier goal-driven rule and the AI agrees to days the tenant
+        // explicitly flagged unavailable.
+        const availDays = Array.isArray(tenantGoals?.available_days) ? tenantGoals.available_days : [];
+        const availDaysStr = availDays.join(', ');
+        const dayRule = availDays.length
+            ? `- If they propose a meeting day:
+  * If that day IS in [${availDaysStr}], reply with a confirmation ("Yes, that works. See you {day}.").
+  * If that day is NOT in [${availDaysStr}], politely counter-propose ONE day from that list ("Could we do ${availDays[0]} instead?"). Never agree to a day outside [${availDaysStr}].
+- If they ask yes/no: answer YES, UNLESS it's asking to meet on a day not in [${availDaysStr}] — in that case counter-propose ${availDays[0]}.`
+            : `- If they propose a time/place/day: reply "Yes, that works. See you ${facts?.proposed_meet_date || 'then'}." or equivalent confirmation.
+- If they ask yes/no: answer YES.`;
+
         return `You are closing a rental deal. The landlord is ready to sign and JUST signaled it.
 
 LANDLORD JUST SAID: "${lastLandlordMessage}"
-KNOWN FACTS: ${factsSummary}${dealClosedHint}${goalsBlock}${goalRulesBlock}
+KNOWN FACTS: ${factsSummary}${dealClosedHint}${goalsBlock}
 
 HARD RULES — VIOLATION OF ANY RULE = IMMEDIATE REJECTION:
 - Reply in 12 words or fewer.
 - DO NOT ask any questions. Zero. None.
-- If they propose a time/place/day: reply "Yes, that works. See you ${facts?.proposed_meet_date || 'then'}." or equivalent confirmation.
-- If they ask yes/no: answer YES.
+${dayRule}
 - No emojis. No "Hey there!". No filler. Sound calm and direct.
 - DO NOT pitch credentials. DO NOT ask about laundry/parking/duration/neighborhood — already known or no longer relevant.
 - DO NOT reintroduce discovery topics like the neighborhood, the apartment layout, or anything unrelated to closing.

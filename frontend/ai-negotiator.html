@@ -398,6 +398,10 @@
 
                     <div id="ngMasterBody" style="display:none; padding-top:6px;">
 
+                        <p style="font-size:12px; color:#6b7280; margin:2px 0 12px;">
+                            All fields are <strong>optional</strong> — fill only what matters to you and leave the rest blank.
+                        </p>
+
                         <!-- 1. Meeting & viewing -->
                         <div class="ng-section open" data-ng-section="meeting">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('meeting')">
@@ -543,7 +547,7 @@
                         <!-- 5. Must-haves -->
                         <div class="ng-section" data-ng-section="musthave">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('musthave')">
-                                <h4>Must-haves (deal breakers)</h4>
+                                <h4>Must-haves (optional)</h4>
                                 <span class="ng-section-summary" id="ngSummary-musthave"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
@@ -584,6 +588,10 @@
                                     </div>
                                 </div>
                             </div>
+                        </div>
+
+                        <div style="display:flex; justify-content:flex-end; padding-top:10px; border-top:1px solid #e5e7eb; margin-top:6px;">
+                            <button type="button" id="ngResetAll" style="background:none; border:none; color:#6b7280; font-size:12px; cursor:pointer; text-decoration:underline;">Reset all</button>
                         </div>
 
                     </div>
@@ -2212,6 +2220,22 @@
                 goals = loadGoals();
                 applyToDom();
             };
+
+            // Reset all goals: clear storage for current key + reset in-memory + re-render.
+            window.clearTenantGoals = function () {
+                try { localStorage.removeItem(storageKey()); } catch (_) { /* ignore */ }
+                goals = emptyGoals();
+                applyToDom();
+            };
+
+            const resetBtn = document.getElementById('ngResetAll');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    if (confirm('Clear all negotiation goals? This cannot be undone.')) {
+                        window.clearTenantGoals();
+                    }
+                });
+            }
 
             applyToDom();
         })();
