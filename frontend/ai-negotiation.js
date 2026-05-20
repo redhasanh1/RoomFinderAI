@@ -704,6 +704,14 @@ Write 2-3 sentences negotiating naturally.`
                 `I hear you. Would $${context.currentOffer || context.userBudget} work? I can commit to a longer lease if that helps.`,
                 `That's a bit above what I was hoping, but I really want this place. Could you do $${context.currentOffer || context.userBudget}?`,
                 `I understand. What if we met somewhere in the middle?`
+            ],
+            // CLOSING was missing — without it the gate below silently fell back
+            // to an INTRODUCTION line ("Is it still available?") when the deal was
+            // already being closed, which reads as the AI restarting the convo.
+            CLOSING: [
+                `Sounds good — works for me.`,
+                `That works. See you then.`,
+                `Perfect, let's lock it in.`
             ]
         };
 
@@ -3976,6 +3984,11 @@ Generate ONLY the message. No greetings, no signatures.
                     schema: 'public',
                     table: 'messages'
                 }, async (payload) => {
+                    // Wrap the entire handler: an unhandled throw inside an async
+                    // realtime callback becomes a silent unhandled rejection, which
+                    // presents to the user as "the AI just stopped replying" with
+                    // zero on-screen signal. Surface it loudly instead.
+                    try {
                     const newMessage = payload.new;
                     console.log('🔔 [AI NEGOTIATION] New message received:', newMessage);
                     console.log('🔔 Message sender:', newMessage.sender_email);
@@ -4144,9 +4157,14 @@ Generate ONLY the message. No greetings, no signatures.
                                         newMessage.id
                                     );
                                     console.log(`✅ [PHASED v2] Sent ${response.phase} response`);
+                                } else {
+                                    console.error('❌ [AI NEGOTIATION] Reply was generated but NOT sent (response/response.message falsy) — no AI reply will appear in the chat.', { hasResponse: !!response });
                                 }
                             }
                         }
+                    }
+                    } catch (cbErr) {
+                        console.error('❌ [AI NEGOTIATION] Unhandled error in realtime message handler — no AI reply will be sent:', cbErr?.message || cbErr, cbErr);
                     }
                 })
                 .subscribe((status, err) => {
@@ -4156,6 +4174,21 @@ Generate ONLY the message. No greetings, no signatures.
                     }
                     if (status === 'SUBSCRIBED') {
                         console.log('✅ [AI NEGOTIATION] Message listener active and ready');
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        // Realtime subscription failed. Without it, landlord replies
+                        // never reach this browser and the AI cannot respond — this is
+                        // the exact "nothing happens / no replies" symptom. Make it
+                        // loud + visible instead of a single buried console line.
+                        console.error(`❌ [AI NEGOTIATION] Realtime subscription FAILED (status=${status}). Landlord replies will NOT be received and the AI cannot respond.`, err || '');
+                        try {
+                            if (typeof document !== 'undefined' && !document.getElementById('ai-negotiator-realtime-error')) {
+                                const banner = document.createElement('div');
+                                banner.id = 'ai-negotiator-realtime-error';
+                                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:10px 16px;font:13px/1.4 sans-serif;text-align:center;';
+                                banner.textContent = `AI Negotiator: live connection failed (${status}). Landlord replies won't be received — try reloading the page.`;
+                                if (document.body) document.body.appendChild(banner);
+                            }
+                        } catch (bannerErr) { /* non-fatal */ }
                     }
                 });
 
