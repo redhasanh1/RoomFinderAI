@@ -5141,12 +5141,19 @@ YOUR GOAL: Work toward a price that works for both of you. You can negotiate now
 ${context.landlordCounterOffer && context.landlordCounterOffer > userBudget + 150 ? `HARDEST RULE (highest priority — this is the biggest leak we see):
 The landlord just countered at $${context.landlordCounterOffer} but your target is ~$${userBudget}. You MUST NOT accept this counter. Make a counter of your own — propose somewhere between your last offer ($${context.currentOffer || userBudget}) and their counter, but NOT just rubber-stamp their number. Example: "I hear you on $${context.landlordCounterOffer}, but $${Math.round((userBudget + context.landlordCounterOffer) / 2)} is more in my range — could we land there?" Do not say "yes that works" / "deal" / "sounds good" to their counter while it's still above your target.` : ''}
 
-CONVERGENCE ASSIST: If you've already made 2+ counter-offers and the landlord still won't budge much, STOP making the same kind of counter. Switch tactics:
-- Propose splitting the remaining gap in half ("Let's split the difference at $X?")
-- OR offer a value trade: longer lease (12 months instead of monthly) or quicker move-in or larger security deposit, in exchange for the lower price ("I can commit to a 12-month lease if we land at $X.")
-- OR if the landlord truly won't move and they're within $200 of your target, accept it gracefully and close.
-- OR if the gap is still huge (>$400 above target), walk away politely: "I don't think we can make the math work — appreciate the time though."
-Don't loop the same "could we land at $Y" forever. Two same-shape counters is enough; pivot on the third.
+YOUR #1 JOB IS TO SECURE THIS APARTMENT — NOT to win the haggle. A tenant who walks away has nowhere to live; that is the WORST outcome, far worse than paying a bit more than hoped.
+
+${goals.assertiveness === 'low'
+  ? 'STANCE: relaxed — you are fine paying the asking price. Make at most ONE light ask for a small break, then ACCEPT and close.'
+  : goals.assertiveness === 'high'
+  ? 'STANCE: firm — push for your target with up to TWO counters or a value-trade. But if the landlord holds firm, you STILL accept their price and close. Never lose the place over money.'
+  : 'STANCE: balanced — try about TWO counters or one value-trade, then accept their price and close.'}
+
+CONVERGENCE ASSIST: Once you have made ~2 counter-offers (or the landlord has said no / "firm" twice), STOP haggling and CLOSE THE DEAL:
+- You may try at most ONE value-trade (longer lease / quicker move-in / larger deposit) for a small reduction.
+- If they still won't move, ACCEPT their number and close: "Okay, $X works — I'd love to take it. When can I come see it and sign?"
+- NEVER walk away. NEVER say "I'll think about it", "I'll let you know", "I'll get back to you", "appreciate the time though", or anything that leaves without a deal. Securing the apartment beats saving a little rent.
+Don't loop the same "could we do $Y" — two counters max, then accept + close.
 
 NEGOTIATION APPROACH:
 - Acknowledge their position genuinely
@@ -5166,7 +5173,7 @@ WHAT NOT TO DO:
 - Don't say "My final offer is..." unless you mean it
 - Don't be aggressive or confrontational
 - Don't use formal negotiation language
-- Don't threaten to walk away (unless genuine)
+- NEVER walk away, defer, or say "I'll think about it" / "I'll let you know". Your job is to secure the apartment — if the landlord won't budge, accept their price and close.
 
 Generate a natural negotiation response with a SPECIFIC counter-offer number when there's still daylight between you and the landlord. Sound like a real person trying to make a deal work.`,
 
@@ -5796,6 +5803,24 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
                     const meet = facts?.proposed_meet_date ? `See you ${facts.proposed_meet_date}.` : 'See you then.';
                     safeResponse = `Sounds good — that works. ${meet}`;
                     console.warn('🛡️ Backend validator: CLOSING reply re-opened utilities/deposit — rewrote to a clean confirmation.');
+                }
+            }
+
+            // "Never walk away" guard: the tool exists to SECURE the apartment.
+            // The coach showed the AI bailing ("I'll think about it", "appreciate
+            // the time") when the landlord held firm — leaving the tenant with no
+            // place. In the negotiating/closing phases, rewrite any walk-away or
+            // defer into an acceptance + close at the landlord's number (or asking).
+            if (phase === 'ACTIVE_NEGOTIATION' || phase === 'CLOSING' || phase === 'AVAILABILITY_DISCUSSION' || phase === 'PRICE_INTRODUCTION') {
+                const walkAwayRe = /\b(think about it|think it over|mull it over|i.?ll let you know|i.?ll consider|appreciate (your|the) time|make the math work|all the best|i.?ll pass|get back to you)\b/i;
+                if (walkAwayRe.test(safeResponse)) {
+                    const closePrice = (facts && facts.landlord_last_named_price)
+                        || (safeContext && Number(safeContext.landlordCounterOffer))
+                        || (safeContext && Number(safeContext.listingPrice)) || 0;
+                    safeResponse = closePrice
+                        ? `Okay, $${closePrice} works for me — I'd love to take it. Happy to come by and sign whenever suits you.`
+                        : `Okay, that works for me — I'd love to take it. Happy to come by and sign whenever suits you.`;
+                    console.warn('🛡️ Backend validator: AI tried to walk away/defer — rewrote to accept + close.');
                 }
             }
         } catch (validatorErr) {
