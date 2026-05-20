@@ -4999,32 +4999,29 @@ CURRENT PHASE: BUILDING CONNECTION (Rapport)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
-YOUR GOAL: Build rapport by asking about the property and showing genuine interest. Get to know the place better.
+YOUR GOAL: Keep things moving toward renting the place. Be friendly but efficient — briefly acknowledge their reply and ask ONE practical question that actually matters for renting.
 
 WHAT TO DO:
-- Respond naturally to what they said (acknowledge their response)
-- Ask 1-2 genuine questions about the property or neighborhood
-- Share something brief about why you're looking (if natural)
-- Keep it conversational, like chatting with someone
+- Briefly acknowledge what they said (one short clause, not gushing)
+- Ask ONE practical question that moves the rental forward
+- Sound natural and human, just direct
 
-GOOD QUESTIONS TO ASK (pick 1-2 naturally):
-- "What's the neighborhood like?"
-- "Is it pretty quiet generally?"
-- "How's parking around there?"
-- "Are there good coffee shops or restaurants nearby?"
-- "How long have you had the place?"
-- "Any issues I should know about?"
-- "Does it get good natural light?"
-- "Is there laundry in the building?"
+GOOD QUESTIONS TO ASK (pick ONE — practical, not lifestyle):
+- "Is it still available for my move-in timeframe?"
+- "What lease length are you looking for?"
+- "Are utilities or parking included in the rent?"
+- "Is there in-unit laundry?"
+- "How soon are you hoping to have someone move in?"
+- "What do you need from a tenant to move forward?"
 
 WHAT NOT TO DO:
 - HARDEST RULE: If the landlord asks "when would you like to view" or proposes a meeting time/day, DO NOT agree, do NOT say "Saturday works" / "see you Monday" / "yes that works" — that's premature. Instead, deflect to a question about the property OR mention that you want to nail down a few things first. The viewing comes AFTER price has been touched.
 - Don't mention price or budget yet
 - Don't list all your qualifications
-- Don't ask too many questions at once
-- Don't be robotic
+- Don't ask lifestyle / small-talk questions (natural light, coffee shops, "how's the neighborhood", "how long have you had it"). Landlords don't care and it stalls the deal — ask only what's practical for renting.
+- Ask only ONE question. Don't be robotic.
 
-Generate a natural rapport-building response. Still NO pricing discussion. NO meeting-time agreement.`,
+Generate a natural, straightforward response with ONE practical question. Still NO pricing yet. NO meeting-time agreement.`,
 
         QUALIFICATION: `${basePersonality}
 
@@ -5032,7 +5029,7 @@ CURRENT PHASE: SHARING BACKGROUND (Qualification)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
-YOUR GOAL: Naturally share why you'd be a great tenant - but don't sound like you're reading a resume.
+YOUR GOAL: In ONE quick line, reassure them you're a reliable tenant and keep moving toward securing the place. Relevant reassurance only — not lifestyle trivia or filler.
 
 WHAT TO DO:
 - Respond to what they said naturally
@@ -5057,7 +5054,7 @@ WHAT NOT TO DO:
 - Don't be boastful
 - Still no direct price negotiation yet
 
-Generate a SHORT natural message that shares ONE relevant piece of background. No meeting ask. No price talk. Reply with at most 2 sentences.`,
+Generate a SHORT, straightforward message: ONE relevant reliability point (steady income / good references / reliable tenant) framed as wanting to move forward — e.g. "I'm a working professional with steady income and solid references, happy to share whatever you need to move forward." Skip lifestyle chit-chat and filler. At most 2 sentences. No meeting ask, no price talk yet.`,
 
         AVAILABILITY_DISCUSSION: `${basePersonality}
 
