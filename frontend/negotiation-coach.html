@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Negotiation Coach — you are the landlord</title>
+<!--
+  Local coaching tool. You play the LANDLORD; the AI Negotiator plays the TENANT
+  using the real /api/negotiate/phase-message endpoint on this same backend.
+  Served by backend/server.js at http://localhost:3000/negotiation-coach.html.
+  Logic (phase machine, fact extraction, rubric) is ported from
+  scripts/negotiation_battle.js + scripts/negotiation_coach.js so behavior matches.
+-->
+<style>
+  :root { --bg:#0f1419; --panel:#1a2230; --tenant:#26344a; --landlord:#1f6f4a; --muted:#8aa0b6; --line:#2a3647; --accent:#3b82f6; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:#e7eef6; font:15px/1.45 -apple-system,Segoe UI,Roboto,sans-serif; height:100vh; display:flex; flex-direction:column; }
+  header { background:var(--panel); border-bottom:1px solid var(--line); padding:10px 16px; display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:15px; margin:0 12px 0 0; font-weight:700; }
+  header .ctl { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--muted); }
+  header input, header select { background:#0d1320; color:#e7eef6; border:1px solid var(--line); border-radius:6px; padding:5px 8px; font-size:13px; }
+  header input#price { width:78px; }
+  .spacer { flex:1; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:7px; padding:8px 14px; font-size:14px; cursor:pointer; }
+  button.secondary { background:#2a3647; }
+  button:disabled { opacity:.5; cursor:not-allowed; }
+  #chat { flex:1; overflow-y:auto; padding:18px 16px; display:flex; flex-direction:column; gap:12px; }
+  .row { display:flex; }
+  .row.tenant { justify-content:flex-start; }
+  .row.landlord { justify-content:flex-end; }
+  .row.system { justify-content:center; }
+  .bubble { max-width:72%; padding:10px 13px; border-radius:14px; white-space:pre-wrap; word-wrap:break-word; }
+  .tenant .bubble { background:var(--tenant); border-bottom-left-radius:4px; }
+  .landlord .bubble { background:var(--landlord); border-bottom-right-radius:4px; }
+  .system .bubble { background:transparent; color:var(--muted); font-size:12.5px; text-align:center; max-width:90%; }
+  .tag { display:block; font-size:11px; color:var(--muted); margin-bottom:3px; letter-spacing:.3px; }
+  .err .bubble { background:#5b1d22; color:#ffd7d7; }
+  #typing { color:var(--muted); font-size:13px; font-style:italic; padding:0 4px; height:18px; }
+  footer { background:var(--panel); border-top:1px solid var(--line); padding:10px 16px; display:flex; gap:10px; align-items:flex-end; }
+  #msg { flex:1; resize:none; background:#0d1320; color:#e7eef6; border:1px solid var(--line); border-radius:8px; padding:10px 12px; font:15px/1.4 inherit; max-height:120px; }
+  /* score panel */
+  #scoreWrap { display:none; padding:14px 16px; background:#0d1320; border-top:1px solid var(--line); }
+  #scoreWrap h3 { margin:0 0 6px; font-size:14px; }
+  #scoreLine { font-size:14px; margin-bottom:8px; }
+  #scoreLine .pill { background:#26344a; border-radius:10px; padding:2px 9px; margin-right:6px; }
+  #scoreLine .bad { background:#5b1d22; color:#ffd7d7; }
+  #transcript { width:100%; height:150px; background:#070b12; color:#bcd; border:1px solid var(--line); border-radius:8px; font:12px/1.4 ui-monospace,Consolas,monospace; padding:8px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🤝 Negotiation Coach</h1>
+  <span class="ctl">Listing
+    <input id="title" value="Premium 3-Bedroom Apartment" style="width:200px">
+    $<input id="price" type="number" value="2025"></span>
+  <span class="ctl">Tenant goals
+    <select id="goals">
+      <option value="mon-only-firm">mon-only-firm</option>
+      <option value="weekend-friendly">weekend-friendly</option>
+      <option value="professional-medium">professional-medium</option>
+    </select></span>
+  <span class="spacer"></span>
+  <button id="restart" class="secondary">↺ Start over</button>
+  <button id="finish">✓ Finish &amp; Score</button>
+</header>
+
+<div id="chat"></div>
+<div id="typing"></div>
+
+<div id="scoreWrap">
+  <h3>Conversation scored</h3>
+  <div id="scoreLine"></div>
+  <textarea id="transcript" readonly></textarea>
+  <div style="margin-top:8px"><button id="copy" class="secondary">📋 Copy transcript</button>
+  <span id="copyMsg" style="color:var(--muted);font-size:13px;margin-left:8px"></span></div>
+</div>
+
+<footer>
+  <textarea id="msg" rows="1" placeholder="Type the landlord's reply…  (Enter to send, Shift+Enter for newline)"></textarea>
+  <button id="send">Send</button>
+</footer>
+
+<script>
+// ---------------- config ----------------
+const API = '/api/negotiate/phase-message';   // same-origin: this backend
+const GOAL_TEMPLATES = {
+  'mon-only-firm':       { name:'mon-only-firm', available_days:['mon'], available_time:['morning'], meeting_format:['in_person'], target_reduction:200, ask_utilities_included:true, must_haves:['parking','in_unit_laundry'], pets:'dog', non_smoker:true, employment:'employed', income_confidence:'strong', tone:'firm', assertiveness:'high' },
+  'weekend-friendly':    { name:'weekend-friendly', available_days:['sat','sun'], available_time:['afternoon'], meeting_format:['in_person','video'], target_reduction:100, must_haves:[], pets:'none', employment:'student', income_confidence:'building', tone:'friendly', assertiveness:'low' },
+  'professional-medium': { name:'professional-medium', available_days:['tue','wed','thu'], available_time:['evening'], meeting_format:['in_person'], target_reduction:150, ask_lower_deposit:true, must_haves:['in_unit_laundry'], employment:'self_employed', income_confidence:'strong', tone:'professional', assertiveness:'medium' }
+};
+const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (this weekend|next week|then|tomorrow|mon|tues|wed|thur|fri|sat|sun)|let.?s meet (this weekend|next week|mon|tues|wed|thur|fri|sat|sun|on)|let.?s sign|done deal|come (sign|by saturday|by sunday|by monday|by tuesday|by wednesday|by thursday|by friday))\b/i;
+const frustratedRe = /\b(stop|annoying|waste|ridiculous|scam|rude|fuck|shit|piss|pissed|angry|forget it|not interested|leave me alone|wasting my time|seriously\?)\b/i;
+
+// ---------------- state ----------------
+let listing, tenantBudget, tenantGoals, goals;
+let messageHistory, facts, phase, tone, alreadyAsked, alreadySharedCredentials, currentOffer, landlordCounterOffer, closingTurnsSeen, busy;
+
+function resetState() {
+  listing = {
+    id:'local-sample',
+    title: document.getElementById('title').value.trim() || 'your place',
+    city:'Toronto',
+    price: Math.max(1, Number(document.getElementById('price').value) || 2025),
+    house_type:'apartment', bedrooms:3, user_email:'landlord@example.com',
+    description:'Spacious unit with hardwood floors, a balcony, and great natural light.'
+  };
+  goals = GOAL_TEMPLATES[document.getElementById('goals').value] || GOAL_TEMPLATES['mon-only-firm'];
+  tenantBudget = Math.max(1, Math.round(listing.price * 0.85));
+  tenantGoals = Object.assign({}, goals, { monthly_budget: listing.price > 2500 ? Math.round(listing.price * 1.1) : 0 });
+  messageHistory = [];
+  facts = { listing_held_months:null, deposit_amount:null, proposed_meet_date:null, has_laundry:null, has_parking:null, pets_allowed:null, landlord_said_yes_to_meet:false, landlord_offered_closing:false, landlord_last_named_price:null, agreed_price:null };
+  phase = 'INTRODUCTION'; tone = 'NEUTRAL'; alreadyAsked = []; alreadySharedCredentials = false;
+  currentOffer = null; landlordCounterOffer = null; closingTurnsSeen = 0; busy = false;
+  document.getElementById('chat').innerHTML = '';
+  document.getElementById('scoreWrap').style.display = 'none';
+  const tr = Math.max(0, listing.price - (goals.target_reduction||0));
+  systemLine(`Tenant: goals=${goals.name} · budget≈$${tenantBudget} · target≈$${tr} · available=[${goals.available_days}]`);
+}
+
+// ---------------- rendering ----------------
+function el(id){ return document.getElementById(id); }
+function scrollDown(){ const c = el('chat'); c.scrollTop = c.scrollHeight; }
+function bubble(sender, text, tag, cls) {
+  const row = document.createElement('div');
+  row.className = 'row ' + sender + (cls ? ' ' + cls : '');
+  const b = document.createElement('div'); b.className = 'bubble';
+  if (tag) { const t = document.createElement('span'); t.className='tag'; t.textContent = tag; b.appendChild(t); }
+  b.appendChild(document.createTextNode(text));
+  row.appendChild(b); el('chat').appendChild(row); scrollDown();
+}
+function systemLine(text){ bubble('system', text); }
+function setTyping(on){ el('typing').textContent = on ? 'tenant is typing…' : ''; }
+function setBusy(on){ busy = on; el('send').disabled = on; setTyping(on); }
+
+// ---------------- turns (mirror scripts/negotiation_coach.js) ----------------
+async function tenantTurn() {
+  const ctx = {
+    userName:'Alex', propertyTitle: listing.title, propertyFeature: featureFromDescription(listing.description),
+    city: listing.city, userBudget: tenantBudget, listingPrice: listing.price,
+    lastLandlordMessage: lastMessageOfSender(messageHistory,'landlord') || '',
+    currentOffer, landlordCounterOffer, agreedPrice: facts.agreed_price
+  };
+  let resp;
+  try {
+    resp = await postJSON(API, { phase, tone, facts, alreadyAsked, alreadySharedCredentials, tenantGoals, context: ctx, messageHistory: messageHistory.map(m=>({sender:m.sender,content:m.content})) });
+  } catch (e) {
+    bubble('tenant', 'Backend error: ' + (e.message||e) + '\nIs the local backend running on this port? (node backend/server.js)', null, 'err');
+    return false;
+  }
+  const tenantMsg = String((resp && resp.response) || '').trim();
+  if (!tenantMsg) { bubble('tenant', 'empty tenant response', null, 'err'); return false; }
+
+  messageHistory.push({ sender:'ai', content:tenantMsg, phase });
+  const t$ = findFirstPrice(tenantMsg, 100, 50000);
+  if (t$ != null) {
+    const isCommitment = /\b(could (we|you) do|how about|i can (do|stretch|commit)|what about|propose|land at|more in my range|meet (in )?(the )?middle|i.?m at|my (budget|range|target|comfortable) (is|around))\b/i.test(tenantMsg);
+    const isReference = /\b(is (the|this|that)? ?\$?[\d,]+ firm|any (room|wiggle|flexibility)|firm at|wiggle room)\b/i.test(tenantMsg);
+    if (isCommitment && !isReference && t$ !== facts.landlord_last_named_price) currentOffer = t$;
+  }
+  if (phase === 'QUALIFICATION') alreadySharedCredentials = true;
+  if (closingRe.test(tenantMsg) && phase !== 'CLOSING') phase = 'CLOSING';
+  if (phase === 'CLOSING') closingTurnsSeen++;
+
+  bubble('tenant', tenantMsg, `TENANT · ${phase} · ${tone}`);
+  return true;
+}
+
+function landlordTurn(text) {
+  messageHistory.push({ sender:'landlord', content:text, phase });
+  const l$ = findFirstPrice(text, 100, 50000);
+  if (l$ != null) { facts.landlord_last_named_price = l$; landlordCounterOffer = l$; }
+  if (/\b(meet|see you|come by|stop by|swing by|tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|this weekend)\b/i.test(text)) {
+    facts.landlord_offered_closing = true;
+    const dayMatch = text.toLowerCase().match(/\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight|today)\b/);
+    if (dayMatch && !facts.proposed_meet_date) facts.proposed_meet_date = dayMatch[1];
+  }
+  if (frustratedRe.test(text)) tone = 'FRUSTRATED';
+  else if (closingRe.test(text) && tone !== 'FRUSTRATED') tone = 'ENGAGED';
+  if (closingRe.test(text)) phase = 'CLOSING';
+  if (currentOffer && facts.landlord_last_named_price && Math.abs(currentOffer - facts.landlord_last_named_price) <= 25) {
+    facts.agreed_price = Math.round((currentOffer + facts.landlord_last_named_price) / 2);
+    phase = 'CLOSING';
+  }
+  phase = advancePhase(phase, text);
+}
+
+// ---------------- rubric (verbatim from negotiation_battle.js:337-388) ----------------
+function analyze() {
+  const issues = [];
+  const out = {
+    deal_closed: phase === 'CLOSING' && !!(facts.agreed_price || facts.landlord_offered_closing),
+    agreed_price: facts.agreed_price, landlord_last_named_price: facts.landlord_last_named_price,
+    tenant_last_offer: currentOffer,
+    turns_to_close: phase === 'CLOSING' ? messageHistory.length : null,
+    too_long: messageHistory.length >= 40, issues
+  };
+  if (Array.isArray(tenantGoals.available_days) && tenantGoals.available_days.length && facts.proposed_meet_date) {
+    const map = { mon:'monday',tue:'tuesday',wed:'wednesday',thu:'thursday',fri:'friday',sat:'saturday',sun:'sunday' };
+    const allowed = tenantGoals.available_days.map(d => map[d] || d);
+    if (!allowed.includes(String(facts.proposed_meet_date).toLowerCase())) {
+      const tail = messageHistory.slice(-4).map(m=>m.content).join(' ').toLowerCase();
+      const aiAffirmed = /\b(works|sounds good|see you|let.?s meet)\b/i.test(tail) && !/\binstead\b|\bcould we (?:do|meet)\b/i.test(tail);
+      if (aiAffirmed) issues.push('accepted_day_outside_availability');
+    }
+  }
+  if (phase === 'CLOSING' && !facts.landlord_last_named_price && !currentOffer) issues.push('closed_without_price_discussion');
+  if (facts.agreed_price && tenantGoals.monthly_budget && facts.agreed_price > tenantGoals.monthly_budget) issues.push('agreed_above_budget');
+  if (facts.agreed_price && tenantGoals.target_reduction) {
+    const targetRent = Math.max(0, listing.price - tenantGoals.target_reduction);
+    if (facts.agreed_price > targetRent + 75) issues.push('agreed_significantly_above_target');
+  }
+  const tms = messageHistory.filter(m=>m.sender==='ai').map(m=>m.content.toLowerCase());
+  for (let i=1;i<tms.length;i++) for (let j=0;j<i;j++) {
+    const a=tms[i], b=tms[j];
+    if (a.length>20 && b.length>20 && (a.includes(b.slice(0,30)) || b.includes(a.slice(0,30)))) { issues.push('tenant_repeated_self'); i=tms.length; break; }
+  }
+  const pen = { accepted_day_outside_availability:0.4, closed_without_price_discussion:0.4, agreed_above_budget:0.5, agreed_significantly_above_target:0.2, tenant_repeated_self:0.15 };
+  let score=1.0; for (const i of issues) score -= (pen[i]||0.1);
+  if (!out.deal_closed) score -= 0.25; if (out.too_long) score -= 0.15;
+  out.score = Math.max(0, Number(score.toFixed(2)));
+  return out;
+}
+
+// ---------------- helpers (ported) ----------------
+async function postJSON(url, body) {
+  const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+  if (!res.ok) { const t = await res.text().catch(()=> ''); throw new Error(`HTTP ${res.status} ${t.slice(0,160)}`); }
+  return res.json();
+}
+function findFirstPrice(text, min, max) {
+  const m = String(text||'').match(/\$?\s*(\d{1,3}(?:[,]\d{3})+|\d{3,5})(?:\.\d{1,2})?/g);
+  if (!m) return null;
+  for (const raw of m) { const n = parseFloat(raw.replace(/[$,\s]/g,'')); if (n>=min && n<=max) return n; }
+  return null;
+}
+function lastMessageOfSender(h, s){ for (let i=h.length-1;i>=0;i--) if (h[i].sender===s) return h[i].content; return null; }
+function featureFromDescription(d){ if (!d) return 'the layout'; for (const k of ['hardwood','granite','high ceiling','balcony','view','fireplace','stainless']) if (new RegExp(k,'i').test(d)) return k; return 'the layout'; }
+function advancePhase(currentPhase, landlordMsg) {
+  const order = ['INTRODUCTION','RAPPORT_BUILDING','QUALIFICATION','PRICE_INTRODUCTION','ACTIVE_NEGOTIATION','AVAILABILITY_DISCUSSION','CLOSING'];
+  if (/\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|let.?s do it|i.?ll take it|we.?ll take it|deal|agreed|sold|sounds good|works for me|that works)\b/i.test(landlordMsg)) return 'CLOSING';
+  if (/\b(\$\d+|price|rent|budget|cost|afford|monthly|per month|how much|offer|firm|flexible|wiggle|counter)\b/i.test(landlordMsg) && currentPhase !== 'ACTIVE_NEGOTIATION') return currentPhase === 'PRICE_INTRODUCTION' ? 'ACTIVE_NEGOTIATION' : 'PRICE_INTRODUCTION';
+  if (/\b(job|work|employ|income|credit|reference|background|tell me about)\b/i.test(landlordMsg) && (currentPhase==='INTRODUCTION'||currentPhase==='RAPPORT_BUILDING')) return 'QUALIFICATION';
+  const idx = order.indexOf(currentPhase);
+  if (idx>=0 && idx<4) return order[idx+1];
+  return currentPhase;
+}
+
+// ---------------- transcript / scoring ----------------
+function showScore() {
+  if (!facts.agreed_price && phase === 'CLOSING') facts.agreed_price = facts.landlord_last_named_price || currentOffer || null;
+  const a = analyze();
+  const issuesHtml = a.issues.length ? a.issues.map(i=>`<span class="pill bad">${i}</span>`).join('') : '<span class="pill">no issues</span>';
+  el('scoreLine').innerHTML =
+    `<span class="pill">score ${a.score}</span>` +
+    `<span class="pill">${a.deal_closed?'deal closed':'no deal'}</span>` +
+    `<span class="pill">agreed $${a.agreed_price ?? '—'}</span>` +
+    `<span class="pill">turns ${messageHistory.length}</span>` + issuesHtml;
+  el('transcript').value = JSON.stringify({
+    listing:{ title:listing.title, city:listing.city, price:listing.price },
+    tenantGoals, goals_template: goals.name, terminal_phase: phase, tone,
+    finalState:{ facts, currentOffer, landlordCounterOffer, alreadySharedCredentials },
+    analysis: a,
+    transcript: messageHistory.map(m => `[${m.phase}] ${m.sender==='ai'?'TENANT':'LANDLORD'}: ${m.content}`)
+  }, null, 2);
+  el('scoreWrap').style.display = 'block';
+  el('transcript').scrollIntoView({ behavior:'smooth' });
+}
+
+// ---------------- events ----------------
+async function send() {
+  if (busy) return;
+  const ta = el('msg'); const text = ta.value.trim();
+  if (!text) return;
+  ta.value = ''; ta.style.height = 'auto';
+  bubble('landlord', text, 'LANDLORD');
+  landlordTurn(text);
+  setBusy(true);
+  await tenantTurn();
+  setBusy(false);
+  el('msg').focus();
+}
+async function start() {
+  resetState();
+  setBusy(true);
+  await tenantTurn();   // AI opening
+  setBusy(false);
+  el('msg').focus();
+}
+
+el('send').addEventListener('click', send);
+el('msg').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+el('msg').addEventListener('input', e => { e.target.style.height='auto'; e.target.style.height = Math.min(120, e.target.scrollHeight)+'px'; });
+el('finish').addEventListener('click', showScore);
+el('restart').addEventListener('click', start);
+el('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(el('transcript').value); el('copyMsg').textContent = 'copied — paste it to Claude'; }
+  catch { el('transcript').select(); el('copyMsg').textContent = 'select-all + Ctrl+C'; }
+});
+
+start();
+</script>
+</body>
+</html>
