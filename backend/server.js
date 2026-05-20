@@ -5595,6 +5595,7 @@ ${dayRule}
 - No emojis. No "Hey there!". No filler. Sound calm and direct.
 - DO NOT pitch credentials. DO NOT ask about laundry/parking/duration/neighborhood — already known or no longer relevant.
 - DO NOT reintroduce discovery topics like the neighborhood, the apartment layout, or anything unrelated to closing.
+- The deal terms are SETTLED. Do NOT bring up utilities, deposit, or any NEW request, and do NOT propose a different rent number. If you already asked about utilities and they said no, it is OFF the table.
 ${agreedPrice ? `- Price ($${agreedPrice}) is FINAL. Do not negotiate it again or restate it as an offer.` : ''}
 
 Write the confirmation message now.`;
@@ -5612,6 +5613,7 @@ HARD RULES:
 - 15 words TOTAL maximum.
 - No emojis. No exclamation points. No "Hey there!". No filler.
 - DO NOT pitch credentials again. DO NOT ask discovery questions.
+- DO NOT mention any rent number, utilities, or a new demand. DO NOT counter-offer or re-open price. Just de-escalate and signal you're still interested.
 
 Write the damage-control reply now.`;
     }
@@ -5776,6 +5778,25 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
                 const midpoint = Math.round((tenantTargetRent + landlordCounter) / 2);
                 console.warn(`🛡️ Backend validator (1x): AI accepted $${landlordCounter} but target was $${tenantTargetRent}. Counter at $${midpoint}.`);
                 safeResponse = `I hear you on $${landlordCounter}, but $${midpoint} is more in my range. Could we land there?`;
+            }
+
+            // CLOSING / FRUSTRATED guard: once the deal is converging the AI must
+            // NOT re-open settled terms. The coach surfaced two bad patterns:
+            // (1) re-asking "include utilities?" after the meeting was already set,
+            // (2) after the landlord got frustrated, lowballing a brand-new number
+            // ($1721 + utilities) instead of de-escalating. Hard-rewrite both.
+            if (tone === 'FRUSTRATED') {
+                if (/\$\s*\d{3,5}|\butilit|\bdeposit\b|\binclude\b/i.test(safeResponse)) {
+                    const meet = facts?.proposed_meet_date ? `See you ${facts.proposed_meet_date}.` : 'When works to meet?';
+                    safeResponse = `Sorry — didn't mean to push. I'm still keen on the place. ${meet}`;
+                    console.warn('🛡️ Backend validator: FRUSTRATED reply re-negotiated price/utilities — rewrote to de-escalation.');
+                }
+            } else if (phase === 'CLOSING') {
+                if (/\butilit|\bdeposit\b|throw in|include .*(in the )?rent/i.test(safeResponse)) {
+                    const meet = facts?.proposed_meet_date ? `See you ${facts.proposed_meet_date}.` : 'See you then.';
+                    safeResponse = `Sounds good — that works. ${meet}`;
+                    console.warn('🛡️ Backend validator: CLOSING reply re-opened utilities/deposit — rewrote to a clean confirmation.');
+                }
             }
         } catch (validatorErr) {
             console.warn('Backend response validator threw (non-fatal):', validatorErr?.message || validatorErr);
