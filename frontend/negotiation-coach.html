@@ -53,11 +53,11 @@
   <span class="ctl">Listing
     <input id="title" value="Premium 3-Bedroom Apartment" style="width:200px">
     $<input id="price" type="number" value="2025"></span>
-  <span class="ctl">Tenant goals
+  <span class="ctl">Tenant mode
     <select id="goals">
-      <option value="mon-only-firm">mon-only-firm</option>
-      <option value="weekend-friendly">weekend-friendly</option>
-      <option value="professional-medium">professional-medium</option>
+      <option value="firm">Firm — push for a discount</option>
+      <option value="medium" selected>Medium — meet in the middle</option>
+      <option value="relaxed">Relaxed — happy to pay asking</option>
     </select></span>
   <span class="spacer"></span>
   <button id="restart" class="secondary">↺ Start over</button>
@@ -83,10 +83,13 @@
 <script>
 // ---------------- config ----------------
 const API = '/api/negotiate/phase-message';   // same-origin: this backend
+// Three negotiation MODES describing how hard the tenant pushes on PRICE.
+// Meeting days are irrelevant for coaching, so availability is left
+// unconstrained (available_days:[] → the AI agrees to any proposed day).
 const GOAL_TEMPLATES = {
-  'mon-only-firm':       { name:'mon-only-firm', available_days:['mon'], available_time:['morning'], meeting_format:['in_person'], target_reduction:200, ask_utilities_included:true, must_haves:['parking','in_unit_laundry'], pets:'dog', non_smoker:true, employment:'employed', income_confidence:'strong', tone:'firm', assertiveness:'high' },
-  'weekend-friendly':    { name:'weekend-friendly', available_days:['sat','sun'], available_time:['afternoon'], meeting_format:['in_person','video'], target_reduction:100, must_haves:[], pets:'none', employment:'student', income_confidence:'building', tone:'friendly', assertiveness:'low' },
-  'professional-medium': { name:'professional-medium', available_days:['tue','wed','thu'], available_time:['evening'], meeting_format:['in_person'], target_reduction:150, ask_lower_deposit:true, must_haves:['in_unit_laundry'], employment:'self_employed', income_confidence:'strong', tone:'professional', assertiveness:'medium' }
+  'firm':    { name:'firm',    label:'Firm — push hard for a discount', available_days:[], available_time:[], meeting_format:['in_person'], target_reduction:250, ask_lower_deposit:true, must_haves:[], employment:'employed',      income_confidence:'strong', tone:'firm',         assertiveness:'high' },
+  'medium':  { name:'medium',  label:'Medium — meet in the middle',     available_days:[], available_time:[], meeting_format:['in_person'], target_reduction:150,                          must_haves:[], employment:'self_employed', income_confidence:'strong', tone:'professional', assertiveness:'medium' },
+  'relaxed': { name:'relaxed', label:'Relaxed — happy to pay asking',   available_days:[], available_time:[], meeting_format:['in_person'], target_reduction:0,                            must_haves:[], employment:'employed',      income_confidence:'strong', tone:'friendly',     assertiveness:'low' }
 };
 const closingRe = /\b(deal\b|sold\b|i.?ll take it|we.?ll take it|let.?s do (it|that)|sign the lease|put down the deposit|see you (this weekend|next week|then|tomorrow|mon|tues|wed|thur|fri|sat|sun)|let.?s meet (this weekend|next week|mon|tues|wed|thur|fri|sat|sun|on)|let.?s sign|done deal|come (sign|by saturday|by sunday|by monday|by tuesday|by wednesday|by thursday|by friday))\b/i;
 const frustratedRe = /\b(stop|annoying|waste|ridiculous|scam|rude|fuck|shit|piss|pissed|angry|forget it|not interested|leave me alone|wasting my time|seriously\?)\b/i;
@@ -104,8 +107,10 @@ function resetState() {
     house_type:'apartment', bedrooms:3, user_email:'landlord@example.com',
     description:'Spacious unit with hardwood floors, a balcony, and great natural light.'
   };
-  goals = GOAL_TEMPLATES[document.getElementById('goals').value] || GOAL_TEMPLATES['mon-only-firm'];
-  tenantBudget = Math.max(1, Math.round(listing.price * 0.85));
+  goals = GOAL_TEMPLATES[document.getElementById('goals').value] || GOAL_TEMPLATES['medium'];
+  // Budget = the tenant's target rent for this mode (asking − reduction). Firm
+  // aims well below asking; relaxed is comfortable paying the full asking price.
+  tenantBudget = Math.max(1, listing.price - (goals.target_reduction || 0));
   tenantGoals = Object.assign({}, goals, { monthly_budget: listing.price > 2500 ? Math.round(listing.price * 1.1) : 0 });
   messageHistory = [];
   facts = { listing_held_months:null, deposit_amount:null, proposed_meet_date:null, has_laundry:null, has_parking:null, pets_allowed:null, landlord_said_yes_to_meet:false, landlord_offered_closing:false, landlord_last_named_price:null, agreed_price:null };
@@ -113,8 +118,7 @@ function resetState() {
   currentOffer = null; landlordCounterOffer = null; closingTurnsSeen = 0; busy = false;
   document.getElementById('chat').innerHTML = '';
   document.getElementById('scoreWrap').style.display = 'none';
-  const tr = Math.max(0, listing.price - (goals.target_reduction||0));
-  systemLine(`Tenant: goals=${goals.name} · budget≈$${tenantBudget} · target≈$${tr} · available=[${goals.available_days}]`);
+  systemLine(`Tenant mode: ${goals.label} · willing to pay ≈$${tenantBudget} (asking $${listing.price}) · ${goals.target_reduction ? 'wants $' + goals.target_reduction + ' off' : 'fine at asking'}`);
 }
 
 // ---------------- rendering ----------------
