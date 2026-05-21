@@ -516,8 +516,12 @@ class AIChatHandler {
         console.log('🔍 Requirements status:', status);
 
         if (!status.complete) {
-            // Ask for the missing requirement (only if AI didn't already ask)
-            if (!aiResponse || !aiResponse.toLowerCase().includes(status.missing)) {
+            // The backend AI (/api/chat) already drives the conversation and asks
+            // for whatever's missing in natural language. Only emit the scripted
+            // fallback question when there is NO AI response (API down / manual
+            // extraction) — otherwise we double-message and re-ask for info the
+            // user already gave (e.g. repeating "What area or city?" after "toronto").
+            if (!aiResponse) {
                 this.appendMessage('AI', status.question, 'left');
             }
             console.log(`⏳ Missing requirement: ${status.missing}`);
