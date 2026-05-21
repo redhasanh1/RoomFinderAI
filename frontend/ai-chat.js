@@ -532,7 +532,8 @@ class AIChatHandler {
         this.requirementsComplete = true;
         console.log('✅ All requirements collected, starting search...');
 
-        const summary = `Got it! Searching for ${this.requiredFields.bedrooms}-bedroom places in ${this.requiredFields.location} under $${this.requiredFields.budget}/month...`;
+        const bedText = this.requiredFields.bedrooms ? `${this.requiredFields.bedrooms}-bedroom ` : '';
+        const summary = `Got it! Searching for ${bedText}places in ${this.requiredFields.location} under $${this.requiredFields.budget}/month...`;
         this.appendMessage('AI', summary, 'left');
 
         setTimeout(() => this.searchAndMessage(), 1000);
@@ -713,15 +714,12 @@ class AIChatHandler {
                 question: "What's your monthly budget for rent?"
             };
         }
-        if (!bedrooms) {
-            return {
-                complete: false,
-                missing: 'bedrooms',
-                question: "How many bedrooms do you need?"
-            };
-        }
-
-        console.log('✅ All requirements complete!');
+        // Bedrooms is OPTIONAL. Requiring it made the assistant loop forever when
+        // the user said "no preferences" — it never collected a bedroom count, so
+        // it never searched (and findMatchingListings doesn't even filter on
+        // bedrooms). Once we have location + budget, search; bedrooms only refines
+        // the summary line if it happens to be known.
+        console.log('✅ Core requirements complete (location + budget)!');
         return { complete: true };
     }
 
