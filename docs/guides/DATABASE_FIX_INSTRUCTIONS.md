@@ -25,7 +25,7 @@ Your database has critical issues preventing data from being properly saved. Thi
 
    a. **supabase-migrations.sql** - Creates missing tables and fixes structure
    b. **migrate-existing-data.sql** - Migrates your existing data safely
-   c. **setup-supabase-storage.sql** - Sets up storage buckets for images
+   c. **database/sql/setup-supabase-storage.sql** - Sets up storage buckets for images
 
 ### Step 3: Enable Supabase Auth
 1. Go to Supabase Dashboard > Authentication > Providers
@@ -87,7 +87,7 @@ await dbIntegration.createBooking(bookingData);
 ### SQL Files:
 - **supabase-migrations.sql**: Main database structure fixes
 - **migrate-existing-data.sql**: Safely migrates your current data
-- **setup-supabase-storage.sql**: Creates storage buckets for files
+- **database/sql/setup-supabase-storage.sql**: Creates storage buckets for files
 
 ### JavaScript Files:
 - **supabase-auth-manager.js**: Handles secure authentication
