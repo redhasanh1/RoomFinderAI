@@ -405,6 +405,7 @@ curl http://localhost:3000/health
 |----------|----------|
 | QA audit (July 2026) | `docs/QA_AUDIT_JULY_2026.md` |
 | **Live integrations audit** | `docs/LIVE_INTEGRATIONS_AUDIT.md` |
+| **All connections (auth, payments, maps, AI)** | `docs/ALL_CONNECTIONS.md` |
 | Phase 5 setup guide | `docs/PHASE_5_SETUP_GUIDE.md` |
 | **Project completion checklist** | `docs/PROJECT_COMPLETION_CHECKLIST.md` |
 | **Feature status & your action list** | `docs/FEATURE_STATUS_AND_TODO.md` |
