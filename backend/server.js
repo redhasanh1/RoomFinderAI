@@ -9211,12 +9211,13 @@ async function initializeStorage() {
     try {
         console.log('📦 Initializing storage buckets...');
         
-        // Check if Supabase is initialized
         if (!supabase) {
             console.log('⚠️ Skipping storage initialization - Supabase not available');
-            if (DEMO_MODE) {
-                console.log('📝 Demo mode - Storage features will use mock functionality');
-            }
+            return;
+        }
+
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.log('ℹ️ Skipping bucket creation — set SUPABASE_SERVICE_ROLE_KEY for admin storage setup (buckets may already exist in Supabase dashboard)');
             return;
         }
         

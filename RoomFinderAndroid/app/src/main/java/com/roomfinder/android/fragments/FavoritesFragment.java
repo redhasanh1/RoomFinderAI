@@ -16,6 +16,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.roomfinder.android.R;
 import com.roomfinder.android.activities.IndividualChatActivity;
+import com.roomfinder.android.activities.ListingDetailActivity;
 import com.roomfinder.android.activities.LoginActivity;
 import com.roomfinder.android.adapters.ListingsAdapter;
 import com.roomfinder.android.auth.AuthManager;
@@ -80,7 +81,9 @@ public class FavoritesFragment extends Fragment implements ListingsAdapter.OnLis
     
     @Override
     public void onListingClick(Listing listing) {
-        // TODO: Navigate to detail
+        Intent intent = new Intent(requireContext(), ListingDetailActivity.class);
+        intent.putExtra("listing", listing);
+        startActivity(intent);
     }
     
     @Override

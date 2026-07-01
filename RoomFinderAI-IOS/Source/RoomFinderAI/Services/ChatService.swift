@@ -33,15 +33,25 @@ class ChatService: ObservableObject {
     init(supabase: SupabaseClient) {
         self.supabase = supabase
     }
+
+    private func currentUserEmail() async throws -> String {
+        let session = try await supabase.auth.session
+        guard let email = session.user.email, !email.isEmpty else {
+            throw NSError(domain: "ChatService", code: 401, userInfo: [NSLocalizedDescriptionKey: "User is not signed in"])
+        }
+        return email
+    }
+
+    private func setUserContext() async throws {
+        let email = try await currentUserEmail()
+        try await supabase.rpc("set_current_user_email", params: ["user_email": email]).execute()
+    }
     
     // MARK: - Conversation Management
     
     func fetchPropertyConversations() async throws -> [ChatConversation] {
-        // Get current user email from auth or settings
-        let currentUserEmail = "zacoda1@hotmail.com" // You can make this dynamic later
-        
-        // Set user context for RLS (Row Level Security)
-        _ = try supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        let currentUserEmail = try await currentUserEmail()
+        try await setUserContext()
         
         // Query conversations where user is either sender or receiver
         let conversationsResponse: [DatabaseConversation] = try await supabase
@@ -144,10 +154,8 @@ class ChatService: ObservableObject {
     // MARK: - Message Management
     
     func fetchMessages(for conversationId: String) async throws -> [ChatMessage] {
-        let currentUserEmail = "zacoda1@hotmail.com"
-        
-        // Set user context for RLS (Row Level Security)
-        _ = try supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        _ = try await currentUserEmail()
+        try await setUserContext()
         
         // Query all messages for this conversation
         let messagesResponse: [DatabaseMessage] = try await supabase
@@ -180,11 +188,10 @@ class ChatService: ObservableObject {
     }
     
     func sendMessage(request: SendMessageRequest) async throws -> ChatMessage {
-        let currentUserEmail = "zacoda1@hotmail.com" // Make this dynamic later
+        let currentUserEmail = try await currentUserEmail()
         let messageId = UUID().uuidString
         
-        // Set user context for RLS (Row Level Security)
-        _ = try supabase.rpc("set_current_user_email", params: ["email": currentUserEmail])
+        try await setUserContext()
         
         // Insert message into database
         let messageData = DatabaseMessageInsert(

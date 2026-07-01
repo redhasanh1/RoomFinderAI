@@ -4,8 +4,8 @@ import PhotosUI
 
 // MARK: - Configuration
 enum AppConfig {
-    static let enableMockAI = false // Use real OpenAI API for intelligent responses
-    static let debugMode = true // Enable debug logs to see what's happening
+    static var enableMockAI: Bool { !Secrets.isOpenAIKeyValid }
+    static let debugMode = true
 }
 
 // MARK: - Secrets Configuration
@@ -1887,19 +1887,11 @@ struct PropertyThumbnailView: View {
 // MARK: - Conversation Row View
 struct ConversationRowView: View {
     let conversation: ChatConversation
-    
-    // Extract the other user's email from participants (assume current user is "zacoda1@hotmail.com")
+    @Environment(\.supabase) private var supabase
+    @State private var currentUserEmail = ""
+
     private var otherUserEmail: String {
-        let currentUserEmail = "zacoda1@hotmail.com"
         let foundEmail = conversation.participantIds.first { $0 != currentUserEmail } ?? conversation.participantIds.first ?? "unknown@email.com"
-        
-        print("🔍 ConversationRowView: Extracting other user email")
-        print("  - Current user: '\(currentUserEmail)'")
-        print("  - All participants: \(conversation.participantIds)")
-        print("  - Other user email: '\(foundEmail)'")
-        print("  - Conversation ID: \(conversation.id)")
-        print("  - Conversation type: \(conversation.conversationType)")
-        
         return foundEmail
     }
     
@@ -1956,6 +1948,13 @@ struct ConversationRowView: View {
         }
         .padding(.vertical, 8)
         .padding(.horizontal, 4)
+        .onAppear {
+            Task {
+                if let email = try? await supabase.auth.session.user.email {
+                    currentUserEmail = email
+                }
+            }
+        }
     }
     
     // Only show type badges for special conversation types
@@ -4094,6 +4093,10 @@ struct PostView: View {
             
             // Convert price to Double
             let priceValue = Double(price) ?? 0.0
+            let session = try await supabase.auth.session
+            guard let userEmail = session.user.email, !userEmail.isEmpty else {
+                throw NSError(domain: "PostView", code: 401, userInfo: [NSLocalizedDescriptionKey: "Sign in required to post a listing"])
+            }
             
             // Create a proper Codable struct for insertion
             struct ListingInsert: Codable {
@@ -4126,7 +4129,7 @@ struct PostView: View {
                 utilities: utilities,
                 description: description.isEmpty ? nil : description,
                 media: mediaItems.isEmpty ? nil : mediaItems,
-                user_email: "zacoda1@hotmail.com",
+                user_email: userEmail,
                 created_at: currentTime,
                 updated_at: currentTime
             )
@@ -4150,15 +4153,28 @@ struct PostView: View {
     }
     
     private func uploadPhotos() async throws -> [String] {
-        // For now, return placeholder URLs until Supabase storage is properly configured
-        // TODO: Implement actual photo upload to Supabase Storage
         var uploadedUrls: [String] = []
-        
-        for (index, _) in selectedImages.enumerated() {
-            let placeholderUrl = "https://via.placeholder.com/400x300.jpg?text=Photo\(index+1)"
-            uploadedUrls.append(placeholderUrl)
+
+        for (index, image) in selectedImages.enumerated() {
+            guard let data = image.jpegData(compressionQuality: 0.85) else { continue }
+            let fileName = "ios_\(UUID().uuidString)_\(index).jpg"
+            let path = "Photos/\(fileName)"
+
+            try await supabase.storage
+                .from("listing-media")
+                .upload(
+                    path: path,
+                    file: data,
+                    options: FileOptions(contentType: "image/jpeg", upsert: true)
+                )
+
+            let publicURL = try supabase.storage
+                .from("listing-media")
+                .getPublicURL(path: path)
+
+            uploadedUrls.append(publicURL.absoluteString)
         }
-        
+
         return uploadedUrls
     }
     
