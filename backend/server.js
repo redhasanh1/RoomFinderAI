@@ -415,17 +415,7 @@ app.get('/listings-new', (req, res) => {
     }
 });
 
-// Serve static files from parent directory (frontend files)
-const staticPath = path.join(__dirname, '..');
-console.log('📁 Serving static files from:', staticPath);
-app.use(express.static(staticPath, {
-    setHeaders: (res, path) => {
-        // Allow CORS for images
-        res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-}));
-
-// Serve frontend files specifically (for /js/, /css/, etc.)
+// Serve static assets from frontend only (not entire repo root)
 const frontendPath = path.join(__dirname, '..', 'frontend');
 console.log('🌐 Serving frontend files from:', frontendPath);
 // Custom middleware to block static serving of listings.html
