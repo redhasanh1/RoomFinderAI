@@ -1,5 +1,18 @@
 -- Supabase Storage Setup (idempotent — safe to re-run)
 -- Run entire file in Supabase SQL Editor as ONE query.
+--
+-- If you previously ran an older version and got
+--   column "participant1_id" does not exist
+-- this file drops those legacy policies first, then recreates correct ones.
+
+-- ============================================
+-- Drop LEGACY policies (old file versions)
+-- ============================================
+DROP POLICY IF EXISTS "Users can view chat attachments in their conversations" ON storage.objects;
+DROP POLICY IF EXISTS "Authenticated users can upload listing images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can update their own listing images" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own listing images" ON storage.objects;
+DROP POLICY IF EXISTS "Listing images are publicly accessible" ON storage.objects;
 
 -- ============================================
 -- Buckets (names must match frontend/backend code)

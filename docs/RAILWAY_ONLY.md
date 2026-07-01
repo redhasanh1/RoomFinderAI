@@ -1,6 +1,8 @@
 # Railway — Last Step to Go Live
 
-Everything else (code, Supabase SQL, docs) is ready. **Only Railway deployment** needs your friend’s account access.
+Everything else (code, Supabase SQL, docs) is ready. **Only Railway deployment** needs dashboard access.
+
+> **Branch must be `main`:** If Railway still deploys `hasan`, follow **[`RAILWAY_SWITCH_TO_MAIN.md`](RAILWAY_SWITCH_TO_MAIN.md)** first.
 
 ---
 
@@ -23,7 +25,8 @@ Everything else (code, Supabase SQL, docs) is ready. **Only Railway deployment**
 
 ### Source
 - Project linked to **RoomFinderAI** GitHub repo
-- Branch: **`main`**
+- Branch: **`main`** ← **change in Railway → Settings → Source if not already `main`**
+- See **[`RAILWAY_SWITCH_TO_MAIN.md`](RAILWAY_SWITCH_TO_MAIN.md)** for step-by-step
 - Root directory: repo root (default)
 - Build/start: uses `railway.json` → `node backend/server.js`
 - Health check path: `/health`

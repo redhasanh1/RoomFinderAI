@@ -276,6 +276,7 @@ Production uses a Supabase project configured via env vars. Credentials are **ne
 - `listing-media` — property photos (upload path: `listing-media/Photos/...`)
 - `profile-images`, `chat-attachments`, `verification-docs`
 - Run **`database/sql/setup-supabase-storage.sql`** in Supabase SQL Editor as **one query** (idempotent — safe to re-run)
+- If you see `column "participant1_id" does not exist`, you ran an **old** copy — use the file from latest `main`, or run `setup-supabase-storage-buckets-only.sql` first, then the full file
 - Requires `SUPABASE_SERVICE_ROLE_KEY` on server for admin storage operations
 
 ### Auth
@@ -402,6 +403,7 @@ curl http://localhost:3000/health
 
 | Document | Location |
 |----------|----------|
+| **Project completion checklist** | `docs/PROJECT_COMPLETION_CHECKLIST.md` |
 | **Feature status & your action list** | `docs/FEATURE_STATUS_AND_TODO.md` |
 | Platform status (detail) | `docs/PLATFORM_STATUS.md` |
 | Setup guide | `docs/guides/SETUP_GUIDE.md` |
