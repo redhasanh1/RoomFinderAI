@@ -7,8 +7,11 @@
     <title>Student Housing Hub - RoomFinderAI</title>
 
     <!-- Scripts and styles -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config-init.js"></script>
     <script src="universal-auth-protection.js?v=2.0.2"></script>
     <script src="universal-auth-manager.js?v=2.0.1"></script>
+    <script src="js/university-search.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1299,28 +1302,20 @@
         let selectedUniversityData = null;
         let searchTimeout = null;
         
-        // Search universities using Hipolabs API
+        // Search universities (offline dataset)
         async function searchUniversities(query) {
             if (!query || query.length < 2) {
                 hideSuggestions();
                 return;
             }
             
-            // Debounce search requests
             clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(async () => {
-                try {
-                    const response = await fetch(`https://universities.hipolabs.com/search?name=${encodeURIComponent(query)}`);
-                    const universities = await response.json();
-                    
-                    // Limit to first 10 results for better UX
-                    const limitedResults = universities.slice(0, 10);
-                    displayUniversitySuggestions(limitedResults);
-                } catch (error) {
-                    console.error('Error searching universities:', error);
-                    hideSuggestions();
-                }
-            }, 300);
+            searchTimeout = setTimeout(() => {
+                const universities = window.UniversitySearch
+                    ? UniversitySearch.search(query, 10)
+                    : [];
+                displayUniversitySuggestions(universities);
+            }, 200);
         }
         
         // Display university suggestions dropdown
@@ -1575,64 +1570,52 @@
             return cityPatterns[domain] || null;
         }
         
-        // Fetch private housing data (Student.com API integration)
+        // Fetch listings near selected university from RoomFinderAI API
         async function fetchPrivateHousingData(location) {
-            // In production, this would make real API calls to Student.com
-            // For now, return simulated data based on location
-            
-            return new Promise((resolve) => {
-                setTimeout(() => {
-                    const sampleData = generateSampleHousingData(location);
-                    resolve(sampleData);
-                }, 1500);
-            });
-        }
-        
-        // Generate sample housing data based on location
-        function generateSampleHousingData(location) {
-            const baseOptions = [
-                {
-                    name: 'Student.com Verified Properties',
-                    description: 'Fully furnished student accommodation with all bills included',
-                    priceRange: '$800-1,200/month',
-                    type: 'student-residence',
-                    url: 'https://www.student.com',
-                    features: ['Furnished', 'Bills included', 'Study areas', '24/7 security'],
-                    count: Math.floor(Math.random() * 30) + 15
-                },
-                {
-                    name: 'Places4Students Listings',
-                    description: 'Off-campus apartments and shared housing near university',
-                    priceRange: '$600-1,000/month', 
-                    type: 'shared-housing',
-                    url: 'https://www.places4students.com',
-                    features: ['Close to campus', 'Flexible leases', 'Pet-friendly options'],
-                    count: Math.floor(Math.random() * 50) + 25
-                },
-                {
-                    name: 'Local Rental Properties',
-                    description: 'Private apartments and studios in the university area',
-                    priceRange: '$700-1,500/month',
-                    type: 'private-rental',
-                    url: '#',
-                    features: ['Private bathrooms', 'Kitchen access', 'Parking available'],
-                    count: Math.floor(Math.random() * 20) + 10
+            try {
+                const res = await fetch('/api/listings');
+                const payload = await res.json();
+                const listings = payload.data || payload.listings || [];
+                const cityHint = (location?.city || location?.['state-province'] || location?.name || '').toLowerCase();
+
+                const matched = listings.filter((item) => {
+                    const hay = `${item.city || ''} ${item.location || ''} ${item.address || ''}`.toLowerCase();
+                    return !cityHint || hay.includes(cityHint.split(',')[0].trim());
+                }).slice(0, 12);
+
+                if (!matched.length) {
+                    return [{
+                        name: 'No listings in this area yet',
+                        description: 'Browse all listings on RoomFinderAI or post your own near campus.',
+                        priceRange: '—',
+                        type: 'info',
+                        url: 'listings.html',
+                        features: ['Real listings from Supabase'],
+                        count: 0
+                    }];
                 }
-            ];
-            
-            // Adjust pricing based on location
-            if (location?.country === 'United States') {
-                if (location.state === 'California' || location.state === 'New York') {
-                    // Higher prices for expensive states
-                    baseOptions.forEach(option => {
-                        option.priceRange = option.priceRange.replace(/\$(\d+)/g, (match, price) => 
-                            '$' + Math.floor(parseInt(price) * 1.3)
-                        );
-                    });
-                }
+
+                return matched.map((item) => ({
+                    name: item.title || 'Rental listing',
+                    description: item.description || `${item.bedrooms || '?'} bed · ${item.house_type || 'rental'}`,
+                    priceRange: item.price ? `$${item.price}/month` : 'Price on request',
+                    type: 'listing',
+                    url: `listing_details.html?id=${item.id}`,
+                    features: [item.city || item.location || 'RoomFinderAI'].filter(Boolean),
+                    count: 1
+                }));
+            } catch (err) {
+                console.error('Failed to load listings for student housing:', err);
+                return [{
+                    name: 'Could not load listings',
+                    description: 'Check your connection or browse listings manually.',
+                    priceRange: '—',
+                    type: 'error',
+                    url: 'listings.html',
+                    features: [],
+                    count: 0
+                }];
             }
-            
-            return baseOptions;
         }
         
         // Display private housing options
@@ -1647,7 +1630,7 @@
                             <div class="text-sm text-gray-600">${option.description}</div>
                         </div>
                         <div class="text-right">
-                            <div class="text-sm font-semibold text-blue-600">${option.count}+ properties</div>
+                            <div class="text-sm font-semibold text-blue-600">${option.count > 0 ? option.count + ' listing' + (option.count > 1 ? 's' : '') : 'Browse'}</div>
                             <div class="text-xs text-gray-500">${option.priceRange}</div>
                         </div>
                     </div>
@@ -1658,9 +1641,9 @@
                         `).join('')}
                     </div>
                     
-                    <button onclick="openHousingLink('${option.url}', '${option.name}')" 
+                    <button onclick="openHousingLink('${option.url}', '${option.name.replace(/'/g, "\\'")}')" 
                             class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                        View ${option.count} Properties
+                        ${option.type === 'listing' ? 'View listing' : option.type === 'info' ? 'Browse listings' : 'Open'}
                     </button>
                 </div>
             `).join('');
@@ -1733,6 +1716,9 @@
         
         // Initialize budget calculator
         document.addEventListener('DOMContentLoaded', function() {
+            if (typeof UniversalAuth !== 'undefined') {
+                UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+            }
             updateBudget();
         });
     </script>

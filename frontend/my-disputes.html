@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>My Disputes - RoomFinderAI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config-init.js"></script>
+    <script src="universal-auth-manager.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/modules/css/main.css"/>
+    <script src="js/dispute-store.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
+        <nav class="w-[90%] max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-xl font-bold gradient-text">RoomFinderAI</a>
+            <div class="flex items-center gap-4 text-sm font-medium">
+                <a href="file-dispute.html" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700">File Dispute</a>
+                <a href="dispute-resolution-policy.html" class="text-gray-600 hover:text-indigo-600">Policy</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="pt-28 pb-16 px-4">
+        <div class="max-w-5xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+                <div>
+                    <h1 class="text-4xl font-bold text-gray-900 mb-2">My Disputes</h1>
+                    <p class="text-gray-600">Track disputes filed from this browser. Signed-in users should use the same device to view history.</p>
+                </div>
+                <a href="file-dispute.html" class="inline-flex items-center justify-center bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl font-semibold">+ New Dispute</a>
+            </div>
+
+            <div id="emptyState" class="hidden bg-white rounded-2xl shadow p-12 text-center">
+                <p class="text-gray-600 mb-6">You have not filed any disputes yet.</p>
+                <a href="file-dispute.html" class="text-indigo-600 font-semibold hover:underline">File your first dispute →</a>
+            </div>
+
+            <div id="disputesList" class="space-y-4"></div>
+        </div>
+    </main>
+
+    <script>
+        const STATUS_LABELS = {
+            submitted: { text: 'Submitted', class: 'bg-blue-100 text-blue-800' },
+            'in-review': { text: 'In review', class: 'bg-yellow-100 text-yellow-800' },
+            mediation: { text: 'Mediation', class: 'bg-purple-100 text-purple-800' },
+            resolved: { text: 'Resolved', class: 'bg-green-100 text-green-800' },
+            closed: { text: 'Closed', class: 'bg-gray-100 text-gray-800' }
+        };
+
+        function formatDate(iso) {
+            return new Date(iso).toLocaleString();
+        }
+
+        function renderDisputes() {
+            const disputes = DisputeStore.getDisputes();
+            const list = document.getElementById('disputesList');
+            const empty = document.getElementById('emptyState');
+
+            if (!disputes.length) {
+                list.innerHTML = '';
+                empty.classList.remove('hidden');
+                return;
+            }
+
+            empty.classList.add('hidden');
+            list.innerHTML = disputes.map((d) => {
+                const status = STATUS_LABELS[d.status] || STATUS_LABELS.submitted;
+                return `
+                <article class="bg-white rounded-2xl shadow p-6 border border-gray-100">
+                    <div class="flex flex-wrap items-start justify-between gap-3 mb-4">
+                        <div>
+                            <p class="text-xs text-gray-500 font-mono">${d.id}</p>
+                            <h2 class="text-lg font-semibold text-gray-900 mt-1">${d.category.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase())}</h2>
+                        </div>
+                        <span class="text-xs font-semibold px-3 py-1 rounded-full ${status.class}">${status.text}</span>
+                    </div>
+                    <p class="text-gray-700 text-sm mb-4 line-clamp-3">${d.description}</p>
+                    <div class="grid sm:grid-cols-2 gap-3 text-sm text-gray-600 mb-4">
+                        <div><span class="font-medium text-gray-800">Filed:</span> ${formatDate(d.createdAt)}</div>
+                        <div><span class="font-medium text-gray-800">Reporter:</span> ${d.reporterEmail}</div>
+                        ${d.propertyRef ? `<div class="sm:col-span-2"><span class="font-medium text-gray-800">Property:</span> ${d.propertyRef}</div>` : ''}
+                        ${d.desiredOutcome ? `<div class="sm:col-span-2"><span class="font-medium text-gray-800">Desired outcome:</span> ${d.desiredOutcome}</div>` : ''}
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="markResolved('${d.id}')" class="text-xs bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700">Mark resolved</button>
+                        <a href="dispute-resolution-policy.html" class="text-xs border border-gray-300 px-3 py-2 rounded-lg hover:bg-gray-50">View policy</a>
+                    </div>
+                </article>`;
+            }).join('');
+        }
+
+        function markResolved(id) {
+            DisputeStore.updateDispute(id, { status: 'resolved' });
+            renderDisputes();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof UniversalAuth !== 'undefined') {
+                UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+            }
+            renderDisputes();
+        });
+    </script>
+</body>
+</html>

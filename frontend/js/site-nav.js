@@ -7,23 +7,29 @@
     function toggleMobileMenu() {
         var menu = document.getElementById('mobile-menu');
         if (!menu) return;
+        menu.classList.toggle('active');
         menu.classList.toggle('show');
-        document.body.classList.toggle('mobile-menu-open', menu.classList.contains('show'));
+        var btn = document.querySelector('.mobile-menu-btn');
+        if (btn) btn.classList.toggle('active');
+        document.body.classList.toggle('mobile-menu-open', menu.classList.contains('active') || menu.classList.contains('show'));
     }
 
     function closeMobileMenu() {
         var menu = document.getElementById('mobile-menu');
         if (!menu) return;
-        menu.classList.remove('show');
+        menu.classList.remove('active', 'show');
+        var btn = document.querySelector('.mobile-menu-btn');
+        if (btn) btn.classList.remove('active');
         document.body.classList.remove('mobile-menu-open');
     }
 
     function toggleDropdown(name) {
         var menu = document.getElementById(name + '-dropdown');
         if (!menu) return;
-        document.querySelectorAll('.dropdown-menu.show').forEach(function (el) {
-            if (el !== menu) el.classList.remove('show');
+        document.querySelectorAll('.dropdown-menu.active, .dropdown-menu.show').forEach(function (el) {
+            if (el !== menu) el.classList.remove('active', 'show');
         });
+        menu.classList.toggle('active');
         menu.classList.toggle('show');
     }
 
@@ -31,9 +37,11 @@
         var section = document.getElementById(sectionId + '-section');
         var arrow = document.getElementById(sectionId + '-arrow');
         if (!section) return;
+        section.classList.toggle('active');
         section.classList.toggle('show');
         if (arrow) {
-            arrow.style.transform = section.classList.contains('show') ? 'rotate(180deg)' : 'rotate(0deg)';
+            var open = section.classList.contains('active') || section.classList.contains('show');
+            arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
         }
     }
 
@@ -50,8 +58,8 @@
 
     document.addEventListener('click', function (e) {
         if (!e.target.closest('.dropdown')) {
-            document.querySelectorAll('.dropdown-menu.show').forEach(function (m) {
-                m.classList.remove('show');
+            document.querySelectorAll('.dropdown-menu.active, .dropdown-menu.show').forEach(function (m) {
+                m.classList.remove('active', 'show');
             });
         }
     });

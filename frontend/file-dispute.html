@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>File a Dispute - RoomFinderAI</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config-init.js"></script>
+    <script src="universal-auth-manager.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/modules/css/main.css"/>
+    <script src="js/dispute-store.js"></script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
+        <nav class="w-[90%] max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="index.html" class="text-xl font-bold gradient-text">RoomFinderAI</a>
+            <div class="flex items-center gap-4 text-sm font-medium">
+                <a href="dispute-resolution-policy.html" class="text-gray-600 hover:text-indigo-600">Policy</a>
+                <a href="my-disputes.html" class="text-gray-600 hover:text-indigo-600">My Disputes</a>
+                <a href="legal.html" class="text-gray-600 hover:text-indigo-600">Legal Center</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="pt-28 pb-16 px-4">
+        <div class="max-w-3xl mx-auto">
+            <div class="text-center mb-10">
+                <h1 class="text-4xl font-bold text-gray-900 mb-3">File a Dispute</h1>
+                <p class="text-gray-600">Report landlord, tenant, or roommate conflicts. We review submissions and guide you through resolution.</p>
+            </div>
+
+            <div id="statusBanner" class="hidden mb-6 p-4 rounded-xl text-sm"></div>
+
+            <form id="disputeForm" class="bg-white rounded-2xl shadow-lg p-8 space-y-6">
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Your name *</label>
+                        <input id="reporterName" type="text" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Your email *</label>
+                        <input id="reporterEmail" type="email" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Dispute category *</label>
+                    <select id="category" required class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                        <option value="">Select category</option>
+                        <option value="rent-payment">Rent / payment issue</option>
+                        <option value="security-deposit">Security deposit</option>
+                        <option value="repairs-maintenance">Repairs / maintenance</option>
+                        <option value="lease-violation">Lease violation</option>
+                        <option value="roommate-conflict">Roommate conflict</option>
+                        <option value="sublease">Sublease issue</option>
+                        <option value="harassment">Harassment / discrimination</option>
+                        <option value="billing">Platform billing</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="grid md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Other party name</label>
+                        <input id="respondentName" type="text" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Other party email</label>
+                        <input id="respondentEmail" type="email" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Listing / property reference</label>
+                    <input id="propertyRef" type="text" placeholder="Listing URL, address, or ID" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Describe the issue *</label>
+                    <textarea id="description" rows="6" required placeholder="What happened? Include dates and any communication you've had." class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Evidence notes</label>
+                    <textarea id="evidenceNotes" rows="3" placeholder="Screenshots, emails, photos — describe what you have (attach via email reply after submission)." class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500"></textarea>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Desired outcome</label>
+                    <input id="desiredOutcome" type="text" placeholder="e.g. Return deposit, fix heating, mediation session" class="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-2 focus:ring-indigo-500">
+                </div>
+
+                <label class="flex items-start gap-3 text-sm text-gray-600">
+                    <input id="agreePolicy" type="checkbox" required class="mt-1">
+                    <span>I agree to the <a href="dispute-resolution-policy.html" class="text-indigo-600 underline">Dispute Resolution Policy</a> and confirm this information is accurate.</span>
+                </label>
+
+                <button type="submit" id="submitBtn" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-4 rounded-xl font-semibold hover:opacity-90 transition">
+                    Submit Dispute
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (typeof UniversalAuth !== 'undefined') {
+                UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+                const user = await UniversalAuth.getCurrentUser();
+                if (user?.email) {
+                    document.getElementById('reporterEmail').value = user.email;
+                    const profile = await UniversalAuth.getUserProfile?.();
+                    if (profile?.full_name) document.getElementById('reporterName').value = profile.full_name;
+                }
+            }
+        });
+
+        function showBanner(type, text) {
+            const el = document.getElementById('statusBanner');
+            el.className = `mb-6 p-4 rounded-xl text-sm ${type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-green-50 text-green-800 border border-green-200'}`;
+            el.textContent = text;
+            el.classList.remove('hidden');
+        }
+
+        document.getElementById('disputeForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.textContent = 'Submitting...';
+
+            const payload = {
+                reporterName: document.getElementById('reporterName').value.trim(),
+                reporterEmail: document.getElementById('reporterEmail').value.trim(),
+                category: document.getElementById('category').value,
+                respondentName: document.getElementById('respondentName').value.trim(),
+                respondentEmail: document.getElementById('respondentEmail').value.trim(),
+                propertyRef: document.getElementById('propertyRef').value.trim(),
+                description: document.getElementById('description').value.trim(),
+                evidenceNotes: document.getElementById('evidenceNotes').value.trim(),
+                desiredOutcome: document.getElementById('desiredOutcome').value.trim()
+            };
+
+            try {
+                const dispute = DisputeStore.saveDispute(payload);
+                try {
+                    await DisputeStore.notifyTeam(dispute);
+                    dispute.notifiedSupport = true;
+                    DisputeStore.updateDispute(dispute.id, { notifiedSupport: true });
+                } catch (notifyErr) {
+                    console.warn('Support notification failed:', notifyErr);
+                    DisputeStore.updateDispute(dispute.id, { notifiedSupport: false, notifyError: notifyErr.message });
+                }
+                showBanner('success', `Dispute ${dispute.id} submitted. View it in My Disputes. Our team will follow up by email.`);
+                e.target.reset();
+                setTimeout(() => { window.location.href = 'my-disputes.html'; }, 1500);
+            } catch (err) {
+                showBanner('error', err.message || 'Failed to submit dispute.');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Submit Dispute';
+            }
+        });
+    </script>
+</body>
+</html>

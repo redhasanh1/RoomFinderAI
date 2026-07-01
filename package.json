@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
-    "build": "rm -rf frontend/build && mkdir -p frontend/build && cp -r frontend/* frontend/build/ 2>/dev/null || true",
+    "build": "echo 'Static frontend — no build step required'",
     "test": "echo 'No tests specified'",
     "validate": "node validate-config.js",
     "setup": "npm install && npm run validate",

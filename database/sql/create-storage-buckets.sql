@@ -12,11 +12,11 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- Create bucket for listing images
+-- Create bucket for listing media (matches listings.html upload path listing-media/Photos)
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 VALUES (
-    'listing-images',
-    'listing-images',
+    'listing-media',
+    'listing-media',
     true,  -- Public bucket
     10485760,  -- 10MB limit
     ARRAY['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif']

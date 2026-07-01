@@ -227,6 +227,10 @@ Full API docs: `docs/API_DOCUMENTATION.md`
 | Home | `frontend/index.html` | Landing, auth, hero |
 | Listings | `frontend/listings.html` | Browse, search, chat, post |
 | AI Negotiator | `frontend/ai-negotiator.html` | AI rental negotiation |
+| Legal | `frontend/legal.html` | AI documents + lease review |
+| Sublease | `frontend/sublease.html` | Browse/post sublease requests |
+| Disputes | `frontend/file-dispute.html`, `my-disputes.html` | File and track disputes |
+| Student housing | `frontend/student-housing.html` | University search + listings |
 | RoomPal | `frontend/roommate-matching.html` | Roommate matching |
 | Login / Signup | `frontend/login.html`, `signup.html` | Auth |
 | Platform status | `frontend/platform-status.html` | Mobile-closed notice |
@@ -269,9 +273,10 @@ Production uses a Supabase project configured via env vars. Credentials are **ne
 
 ### Storage buckets
 
-- `listing-media` — property photos
-- Run `database/sql/setup-supabase-storage.sql` in Supabase SQL editor if uploads fail
-- Requires `SUPABASE_SERVICE_ROLE_KEY` on server for bucket creation at startup
+- `listing-media` — property photos (upload path: `listing-media/Photos/...`)
+- `profile-images`, `chat-attachments`, `verification-docs`
+- Run **`database/sql/setup-supabase-storage.sql`** in Supabase SQL Editor as **one query** (idempotent — safe to re-run)
+- Requires `SUPABASE_SERVICE_ROLE_KEY` on server for admin storage operations
 
 ### Auth
 
@@ -282,6 +287,8 @@ Production uses a Supabase project configured via env vars. Credentials are **ne
 ---
 
 ## 8. Railway deployment
+
+**Short checklist (only step left for go-live):** [`docs/RAILWAY_ONLY.md`](docs/RAILWAY_ONLY.md)
 
 ### Config files
 
@@ -320,13 +327,20 @@ git push origin main
 - [ ] `SUPABASE_URL`
 - [ ] `SUPABASE_ANON_KEY`
 - [ ] `SUPABASE_SERVICE_ROLE_KEY`
-- [ ] `OPENAI_API_KEY`
+- [ ] `OPENAI_API_KEY` or `GROQ_API_KEY` (at least one for AI)
+- [ ] `GROQ_API_KEY` (recommended — free tier)
 - [ ] `BREVO_API_KEY` (valid — check `/health` → `brevo: true`)
 - [ ] `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY`
 - [ ] `GOOGLE_API_KEY` (referrer-restricted)
 - [ ] `ADMIN_KEY` (strong random)
 - [ ] `ENABLE_DEMO_MODE=false`
 - [ ] `NODE_ENV=production`
+
+### Supabase SQL checklist
+
+- [ ] `database/sql/setup-supabase-storage.sql` — listing photo uploads
+- [ ] `database/migrations/roommate_profiles_schema_v2.sql` — RoomPal
+- [ ] `database/migrations/simple_sublease_schema.sql` — sublease marketplace
 
 ---
 
@@ -391,7 +405,7 @@ curl http://localhost:3000/health
 | **Feature status & your action list** | `docs/FEATURE_STATUS_AND_TODO.md` |
 | Platform status (detail) | `docs/PLATFORM_STATUS.md` |
 | Setup guide | `docs/guides/SETUP_GUIDE.md` |
-| Railway deployment | `docs/RAILWAY_DEPLOYMENT.md` |
+| Railway deployment | `docs/RAILWAY_ONLY.md` (quick) · `docs/RAILWAY_DEPLOYMENT.md` (full) |
 | API reference | `docs/API_DOCUMENTATION.md` |
 | Android locked notice | `RoomFinderAndroid-CLOSED/PLATFORMS_LOCKED.md` |
 | iOS locked notice | `RoomFinderAI-IOS-CLOSED/PLATFORMS_LOCKED.md` |

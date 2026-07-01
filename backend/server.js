@@ -4710,171 +4710,105 @@ app.post('/api/chat', openAiRateLimitMiddleware, async (req, res) => {
     console.log('💬 AI Chat endpoint called');
 
     try {
-        const { message, conversationHistory, userEmail, tenantGoals } = req.body;
+        const { message, conversationHistory, userEmail, tenantGoals, mode } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
         }
 
-        console.log('📝 Chat message:', message.substring(0, 100));
-        console.log('📊 Conversation history length:', conversationHistory?.length || 0);
-
-        // Check if OpenAI is configured
-        if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
-            console.log('❌ OpenAI API key not configured');
+        const aiStatus = getAIStatus(config);
+        if (!aiStatus.available.length && !DEMO_MODE) {
             return res.status(503).json({
-                error: 'AI service not available',
+                error: 'AI service not available — set OPENAI_API_KEY or GROQ_API_KEY on Railway',
                 fallback: true
             });
         }
 
-        // If the caller forwarded locked-in negotiation goals, prepend them to
-        // the system prompt so the AI can answer follow-up questions about
-        // the user's settings. The deterministic "list back" is handled
-        // client-side; this block covers natural-language follow-ups (e.g.
-        // "do I have pets listed?", "what's my tone set to?").
-        let goalsBlock = '';
-        if (tenantGoals && typeof tenantGoals === 'object' && Object.keys(tenantGoals).length > 0 && typeof summarizeGoals === 'function') {
-            const summary = summarizeGoals(tenantGoals);
-            if (summary) {
-                const rules = [];
-                if (tenantGoals.monthly_budget) {
-                    rules.push(`DO NOT ask the user for their monthly budget — they already set $${tenantGoals.monthly_budget}/mo above. Use that number. If you must confirm, frame it as "so you're looking around $${tenantGoals.monthly_budget}/month, right?" — never "what's your monthly budget?".`);
+        console.log('📝 Chat message:', message.substring(0, 100));
+        console.log('📊 Mode:', mode || 'rental');
+
+        const chatMode = mode || 'rental';
+        let systemPrompt;
+
+        if (chatMode === 'legal-document') {
+            systemPrompt = `You are a legal document drafting assistant for tenants and renters on RoomFinderAI. Generate clear, jurisdiction-appropriate document drafts with standard sections and placeholders like [LANDLORD NAME] and [TENANT NAME]. Include a disclaimer that this is not legal advice. Output the full document text only — no JSON blocks.`;
+        } else if (chatMode === 'legal-advice') {
+            systemPrompt = `You are a housing legal information assistant for RoomFinderAI. Provide educational guidance about tenant rights, leases, and disputes. Be clear this is general information, not legal advice. Recommend consulting an attorney for serious matters.`;
+        } else {
+            // Rental assistant mode (default)
+            let goalsBlock = '';
+            if (tenantGoals && typeof tenantGoals === 'object' && Object.keys(tenantGoals).length > 0 && typeof summarizeGoals === 'function') {
+                const summary = summarizeGoals(tenantGoals);
+                if (summary) {
+                    const rules = [];
+                    if (tenantGoals.monthly_budget) {
+                        rules.push(`DO NOT ask the user for their monthly budget — they already set $${tenantGoals.monthly_budget}/mo above.`);
+                    }
+                    if (Array.isArray(tenantGoals.must_haves) && tenantGoals.must_haves.length) {
+                        rules.push(`DO NOT ask about must-haves — they listed: ${tenantGoals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}.`);
+                    }
+                    const rulesBlock = rules.length ? '\n\n' + rules.map(r => '- ' + r).join('\n') : '';
+                    goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS:\n${summary}${rulesBlock}\n`;
                 }
-                if (Array.isArray(tenantGoals.must_haves) && tenantGoals.must_haves.length) {
-                    rules.push(`DO NOT ask the user about preferences or must-haves — they already listed: ${tenantGoals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}. Acknowledge them ("I'll prioritize listings with X and Y") instead of re-asking.`);
-                }
-                if (tenantGoals.pets && tenantGoals.pets !== 'none') {
-                    rules.push(`DO NOT ask if the user has pets — they told you (${tenantGoals.pets}). Acknowledge it ("I'll focus on pet-friendly places") instead of re-asking.`);
-                }
-                if (tenantGoals.employment) {
-                    rules.push(`DO NOT ask about employment status — they're ${tenantGoals.employment.replace(/_/g, ' ')}.`);
-                }
-                const rulesBlock = rules.length ? '\n\n' + rules.map(r => '- ' + r).join('\n') : '';
-                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.${rulesBlock}\n`;
-                console.log('🎯 /api/chat: forwarding tenant goals to system prompt.');
             }
-        }
 
-        // Build the system prompt for conversational rental assistant
-        const systemPrompt = `You are a friendly and helpful rental assistant for RoomFinderAI. Your name is "Negotiator" and you help users find rental properties and negotiate better prices.${goalsBlock}
+            systemPrompt = `You are a friendly rental assistant for RoomFinderAI. Help users find rentals and negotiate better prices.${goalsBlock}
 
-YOUR CAPABILITIES:
-- Help users search for rental properties by understanding their needs
-- Have natural, friendly conversations
-- Extract rental search criteria from user messages
-- Provide helpful advice about renting
-- Assist with rental negotiations
-
-CONVERSATION STYLE:
-- Be warm, friendly, and conversational
-- Keep responses concise (2-3 sentences for casual chat, more for detailed questions)
-- Use a helpful but not overly formal tone
-- If users make small talk, respond naturally before guiding back to rentals
-
-IMPORTANT: After your response, you MUST include a JSON block with extracted rental criteria.
-Always end your response with this exact format on a new line:
+Keep responses concise. After your response, you MUST include:
 ###CRITERIA###{"price":null,"city":null,"house_type":null,"bedrooms":null,"intent":null}###END###
 
-Fill in any values you can extract from the conversation (handle typos naturally):
-- price: maximum monthly rent as a number (e.g., 1500)
-- city: city or country name in lowercase (e.g., "toronto", "pakistan")
-- house_type: one of "Apartment", "Condo", "House", "Townhouse", "Studio", "Basement", "Room" or null
-- bedrooms: number of bedrooms or null
-- intent: "search" if user wants to find rentals, "negotiate" if discussing a specific listing, "chat" for general conversation
-
-Examples:
-- "I need a 2br apartment under $1500 in Toronto" → {"price":1500,"city":"toronto","house_type":"Apartment","bedrooms":2,"intent":"search"}
-- "i want a townhosue in pakitan" → {"price":null,"city":"pakistan","house_type":"Townhouse","bedrooms":null,"intent":"search"}
-- "How are you?" → {"price":null,"city":null,"house_type":null,"bedrooms":null,"intent":"chat"}
-- "Find me something cheap in Vancouver" → {"price":null,"city":"vancouver","house_type":null,"bedrooms":null,"intent":"search"}`;
+Fill criteria from the conversation. intent: "search", "negotiate", or "chat".`;
+        }
 
         const messages = [
             { role: 'system', content: systemPrompt },
-            ...(conversationHistory || []).slice(-10) // Keep last 10 messages for context
+            ...(conversationHistory || []).slice(-10),
+            { role: 'user', content: message }
         ];
 
-        messages.push({ role: 'user', content: message });
-
-        console.log('🤖 Sending chat request to OpenAI...');
-
-        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
-            },
-            body: JSON.stringify({
-                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                messages: messages,
-                max_tokens: 300,
-                temperature: 0.7
-            })
+        const result = await callAI(config, {
+            messages,
+            maxTokens: chatMode.startsWith('legal') ? 1200 : 300,
+            temperature: chatMode.startsWith('legal') ? 0.3 : 0.7
         });
 
-        if (!openaiResponse.ok) {
-            const errorData = await openaiResponse.json().catch(() => ({}));
-            console.error('❌ OpenAI API error:', errorData);
-            throw new Error(`OpenAI API error: ${openaiResponse.status}`);
-        }
-
-        const data = await openaiResponse.json();
-        let fullResponse = data.choices[0].message.content.trim();
-
-        console.log('✅ OpenAI response received');
-
-        // Parse the response to extract criteria
+        let fullResponse = result.content;
+        let extractedCriteria = { price: null, city: null, house_type: null, bedrooms: null, intent: null };
         let aiResponse = fullResponse;
-        let extractedCriteria = {
-            price: null,
-            city: null,
-            house_type: null,
-            bedrooms: null,
-            intent: null
-        };
 
-        // Extract the criteria JSON from the response
-        const criteriaMatch = fullResponse.match(/###CRITERIA###(.+?)###END###/s);
-        if (criteriaMatch) {
-            try {
-                extractedCriteria = JSON.parse(criteriaMatch[1]);
-                // Remove the criteria block from the visible response
-                aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
-            } catch (e) {
-                console.log('⚠️ Could not parse criteria JSON:', e.message);
+        if (chatMode === 'rental') {
+            const criteriaMatch = fullResponse.match(/###CRITERIA###(.+?)###END###/s);
+            if (criteriaMatch) {
+                try {
+                    extractedCriteria = JSON.parse(criteriaMatch[1]);
+                    aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
+                } catch (e) {
+                    console.log('⚠️ Could not parse criteria JSON:', e.message);
+                }
             }
-        }
-
-        // Fall back to locked-in goals when the LLM didn't extract a value
-        // from the user's natural-language message. Prevents the chat from
-        // looping "what's your budget?" when the user has it set in the panel.
-        if (tenantGoals && typeof tenantGoals === 'object') {
-            if (!extractedCriteria.price && tenantGoals.monthly_budget) {
+            if (tenantGoals?.monthly_budget && !extractedCriteria.price) {
                 extractedCriteria.price = Number(tenantGoals.monthly_budget);
-                console.log('🎯 /api/chat: filled criteria.price from goals.monthly_budget:', extractedCriteria.price);
             }
         }
 
-        // Log activity
         if (userEmail && supabase) {
             try {
                 await logUserActivity(userEmail, 'ai_chat', 'Used AI chat assistant', {
                     message_length: message.length,
                     response_length: aiResponse.length,
-                    extracted_intent: extractedCriteria.intent
+                    mode: chatMode
                 });
             } catch (e) {
                 console.log('⚠️ Could not log activity:', e.message);
             }
         }
 
-        console.log('💬 Chat response generated, intent:', extractedCriteria.intent);
-
         res.json({
             response: aiResponse,
             criteria: extractedCriteria,
-            tokensUsed: data.usage?.total_tokens || 0
+            tokensUsed: result.tokensUsed || 0,
+            provider: result.provider,
+            model: result.model
         });
 
     } catch (error) {

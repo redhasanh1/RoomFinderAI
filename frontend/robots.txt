@@ -29,7 +29,6 @@ Disallow: /*.backup
 Disallow: /*-example*
 Disallow: /*-modular*
 Disallow: /*.old/
-Disallow: /*coming-soon*
 
 # Disallow backend and admin areas
 Disallow: /backend/

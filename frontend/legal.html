@@ -139,6 +139,9 @@
                 <button onclick="showTab('documents')" class="tab-button" data-tab="documents">
                     Document Generator
                 </button>
+                <button onclick="showTab('lease-review')" class="tab-button" data-tab="lease-review">
+                    Lease Review
+                </button>
                 <button onclick="showTab('rights')" class="tab-button" data-tab="rights">
                     Know Your Rights
                 </button>
@@ -272,6 +275,26 @@
                                     <p class="text-gray-500 italic">Generate a document to see the preview here...</p>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lease Review Tab -->
+            <div id="lease-review-tab" class="tab-content">
+                <div class="glass-card p-8">
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4 text-center">🔍 AI Lease Review</h2>
+                    <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Paste your lease text and our AI will flag red flags, unusual clauses, and negotiation points.</p>
+                    <div class="grid lg:grid-cols-2 gap-8">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">Lease text *</label>
+                            <textarea id="leaseReviewText" rows="14" placeholder="Paste lease agreement text here..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono text-sm"></textarea>
+                            <button onclick="reviewLease()" id="leaseReviewBtn" class="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
+                                Analyze Lease
+                            </button>
+                        </div>
+                        <div id="leaseReviewResults" class="bg-gray-50 p-6 rounded-xl border border-gray-200 min-h-96">
+                            <p class="text-gray-500 italic">Results will appear here after analysis.</p>
                         </div>
                     </div>
                 </div>
@@ -771,7 +794,9 @@
         }
 
         // Document Generation
-        function generateDocument() {
+        let lastGeneratedDocument = '';
+
+        async function generateDocument() {
             const docType = document.getElementById('documentType').value;
             const jurisdiction = document.getElementById('jurisdictionSelect').value;
             const situation = document.getElementById('situationDescription').value;
@@ -780,28 +805,84 @@
                 alert('Please select document type and jurisdiction');
                 return;
             }
-            
-            // Simulate document generation
+
             const preview = document.getElementById('documentPreview');
-            preview.innerHTML = `
-                <div class="space-y-4">
-                    <h4 class="font-bold text-lg">${docType.replace('-', ' ').toUpperCase()}</h4>
-                    <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
-                    <p><strong>Jurisdiction:</strong> ${jurisdiction}</p>
-                    <div class="mt-4">
-                        <p>This is a preview of your generated legal document. The actual document would contain:</p>
-                        <ul class="list-disc ml-6 mt-2">
-                            <li>Legally compliant language for ${jurisdiction}</li>
-                            <li>Your specific situation details</li>
-                            <li>Proper formatting and structure</li>
-                            <li>Relevant legal citations</li>
-                        </ul>
-                    </div>
-                    <div class="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                        <p class="text-sm text-yellow-800">💡 <strong>Tip:</strong> This preview shows the document structure. The full document would be available after generation.</p>
-                    </div>
-                </div>
-            `;
+            preview.innerHTML = '<p class="text-gray-500">Generating document with AI...</p>';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: 'legal-document',
+                        message: `Draft a ${docType.replace(/-/g, ' ')} for jurisdiction ${jurisdiction}. Situation: ${situation || 'standard residential rental'}. Include all standard sections.`
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || data.details || 'Generation failed');
+
+                lastGeneratedDocument = data.response || '';
+                preview.innerHTML = `<div class="whitespace-pre-wrap text-sm text-gray-800">${escapeHtml(lastGeneratedDocument)}</div>
+                    <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded">⚠️ AI-generated draft — not legal advice. Have an attorney review before signing.</p>`;
+            } catch (err) {
+                preview.innerHTML = `<p class="text-red-600">Failed to generate: ${escapeHtml(err.message)}. Ensure OPENAI_API_KEY or GROQ_API_KEY is set on Railway.</p>`;
+            }
+        }
+
+        async function reviewLease() {
+            const leaseText = document.getElementById('leaseReviewText').value.trim();
+            const resultsDiv = document.getElementById('leaseReviewResults');
+            const btn = document.getElementById('leaseReviewBtn');
+
+            if (!leaseText) {
+                alert('Please paste lease text to review');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Analyzing...';
+            resultsDiv.innerHTML = '<p class="text-gray-500">Analyzing lease...</p>';
+
+            try {
+                const response = await fetch('/api/negotiate/lease-review', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ leaseText })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || data.details || 'Review failed');
+
+                const review = data.review || {};
+                const flags = review.flags || [];
+                const ratingColors = { good: 'green', fair: 'yellow', concerning: 'orange', problematic: 'red', unknown: 'gray' };
+                const rating = review.overallRating || 'unknown';
+
+                resultsDiv.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex items-center gap-3">
+                            <span class="text-sm font-semibold uppercase tracking-wide text-${ratingColors[rating] || 'gray'}-700">${rating}</span>
+                            <span class="text-xs text-gray-500">AI lease review</span>
+                        </div>
+                        <p class="text-gray-700">${escapeHtml(review.summary || 'No summary')}</p>
+                        ${flags.length ? `<div class="space-y-3">${flags.map(f => `
+                            <div class="p-3 rounded-lg border ${f.severity === 'high' ? 'border-red-200 bg-red-50' : f.severity === 'medium' ? 'border-yellow-200 bg-yellow-50' : 'border-gray-200 bg-white'}">
+                                <p class="text-xs font-bold uppercase text-gray-500 mb-1">${f.severity || 'info'}</p>
+                                <p class="text-sm font-medium text-gray-900">${escapeHtml(f.issue || '')}</p>
+                                ${f.recommendation ? `<p class="text-sm text-gray-600 mt-1">${escapeHtml(f.recommendation)}</p>` : ''}
+                            </div>
+                        `).join('')}</div>` : '<p class="text-green-700 text-sm">No major flags detected.</p>'}
+                        ${review.negotiationPoints?.length ? `<div><p class="font-semibold text-sm mb-2">Negotiation points:</p><ul class="list-disc ml-5 text-sm text-gray-700">${review.negotiationPoints.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul></div>` : ''}
+                    </div>`;
+            } catch (err) {
+                resultsDiv.innerHTML = `<p class="text-red-600">${escapeHtml(err.message)}</p>`;
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Analyze Lease';
+            }
+        }
+
+        function escapeHtml(str) {
+            return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
 
         // Rights Learning
@@ -987,13 +1068,25 @@
 
         // Utility Functions
         function copyDocument() {
-            // Implementation for copying document
-            console.log('Copy document');
+            if (!lastGeneratedDocument) {
+                alert('Generate a document first');
+                return;
+            }
+            navigator.clipboard.writeText(lastGeneratedDocument).then(() => alert('Copied to clipboard'));
         }
 
         function downloadDocument() {
-            // Implementation for downloading document as PDF
-            console.log('Download document');
+            if (!lastGeneratedDocument) {
+                alert('Generate a document first');
+                return;
+            }
+            const blob = new Blob([lastGeneratedDocument], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `roomfinderai-document-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function browseForms() {

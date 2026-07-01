@@ -1132,6 +1132,12 @@
             input.disabled = false;
             input.focus();
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof UniversalAuth !== 'undefined') {
+                UniversalAuth.init({ allowAnonymous: true, requireSupabase: true });
+            }
+        });
     </script>
 </body>
 </html>
