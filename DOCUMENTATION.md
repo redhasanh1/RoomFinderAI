@@ -2,7 +2,7 @@
 
 **Last updated:** July 1, 2026  
 **Production URL:** [https://www.roomfinderai.com](https://www.roomfinderai.com)  
-**Primary branch:** `hasan`
+**Primary branch:** `main` (deploy from `main`; `hasan` merged in July 2026)
 
 ---
 
@@ -86,7 +86,7 @@ RoomFinderAI/
 # 1. Clone and install
 git clone https://github.com/redhasanh1/RoomFinderAI.git
 cd RoomFinderAI
-git checkout hasan
+git checkout main
 npm install
 
 # 2. Configure environment
@@ -306,9 +306,9 @@ node backend/server.js
 ### Before each push
 
 ```bash
-git pull origin hasan   # Always pull first
+git pull origin main   # Always pull first
 # ... make changes ...
-git push origin hasan
+git push origin main
 ```
 
 ### Railway variables checklist
@@ -397,7 +397,7 @@ curl http://localhost:3000/health
 
 ## 13. Git & commit guidelines
 
-- Pull `hasan` before pushing
+- Pull `main` before pushing
 - Descriptive commit messages — no AI references in commits
 - Never commit `.env`, secrets, or APK files
 - Website only (not mobile app releases while folders are `-CLOSED`)
