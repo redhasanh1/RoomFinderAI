@@ -3,6 +3,8 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const { PLATFORM_STATUS } = require('./platform-status');
+const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
 // Branch state secured - Jul 1, 2025
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
@@ -369,7 +371,7 @@ app.get('/listings.html', (req, res) => {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Last-Modified', new Date().toUTCString());
-        return res.sendFile(consolidatedListingsPath);
+        return sendInjectedHtml(res, consolidatedListingsPath);
     } else {
         console.log(`❌ ERROR: Consolidated listings file not found at: ${consolidatedListingsPath}`);
         return res.status(404).send('Listings not found');
@@ -387,7 +389,7 @@ app.get('/listings', (req, res) => {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Last-Modified', new Date().toUTCString());
-        return res.sendFile(consolidatedListingsPath);
+        return sendInjectedHtml(res, consolidatedListingsPath);
     } else {
         console.log(`❌ ERROR: Consolidated listings file not found at: ${consolidatedListingsPath}`);
         return res.status(404).send('Listings not found');
@@ -408,7 +410,7 @@ app.get('/listings-new', (req, res) => {
         res.setHeader('Expires', '0');
         res.setHeader('Last-Modified', new Date().toUTCString());
         res.setHeader('ETag', Date.now().toString());
-        return res.sendFile(consolidatedListingsPath);
+        return sendInjectedHtml(res, consolidatedListingsPath);
     } else {
         console.log(`❌ TEST ERROR: Consolidated listings file not found`);
         return res.status(404).send('Test listings not found');
@@ -418,6 +420,10 @@ app.get('/listings-new', (req, res) => {
 // Serve static assets from frontend only (not entire repo root)
 const frontendPath = path.join(__dirname, '..', 'frontend');
 console.log('🌐 Serving frontend files from:', frontendPath);
+
+// Inject platform-status banner assets into HTML pages before static fallback
+app.use(createHtmlInjectionMiddleware(frontendPath));
+
 // Custom middleware to block static serving of listings.html
 app.use((req, res, next) => {
     if (req.path === '/listings.html' || req.path === '/listings') {
@@ -9094,6 +9100,13 @@ app.get('/health', (req, res) => {
         status: 'running',
         timestamp: new Date().toISOString(),
         services: serviceStatus,
+        platforms: {
+            web: PLATFORM_STATUS.platforms.web.status,
+            android: PLATFORM_STATUS.platforms.android.status,
+            ios: PLATFORM_STATUS.platforms.ios.status,
+            message: PLATFORM_STATUS.message,
+            documentation: PLATFORM_STATUS.documentation
+        },
         mode: {
             demo: DEMO_MODE,
             anonymousBrowsing: ANONYMOUS_BROWSING,
@@ -9102,6 +9115,19 @@ app.get('/health', (req, res) => {
         uptime: process.uptime()
     };
     res.status(200).json(health);
+});
+
+// Public platform availability for web and mobile clients
+app.get('/api/platform-status', (req, res) => {
+    res.json({
+        updatedAt: PLATFORM_STATUS.updatedAt,
+        message: PLATFORM_STATUS.message,
+        platforms: PLATFORM_STATUS.platforms,
+        activePlatform: 'web',
+        mobileAppsClosed: true,
+        statusPage: PLATFORM_STATUS.statusPage,
+        documentation: PLATFORM_STATUS.documentation
+    });
 });
 
 // Service status endpoint for frontend
@@ -9126,7 +9152,7 @@ app.get('/', (req, res) => {
     try {
         const indexPath = path.join(__dirname, '..', 'frontend', 'index.html');
         console.log('📄 Serving index.html from:', indexPath);
-        res.sendFile(indexPath);
+        sendInjectedHtml(res, indexPath);
     } catch (error) {
         console.error('Error serving index.html:', error);
         res.status(200).send('✅ RoomFinderAI server is running');
@@ -9155,7 +9181,7 @@ app.get('/:page', (req, res) => {
             console.log(`🔍 DEBUG: Checking for modular listings at: ${modularListingsPath}`);
             if (fs.existsSync(modularListingsPath)) {
                 console.log(`📄 SUCCESS: Serving modular listings from: ${modularListingsPath}`);
-                return res.sendFile(modularListingsPath);
+                return sendInjectedHtml(res, modularListingsPath);
             } else {
                 console.log(`❌ ERROR: Modular listings file not found at: ${modularListingsPath}`);
             }
@@ -9167,14 +9193,14 @@ app.get('/:page', (req, res) => {
         // Check if file exists in root
         if (fs.existsSync(htmlPath)) {
             console.log(`📄 Serving ${pageName}.html from root:`, htmlPath);
-            res.sendFile(htmlPath);
+            sendInjectedHtml(res, htmlPath);
         } else {
             // Check frontend directory as fallback
             const frontendHtmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
             
             if (fs.existsSync(frontendHtmlPath)) {
                 console.log(`📄 Serving ${pageName}.html from frontend:`, frontendHtmlPath);
-                res.sendFile(frontendHtmlPath);
+                sendInjectedHtml(res, frontendHtmlPath);
             } else {
                 console.log(`❌ Page not found: ${pageName}.html (checked root and frontend directories)`);
                 res.status(404).send(`Page not found: /${pageName}`);

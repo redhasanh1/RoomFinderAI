@@ -2,14 +2,18 @@
 
 AI-powered rental search, negotiation, and marketplace platform.
 
+> **Platform notice (July 2026):** Only the **web app** is live at [roomfinderai.com](https://www.roomfinderai.com). **Android and iOS native apps are temporarily closed** — not on Google Play or the App Store. See [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md).
+
 ## Platforms
 
 | Platform | Path | Status |
 |----------|------|--------|
-| **Web** | [`frontend/`](frontend/) + [`backend/`](backend/) | Primary — served by Express on Railway |
-| **Android** | [`RoomFinderAndroid/`](RoomFinderAndroid/) | Primary native Android app |
-| **iOS** | [`RoomFinderAI-IOS/`](RoomFinderAI-IOS/) | Native SwiftUI app |
-| Legacy Android | [`archive/legacy-android/android/`](archive/legacy-android/android/) | Deprecated Capacitor-style app |
+| **Web** | [`frontend/`](frontend/) + [`backend/`](backend/) | **Active** — primary platform on Railway |
+| **Android** | [`RoomFinderAndroid/`](RoomFinderAndroid/) | **Closed (temporary)** — source retained, not distributed |
+| **iOS** | [`RoomFinderAI-IOS/`](RoomFinderAI-IOS/) | **Closed (temporary)** — source retained, not distributed |
+| Legacy Android | [`archive/legacy-android/android/`](archive/legacy-android/android/) | Archived — deprecated Capacitor app |
+
+Public status page: **[/platform-status.html](https://www.roomfinderai.com/platform-status.html)** · API: `GET /api/platform-status`
 
 ## Quick start (web)
 
@@ -52,7 +56,10 @@ Production runs on **Railway** via Nixpacks (`railway.json` → `node backend/se
 
 Health check: `GET /health`
 
-## Android / iOS
+## Android / iOS (temporarily closed)
 
-- Android: see [`RoomFinderAndroid/README.md`](RoomFinderAndroid/README.md)
-- iOS: see [`RoomFinderAI-IOS/README.md`](RoomFinderAI-IOS/README.md) and [`RoomFinderAI-IOS/BUILD-AND-RUN.md`](RoomFinderAI-IOS/BUILD-AND-RUN.md)
+Native mobile apps are **not available** to users at this time. Use the website instead.
+
+- Status & reopening plan: [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md)
+- Android (locked): [`RoomFinderAndroid/PLATFORMS_LOCKED.md`](RoomFinderAndroid/PLATFORMS_LOCKED.md)
+- iOS (locked): [`RoomFinderAI-IOS/PLATFORMS_LOCKED.md`](RoomFinderAI-IOS/PLATFORMS_LOCKED.md)
