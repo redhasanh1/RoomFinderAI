@@ -388,6 +388,7 @@ curl http://localhost:3000/health
 
 | Document | Location |
 |----------|----------|
+| **Feature status & your action list** | `docs/FEATURE_STATUS_AND_TODO.md` |
 | Platform status (detail) | `docs/PLATFORM_STATUS.md` |
 | Setup guide | `docs/guides/SETUP_GUIDE.md` |
 | Railway deployment | `docs/RAILWAY_DEPLOYMENT.md` |
