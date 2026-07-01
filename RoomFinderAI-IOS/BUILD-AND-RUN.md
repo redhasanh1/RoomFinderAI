@@ -9,10 +9,14 @@ The AI Negotiator module has been fully integrated into the RoomFinderAI iOS app
    open RoomFinderAI-IOS/Project/RoomFinderAI.xcodeproj
    ```
 
-2. **Configure OpenAI API Key**:
-   - Navigate to `Source/RoomFinderAI/Config/Secrets.swift`
-   - Replace `"sk-your-openai-api-key"` with your actual OpenAI API key
-   - Optionally add your OpenAI Organization ID
+2. **Configure OpenAI API Key** (required for live AI responses):
+   - In Xcode: Target → Build Settings → add User-Defined setting `OPENAI_API_KEY` with your key
+   - Or set scheme environment variable `OPENAI_API_KEY`
+   - CLI build example:
+     ```bash
+     OPENAI_API_KEY=sk-your-key xcodebuild -project RoomFinderAI.xcodeproj -scheme RoomFinderAI build
+     ```
+   - Without a key, the app falls back to mock AI responses (`AppConfig.enableMockAI` path)
 
 3. **Build and Run**:
    - Select your target device/simulator

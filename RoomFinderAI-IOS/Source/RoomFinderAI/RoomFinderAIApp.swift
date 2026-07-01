@@ -10,26 +10,44 @@ enum AppConfig {
 
 // MARK: - Secrets Configuration
 enum Secrets {
-  static let supabaseURL = "https://fkktwhjybuflxqzopaex.supabase.co"
-  static let supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+  private static func configValue(_ key: String, fallback: String = "") -> String {
+    if let env = ProcessInfo.processInfo.environment[key],
+       !env.isEmpty,
+       !env.hasPrefix("$(") {
+      return env
+    }
+    if let plist = Bundle.main.infoDictionary?[key] as? String,
+       !plist.isEmpty,
+       !plist.hasPrefix("$(") {
+      return plist
+    }
+    return fallback
+  }
 
-  // 🚀 OpenAI Configuration
-  // Note: Replace with your actual OpenAI API key from https://platform.openai.com/api-keys
-  static let openAIKey = "sk-proj-your-openai-api-key-here-replace-with-real-key"
-  static let openAIOrgID: String? = nil // Optional: Your OpenAI organization ID
-  static let openAIModel = "gpt-3.5-turbo" // Using more affordable model
+  static let supabaseURL = configValue("SUPABASE_URL", fallback: "https://fkktwhjybuflxqzopaex.supabase.co")
+  static let supabaseAnonKey = configValue(
+    "SUPABASE_ANON_KEY",
+    fallback: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs"
+  )
+
+  static let openAIKey = configValue("OPENAI_API_KEY")
+  static let openAIOrgID: String? = {
+    let value = configValue("OPENAI_ORG_ID")
+    return value.isEmpty ? nil : value
+  }()
+  static let openAIModel = configValue("OPENAI_MODEL", fallback: "gpt-3.5-turbo")
   
   // API Key validation
   static var isOpenAIKeyValid: Bool {
-    return !openAIKey.contains("your-openai-api-key-here") && 
-           openAIKey.hasPrefix("sk-") && 
+    return !openAIKey.isEmpty &&
+           openAIKey.hasPrefix("sk-") &&
            openAIKey.count > 20 &&
-           !openAIKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+           !openAIKey.contains("your-openai-api-key")
   }
   
   static var openAIKeyStatus: String {
-    if openAIKey == "your-openai-api-key-here" {
-      return "⚠️ Please configure your OpenAI API key"
+    if openAIKey.isEmpty || openAIKey.hasPrefix("$(") {
+      return "OpenAI API key not set. Pass OPENAI_API_KEY in Xcode build settings or scheme environment."
     } else if !openAIKey.hasPrefix("sk-") {
       return "❌ Invalid API key format (must start with 'sk-')"
     } else if openAIKey.count < 20 {

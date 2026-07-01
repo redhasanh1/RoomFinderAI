@@ -47,10 +47,20 @@ The app is designed to work with the RoomFinderAI backend API:
 
 ## Build Instructions
 
-1. Open the project in Android Studio
-2. Sync Gradle files
-3. Update the API base URL in `ApiClient.java`
-4. Build and run on device/emulator
+1. Install **JDK 17** (Gradle 8.13 fails on Java 25). Example:
+   ```bash
+   export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+   ```
+2. Copy `local.properties.template` to `local.properties` and set `sdk.dir` to your Android SDK path.
+   - macOS default: `sdk.dir=/Users/<you>/Library/Android/sdk`
+3. Open the project in Android Studio (or build from CLI):
+   ```bash
+   cd RoomFinderAndroid
+   ./gradlew assembleDebug
+   ./gradlew installDebug   # requires emulator or device
+   ```
+
+API base URL is `https://www.roomfinderai.com/` in `ApiClient.java` and `AuthService.java`.
 
 ## Project Structure
 
@@ -85,10 +95,9 @@ app/src/main/java/com/roomfinder/android/
 
 ## Configuration
 
-Update the base URL in `ApiClient.java`:
-```java
-private static final String BASE_URL = "https://your-api-domain.com/";
-```
+API keys are loaded from `local.properties` or environment variables at build time (see `local.properties.template`).
+
+Base URL: `https://www.roomfinderai.com/` in `ApiClient.java`.
 
 ## Minimum Requirements
 
