@@ -303,6 +303,10 @@ node backend/server.js
 - Timeout: 120s
 - Returns 503 in production if Supabase is unavailable
 
+### Deploy branch
+
+**Railway must deploy from `main`.** In Railway → Project → Settings → Source → set branch to `main` (if it still points to `hasan`).
+
 ### Before each push
 
 ```bash
