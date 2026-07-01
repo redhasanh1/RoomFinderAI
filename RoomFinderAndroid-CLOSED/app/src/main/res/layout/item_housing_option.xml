@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:strokeWidth="0dp"
+    android:backgroundTint="@color/glass_background">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Housing Icon -->
+        <ImageView
+            android:id="@+id/housingIcon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="12dp"
+            android:background="@drawable/circle_background"
+            android:backgroundTint="@color/purple_light"
+            android:padding="12dp"
+            android:src="@drawable/ic_home"
+            android:tint="@color/purple_primary" />
+
+        <!-- Housing Title -->
+        <TextView
+            android:id="@+id/housingTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Dorm Room"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/text_primary"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Housing Description -->
+        <TextView
+            android:id="@+id/housingDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Shared or private rooms\nin university dormitories"
+            android:textSize="12sp"
+            android:textColor="@color/text_secondary"
+            android:gravity="center"
+            android:layout_marginBottom="8dp"
+            android:lineSpacingExtra="2dp" />
+
+        <!-- Price Range -->
+        <TextView
+            android:id="@+id/priceRange"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="$400-800/mo"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="@color/purple_primary"
+            android:gravity="center"
+            android:layout_marginBottom="4dp" />
+
+        <!-- Distance -->
+        <TextView
+            android:id="@+id/distanceFromCampus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="On campus"
+            android:textSize="11sp"
+            android:textColor="@color/success"
+            android:gravity="center"
+            android:background="@drawable/glass_card_background"
+            android:padding="4dp"
+            android:drawableStart="@drawable/ic_location"
+            android:drawablePadding="4dp"
+            android:drawableTint="@color/success" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

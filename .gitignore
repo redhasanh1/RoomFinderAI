@@ -73,15 +73,15 @@ __pycache__/
 
 # Android specific
 archive/legacy-android/android/local.properties
-RoomFinderAndroid/local.properties
-RoomFinderAndroid/.gradle/
-RoomFinderAndroid/build/
-RoomFinderAndroid/app/build/
+RoomFinderAndroid-CLOSED/local.properties
+RoomFinderAndroid-CLOSED/.gradle/
+RoomFinderAndroid-CLOSED/build/
+RoomFinderAndroid-CLOSED/app/build/
 archive/legacy-android/android/app/google-services.json
 archive/legacy-android/android/keystore.properties
 
 # iOS specific
-RoomFinderAI-IOS/Source/RoomFinderAI/Config/Secrets.swift
+RoomFinderAI-IOS-CLOSED/Source/RoomFinderAI/Config/Secrets.swift
 *.xcconfig
 xcuserdata/
 *.xcscmblueprint

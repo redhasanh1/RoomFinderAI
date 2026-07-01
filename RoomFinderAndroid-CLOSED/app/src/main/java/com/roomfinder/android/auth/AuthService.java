@@ -1,0 +1,782 @@
+package com.roomfinder.android.auth;
+
+import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.util.Log;
+import com.google.gson.Gson;
+import com.roomfinder.android.models.User;
+import org.json.JSONObject;
+import java.io.IOException;
+import java.util.concurrent.TimeUnit;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+
+/**
+ * AuthService - Handles API communication exactly like the website
+ * Mirrors login.html API calls and response handling
+ */
+public class AuthService {
+    private static final String TAG = "AuthService";
+    private static AuthService instance;
+    
+    private final OkHttpClient httpClient;
+    private final Gson gson;
+    private final AuthManager authManager;
+    private final LocalAuthService localAuthService;
+    
+    // API endpoints (matching website exactly)
+    private static final String BASE_URL = "https://www.roomfinderai.com";
+    private static final String LOGIN_URL = BASE_URL + "/api/login";
+    private static final String SEND_VERIFICATION_URL = BASE_URL + "/api/send-verification";
+    private static final String VERIFY_EMAIL_URL = BASE_URL + "/api/verify-email";
+    private static final String SEND_RESET_CODE_URL = BASE_URL + "/api/send-reset-code";
+    private static final String VERIFY_RESET_CODE_URL = BASE_URL + "/api/verify-reset-code";
+    private static final String RESET_PASSWORD_URL = BASE_URL + "/api/reset-password";
+    private static final String GOOGLE_AUTH_URL = BASE_URL + "/api/auth/google";
+    
+    // Callback interfaces (matching website patterns)
+    public interface AuthCallback {
+        void onSuccess(User user);
+        void onError(String error);
+    }
+    
+    public interface VerificationCallback {
+        void onSuccess(String message);
+        void onError(String error);
+    }
+    
+    public interface PasswordResetCallback {
+        void onSuccess(String message);
+        void onError(String error);
+    }
+    
+    public interface ResetCodeCallback {
+        void onSuccess(String sessionId);
+        void onError(String error);
+    }
+    
+    public interface CodeVerificationCallback {
+        void onSuccess();
+        void onError(String error);
+    }
+    
+    private AuthService(Context context) {
+        this.authManager = AuthManager.getInstance(context);
+        this.localAuthService = LocalAuthService.getInstance(context);
+        this.gson = new Gson();
+        this.httpClient = new OkHttpClient.Builder()
+                .connectTimeout(10, TimeUnit.SECONDS)  // Increased timeout to allow real email service
+                .readTimeout(10, TimeUnit.SECONDS)
+                .writeTimeout(10, TimeUnit.SECONDS)
+                .build();
+    }
+    
+    public static synchronized AuthService getInstance(Context context) {
+        if (instance == null) {
+            instance = new AuthService(context);
+        }
+        return instance;
+    }
+    
+    /**
+     * Login with email and password (API first, then local fallback - matching website exactly)
+     */
+    public void login(String email, String password, AuthCallback callback) {
+        Log.d(TAG, "Starting login for: " + email);
+        
+        // Try API first (matching website login.html logic)
+        loginWithAPI(email, password, new AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                Log.d(TAG, "✅ API login successful");
+                callback.onSuccess(user);
+            }
+            
+            @Override
+            public void onError(String apiError) {
+                Log.d(TAG, "API login failed, trying local auth: " + apiError);
+                // Fallback to local authentication if API fails
+                localAuthService.loginLocal(email, password, callback);
+            }
+        });
+    }
+    
+    
+    /**
+     * Login using API (matching website login.html exactly)
+     */
+    private void loginWithAPI(String email, String password, AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("email", email);
+                requestData.put("password", password);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(LOGIN_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "🌐 Executing login request to: " + LOGIN_URL);
+                Log.d(TAG, "📧 Email: " + email);
+                Log.d(TAG, "🔗 Request body: " + requestData.toString());
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "📱 Login response code: " + response.code());
+                    Log.d(TAG, "📝 Response headers: " + response.headers().toString());
+                    Log.d(TAG, "📄 Response body: " + responseBody);
+                    Log.d(TAG, "✅ Is successful: " + response.isSuccessful());
+                    
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "🎉 API login successful, processing response");
+                        // Handle successful login with API response data
+                        handleLoginSuccessWithApiResponse(email, responseBody, callback);
+                    } else {
+                        Log.e(TAG, "❌ API login failed with code: " + response.code());
+                        
+                        // Handle specific error codes gracefully
+                        if (response.code() == 404) {
+                            Log.w(TAG, "⚠️ API endpoint not found (404) - this is expected, falling back to local auth");
+                            runOnMainThread(() -> callback.onError("API endpoint unavailable"));
+                        } else {
+                            Log.e(TAG, "❌ Response body: " + responseBody);
+                            
+                            // Handle other API errors
+                            try {
+                                JSONObject errorObj = new JSONObject(responseBody);
+                                String error = errorObj.optString("error", "API Error: " + response.code() + " - " + response.message());
+                                Log.e(TAG, "❌ Parsed error: " + error);
+                                runOnMainThread(() -> callback.onError("API login failed: " + error));
+                            } catch (Exception e) {
+                                Log.e(TAG, "❌ Error parsing response: " + e.getMessage());
+                                String error = "API Error: " + response.code() + " - " + response.message();
+                                runOnMainThread(() -> callback.onError(error));
+                            }
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "🌐 Network error during API login to " + LOGIN_URL, e);
+                Log.e(TAG, "🌐 IOException details: " + e.getMessage());
+                runOnMainThread(() -> callback.onError("Network error accessing " + LOGIN_URL + ": " + e.getMessage()));
+            } catch (Exception e) {
+                Log.e(TAG, "💥 Unexpected error during API login", e);
+                Log.e(TAG, "💥 Exception details: " + e.getMessage());
+                runOnMainThread(() -> callback.onError("API login failed: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Handle successful login with API response data (matching website login.html logic)
+     */
+    private void handleLoginSuccessWithApiResponse(String email, String responseBody, AuthCallback callback) {
+        try {
+            Log.d(TAG, "Processing API login response: " + responseBody);
+            
+            JSONObject apiResponse = new JSONObject(responseBody);
+            
+            // Match website logic: use existing currentUser if email matches, otherwise find in users array, otherwise create new
+            User user = null;
+            
+            // First check if we have currentUser that matches this email (website logic)
+            User currentUser = authManager.getCurrentUser();
+            if (currentUser != null && currentUser.getEmail().equalsIgnoreCase(email)) {
+                user = currentUser;
+                Log.d(TAG, "Using existing currentUser data for: " + email);
+            } else {
+                // Check users array for existing user (website logic)
+                User existingUser = authManager.findUserByEmail(email);
+                if (existingUser != null) {
+                    user = existingUser;
+                    Log.d(TAG, "Using existing user data for: " + email);
+                } else {
+                    // Create new user with default values (matching website: { firstName:'User', lastName:'Name', email, profileImage:getDefaultProfileImage(), aiChats:[], listings:[], emailVerified:true })
+                    user = new User();
+                    user.setFirstName("User");
+                    user.setLastName("Name");
+                    user.setEmail(email);
+                    user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                    user.setEmailVerified(true);
+                    user.setAiChats(new java.util.ArrayList<>());
+                    user.setListings(new java.util.ArrayList<>());
+                    
+                    // Add to users array (matching website logic)
+                    authManager.registerUser(user);
+                    Log.d(TAG, "Created new user for: " + email);
+                }
+            }
+            
+            // Update user with any API response data if provided
+            JSONObject userData = apiResponse.optJSONObject("user");
+            if (userData != null) {
+                // Only update if API provides specific fields, otherwise keep existing values
+                String apiFirstName = userData.optString("firstName");
+                String apiLastName = userData.optString("lastName");
+                String apiEmail = userData.optString("email");
+                
+                if (!apiFirstName.isEmpty()) user.setFirstName(apiFirstName);
+                if (!apiLastName.isEmpty()) user.setLastName(apiLastName);
+                if (!apiEmail.isEmpty()) user.setEmail(apiEmail);
+                
+                // Set verified status from API if provided
+                if (userData.has("emailVerified")) {
+                    user.setEmailVerified(userData.optBoolean("emailVerified", true));
+                }
+            }
+            
+            // Set tokens if provided
+            String accessToken = apiResponse.optString("access_token");
+            if (!accessToken.isEmpty()) {
+                user.setAccessToken(accessToken);
+            }
+            
+            // Store user as currentUser (matching website localStorage.setItem('currentUser', JSON.stringify(user)))
+            authManager.storeCurrentUser(user);
+            Log.d(TAG, "Login successful for user: " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
+            
+            // Create final reference for lambda
+            final User finalUser = user;
+            runOnMainThread(() -> callback.onSuccess(finalUser));
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing API login response", e);
+            runOnMainThread(() -> callback.onError("Login processing failed"));
+        }
+    }
+    
+    /**
+     * Handle successful login (matching website logic exactly)
+     */
+    private void handleLoginSuccess(String email, AuthCallback callback) {
+        try {
+            // First check if we have a currentUser that matches this email (website logic)
+            User currentUser = authManager.getCurrentUser();
+            if (currentUser != null && currentUser.getEmail().equals(email)) {
+                // Use existing user data (preserves name and profile picture)
+                authManager.storeCurrentUser(currentUser);
+                Log.d(TAG, "Using existing currentUser data for: " + email);
+                runOnMainThread(() -> callback.onSuccess(currentUser));
+                return;
+            }
+            
+            // Check users array for existing user (website logic)
+            User existingUser = authManager.findUserByEmail(email);
+            if (existingUser != null) {
+                // Use existing user data (preserves name and profile picture)
+                authManager.storeCurrentUser(existingUser);
+                Log.d(TAG, "Using existing user data for: " + email);
+                runOnMainThread(() -> callback.onSuccess(existingUser));
+            } else {
+                // Create basic user for backward compatibility (website logic)
+                User newUser = new User();
+                newUser.setFirstName("User");
+                newUser.setLastName("Name");
+                newUser.setEmail(email);
+                newUser.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                newUser.setEmailVerified(true);
+                // Initialize lists (matching website user structure)
+                newUser.setAiChats(new java.util.ArrayList<>());
+                newUser.setListings(new java.util.ArrayList<>());
+                
+                // Register and store user
+                authManager.registerUser(newUser);
+                authManager.storeCurrentUser(newUser);
+                
+                Log.d(TAG, "Created new user for: " + email);
+                runOnMainThread(() -> callback.onSuccess(newUser));
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error handling login success", e);
+            runOnMainThread(() -> callback.onError("Login processing failed"));
+        }
+    }
+    
+    /**
+     * Send verification email (API first, local fallback)
+     */
+    public void sendVerification(String firstName, String lastName, String email, String password, VerificationCallback callback) {
+        Log.d(TAG, "Sending verification for: " + email);
+        
+        // Try API first, fallback to local auth
+        sendVerificationWithAPI(firstName, lastName, email, password, new VerificationCallback() {
+            @Override
+            public void onSuccess(String message) {
+                callback.onSuccess(message);
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API verification failed, trying local auth: " + error);
+                localAuthService.signupLocal(firstName, lastName, email, password, callback);
+            }
+        });
+    }
+    
+    /**
+     * Send verification using API (original implementation)
+     */
+    private void sendVerificationWithAPI(String firstName, String lastName, String email, String password, VerificationCallback callback) {
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("firstName", firstName);
+                requestData.put("lastName", lastName);
+                requestData.put("email", email);
+                requestData.put("password", password);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(SEND_VERIFICATION_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing send verification request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Send verification response code: " + response.code());
+                    
+                    if (response.isSuccessful()) {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        String message = jsonResponse.optString("message", "Verification email sent successfully");
+                        runOnMainThread(() -> callback.onSuccess(message));
+                    } else {
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Failed to send verification email");
+                            runOnMainThread(() -> callback.onError(error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Failed to send verification email"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during send verification", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Send verification error", e);
+                runOnMainThread(() -> callback.onError("Failed to send verification email: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Verify email with code (API first, local fallback)
+     */
+    public void verifyEmail(String email, String code, AuthCallback callback) {
+        Log.d(TAG, "Verifying email for: " + email);
+        
+        // Try API first, fallback to local auth
+        verifyEmailWithAPI(email, code, new AuthCallback() {
+            @Override
+            public void onSuccess(User user) {
+                callback.onSuccess(user);
+            }
+            
+            @Override
+            public void onError(String error) {
+                Log.d(TAG, "API email verification failed, trying local auth: " + error);
+                localAuthService.verifyEmailLocal(email, code, callback);
+            }
+        });
+    }
+    
+    /**
+     * Verify email using API (original implementation)
+     */
+    private void verifyEmailWithAPI(String email, String code, AuthCallback callback) {
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("email", email);
+                requestData.put("code", code);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(VERIFY_EMAIL_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing verify email request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Verify email response code: " + response.code());
+                    
+                    if (response.isSuccessful()) {
+                        // Email verified successfully - user should already be created by sendVerification
+                        User existingUser = authManager.findUserByEmail(email);
+                        if (existingUser != null) {
+                            existingUser.setEmailVerified(true);
+                            authManager.storeCurrentUser(existingUser);
+                            runOnMainThread(() -> callback.onSuccess(existingUser));
+                        } else {
+                            // Fallback: create user (shouldn't happen but for safety)
+                            User user = new User();
+                            user.setEmail(email);
+                            user.setFirstName("User");
+                            user.setLastName("Name");
+                            user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                            user.setEmailVerified(true);
+                            // Initialize lists (matching website user structure)
+                            user.setAiChats(new java.util.ArrayList<>());
+                            user.setListings(new java.util.ArrayList<>());
+                            
+                            authManager.registerUser(user);
+                            authManager.storeCurrentUser(user);
+                            runOnMainThread(() -> callback.onSuccess(user));
+                        }
+                    } else {
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Email verification failed");
+                            runOnMainThread(() -> callback.onError(error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Email verification failed"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during verify email", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Verify email error", e);
+                runOnMainThread(() -> callback.onError("Email verification failed: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Send password reset code (matching website /api/send-reset-code call)
+     */
+    public void sendPasswordResetCode(String email, ResetCodeCallback callback) {
+        Log.d(TAG, "Sending password reset code for: " + email);
+        
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("email", email);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(SEND_RESET_CODE_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing send reset code request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Send reset code response code: " + response.code());
+                    
+                    if (response.isSuccessful()) {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        String sessionId = jsonResponse.optString("sessionId", "");
+                        runOnMainThread(() -> callback.onSuccess(sessionId));
+                    } else {
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Failed to send reset code");
+                            runOnMainThread(() -> callback.onError(error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Failed to send reset code"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during send reset code", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Send reset code error", e);
+                runOnMainThread(() -> callback.onError("Failed to send reset code: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Verify password reset code (matching website /api/verify-reset-code call)
+     */
+    public void verifyResetCode(String email, String code, String sessionId, CodeVerificationCallback callback) {
+        Log.d(TAG, "Verifying reset code for: " + email);
+        
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("email", email);
+                requestData.put("code", code);
+                requestData.put("sessionId", sessionId);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(VERIFY_RESET_CODE_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing verify reset code request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Verify reset code response code: " + response.code());
+                    
+                    if (response.isSuccessful()) {
+                        runOnMainThread(() -> callback.onSuccess());
+                    } else {
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Invalid or expired code");
+                            runOnMainThread(() -> callback.onError(error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Invalid or expired code"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during verify reset code", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Verify reset code error", e);
+                runOnMainThread(() -> callback.onError("Code verification failed: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Reset password with code and session (matching website /api/reset-password call)
+     */
+    public void resetPassword(String email, String code, String newPassword, String sessionId, PasswordResetCallback callback) {
+        Log.d(TAG, "Resetting password with code for: " + email);
+        
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("email", email);
+                requestData.put("code", code);
+                requestData.put("newPassword", newPassword);
+                requestData.put("sessionId", sessionId);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(RESET_PASSWORD_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing reset password request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Reset password response code: " + response.code());
+                    
+                    if (response.isSuccessful()) {
+                        JSONObject jsonResponse = new JSONObject(responseBody);
+                        String message = jsonResponse.optString("message", "Password reset successfully");
+                        runOnMainThread(() -> callback.onSuccess(message));
+                    } else {
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Failed to reset password");
+                            runOnMainThread(() -> callback.onError(error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Failed to reset password"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during reset password", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Reset password error", e);
+                runOnMainThread(() -> callback.onError("Failed to reset password: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Helper method to run code on main thread
+     */
+    /**
+     * Authenticate with Google ID token (matching website /api/auth/google call)
+     */
+    public void authenticateWithGoogle(String idToken, AuthCallback callback) {
+        Log.d(TAG, "Authenticating with Google ID token");
+        
+        new Thread(() -> {
+            try {
+                // Create request body (matching website exactly)
+                JSONObject requestData = new JSONObject();
+                requestData.put("idToken", idToken);
+                
+                RequestBody body = RequestBody.create(
+                    requestData.toString(),
+                    MediaType.get("application/json")
+                );
+                
+                Request request = new Request.Builder()
+                        .url(GOOGLE_AUTH_URL)
+                        .post(body)
+                        .addHeader("Content-Type", "application/json")
+                        .build();
+                
+                Log.d(TAG, "Executing Google authentication request");
+                
+                try (Response response = httpClient.newCall(request).execute()) {
+                    String responseBody = response.body() != null ? response.body().string() : "";
+                    Log.d(TAG, "Google auth response code: " + response.code());
+                    Log.d(TAG, "Google auth response body: " + responseBody);
+                    
+                    if (response.isSuccessful()) {
+                        Log.d(TAG, "🎉 Google authentication successful, processing response");
+                        // Handle successful Google authentication (email will be extracted from response)
+                        handleGoogleAuthSuccessWithApiResponse(responseBody, callback);
+                    } else {
+                        Log.e(TAG, "❌ Google authentication failed with code: " + response.code());
+                        try {
+                            JSONObject errorObj = new JSONObject(responseBody);
+                            String error = errorObj.optString("error", "Google Sign-In failed");
+                            Log.e(TAG, "❌ Google auth error: " + error);
+                            runOnMainThread(() -> callback.onError("Google Sign-In failed: " + error));
+                        } catch (Exception e) {
+                            runOnMainThread(() -> callback.onError("Google Sign-In failed"));
+                        }
+                    }
+                }
+                
+            } catch (IOException e) {
+                Log.e(TAG, "Network error during Google authentication", e);
+                runOnMainThread(() -> callback.onError("Network error: Please check your internet connection"));
+            } catch (Exception e) {
+                Log.e(TAG, "Google authentication error", e);
+                runOnMainThread(() -> callback.onError("Google Sign-In failed: " + e.getMessage()));
+            }
+        }).start();
+    }
+    
+    /**
+     * Handle successful Google authentication with API response data (matching website login.html Google auth logic)
+     */
+    private void handleGoogleAuthSuccessWithApiResponse(String responseBody, AuthCallback callback) {
+        try {
+            Log.d(TAG, "Processing Google auth API response: " + responseBody);
+            
+            JSONObject apiResponse = new JSONObject(responseBody);
+            JSONObject userData = apiResponse.optJSONObject("user");
+            
+            if (userData != null) {
+                // Extract email from user data
+                String email = userData.optString("email", "").toLowerCase();
+                
+                if (email.isEmpty()) {
+                    Log.e(TAG, "Google auth response missing email");
+                    runOnMainThread(() -> callback.onError("Google Sign-In response missing email"));
+                    return;
+                }
+                
+                // Match website Google auth logic: localStorage.setItem('currentUser', JSON.stringify(result.user))
+                // Check if user already exists
+                User existingUser = authManager.findUserByEmail(email);
+                User user;
+                
+                if (existingUser != null) {
+                    // Update existing user with Google data
+                    user = existingUser;
+                    Log.d(TAG, "Updating existing user with Google data for: " + email);
+                } else {
+                    // Create new user
+                    user = new User();
+                    user.setAiChats(new java.util.ArrayList<>());
+                    user.setListings(new java.util.ArrayList<>());
+                    
+                    // Add to users array
+                    authManager.registerUser(user);
+                    Log.d(TAG, "Created new user from Google auth for: " + email);
+                }
+                
+                // Update user with Google auth data
+                user.setFirstName(userData.optString("firstName", userData.optString("given_name", "User")));
+                user.setLastName(userData.optString("lastName", userData.optString("family_name", "Name")));
+                user.setEmail(email);
+                user.setEmailVerified(true); // Google accounts are pre-verified
+                
+                // Set profile image from Google if provided
+                String profileImage = userData.optString("profileImage", userData.optString("picture", ""));
+                if (!profileImage.isEmpty()) {
+                    user.setProfileImage(profileImage);
+                } else {
+                    user.setProfileImage(AuthManager.DEFAULT_PROFILE_IMAGE);
+                }
+                
+                // Set tokens if provided
+                String accessToken = apiResponse.optString("access_token");
+                if (!accessToken.isEmpty()) {
+                    user.setAccessToken(accessToken);
+                }
+                
+                // Store user as currentUser (matching website)
+                authManager.storeCurrentUser(user);
+                Log.d(TAG, "Google auth successful for user: " + user.getFirstName() + " " + user.getLastName() + " (" + user.getEmail() + ")");
+                runOnMainThread(() -> callback.onSuccess(user));
+                
+            } else {
+                Log.e(TAG, "Google auth API response missing user data");
+                runOnMainThread(() -> callback.onError("Invalid Google auth response format"));
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error processing Google auth API response", e);
+            runOnMainThread(() -> callback.onError("Google auth processing failed"));
+        }
+    }
+    
+    private void runOnMainThread(Runnable runnable) {
+        new Handler(Looper.getMainLooper()).post(runnable);
+    }
+}

@@ -1,0 +1,15 @@
+<en-GB>
+RoomFinderAI - Your Smart Room Discovery Assistant
+
+Welcome to the first release of RoomFinderAI! 
+
+Key Features:
+• Smart room search with AI-powered recommendations
+• Browse detailed room listings with photos and amenities
+• Advanced filtering by price, location, and features
+• Save your favorite rooms for quick access
+• Direct contact with landlords
+• Secure and user-friendly interface
+
+This initial release focuses on providing a seamless room-finding experience for students and professionals.
+</en-GB>
