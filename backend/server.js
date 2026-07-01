@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { PLATFORM_STATUS } = require('./platform-status');
 const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
+const { callAI, getAIStatus } = require('./ai-providers');
 const {
     IS_PRODUCTION,
     blockInProduction,
@@ -29,6 +30,7 @@ const serviceStatus = {
     supabase: false,
     stripe: false,
     openai: false,
+    groq: false,
     brevo: false,
     azure: {
         documentIntelligence: false,
@@ -80,6 +82,8 @@ config = {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
     OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
+    GROQ_API_KEY: process.env.GROQ_API_KEY?.trim() || config.GROQ_API_KEY,
+    GROQ_MODEL: process.env.GROQ_MODEL?.trim() || config.GROQ_MODEL || 'llama-3.1-8b-instant',
     BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
@@ -253,19 +257,21 @@ try {
     console.log('❌ Stripe initialization failed:', error.message);
 }
 
-// Initialize OpenAI service status
+// Initialize AI service status (OpenAI and/or Groq)
 try {
-    if (config.OPENAI_API_KEY && config.OPENAI_API_KEY.startsWith('sk-')) {
-        serviceStatus.openai = true;
-        console.log('✅ OpenAI initialized');
+    const aiStatus = getAIStatus(config);
+    serviceStatus.openai = aiStatus.openai;
+    serviceStatus.groq = aiStatus.groq;
+    if (aiStatus.available.length > 0) {
+        console.log(`✅ AI providers available: ${aiStatus.available.join(', ')}`);
     } else {
-        console.log('⚠️ OpenAI not initialized - missing or invalid API key');
+        console.log('⚠️ No AI provider configured — set OPENAI_API_KEY or GROQ_API_KEY');
         if (DEMO_MODE) {
-            console.log('📝 Demo mode enabled - OpenAI features will use mock responses');
+            console.log('📝 Demo mode enabled - AI features will use mock responses');
         }
     }
 } catch (error) {
-    console.log('❌ OpenAI initialization failed:', error.message);
+    console.log('❌ AI initialization failed:', error.message);
 }
 
 // Initialize Supabase client with error handling
@@ -5333,41 +5339,9 @@ function sanitizeForPrompt(text, maxLength = 500) {
         .trim();
 }
 
-// Helper: Make OpenAI API call (centralized)
+// Helper: Make AI API call (OpenAI primary, Groq free-tier fallback)
 async function callOpenAI({ messages, model = 'gpt-4', maxTokens = 300, temperature = 0.7 }) {
-    if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
-        throw new Error('OpenAI not configured');
-    }
-
-    const useModel = model === 'gpt-4' ? (config.OPENAI_MODEL || 'gpt-4') : 'gpt-3.5-turbo';
-
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-            'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
-            'Content-Type': 'application/json',
-            ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
-        },
-        body: JSON.stringify({
-            model: useModel,
-            messages,
-            max_tokens: maxTokens,
-            temperature,
-            presence_penalty: 0.1,
-            frequency_penalty: 0.1
-        })
-    });
-
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
-    }
-
-    const data = await response.json();
-    return {
-        content: data.choices[0].message.content.trim(),
-        tokensUsed: data.usage?.total_tokens || 0
-    };
+    return callAI(config, { messages, model, maxTokens, temperature });
 }
 
 // ========================================
@@ -9210,14 +9184,17 @@ app.get('/api/platform-status', (req, res) => {
 
 // Service status endpoint for frontend
 app.get('/api/service-status', (req, res) => {
+    const aiStatus = getAIStatus(config);
     res.json({
         services: serviceStatus,
+        ai: aiStatus,
         features: {
-            ai: serviceStatus.openai || DEMO_MODE,
+            ai: aiStatus.available.length > 0 || DEMO_MODE,
+            aiProviders: aiStatus.available,
             payments: serviceStatus.stripe || DEMO_MODE,
             database: serviceStatus.supabase || DEMO_MODE,
             email: serviceStatus.brevo || DEMO_MODE,
-            maps: serviceStatus.google || true, // OpenStreetMap fallback
+            maps: serviceStatus.google || true,
             idVerification: serviceStatus.azure.documentIntelligence || DEMO_MODE,
             anonymousBrowsing: ANONYMOUS_BROWSING,
             demoMode: DEMO_MODE
