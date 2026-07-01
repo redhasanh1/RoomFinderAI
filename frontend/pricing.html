@@ -38,7 +38,7 @@
             <!-- Desktop Navigation -->
             <div class="desktop-nav hidden md:flex items-center space-x-8">
                 <!-- Home - Standalone -->
-                <a href="/index" class="nav-item">Home</a>
+                <a href="index.html" class="nav-item">Home</a>
                 
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
@@ -46,7 +46,7 @@
                         Browse <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="browse-dropdown">
-                        <a href="/listings" class="dropdown-item">Browse Listings</a>
+                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
                         <a href="coming-soon.html" class="dropdown-item">Sublease Property</a>
                         <a href="/student-housing" class="dropdown-item">Student Housing</a>
                     </div>
@@ -58,9 +58,9 @@
                         Tools <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="tools-dropdown">
-                        <a href="/ai-negotiator" class="dropdown-item">AI Negotiator</a>
-                        <a href="/pricing" class="dropdown-item current-page">Pricing Plans</a>
-                        <a href="/legal" class="dropdown-item">Legal Help</a>
+                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
+                        <a href="pricing.html" class="dropdown-item current-page">Pricing Plans</a>
+                        <a href="legal.html" class="dropdown-item">Legal Help</a>
                         <a href="/mortgage" class="dropdown-item">Mortgage Tools</a>
                     </div>
                 </div>
@@ -71,9 +71,9 @@
                         About <span class="dropdown-arrow">▼</span>
                     </button>
                     <div class="dropdown-menu" id="about-dropdown">
-                        <a href="/index#about" class="dropdown-item">About Us</a>
-                        <a href="/index#contact" class="dropdown-item">Contact</a>
-                        <a href="/support" class="dropdown-item">Support</a>
+                        <a href="coming-soon.html" class="dropdown-item">About Us</a>
+                        <a href="index.html#contact" class="dropdown-item">Contact</a>
+                        <a href="support.html" class="dropdown-item">Support</a>
                     </div>
                 </div>
             </div>
@@ -97,7 +97,7 @@
                 </div>
 
                 <div class="mobile-menu-items">
-                    <a href="/index" class="mobile-menu-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Home</a>
+                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Home</a>
 
                     <!-- Browse Section -->
                     <div class="mobile-section">
@@ -105,7 +105,7 @@
                             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="browse-section">
-                            <a href="/listings" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
+                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
                             <a href="coming-soon.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
                             <a href="/student-housing" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
@@ -117,9 +117,9 @@
                             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="tools-section">
-                            <a href="/ai-negotiator" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
-                            <a href="/pricing" class="mobile-menu-item current-page" onclick="closeMobileMenu()">Pricing Plans</a>
-                            <a href="/legal" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
+                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
+                            <a href="pricing.html" class="mobile-menu-item current-page" onclick="closeMobileMenu()">Pricing Plans</a>
+                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
                             <a href="/mortgage" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
                         </div>
                     </div>
@@ -130,9 +130,9 @@
                             <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>About <span class="mobile-arrow" id="about-arrow">▼</span>
                         </button>
                         <div class="mobile-section-content" id="about-section">
-                            <a href="/index#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
-                            <a href="/index#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
-                            <a href="/support" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
+                            <a href="coming-soon.html" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
+                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
+                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
                         </div>
                     </div>
 
@@ -159,7 +159,7 @@
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Basic search filters and sublease tools</li>
                     <li class="flex items-center"><svg class="w-5 h-5 text-green-500 mr-2" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg> Community/email support</li>
                 </ul>
-                <a href="/signup" class="inline-block w-full sm:w-auto bg-green-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Get Started Free</a>
+                <a href="login.html" class="inline-block w-full sm:w-auto bg-green-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-green-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Get Started Free</a>
             </div>
             <!-- Pro Plan -->
             <div class="modern-pricing-card featured-card p-6 sm:p-8 text-center transition-all duration-300 hover:scale-105 relative">
@@ -187,13 +187,13 @@
         <div class="w-[95%] sm:w-[90%] lg:w-[80%] mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p class="text-sm">© 2025 RoomFinderAI. All rights reserved.</p>
             <div class="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2 sm:gap-x-6">
-                <a href="/index" class="hover:text-blue-400 transition-colors py-2 px-1">Home</a>
-                <a href="/index#about" class="hover:text-blue-400 transition-colors py-2 px-1">About</a>
+                <a href="index.html" class="hover:text-blue-400 transition-colors py-2 px-1">Home</a>
+                <a href="coming-soon.html" class="hover:text-blue-400 transition-colors py-2 px-1">About</a>
                 <a href="coming-soon.html" class="hover:text-blue-400 transition-colors py-2 px-1">Sublease</a>
-                <a href="/ai-negotiator" class="hover:text-blue-400 transition-colors py-2 px-1">AI Negotiator</a>
-                <a href="/listings" class="hover:text-blue-400 transition-colors py-2 px-1">Listings</a>
-                <a href="/pricing" class="hover:text-blue-400 transition-colors py-2 px-1">Pricing</a>
-                <a href="/index#contact" class="hover:text-blue-400 transition-colors py-2 px-1">Contact</a>
+                <a href="ai-negotiator.html" class="hover:text-blue-400 transition-colors py-2 px-1">AI Negotiator</a>
+                <a href="listings.html" class="hover:text-blue-400 transition-colors py-2 px-1">Listings</a>
+                <a href="pricing.html" class="hover:text-blue-400 transition-colors py-2 px-1">Pricing</a>
+                <a href="index.html#contact" class="hover:text-blue-400 transition-colors py-2 px-1">Contact</a>
             </div>
         </div>
     </footer>
@@ -374,7 +374,7 @@
                 }
                 authSection.innerHTML = `
                     <div class="flex items-center space-x-4">
-                        <a href="/profile">
+                        <a href="profile.html">
                             <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
                         </a>
                     </div>

@@ -14,6 +14,15 @@ body {
     color: var(--color-gray-700);
 }
 
+body.site-has-header:not(.hero-page) {
+    padding-top: 5.5rem;
+}
+
+body.site-has-header .premium-header,
+body.site-has-header header.fixed {
+    z-index: 50;
+}
+
 /* Display Font Family */
 .font-display {
     font-family: var(--font-display);

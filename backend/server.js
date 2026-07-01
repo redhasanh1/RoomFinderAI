@@ -6,6 +6,7 @@ const fs = require('fs');
 const { PLATFORM_STATUS } = require('./platform-status');
 const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
 const { callAI, getAIStatus } = require('./ai-providers');
+const { success: apiSuccess, notFound: apiNotFound, error: apiError } = require('./api-response');
 const {
     IS_PRODUCTION,
     blockInProduction,
@@ -1089,28 +1090,25 @@ app.get('/api/listings/:id', async (req, res) => {
             }
 
             if (dbListing) {
-                return res.json({
+                const listing = transformListingForAndroid(dbListing, {});
+                return res.status(200).json({
                     success: true,
-                    listing: transformListingForAndroid(dbListing, {}),
-                    data: transformListingForAndroid(dbListing, {})
+                    data: listing,
+                    listing,
+                    message: 'Listing retrieved successfully'
                 });
             }
         }
 
         const listing = listings.find(l => l.id === listingId);
         if (listing && shouldUseDemoFallback()) {
-            return res.json({
-                success: true,
-                listing,
-                data: listing,
-                demo: true
-            });
+            return apiSuccess(res, listing, 'Demo listing', 200);
         }
 
-        return res.status(404).json({ error: 'Listing not found' });
+        return apiNotFound(res, 'Listing not found');
     } catch (error) {
         console.error('Error in /api/listings/:id:', error.message);
-        res.status(500).json({ error: 'Failed to retrieve listing' });
+        apiError(res, 500, 'Failed to retrieve listing');
     }
 });
 
