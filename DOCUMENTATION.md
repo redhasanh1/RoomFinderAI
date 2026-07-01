@@ -15,7 +15,7 @@
 | **iOS** | `RoomFinderAI-IOS-CLOSED/` | **CLOSED (temporary)** | Not on App Store or TestFlight. |
 | Legacy Android | `archive/legacy-android/android/` | Archived | Deprecated Capacitor app |
 
-> **Only the website is live for users.** Native mobile app folders are renamed with `-CLOSED` so contributors and GitHub visitors see they are paused. Source code is kept for a future re-launch.
+> **Only the website is live for users.** Native mobile app folders are renamed with `-CLOSED` so contributors see they are paused. Source code is kept for a future re-launch.
 
 **Public status page:** [/platform-status.html](https://www.roomfinderai.com/platform-status.html)  
 **API:** `GET /api/platform-status` · `GET /health`
@@ -406,6 +406,14 @@ curl http://localhost:3000/health
 - Descriptive commit messages — no AI references in commits
 - Never commit `.env`, secrets, or APK files
 - Website only (not mobile app releases while folders are `-CLOSED`)
+- **No `Co-authored-by` trailers** — Cursor, Claude, and bot co-authors pollute the contributor list. History was scrubbed July 2026; prevent recurrence:
+
+```bash
+chmod +x scripts/git-hooks/prepare-commit-msg
+git config core.hooksPath scripts/git-hooks
+```
+
+To re-scrub history if needed: pipe `scripts/git-hooks/clean-commit-msg.sh` through `git filter-branch --msg-filter`.
 
 ---
 

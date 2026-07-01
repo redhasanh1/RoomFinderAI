@@ -1,0 +1,16 @@
+#!/bin/sh
+# Strip co-author / AI footers so they do not appear on GitHub contributors.
+COMMIT_MSG_FILE=$1
+if [ ! -f "$COMMIT_MSG_FILE" ]; then
+  exit 0
+fi
+
+tmp="${COMMIT_MSG_FILE}.clean"
+sed -E \
+  -e '/^[Cc]o-[Aa]uthored-[Bb]y:/d' \
+  -e '/Generated with.*[Cc]laude/d' \
+  -e '/^🤖 Generated/d' \
+  -e '/^🚀 Generated/d' \
+  -e '/^🎯 Generated/d' \
+  "$COMMIT_MSG_FILE" > "$tmp"
+mv "$tmp" "$COMMIT_MSG_FILE"
