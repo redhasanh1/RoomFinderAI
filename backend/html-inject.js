@@ -1,16 +1,19 @@
 const fs = require('fs');
 const path = require('path');
 
-const INJECT_MARKER = 'platform-status-banner.js';
+const SITE_SHELL_MARKER = 'site-bootstrap.js';
 
-function injectPlatformStatusAssets(html) {
-    if (!html || html.includes(INJECT_MARKER)) {
+function injectSiteShell(html) {
+    if (!html || html.includes(SITE_SHELL_MARKER)) {
         return html;
     }
 
     const injection = [
         '<link rel="stylesheet" href="/css/platform-status.css">',
-        '<script src="/js/platform-status-banner.js" defer></script>'
+        '<link rel="stylesheet" href="/modules/css/main.css">',
+        '<script src="/js/platform-status-banner.js" defer></script>',
+        '<script src="/js/site-nav.js" defer></script>',
+        '<script src="/js/site-bootstrap.js" defer></script>'
     ].join('\n');
 
     if (html.includes('</head>')) {
@@ -26,7 +29,7 @@ function sendInjectedHtml(res, filePath) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.setHeader('Pragma', 'no-cache');
     res.setHeader('Expires', '0');
-    res.send(injectPlatformStatusAssets(html));
+    res.send(injectSiteShell(html));
 }
 
 function createHtmlInjectionMiddleware(frontendPath) {
@@ -52,14 +55,14 @@ function createHtmlInjectionMiddleware(frontendPath) {
         try {
             sendInjectedHtml(res, filePath);
         } catch (error) {
-            console.error('Failed to inject platform status into HTML:', filePath, error);
+            console.error('Failed to inject site shell into HTML:', filePath, error);
             next(error);
         }
     };
 }
 
 module.exports = {
-    injectPlatformStatusAssets,
+    injectSiteShell,
     sendInjectedHtml,
     createHtmlInjectionMiddleware
 };
