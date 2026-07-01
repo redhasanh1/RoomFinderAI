@@ -12,14 +12,22 @@ Thumbs.db
 .idea/
 .next/
 coverage/
+archive/
+builds/
+scripts/maintenance/
+scripts/migrations/
+RoomFinderAndroid-CLOSED/
+RoomFinderAI-IOS-CLOSED/
+tests/
 
 # Keep essential files
 !package.json
 !backend/
-!*.html
-!css/
-!js/
+!frontend/
 !3D House Models/
 !nixpacks.toml
 !Dockerfile
 !railway.json
+!validate-config.js
+!config.js.encrypted
+!scripts/tools/decrypt_config.py

@@ -7,20 +7,20 @@
     <title>Support - RoomFinderAI</title>
     
     <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="/supabase-auth-only.js"></script><!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
-    <!-- Auth handled by supabase-auth-only.js -->
-    
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="js/supabase-config-init.js"></script>
+    <script src="universal-auth-manager.js"></script>
+    <script src="/supabase-auth-only.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
 
     <!-- Unified CSS System - No Inline Styles -->
-    <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
+    <link rel="stylesheet" href="/modules/css/main.css"/>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
-    <header class="sticky top-0 bg-white shadow-md z-50">
+    <header class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
@@ -46,7 +46,7 @@
                     </button>
                     <div class="dropdown-menu" id="browse-dropdown">
                         <a href="/listings" class="dropdown-item">Browse Listings</a>
-                        <a href="/sublease" class="dropdown-item">Sublease Property</a>
+                        <a href="coming-soon.html" class="dropdown-item">Sublease Property</a>
                         <a href="/listings#add-listing" class="dropdown-item">Add Listing</a>
                         <a href="/student-housing" class="dropdown-item">Student Housing</a>
                     </div>
@@ -61,7 +61,7 @@
                         <a href="/ai-negotiator" class="dropdown-item">AI Negotiator</a>
                         <a href="/pricing" class="dropdown-item">Pricing Plans</a>
                         <a href="/legal" class="dropdown-item">Legal Help</a>
-                        <a href="/mortgage" class="dropdown-item">Mortgage Tools</a>
+                        <a href="coming-soon.html" class="dropdown-item">Mortgage Tools</a>
                     </div>
                 </div>
                 
@@ -106,7 +106,7 @@
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="/listings" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
-                            <a href="/sublease" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
+                            <a href="coming-soon.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
                             <a href="/listings#add-listing" class="mobile-menu-item" onclick="closeMobileMenu()">Add Listing</a>
                             <a href="/student-housing" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
@@ -121,7 +121,7 @@
                             <a href="/ai-negotiator" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
                             <a href="/pricing" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
                             <a href="/legal" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
-                            <a href="/mortgage" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
+                            <a href="coming-soon.html" class="mobile-menu-item" onclick="closeMobileMenu()">Mortgage Tools</a>
                         </div>
                     </div>
 
@@ -643,6 +643,8 @@
         // Initialize Universal Authentication Manager
         if (typeof window.UniversalAuth !== 'undefined') {
             window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+        } else if (typeof window.UniversalAuthManager !== 'undefined') {
+            window.UniversalAuthManager.initializeAuth();
         }
 
         // FAQ Accordion functionality

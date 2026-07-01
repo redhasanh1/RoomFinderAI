@@ -1,32 +1,41 @@
 /**
- * 🔐 SUPABASE-ONLY AUTHENTICATION SYSTEM
- * 
- * Replaces localStorage-based auth with pure Supabase Auth
- * No localStorage dependencies - everything stored server-side
+ * Supabase-only authentication system.
+ * Credentials loaded from /api/config (no hardcoded keys).
  */
 
-console.log('🔐 SUPABASE-ONLY AUTH SYSTEM LOADING...');
+console.log('SUPABASE-ONLY AUTH SYSTEM LOADING...');
 
-// Initialize Supabase client
-const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
-
-if (!window.supabase) {
-    if (typeof supabase !== 'undefined') {
-        window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('✅ Supabase client initialized');
-    } else {
-        console.warn('⚠️ Supabase library not loaded yet, client will be initialized later');
+async function ensureSupabaseClient() {
+    if (window.supabase && window.supabase.auth) {
+        return window.supabase;
     }
+
+    if (window.supabaseConfigReady) {
+        await window.supabaseConfigReady;
+        if (window.supabase) return window.supabase;
+    }
+
+    if (typeof supabase === 'undefined') {
+        return null;
+    }
+
+    const response = await fetch('/api/config');
+    if (!response.ok) {
+        throw new Error('Failed to load /api/config');
+    }
+
+    const config = await response.json();
+    window.supabase = supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+    window.AppConfig = window.AppConfig || {};
+    window.AppConfig.supabase = window.supabase;
+    return window.supabase;
 }
 
-/**
- * Check if user is authenticated via Supabase
- */
 async function isUserAuthenticated() {
     try {
-        if (!window.supabase) return false;
-        const { data: { session } } = await window.supabase.auth.getSession();
+        const client = await ensureSupabaseClient();
+        if (!client) return false;
+        const { data: { session } } = await client.auth.getSession();
         return !!session?.user;
     } catch (error) {
         console.error('Auth check error:', error);
@@ -34,23 +43,20 @@ async function isUserAuthenticated() {
     }
 }
 
-/**
- * Get current user data from Supabase
- */
 async function getCurrentUser() {
     try {
-        if (!window.supabase) return null;
-        
-        const { data: { session } } = await window.supabase.auth.getSession();
+        const client = await ensureSupabaseClient();
+        if (!client) return null;
+
+        const { data: { session } } = await client.auth.getSession();
         if (!session?.user) return null;
-        
-        // Get profile data from profiles table
-        const { data: profile, error } = await window.supabase
+
+        const { data: profile, error } = await client
             .from('profiles')
             .select('first_name, last_name, email, profile_image_url')
             .eq('email', session.user.email)
             .single();
-            
+
         if (error) {
             console.warn('Profile fetch error:', error);
             return {
@@ -59,7 +65,7 @@ async function getCurrentUser() {
                 lastName: 'Name'
             };
         }
-        
+
         return {
             email: profile.email,
             firstName: profile.first_name || 'User',
@@ -72,126 +78,89 @@ async function getCurrentUser() {
     }
 }
 
-/**
- * Login with email and password
- */
 async function loginUser(email, password) {
     try {
-        if (!window.supabase) throw new Error('Supabase not initialized');
-        
-        const { data, error } = await window.supabase.auth.signInWithPassword({
-            email: email,
-            password: password
-        });
-        
+        const client = await ensureSupabaseClient();
+        if (!client) throw new Error('Supabase not initialized');
+
+        const { data, error } = await client.auth.signInWithPassword({ email, password });
         if (error) throw error;
-        
-        console.log('✅ User logged in:', data.user.email);
+
         return { success: true, user: data.user };
-        
     } catch (error) {
         console.error('Login error:', error);
         return { success: false, error: error.message };
     }
 }
 
-/**
- * Logout user
- */
 async function logoutUser() {
     try {
-        if (!window.supabase) return;
-        
-        const { error } = await window.supabase.auth.signOut();
+        const client = await ensureSupabaseClient();
+        if (!client) return;
+
+        const { error } = await client.auth.signOut();
         if (error) throw error;
-        
-        console.log('✅ User logged out');
-        
-        // Clear any remaining localStorage (legacy cleanup)
+
         try {
             localStorage.removeItem('currentUser');
             localStorage.removeItem('userToken');
         } catch (e) {
-            // Ignore localStorage errors
+            // ignore
         }
-        
-        // Redirect to login page
+
         if (window.location.pathname !== '/login.html' && window.location.pathname !== '/') {
             window.location.href = '/login.html';
         }
-        
     } catch (error) {
         console.error('Logout error:', error);
     }
 }
 
-/**
- * Check for existing email in database
- */
 async function checkEmailExists(email) {
     try {
-        if (!window.supabase) return false;
-        
-        // Check profiles table
-        const { data: profile } = await window.supabase
+        const client = await ensureSupabaseClient();
+        if (!client) return false;
+
+        const { data: profile } = await client
             .from('profiles')
             .select('email')
             .eq('email', email)
             .maybeSingle();
-            
-        // Check auth users
-        const { data: { session } } = await window.supabase.auth.getSession();
+
+        const { data: { session } } = await client.auth.getSession();
         if (session?.user?.email === email) return true;
-        
+
         return !!profile;
-        
     } catch (error) {
         console.error('Email check error:', error);
         return false;
     }
 }
 
-/**
- * Initialize auth system
- */
 async function initializeAuth() {
     try {
-        console.log('🔄 Initializing Supabase Auth...');
-        
-        if (!window.supabase) {
-            console.error('❌ Supabase client not available');
-            // Try to initialize Supabase if library is now loaded
-            if (typeof supabase !== 'undefined') {
-                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-                console.log('✅ Supabase client initialized on retry');
-            } else {
-                return false;
-            }
+        const client = await ensureSupabaseClient();
+        if (!client) {
+            console.error('Supabase client not available');
+            return false;
         }
-        
-        // Listen for auth changes
-        window.supabase.auth.onAuthStateChange((event, session) => {
-            console.log('🔄 Auth state changed:', event, session?.user?.email || 'no user');
-            
+
+        client.auth.onAuthStateChange((event) => {
             if (event === 'SIGNED_OUT') {
-                // Redirect to login if on protected page
                 const protectedPaths = ['/profile.html', '/listings.html'];
                 if (protectedPaths.includes(window.location.pathname)) {
                     window.location.href = '/login.html';
                 }
             }
         });
-        
-        console.log('✅ Supabase Auth initialized');
+
         return true;
-        
     } catch (error) {
-        console.error('❌ Auth initialization error:', error);
+        console.error('Auth initialization error:', error);
         return false;
     }
 }
 
-// Export functions globally
 window.UniversalAuthManager = {
     isUserAuthenticated,
     getCurrentUser,
@@ -201,11 +170,10 @@ window.UniversalAuthManager = {
     initializeAuth
 };
 
-// Auto-initialize
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initializeAuth);
 } else {
     initializeAuth();
 }
 
-console.log('✅ SUPABASE-ONLY AUTH SYSTEM READY');
+console.log('SUPABASE-ONLY AUTH SYSTEM READY');

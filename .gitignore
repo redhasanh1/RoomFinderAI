@@ -12,6 +12,10 @@ yarn-error.log*
 # Production builds
 dist/
 build/
+frontend/build/
+builds/
+*.apk
+*.aab
 
 # Environment files
 .env
@@ -68,21 +72,18 @@ __pycache__/
 *.save
 
 # Android specific
-android/local.properties
-android/app/google-services.json
-android/keystore.properties
-android/app/release/
-android/app/debug/
-android/.gradle/
-android/build/
-android/captures/
-android/gradlew
-android/gradlew.bat
-android/gradle/wrapper/gradle-wrapper.jar
+archive/legacy-android/android/local.properties
+RoomFinderAndroid-CLOSED/local.properties
+RoomFinderAndroid-CLOSED/.gradle/
+RoomFinderAndroid-CLOSED/build/
+RoomFinderAndroid-CLOSED/app/build/
+archive/legacy-android/android/app/google-services.json
+archive/legacy-android/android/keystore.properties
 
 # iOS specific
-RoomFinderAI-IOS/Source/RoomFinderAI/Config/Secrets.swift
+RoomFinderAI-IOS-CLOSED/Source/RoomFinderAI/Config/Secrets.swift
 *.xcconfig
 xcuserdata/
 *.xcscmblueprint
 *.xccheckout
+scripts/_results/

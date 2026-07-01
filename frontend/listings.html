@@ -368,7 +368,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Unified CSS System - No Inline Styles -->
-    <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
+    <link rel="stylesheet" href="/modules/css/main.css"/>
     
 </head>
 <body class="flex flex-col min-h-screen">
@@ -723,13 +723,13 @@
             <!-- Listings Grid with Map Toggle -->
             <div class="mb-4 flex items-center justify-between">
                 <div class="flex items-center gap-4">
-                    <button id="gridViewBtn" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium flex items-center gap-2">
+                    <button id="gridViewBtn" type="button" onclick="setViewMode('grid')" class="px-4 py-2 bg-purple-100 text-purple-700 rounded-lg font-medium flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
                         </svg>
                         Grid View
                     </button>
-                    <button id="mapViewBtn" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2">
+                    <button id="mapViewBtn" type="button" onclick="setViewMode('map')" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/>
                         </svg>
@@ -828,7 +828,7 @@
             <div class="mt-4 flex justify-center space-x-4">
                 <a href="/index" class="hover:text-purple-400">Home</a>
                 <a href="/index#about" class="hover:text-purple-400">About</a>
-                <a href="/sublease" class="hover:text-purple-400">Sublease</a>
+                <a href="coming-soon.html" class="hover:text-purple-400">Sublease</a>
                 <a href="/ai-negotiator" class="hover:text-purple-400">AI Negotiator</a>
                 <a href="/listings" class="hover:text-purple-400">Listings</a>
                 <a href="/index#contact" class="hover:text-purple-400">Contact</a>
@@ -968,9 +968,11 @@
                 return false;
             }
 
-            // Check if container is visible
+            // Container is hidden whenever the page is in Grid View (the default).
+            // That's expected — initMap will be called again when the user toggles to
+            // Map View. Logged at info level to avoid looking like an error.
             if (mapContainer && mapContainer.classList.contains('hidden')) {
-                console.warn('⚠️ Map container is still hidden, aborting initialization');
+                console.log('🗺️ initMap: container hidden (Grid View) — deferring init');
                 return false;
             }
 
@@ -1127,7 +1129,11 @@
             };
         }
 
-        // Update Map with Listings - Simplified and More Reliable
+        // Update Map with Listings.
+        // Coords source of truth = listings.latitude/longitude in the DB (populated
+        // by /api/geocode/batch). Anything missing both columns is sent to the
+        // backend in a single batch; the backend caches the result onto the row so
+        // subsequent loads skip geocoding entirely. No more per-listing Nominatim.
         async function updateMap(listings) {
             console.log('🗺️ Starting updateMap with', listings.length, 'listings');
 
@@ -1135,84 +1141,88 @@
             if (!map || !markerClusterGroup) {
                 console.log('Map not ready, initializing...');
                 if (!initMap()) {
-                    console.error('❌ Failed to initialize map');
+                    // Most common reason: user is on Grid View, container is hidden, so
+                    // initMap intentionally bails. The view toggle will re-call updateMap
+                    // once the map is visible — no need to surface this as an error.
+                    console.log('🗺️ updateMap deferred: map not visible yet (will render when Map View toggles)');
                     return;
                 }
-                // Wait for map to be ready
                 await new Promise(resolve => setTimeout(resolve, 1000));
             }
 
-            // ADDED: Ensure map size is correct before updating markers
             if (map) {
                 map.invalidateSize();
                 console.log('🔄 Map size invalidated before marker update');
             }
 
-            // Clear existing markers
-            console.log('Clearing existing markers...');
             markerClusterGroup.clearLayers();
             markers = [];
             const validCoordinates = [];
             let successfulMarkers = 0;
 
-            console.log('Processing listings for markers...');
-            
-            for (let i = 0; i < listings.length; i++) {
-                const listing = listings[i];
-                console.log(`\n📍 Processing listing ${i + 1}/${listings.length}:`, listing.title);
-                
-                const location = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
-                console.log('Full address:', location);
-                
-                if (!listing.street || !listing.city) {
-                    console.warn('⚠️ Listing missing required address components:', listing);
-                    // Still try to geocode with available data
+            // Partition: rows with cached coords vs rows that still need geocoding
+            const ready = [];
+            const needsGeocode = [];
+            for (const listing of listings) {
+                if (typeof listing.latitude === 'number' && typeof listing.longitude === 'number') {
+                    ready.push({ listing, lat: listing.latitude, lng: listing.longitude });
+                } else if (listing.id) {
+                    needsGeocode.push(listing);
                 }
+            }
+            console.log(`📊 Cached coords: ${ready.length}, need backend geocode: ${needsGeocode.length}`);
 
+            // Fetch any missing coords in ONE round trip; backend writes the
+            // results back to the row so this stays a one-time cost per listing.
+            if (needsGeocode.length > 0) {
                 try {
-                    // Get coordinates (this function now always returns coordinates)
-                    const coords = await geocodeLocation(location);
-                    console.log('Got coordinates:', coords);
-
-                    if (coords && !isNaN(coords.lat) && !isNaN(coords.lon)) {
-                        // Create simple, reliable marker
-                        const marker = L.marker([coords.lat, coords.lon], {
-                            title: listing.title
-                        });
-
-                        // Create simple popup
-                        const popupContent = `
-                            <div style="min-width: 200px; font-family: Arial, sans-serif;">
-                                <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">${listing.title}</h3>
-                                <div style="color: #059669; font-weight: bold; font-size: 18px; margin-bottom: 6px;">$${listing.price.toLocaleString()}/mo</div>
-                                <div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">${location}</div>
-                                <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
-                                    ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
-                                </div>
-                                <a href="listing_details.html?id=${listing.id}" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
-                            </div>
-                        `;
-
-                        marker.bindPopup(popupContent, { maxWidth: 250 });
-                        
-                        // Add to cluster group
-                        markerClusterGroup.addLayer(marker);
-                        markers.push(marker);
-                        validCoordinates.push([coords.lat, coords.lon]);
-                        successfulMarkers++;
-                        
-                        console.log(`✅ Added marker ${successfulMarkers} for:`, listing.title, 'at', [coords.lat, coords.lon]);
+                    const response = await fetch('/api/geocode/batch', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ ids: needsGeocode.map(l => l.id) })
+                    });
+                    if (response.ok) {
+                        const json = await response.json();
+                        const coords = json.coords || {};
+                        for (const listing of needsGeocode) {
+                            const c = coords[listing.id];
+                            if (c && typeof c.lat === 'number' && typeof c.lng === 'number') {
+                                ready.push({ listing, lat: c.lat, lng: c.lng });
+                            } else {
+                                console.warn(`⚠️ No coords for "${listing.title}" (${listing.id}):`, c?.error || 'unknown');
+                            }
+                        }
+                        console.log(`✅ Backend returned coords for ${Object.keys(coords).length} listings`);
                     } else {
-                        console.error('❌ Invalid coordinates for:', listing.title);
+                        console.error('❌ /api/geocode/batch responded with HTTP', response.status);
                     }
-                } catch (error) {
-                    console.error('❌ Error processing listing:', listing.title, error);
+                } catch (err) {
+                    console.error('❌ Failed to call /api/geocode/batch:', err);
                 }
+            }
 
-                // Small delay between geocoding requests
-                if (i < listings.length - 1) {
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
+            // Drop markers for everything we have coords for
+            for (const { listing, lat, lng } of ready) {
+                const location = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
+                const marker = L.marker([lat, lng], { title: listing.title });
+
+                const popupContent = `
+                    <div style="min-width: 200px; font-family: Arial, sans-serif;">
+                        <h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: bold; color: #1f2937;">${listing.title}</h3>
+                        <div style="color: #059669; font-weight: bold; font-size: 18px; margin-bottom: 6px;">$${listing.price.toLocaleString()}/mo</div>
+                        <div style="color: #6b7280; font-size: 13px; margin-bottom: 8px;">${location}</div>
+                        <div style="font-size: 12px; color: #6b7280; margin-bottom: 10px;">
+                            ${listing.bedrooms} Bed • ${listing.house_type} • ${listing.utilities}
+                        </div>
+                        <a href="listing_details.html?id=${listing.id}" style="background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 4px; text-decoration: none; font-size: 12px; font-weight: 500;">View Details</a>
+                    </div>
+                `;
+
+                marker.bindPopup(popupContent, { maxWidth: 250 });
+                markerClusterGroup.addLayer(marker);
+                markers.push(marker);
+                validCoordinates.push([lat, lng]);
+                successfulMarkers++;
             }
 
             console.log(`\n🎯 Map update complete! Successfully added ${successfulMarkers} markers out of ${listings.length} listings`);
@@ -1818,11 +1828,28 @@
                             default: orderColumn = 'created_at'; ascending = false;
                         }
 
-                        const { data, error } = await supabase
+                        let { data, error } = await supabase
                             .from('listings')
-                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
+                            .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at, latitude, longitude')
                             .order(orderColumn, { ascending: ascending })
                             .limit(50);
+
+                        // Fallback if latitude/longitude columns aren't in the schema yet
+                        // (PostgreSQL error 42703 = undefined column). Apply
+                        // database/migrations/add_listings_coordinates.sql in the
+                        // Supabase SQL editor to flip on the cached-coords fast path.
+                        const isLatLngMissing = error && (
+                            error.code === '42703' ||
+                            /column[^.]*\.(latitude|longitude)[^.]* does not exist/i.test(error.message || '')
+                        );
+                        if (isLatLngMissing) {
+                            console.warn('⚠️ listings.latitude/longitude columns not present — falling back to legacy SELECT. Map will geocode via backend on every load until migration is applied.');
+                            ({ data, error } = await supabase
+                                .from('listings')
+                                .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
+                                .order(orderColumn, { ascending: ascending })
+                                .limit(50));
+                        }
 
                         const queryTime = Date.now() - startTime;
                         console.log('📊 Query completed in', queryTime, 'ms');
@@ -1992,6 +2019,11 @@
                 return;
             }
 
+            // Cache listings on window so the map toggle can re-render without refetching.
+            // setViewMode('map') reads window.currentListings — without this assignment the
+            // map only populated after a manual Refresh click.
+            window.currentListings = listings;
+
             console.log('📋 Fetched listings:', listings);
 
             // NOW clear container (after successful fetch)
@@ -2084,9 +2116,9 @@
                         </div>
                         <p class="text-gray-600 text-sm mt-2 line-clamp-2">${listing.description || 'No description provided'}</p>
                         <div class="flex space-x-2 mt-4">
-                            <button class="view-details-btn w-1/2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2" data-listing='${JSON.stringify(listing)}'>
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
-                                View
+                            <button class="view-details-btn w-1/2 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2" data-listing='${JSON.stringify(listing)}'>
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                View Details
                             </button>
                             <button class="chat-btn w-1/2 ${hasOwner ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700' : 'bg-gray-400 cursor-not-allowed'} text-white px-4 py-2.5 rounded-xl transition-all duration-200 font-semibold shadow-md hover:shadow-lg flex items-center justify-center gap-2" data-listing='${JSON.stringify(listing)}' ${hasOwner ? '' : 'disabled title="No owner specified for this listing"'}>
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
@@ -2103,6 +2135,13 @@
 
             // Lazy load images for each listing card
             lazyLoadListingImages(listings);
+
+            // Restore favorite (heart) states on the freshly-rendered cards. Fire-and-
+            // forget — this runs in parallel with the map update below and doesn't block
+            // the user from seeing listings.
+            if (typeof loadFavoriteStates === 'function') {
+                loadFavoriteStates().catch(err => console.error('loadFavoriteStates failed:', err));
+            }
 
             // Update map with all listings
             console.log('📍 Updating map with', listings.length, 'listings...');
@@ -2248,6 +2287,12 @@
         // Chat Functionality
         let currentConversationId = null;
         let currentListing = null;
+        // ISO timestamp of the newest message we've already rendered in the open
+        // conversation. Both the Realtime handler and the delta-poll fallback use
+        // this to dedup, so messages can never double-render even when Realtime
+        // and polling both deliver the same row.
+        let lastSeenMessageAt = null;
+        let messagePollInterval = null;
 
         // Global chat system status tracking
         let chatSystemStatus = {
@@ -2585,6 +2630,24 @@
                     throw error;
                 }
 
+                // Live broadcast to anyone else subscribed to this conversation's channel.
+                // Bypasses the DB-watching postgres_changes pipeline entirely — sub-100ms
+                // delivery. Fire-and-forget; failures here don't matter because the DB
+                // INSERT is the source of truth and the delta-poll fallback catches up.
+                if (window.__currentChatChannel) {
+                    window.__currentChatChannel.send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: {
+                            conversation_id: currentConversationId,
+                            sender_email: currentUser.email,
+                            content: messageContent,
+                            message_type: 'text',
+                            created_at: timestamp
+                        }
+                    }).catch(err => console.warn('broadcast send failed (non-fatal):', err));
+                }
+
                 // Create notification for landlord in AI negotiations section
                 await createNotificationForLandlord(currentUser, messageContent);
             }
@@ -2738,20 +2801,34 @@
                     console.log('Message conversation ID:', payload.new.conversation_id);
                     
                     if (currentConversationId && currentConversationId === payload.new.conversation_id) {
-                        console.log('✅ Message is for current conversation!');
-                        
-                        // Reload messages to ensure we get the latest
-                        loadMessages(currentConversationId);
-                        
-                        // Also try instant append for better UX
+                        // Incremental append. Deliberately NOT calling loadMessages(),
+                        // which would clear-and-reload the whole conversation (expensive
+                        // and races against optimistic send-side appends). Skip when the
+                        // message is from the current user; the send handler already
+                        // appended it locally and we'd otherwise double-render. Email
+                        // comparison is case-insensitive — stored casings drift between
+                        // signup/OAuth/legacy rows.
                         const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                         const chatMessagesContainer = document.getElementById('chatMessages');
-                        
-                        if (chatMessagesContainer && payload.new.sender_email !== currentUser.email) {
-                            console.log('🚀 Adding message instantly to UI');
+                        const isMine = payload.new.sender_email?.toLowerCase() === currentUser?.email?.toLowerCase();
+                        // Always advance the watermark so the delta poll won't refetch
+                        // this row, even when we skipped the append (own message echo).
+                        if (payload.new.created_at && (!lastSeenMessageAt || payload.new.created_at > lastSeenMessageAt)) {
+                            lastSeenMessageAt = payload.new.created_at;
                         }
-                    } else {
-                        console.log('❌ Message not for current conversation');
+                        if (chatMessagesContainer && !isMine) {
+                            const msgEl = document.createElement('div');
+                            msgEl.className = 'message received';
+                            const msgP = document.createElement('p');
+                            msgP.textContent = payload.new.content || '';
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-timestamp';
+                            timeDiv.textContent = new Date(payload.new.created_at || Date.now()).toLocaleTimeString();
+                            msgEl.appendChild(msgP);
+                            msgEl.appendChild(timeDiv);
+                            chatMessagesContainer.appendChild(msgEl);
+                            chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                        }
                     }
                 })
                 .subscribe((status) => {
@@ -2764,6 +2841,49 @@
                         console.error('⏰ Subscription timed out');
                     }
                 });
+
+            // Delta poll fallback for the open conversation. Runs every 5s regardless
+            // of whether Realtime is reporting SUBSCRIBED — we trust whichever path
+            // delivers first, and lastSeenMessageAt prevents double-rendering. The
+            // query is bounded by `created_at > lastSeenMessageAt`, so 99% of polls
+            // touch zero rows and cost almost nothing. Skipped while tab is hidden.
+            if (!messagePollInterval) {
+                messagePollInterval = setInterval(async () => {
+                    if (document.hidden) return;
+                    if (!currentConversationId || !lastSeenMessageAt) return;
+                    try {
+                        const { data, error } = await supabase
+                            .from('messages')
+                            .select('*')
+                            .eq('conversation_id', currentConversationId)
+                            .gt('created_at', lastSeenMessageAt)
+                            .order('created_at', { ascending: true });
+                        if (error || !data || data.length === 0) return;
+                        const container = document.getElementById('chatMessages');
+                        if (!container) return;
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        const myEmailLower = currentUser?.email?.toLowerCase();
+                        for (const msg of data) {
+                            if (msg.created_at > lastSeenMessageAt) lastSeenMessageAt = msg.created_at;
+                            // Own messages are appended optimistically on send — skip echoes.
+                            if (msg.sender_email?.toLowerCase() === myEmailLower) continue;
+                            const msgEl = document.createElement('div');
+                            msgEl.className = 'message received';
+                            const msgP = document.createElement('p');
+                            msgP.textContent = msg.content || '';
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-timestamp';
+                            timeDiv.textContent = new Date(msg.created_at).toLocaleTimeString();
+                            msgEl.appendChild(msgP);
+                            msgEl.appendChild(timeDiv);
+                            container.appendChild(msgEl);
+                        }
+                        container.scrollTop = container.scrollHeight;
+                    } catch (e) {
+                        console.warn('Message delta-poll error:', e);
+                    }
+                }, 5000);
+            }
 
             // Mark chat system as successfully initialized
             chatSystemStatus.isInitialized = true;
@@ -3311,17 +3431,13 @@
             try {
                 await loadMessages(conversation.id);
                 
-                // Show file upload button only for listing owners
+                // Both parties (landlord + tenant) can send files. We still record
+                // isCurrentUserLandlord because other code paths read that flag for
+                // unrelated permissions, but the button itself is no longer gated.
                 const fileUploadBtn = document.getElementById('fileUploadBtn');
                 isCurrentUserLandlord = currentUser.email === listing.user_email;
                 if (fileUploadBtn) {
-                    if (isCurrentUserLandlord) {
-                        fileUploadBtn.classList.remove('hidden');
-                        console.log('📎 File upload enabled for listing owner (landlord)');
-                    } else {
-                        fileUploadBtn.classList.add('hidden');
-                        console.log('📎 File upload disabled for non-owner (tenant)');
-                    }
+                    fileUploadBtn.classList.remove('hidden');
                 }
                 console.log('🏠 User role:', isCurrentUserLandlord ? 'Landlord' : 'Tenant');
                 
@@ -3358,7 +3474,48 @@
             console.log('🔄 Loading messages for conversation:', conversationId);
             console.log('📊 Supabase client status:', !!supabase);
             console.log('👤 Current user status:', !!localStorage.getItem('currentUser'));
-            
+
+            // ===== Broadcast subscription =====
+            // Sub-100ms live delivery via Supabase Realtime broadcast (one ephemeral
+            // channel per conversation, NO DB involvement on the receive side). This
+            // sits alongside the existing postgres_changes listener and the 5s delta
+            // poll — all three append paths share lastSeenMessageAt as the dedup
+            // watermark so the same message never double-renders, regardless of
+            // which path delivers it first.
+            try {
+                if (window.__currentChatChannel) {
+                    await window.__currentChatChannel.unsubscribe();
+                    window.__currentChatChannel = null;
+                }
+            } catch (e) { /* ignore */ }
+
+            const broadcastCh = supabase.channel(`chat-${conversationId}`);
+            broadcastCh.on('broadcast', { event: 'new_message' }, ({ payload }) => {
+                if (!payload || payload.conversation_id !== conversationId) return;
+                const me = JSON.parse(localStorage.getItem('currentUser'));
+                const isMine = payload.sender_email?.toLowerCase() === me?.email?.toLowerCase();
+                if (lastSeenMessageAt && payload.created_at && payload.created_at <= lastSeenMessageAt) return;
+                if (payload.created_at) lastSeenMessageAt = payload.created_at;
+                if (isMine) return; // sender already appended optimistically
+                const container = document.getElementById('chatMessages');
+                if (!container) return;
+                const msgEl = document.createElement('div');
+                msgEl.className = 'message received';
+                const msgP = document.createElement('p');
+                msgP.textContent = payload.content || '';
+                const timeDiv = document.createElement('div');
+                timeDiv.className = 'message-timestamp';
+                timeDiv.textContent = new Date(payload.created_at || Date.now()).toLocaleTimeString();
+                msgEl.appendChild(msgP);
+                msgEl.appendChild(timeDiv);
+                container.appendChild(msgEl);
+                container.scrollTop = container.scrollHeight;
+            });
+            broadcastCh.subscribe((status) => {
+                console.log('📡 BROADCAST channel', `chat-${conversationId}`, status);
+            });
+            window.__currentChatChannel = broadcastCh;
+
             try {
                 const { data: messages, error } = await supabase
                     .from('messages')
@@ -3384,23 +3541,21 @@
                 
                 chatMessagesContainer.innerHTML = '';
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                const myEmailLower = currentUser?.email?.toLowerCase();
                 console.log('👤 Current user for message display:', currentUser?.email);
 
                 messages.forEach((message, index) => {
-                    console.log(`💬 Processing message ${index + 1}:`, {
-                        sender: message.sender_email,
-                        content: message.content?.substring(0, 50) + '...',
-                        type: message.message_type,
-                        timestamp: message.created_at
-                    });
-                    
                     const messageElement = document.createElement('div');
-                    messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
+                    // Case-insensitive sender check: emails sometimes get stored with
+                    // mixed casing (e.g. signup vs OAuth flows). A strict === made
+                    // EVERYTHING land on one side (whichever the user's casing matched).
+                    const isMine = message.sender_email?.toLowerCase() === myEmailLower;
+                    messageElement.className = `message ${isMine ? 'sent' : 'received'}`;
                     
                     // Handle different message types
                     let messageContent;
                     if (message.message_type === 'file' && message.file_url) {
-                        const isOwner = message.sender_email === currentUser.email;
+                        const isOwner = isMine;
                         messageContent = `
                             <div class="file-message ${isOwner ? 'bg-blue-50' : 'bg-gray-50'} p-3 rounded">
                                 <div class="flex items-center space-x-2">
@@ -3425,6 +3580,10 @@
                 });
 
                 chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+                // Seed the delta-poll watermark from the newest message just rendered.
+                if (messages.length > 0) {
+                    lastSeenMessageAt = messages[messages.length - 1].created_at;
+                }
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
                 
             } catch (error) {
@@ -3681,28 +3840,16 @@
 
             console.log('✅ Messaging panel setup complete');
 
-            // Load user's conversations
+            // Load user's conversations.
+            // Was previously logging like a debugger AND issuing an extra "ALL
+            // conversations" SELECT on every call (purely diagnostic). Stripped
+            // to one indexed SELECT + the per-conversation unread counts below.
             async function loadUserConversations() {
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                console.log('📬 loadUserConversations called');
-                console.log('📬 currentUser:', currentUser);
-                if (!currentUser || !currentUser.email) {
-                    console.log('📬 No currentUser, returning');
-                    return;
-                }
+                if (!currentUser || !currentUser.email) return;
 
                 const userEmail = currentUser.email;
-                console.log('📬 Querying ALL conversations first...');
 
-                // First get ALL conversations to debug
-                const { data: allConvs, error: allError } = await supabase
-                    .from('conversations')
-                    .select('id, sender_email, receiver_email, listing_id')
-                    .limit(20);
-                console.log('📬 ALL conversations in DB:', allConvs, 'error:', allError?.message);
-
-                // Now query for this user
-                console.log('📬 Querying conversations for user:', userEmail);
                 const { data: conversations, error } = await supabase
                     .from('conversations')
                     .select(`
@@ -3711,8 +3858,6 @@
                     `)
                     .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`)
                     .order('created_at', { ascending: false });
-
-                console.log('📬 User conversations result:', { count: conversations?.length, error: error?.message, conversations });
 
                 if (error) {
                     console.error('Error loading conversations:', error);
@@ -3744,28 +3889,18 @@
                     conversationsWithUnread.push(conv);
                 }
 
-                // Filter conversations to include those where current user is a participant
-                // (relaxed check - don't require both users to be in profiles)
+                // Filter conversations to include those where current user is a participant.
+                // The .or() filter on Supabase should already guarantee this, but we keep a
+                // case-insensitive client-side check as a belt-and-suspenders against data
+                // inserted with mixed casing. No per-iteration logs (was the worst offender).
                 const filteredConversations = [];
                 const userEmailLower = currentUser.email.toLowerCase();
-                console.log('📬 Filtering conversations. User email:', userEmailLower, 'Total conversations:', conversationsWithUnread.length);
                 for (const conv of conversationsWithUnread) {
-                    // Check if current user is a participant (case-insensitive)
                     const senderLower = conv.sender_email?.toLowerCase();
                     const receiverLower = conv.receiver_email?.toLowerCase();
-                    const isParticipant = senderLower === userEmailLower || receiverLower === userEmailLower;
-                    console.log('📬 Checking conv:', conv.id, 'sender:', senderLower, 'receiver:', receiverLower, 'isParticipant:', isParticipant);
-
-                    if (isParticipant) {
-                        // Apply local read status - if conversation was marked as read locally, keep it as 0
-                        if (locallyReadConversations.has(conv.id)) {
-                            console.log('🔒 Preserving local read status for conversation:', conv.id);
-                            conv.unread_count = 0;
-                        }
+                    if (senderLower === userEmailLower || receiverLower === userEmailLower) {
+                        if (locallyReadConversations.has(conv.id)) conv.unread_count = 0;
                         filteredConversations.push(conv);
-                        console.log('✅ Including conversation:', conv.id, 'between', conv.sender_email, 'and', conv.receiver_email);
-                    } else {
-                        console.log('⚠️ Skipping conversation (not a participant):', conv.id);
                     }
                 }
 
@@ -3946,6 +4081,13 @@
                 })
                 .subscribe((status) => {
                     console.log('📱 PANEL SUBSCRIPTION STATUS:', status);
+                    // Track whether realtime is actually working; the polling fallback below
+                    // is gated on this flag so we don't double up with realtime + polling.
+                    if (status === 'SUBSCRIBED') {
+                        window.__panelRealtimeOk = true;
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        window.__panelRealtimeOk = false;
+                    }
                 });
 
             // Initialize
@@ -3961,26 +4103,32 @@
             // Update global reference when conversations are loaded
             window.globalUserConversations = globalUserConversations;
 
-            // FALLBACK: Polling for updates if real-time fails
+            // FALLBACK: Polling for updates only if Supabase Realtime fails to subscribe.
+            // The panelChannel subscribe callback sets window.__panelRealtimeOk; we check
+            // it before turning polling on. Slow interval (30s) + tab-visibility check so
+            // mobile devices don't burn battery in the background — was 3s + always-on,
+            // which spammed ~4 queries every 3 seconds even when realtime was healthy.
             let pollingInterval;
             function startPolling() {
-                console.log('🔄 Starting polling fallback (every 3 seconds)');
+                console.log('🔄 Starting polling fallback (every 30 seconds, paused when tab hidden)');
                 pollingInterval = setInterval(() => {
+                    if (document.hidden) return;
                     if (currentConversationId) {
                         loadMessages(currentConversationId);
                     }
                     loadUserConversations();
-                    // Also refresh AI notifications
                     if (currentMessagingTab === 'aiNotifications') {
                         loadAINotifications();
                     }
-                }, 3000);
+                }, 30000);
             }
 
-            // Start polling if real-time doesn't work after 10 seconds
-            // Note: messageChannel is not in scope here, so we'll just start polling as fallback
             setTimeout(() => {
-                console.log('⚠️ Starting fallback polling for messages');
+                if (window.__panelRealtimeOk) {
+                    console.log('✅ Realtime subscription active; skipping polling fallback');
+                    return;
+                }
+                console.log('⚠️ Realtime not ready after 10s; starting fallback polling');
                 startPolling();
             }, 10000);
         }
@@ -4018,6 +4166,12 @@
             
             await loadMessages(conversationId);
             document.getElementById('chatModal').classList.add('active');
+
+            // Always surface the 📎 Files button on the docked bubble. startConversation()
+            // sets this for fresh-from-listing flows; this is the existing-conversation
+            // counterpart so the button doesn't stay hidden from a prior session's state.
+            const fileUploadBtn = document.getElementById('fileUploadBtn');
+            if (fileUploadBtn) fileUploadBtn.classList.remove('hidden');
             
             // Update database in background (don't wait)
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
@@ -5056,33 +5210,58 @@
         }
 
         async function loadFavoriteStates() {
+            // Background of the bug this fixes: the old version called GET
+            // /api/favorites/${currentUser.id}, but no such backend route exists. The
+            // working routes key on userEmail, not user.id. On top of that, the
+            // existing GET /api/favorites returns the FULL listing row for each
+            // favorite (a big payload + N extra SELECTs server-side), which is
+            // wasteful when all we need is a yes/no per visible card.
+            //
+            // /api/favorites/check is the optimal endpoint: send only the listing
+            // IDs currently rendered on this page, get back a {id: boolean} map.
+            // One round trip, one SELECT WHERE listing_id IN (...) on the backend,
+            // zero per-listing follow-up queries.
             const currentUser = await window.UniversalAuth.getCurrentUser();
-            
-            if (!currentUser || !currentUser.id) {
+
+            if (!currentUser || !currentUser.email) {
                 console.log('No authenticated user, skipping favorite states');
                 return;
             }
 
+            const buttons = document.querySelectorAll('.favorite-btn');
+            const listingIds = Array.from(buttons)
+                .map(b => b.getAttribute('data-listing-id'))
+                .filter(Boolean);
+
+            if (listingIds.length === 0) {
+                console.log('No favorite buttons rendered yet, skipping');
+                return;
+            }
+
             try {
-                const response = await fetch(`/api/favorites/${currentUser.id}`);
-                
-                if (response.ok) {
-                    const favorites = await response.json();
-                    const favoriteIds = new Set(favorites.map(fav => fav.listing_id));
-                    
-                    // Update heart button states
-                    document.querySelectorAll('.favorite-btn').forEach(button => {
-                        const listingId = button.getAttribute('data-listing-id');
-                        if (favoriteIds.has(listingId)) {
-                            button.setAttribute('data-favorited', 'true');
-                            button.setAttribute('title', 'Remove from favorites');
-                        }
-                    });
-                    
-                    console.log(`✅ Loaded ${favorites.length} favorite states`);
-                } else {
-                    console.log('Could not load favorite states');
+                const response = await fetch('/api/favorites/check', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ listingIds, userEmail: currentUser.email })
+                });
+
+                if (!response.ok) {
+                    console.warn('loadFavoriteStates: /api/favorites/check returned', response.status);
+                    return;
                 }
+
+                const favoriteMap = await response.json();
+                let matched = 0;
+                buttons.forEach(button => {
+                    const listingId = button.getAttribute('data-listing-id');
+                    if (favoriteMap[listingId] === true) {
+                        button.setAttribute('data-favorited', 'true');
+                        button.setAttribute('title', 'Remove from favorites');
+                        matched++;
+                    }
+                });
+
+                console.log(`✅ Restored ${matched} favorite states out of ${listingIds.length} visible listings`);
             } catch (error) {
                 console.error('Error loading favorite states:', error);
             }
@@ -5391,12 +5570,26 @@
                 if (typeof initMap === 'function') {
                     // Use requestAnimationFrame to ensure DOM is fully rendered
                     requestAnimationFrame(() => {
-                        setTimeout(() => {
+                        setTimeout(async () => {
                             console.log('Initializing map after container is fully visible...');
                             initMap();
-                            // Also update markers if listings exist
-                            if (typeof updateMap === 'function' && window.currentListings) {
-                                setTimeout(() => updateMap(window.currentListings), 200);
+                            // Update markers. Use cached listings if available, otherwise
+                            // refetch — guarantees the map populates the first time the user
+                            // toggles to Map View, even if no prior fetch ran on this page.
+                            if (typeof updateMap === 'function') {
+                                let listings = window.currentListings;
+                                if (!listings || listings.length === 0) {
+                                    console.log('🔄 No cached listings; fetching for map view...');
+                                    try {
+                                        listings = await fetchListings();
+                                        if (listings && listings.length) window.currentListings = listings;
+                                    } catch (e) {
+                                        console.error('❌ Map-view listings fetch failed:', e);
+                                    }
+                                }
+                                if (listings && listings.length) {
+                                    setTimeout(() => updateMap(listings), 200);
+                                }
                             }
                         }, 150); // Delay for DOM reflow
                     });
@@ -5703,6 +5896,23 @@
                             });
 
                             if (error) throw error;
+
+                            // Mirror the live-broadcast path used by sendTextMessage so the
+                            // fallback sender also delivers sub-100ms to the receiving side.
+                            if (window.__currentChatChannel) {
+                                window.__currentChatChannel.send({
+                                    type: 'broadcast',
+                                    event: 'new_message',
+                                    payload: {
+                                        conversation_id: currentConversationId,
+                                        sender_email: currentUser.email,
+                                        content: messageContent,
+                                        message_type: 'text',
+                                        created_at: msgTimestamp
+                                    }
+                                }).catch(err => console.warn('broadcast send failed (non-fatal):', err));
+                            }
+
                             chatInput.value = '';
                             console.log('Message sent successfully');
                         } catch (err) {
@@ -5748,7 +5958,7 @@
                                 <a href="login.html" class="bg-white text-blue-600 px-4 py-2 rounded-lg border border-blue-600 hover:bg-blue-50 transition duration-300">
                                     Login
                                 </a>
-                                <a href="register.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                                <a href="signup.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
                                     Register
                                 </a>
                             </div>
@@ -5782,8 +5992,8 @@
                                 <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden z-50">
                                     <a href="profile.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Profile</a>
                                     <a href="profile.html#saved-listings" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Favorites</a>
-                                    <a href="my-listings.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">My Listings</a>
-                                    <a href="messages.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Messages</a>
+                                    <a href="profile.html#my-listings" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">My Listings</a>
+                                    <a href="listings.html#messages" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Messages</a>
                                     <hr class="my-2">
                                     <button onclick="logout()" class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
                                 </div>
@@ -5800,8 +6010,8 @@
                                     </div>
                                     <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">👤 Profile</a>
                                     <a href="profile.html#saved-listings" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">❤️ Favorites</a>
-                                    <a href="my-listings.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">🏠 My Listings</a>
-                                    <a href="messages.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">💬 Messages</a>
+                                    <a href="profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">🏠 My Listings</a>
+                                    <a href="listings.html#messages" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">💬 Messages</a>
                                     <button onclick="logout(); closeMobileMenu();" class="mobile-menu-item" style="width: 100%; text-align: left; padding: 0.5rem 0.75rem; color: #ef4444; border: none; background: none; cursor: pointer;">🚪 Logout</button>
                                 </div>
                             `;

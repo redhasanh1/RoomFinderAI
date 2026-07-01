@@ -70,6 +70,20 @@
     </style>
 </head>
 <body>
+    <!-- Native mobile web shell — apps temporarily closed -->
+    <div id="mobileAppClosed" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(160deg,#1e3a8a 0%,#312e81 100%);color:#fff;display:flex;align-items:center;justify-content:center;padding:1.5rem;text-align:center;font-family:Inter,-apple-system,BlinkMacSystemFont,sans-serif;">
+        <div style="max-width:420px;">
+            <div style="font-size:2.5rem;margin-bottom:0.75rem;">🏠</div>
+            <h1 style="font-size:1.5rem;font-weight:700;margin-bottom:0.75rem;">Mobile app temporarily unavailable</h1>
+            <p style="opacity:0.95;line-height:1.6;margin-bottom:1.25rem;">
+                RoomFinderAI native Android and iOS apps are closed for now. Please use the <strong>website</strong> — it works in your mobile browser.
+            </p>
+            <a href="index.html" style="display:inline-block;background:#fff;color:#312e81;font-weight:600;padding:0.75rem 1.25rem;border-radius:999px;text-decoration:none;margin:0.25rem;">Open website</a>
+            <a href="platform-status.html" style="display:inline-block;color:#bfdbfe;font-weight:600;padding:0.75rem 1rem;text-decoration:underline;margin:0.25rem;">Platform status</a>
+        </div>
+    </div>
+    <style>body > *:not(#mobileAppClosed) { visibility: hidden; height: 0; overflow: hidden; }</style>
+
     <!-- App Header -->
     <header class="app-header">
         <div class="app-header-content">
