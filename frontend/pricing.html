@@ -10,9 +10,9 @@
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5195773691165769"
          crossorigin="anonymous"></script>
 
-    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="/supabase-auth-only.js"></script><!-- Auth handled by supabase-auth-only.js -->
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="/js/supabase-config-init.js"></script>
+    <script src="/universal-auth-manager.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
 
@@ -48,7 +48,7 @@
                     <div class="dropdown-menu" id="browse-dropdown">
                         <a href="listings.html" class="dropdown-item">Browse Listings</a>
                         <a href="sublease.html" class="dropdown-item">Sublease Property</a>
-                        <a href="/student-housing" class="dropdown-item">Student Housing</a>
+                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
                     </div>
                 </div>
                 
@@ -106,7 +106,7 @@
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
                             <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
-                            <a href="/student-housing" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
+                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
                         </div>
                     </div>
 

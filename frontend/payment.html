@@ -6,9 +6,9 @@
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>Payment - RoomFinderAI</title>
     
-    <!-- 🛡️ UNIVERSAL AUTHENTICATION PROTECTION SYSTEM -->
-    <script src="/supabase-auth-only.js"></script><!-- Auth handled by supabase-auth-only.js -->
-    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="/js/supabase-config-init.js"></script>
+    <script src="/universal-auth-manager.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.stripe.com/v3/"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -359,7 +359,7 @@
 
                         // Redirect to success page or dashboard
                         setTimeout(() => {
-                            window.location.href = '/index?payment=success';
+                            window.location.href = 'index.html?payment=success';
                         }, 3000);
 
                     } else {
@@ -439,7 +439,7 @@
 
                     // Redirect to success page or dashboard
                     setTimeout(() => {
-                        window.location.href = '/index?payment=success';
+                        window.location.href = 'index.html?payment=success';
                     }, 3000);
 
                 } else {

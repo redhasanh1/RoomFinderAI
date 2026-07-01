@@ -54,10 +54,10 @@ const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING
 // on every send, silently swallowing every reset email — see LEARN.md 2026-05-17.
 // Longer term: own a sender domain so we stop sending FROM @gmail.com.
 const EMAIL_CONFIG = {
-    SENDER_EMAIL: "humblewoslayer@gmail.com",
-    SENDER_NAME: "RoomFinderAI",
-    PRIMARY_RECIPIENT: "roomfinderai@gmail.com",
-    BACKUP_RECIPIENT: "humblewoslayer@gmail.com",
+    SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL?.trim() || "humblewoslayer@gmail.com",
+    SENDER_NAME: process.env.BREVO_SENDER_NAME?.trim() || "RoomFinderAI",
+    PRIMARY_RECIPIENT: process.env.CONTACT_EMAIL?.trim() || "roomfinderai@gmail.com",
+    BACKUP_RECIPIENT: process.env.BREVO_SENDER_EMAIL?.trim() || "humblewoslayer@gmail.com",
     USE_BACKUP_RECIPIENT: false
 };
 
@@ -97,6 +97,11 @@ config = {
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY?.trim() || config.TURNSTILE_SITE_KEY,
     ADMIN_KEY: process.env.ADMIN_KEY?.trim() || config.ADMIN_KEY
 };
+
+// Sync admin key into process.env for getAdminKey()
+if (config.ADMIN_KEY && !process.env.ADMIN_KEY) {
+    process.env.ADMIN_KEY = config.ADMIN_KEY;
+}
 
 console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
 
@@ -436,8 +441,8 @@ app.get('/listings', (req, res) => {
     }
 });
 
-// TEST ROUTE - completely bypass any caching issues
-app.get('/listings-new', (req, res) => {
+// TEST ROUTE - disabled in production
+app.get('/listings-new', blockInProduction, (req, res) => {
     const consolidatedListingsPath = path.join(__dirname, '..', 'frontend', 'listings.html');
     console.log('🧪 TEST ROUTE /listings-new - serving consolidated version');
     console.log(`🕐 TIMESTAMP: ${new Date().toISOString()}`);
@@ -2217,7 +2222,7 @@ app.post('/api/send-verification', authRateLimitMiddleware, async (req, res) => 
 });
 
 // API: Verify email code and complete registration
-app.post('/api/verify-email', async (req, res) => {
+app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
     try {
         const { email, code } = req.body;
         
@@ -3701,7 +3706,7 @@ app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
 });
 
 // API: Verify password reset code
-app.post('/api/verify-reset-code', async (req, res) => {
+app.post('/api/verify-reset-code', authRateLimitMiddleware, async (req, res) => {
     try {
         const { email, code, sessionId } = req.body;
         
@@ -4045,8 +4050,8 @@ app.post('/api/test-email', blockInProduction, async (req, res) => {
     }
 });
 
-// Brevo account status check endpoint  
-app.get('/api/brevo-status', async (req, res) => {
+// Brevo account status check endpoint (admin/debug only)
+app.get('/api/brevo-status', blockInProduction, async (req, res) => {
     try {
         console.log('🔍 Checking Brevo account status...');
         
@@ -9065,8 +9070,8 @@ app.get('/api/turnstile-key', (req, res) => {
     res.json({ siteKey });
 });
 
-// Debug test route to verify deployment
-app.get('/debug-test', (req, res) => {
+// Debug test route — disabled in production
+app.get('/debug-test', blockInProduction, (req, res) => {
     const fs = require('fs');
     const path = require('path');
     res.json({
@@ -9114,6 +9119,20 @@ app.get('/api/platform-status', (req, res) => {
     });
 });
 
+// Service worker stubs (push/visits not yet fully implemented)
+app.post('/api/push-subscription', (req, res) => {
+    res.status(501).json({ ok: false, message: 'Push notifications not enabled yet' });
+});
+app.delete('/api/push-subscription', (req, res) => {
+    res.status(501).json({ ok: false, message: 'Push notifications not enabled yet' });
+});
+app.post('/api/property-visits', (req, res) => {
+    res.status(204).send();
+});
+app.post('/api/analytics/notification-dismissed', (req, res) => {
+    res.status(204).send();
+});
+
 // Service status endpoint for frontend
 app.get('/api/service-status', (req, res) => {
     const aiStatus = getAIStatus(config);
@@ -9126,8 +9145,8 @@ app.get('/api/service-status', (req, res) => {
             payments: serviceStatus.stripe || DEMO_MODE,
             database: serviceStatus.supabase || DEMO_MODE,
             email: serviceStatus.brevo || DEMO_MODE,
-            maps: serviceStatus.google || true,
-            idVerification: serviceStatus.azure.documentIntelligence || DEMO_MODE,
+            maps: !!config.GOOGLE_API_KEY,
+            idVerification: true,
             anonymousBrowsing: ANONYMOUS_BROWSING,
             demoMode: DEMO_MODE
         }

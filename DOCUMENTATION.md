@@ -1,6 +1,6 @@
 # RoomFinderAI — Full Documentation
 
-**Last updated:** July 1, 2026  
+**Last updated:** July 1, 2026 (post QA audit)  
 **Production URL:** [https://www.roomfinderai.com](https://www.roomfinderai.com)  
 **Primary branch:** `main` (deploy from `main`; `hasan` merged in July 2026)
 
@@ -403,6 +403,8 @@ curl http://localhost:3000/health
 
 | Document | Location |
 |----------|----------|
+| QA audit (July 2026) | `docs/QA_AUDIT_JULY_2026.md` |
+| Phase 5 setup guide | `docs/PHASE_5_SETUP_GUIDE.md` |
 | **Project completion checklist** | `docs/PROJECT_COMPLETION_CHECKLIST.md` |
 | **Feature status & your action list** | `docs/FEATURE_STATUS_AND_TODO.md` |
 | Platform status (detail) | `docs/PLATFORM_STATUS.md` |

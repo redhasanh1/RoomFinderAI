@@ -356,7 +356,7 @@ async function initUniversalAuth(options = {}) {
             return { authenticated: false, allowed: true };
         } else if (redirectToLogin) {
             console.log('🔄 Redirecting to login...');
-            window.location.href = '/login';
+            window.location.href = 'login.html';
             return { authenticated: false, allowed: false };
         }
     }
@@ -383,7 +383,7 @@ function handleLogout() {
     // This provides a consistent logout interface
     try {
         // localStorage removed
-        window.location.href = '/login';
+        window.location.href = 'login.html';
     } catch (error) {
         console.log('Logout blocked by protection system');
     }

@@ -149,15 +149,17 @@ curl https://www.roomfinderai.com/api/service-status
 
 ## Phase 5 — Third-party dashboards (launch quality)
 
-Not blocking deploy, but do within the first week.
+Not blocking deploy, but do within the first week. **Full walkthrough:** [`PHASE_5_SETUP_GUIDE.md`](PHASE_5_SETUP_GUIDE.md)
 
 | Status | Task | Where | Why |
 |--------|------|-------|-----|
-| ☐ | Verify Brevo sender domain | Brevo dashboard | Emails don't go to spam |
+| ☐ | Verify Brevo sender | Brevo dashboard | `humblewoslayer@gmail.com` must be verified |
 | ☐ | Google Maps API referrer | Google Cloud Console | `https://www.roomfinderai.com/*` |
-| ☐ | Google OAuth redirect URI | Google Cloud Console | `https://www.roomfinderai.com/api/auth/google/callback` |
-| ☐ | Stripe webhook URL (if using payments) | Stripe dashboard | Point to Railway domain |
-| ☐ | Stripe test → live keys | Stripe + Railway | When ready for real charges |
+| ☐ | Google OAuth origins + redirect | Google Cloud Console | See Phase 5 guide |
+| ☐ | Supabase Auth Site URL + redirects | Supabase dashboard | Email confirm / password reset |
+| ☐ | Turnstile domains | Cloudflare dashboard | Forgot-password captcha |
+| ☐ | Stripe test keys on Railway | Stripe + Railway | Webhooks **not needed yet** (no endpoint in backend) |
+| ☐ | Stripe live keys | Stripe + Railway | **Later** — when ready for real charges |
 
 ---
 

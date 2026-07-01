@@ -37,10 +37,11 @@
         var section = document.getElementById(sectionId + '-section');
         var arrow = document.getElementById(sectionId + '-arrow');
         if (!section) return;
+        section.classList.toggle('expanded');
         section.classList.toggle('active');
         section.classList.toggle('show');
         if (arrow) {
-            var open = section.classList.contains('active') || section.classList.contains('show');
+            var open = section.classList.contains('expanded') || section.classList.contains('active') || section.classList.contains('show');
             arrow.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
         }
     }

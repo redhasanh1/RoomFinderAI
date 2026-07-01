@@ -67,10 +67,10 @@
                 }
 
                 // Reset message panel state
-                const messagePanel = document.getElementById('messagePanel');
-                if (messagePanel && !messagePanel.classList.contains('hidden')) {
+                const messages = document.getElementById('messages');
+                if (messages && !messages.classList.contains('hidden')) {
                     // Panel was open, ensure it stays visible
-                    messagePanel.style.display = 'block';
+                    messages.style.display = 'block';
                 }
 
                 // Reset initialization flag to allow re-init if needed
@@ -526,7 +526,7 @@
     <!-- Main Content -->
     <main class="flex-grow w-[90%] max-w-7xl mx-auto px-4 py-8">
         <!-- Add Listing Form (Initially Hidden) -->
-        <section id="addListingSection" class="hidden mb-12 animate-slide-down">
+        <section id="add-listing" class="hidden mb-12 animate-slide-down">
             <div class="glass-card p-6 sm:p-8">
                 <div class="flex items-center justify-between mb-6">
                     <div>
@@ -849,7 +849,7 @@
         </button>
 
         <!-- Message Panel -->
-        <div id="messagePanel" class="hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-[calc(100vw-3rem)]">
+        <div id="messages" class="hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-[calc(100vw-3rem)]">
             <div class="p-4 border-b text-white rounded-t-2xl flex justify-between items-center" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
                 <h3 class="font-semibold text-sm tracking-wide">Messages</h3>
                 <button id="forceHideNotifications" class="text-xs text-blue-100 hover:text-white transition-colors" title="Mark all as read">Mark all read</button>
@@ -2205,7 +2205,7 @@
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
             if (!currentUser) {
                 alert('Please log in to add a listing.');
-                window.location.href = '/login';
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -3242,7 +3242,7 @@
             if (!currentUser) {
                 console.error('❌ No authenticated user found');
                 alert('Please log in to start a chat.');
-                window.location.href = '/login';
+                window.location.href = 'login.html';
                 return;
             }
 
@@ -3790,12 +3790,12 @@
                 return;
             }
             const messageToggleBtn = document.getElementById('messageToggleBtn');
-            const messagePanel = document.getElementById('messagePanel');
+            const messages = document.getElementById('messages');
             const profileNotificationBadge = document.getElementById('profileNotificationBadge');
             const messageNotificationBadge = document.getElementById('messageNotificationBadge');
 
             // Add null checks
-            if (!messageToggleBtn || !messagePanel) {
+            if (!messageToggleBtn || !messages) {
                 console.error('❌ Message panel elements not found, retrying...');
                 if (messagingPanelRetries < MAX_MESSAGING_RETRIES) {
                     messagingPanelRetries++;
@@ -3815,7 +3815,7 @@
             messageToggleBtn._hasClickHandler = true;
 
             // Prevent clicks inside panel from closing it
-            messagePanel.addEventListener('click', (event) => {
+            messages.addEventListener('click', (event) => {
                 event.stopPropagation();
             });
 
@@ -4137,7 +4137,7 @@
         // Global function to open conversation in modal
         window.openConversationInModal = async function(conversationId, listingTitle, listingId, otherUserEmail) {
             // Close messaging panel
-            document.getElementById('messagePanel').classList.add('hidden');
+            document.getElementById('messages').classList.add('hidden');
             
             // INSTANTLY clear notifications - don't wait for database
             console.log('⚡ INSTANTLY clearing notifications for conversation:', conversationId);
@@ -4920,21 +4920,21 @@
         });
         
         // Global message panel toggle (backup for onclick handler)
-        let messagePanelOpen = false;
+        let messagesOpen = false;
         window.toggleMessagePanel = async function(event) {
             if (event) event.stopPropagation();
-            const messagePanel = document.getElementById('messagePanel');
-            if (!messagePanel) {
+            const messages = document.getElementById('messages');
+            if (!messages) {
                 console.error('Message panel not found');
                 return;
             }
 
-            messagePanelOpen = !messagePanelOpen;
-            console.log('📨 Toggle message panel:', messagePanelOpen);
+            messagesOpen = !messagesOpen;
+            console.log('📨 Toggle message panel:', messagesOpen);
 
-            if (messagePanelOpen) {
-                messagePanel.classList.remove('hidden');
-                messagePanel.style.display = 'block';
+            if (messagesOpen) {
+                messages.classList.remove('hidden');
+                messages.style.display = 'block';
                 // Load conversations and AI notifications if user is logged in
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (currentUser) {
@@ -4956,19 +4956,19 @@
                     }
                 }
             } else {
-                messagePanel.classList.add('hidden');
-                messagePanel.style.display = '';
+                messages.classList.add('hidden');
+                messages.style.display = '';
             }
         }
 
         // Close message panel when clicking outside
         document.addEventListener('click', (event) => {
-            if (messagePanelOpen && !event.target.closest('#messagingPanel')) {
-                const messagePanel = document.getElementById('messagePanel');
-                if (messagePanel) {
-                    messagePanel.classList.add('hidden');
-                    messagePanel.style.display = '';
-                    messagePanelOpen = false;
+            if (messagesOpen && !event.target.closest('#messagingPanel')) {
+                const messages = document.getElementById('messages');
+                if (messages) {
+                    messages.classList.add('hidden');
+                    messages.style.display = '';
+                    messagesOpen = false;
                 }
             }
         });
@@ -5403,9 +5403,9 @@
         // Add Listing Form Toggle
         // Now shows the Photo Wizard first for AI-powered listing creation
         function toggleAddListingForm() {
-            const section = document.getElementById('addListingSection');
+            const section = document.getElementById('add-listing');
             if (!section) {
-                console.error('addListingSection element not found');
+                console.error('add-listing element not found');
                 return;
             }
             if (section.classList.contains('hidden')) {
@@ -5422,9 +5422,9 @@
         }
 
         function showAddListingForm() {
-            const section = document.getElementById('addListingSection');
+            const section = document.getElementById('add-listing');
             if (!section) {
-                console.error('addListingSection element not found');
+                console.error('add-listing element not found');
                 return;
             }
             section.classList.remove('hidden');
@@ -5443,9 +5443,9 @@
         }
 
         function hideAddListingForm() {
-            const section = document.getElementById('addListingSection');
+            const section = document.getElementById('add-listing');
             if (!section) {
-                console.error('addListingSection element not found');
+                console.error('add-listing element not found');
                 return;
             }
             section.classList.add('hidden');
@@ -5466,6 +5466,16 @@
         window.toggleAddListingForm = toggleAddListingForm;
         window.showAddListingForm = showAddListingForm;
         window.hideAddListingForm = hideAddListingForm;
+
+        // Deep links: listings.html#add-listing and #messages
+        (function handleListingsHash() {
+            var hash = window.location.hash;
+            if (hash === '#add-listing' && typeof showAddListingForm === 'function') {
+                showAddListingForm();
+            } else if (hash === '#messages' && typeof window.toggleMessagePanel === 'function') {
+                setTimeout(function () { window.toggleMessagePanel(); }, 500);
+            }
+        })();
 
         // Advanced Filters Toggle
         function toggleAdvancedFilters() {
@@ -5959,7 +5969,7 @@
                                 <a href="login.html" class="bg-white text-blue-600 px-4 py-2 rounded-lg border border-blue-600 hover:bg-blue-50 transition duration-300">
                                     Login
                                 </a>
-                                <a href="signup.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                                <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
                                     Register
                                 </a>
                             </div>
