@@ -3,6 +3,17 @@ const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const { PLATFORM_STATUS } = require('./platform-status');
+const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
+const {
+    IS_PRODUCTION,
+    blockInProduction,
+    authRateLimitMiddleware,
+    registerProcessHandlers,
+    registerErrorHandler,
+    shouldUseDemoFallback,
+    getAdminKey
+} = require('./reliability');
 // Branch state secured - Jul 1, 2025
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
@@ -28,18 +39,23 @@ const serviceStatus = {
 
 // Demo mode flag
 const DEMO_MODE = process.env.ENABLE_DEMO_MODE === 'true' || false;
-const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING === 'true' || true;
+const ANONYMOUS_BROWSING = process.env.ENABLE_ANONYMOUS_BROWSING
+    ? process.env.ENABLE_ANONYMOUS_BROWSING === 'true'
+    : true;
 
-// Email configuration - Centralized for easy management
+// Email configuration - Centralized for easy management.
+// SENDER_EMAIL must be a verified sender in the active Brevo account (see Brevo
+// dashboard → Senders, Domains & dedicated IPs). `humblewoslayer@gmail.com` is
+// the current account's verified sender (id=1, name="roomfinderai"). The previous
+// value (wilmahenning01@gmail.com) was rejected by Brevo with "sender is not valid"
+// on every send, silently swallowing every reset email — see LEARN.md 2026-05-17.
+// Longer term: own a sender domain so we stop sending FROM @gmail.com.
 const EMAIL_CONFIG = {
-    // Use wilmahenning01@gmail.com as it's authorized in Brevo
-    // This prevents delivery issues due to SPF/DKIM/DMARC checks
-    SENDER_EMAIL: "wilmahenning01@gmail.com",
+    SENDER_EMAIL: "humblewoslayer@gmail.com",
     SENDER_NAME: "RoomFinderAI",
     PRIMARY_RECIPIENT: "roomfinderai@gmail.com",
-    BACKUP_RECIPIENT: "wilmahenning01@gmail.com",  // Backup to ensure delivery
-    // Set to true to send to both recipients, false for primary only
-    USE_BACKUP_RECIPIENT: false  // Disabled to avoid spam folder issues
+    BACKUP_RECIPIENT: "humblewoslayer@gmail.com",
+    USE_BACKUP_RECIPIENT: false
 };
 
 // Load config with error handling
@@ -71,7 +87,10 @@ config = {
     AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT,
     GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || config.GOOGLE_OAUTH_CLIENT_SECRET,
-    APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID
+    APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID,
+    RENTCAST_KEY: process.env.RENTCAST_KEY?.trim() || config.RENTCAST_KEY,
+    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY?.trim() || config.TURNSTILE_SITE_KEY,
+    ADMIN_KEY: process.env.ADMIN_KEY?.trim() || config.ADMIN_KEY
 };
 
 console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
@@ -99,6 +118,7 @@ async function testBrevoApiKey() {
         });
         
         console.log('✅ Brevo API key is valid');
+        serviceStatus.brevo = true;
         console.log('📧 Account info:', {
             email: response.data.email,
             company: response.data.companyName,
@@ -127,6 +147,13 @@ const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+registerProcessHandlers();
+app.set('trust proxy', 1);
+
+if (config.GOOGLE_API_KEY) {
+    serviceStatus.google = true;
+}
 
 // ========================================
 // RENTCAST RATE LIMITING SYSTEM
@@ -343,10 +370,23 @@ const upload = multer({
 });
 
 // Middleware
+const allowedOrigins = [
+    'https://www.roomfinderai.com',
+    'https://roomfinderai.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+];
+
 app.use(cors({
-    origin: '*',
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(null, false);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'user-email']
 }));
 // Increase payload limits for profile image uploads
 app.use(express.json({ limit: '10mb' }));
@@ -364,7 +404,7 @@ app.get('/listings.html', (req, res) => {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Last-Modified', new Date().toUTCString());
-        return res.sendFile(consolidatedListingsPath);
+        return sendInjectedHtml(res, consolidatedListingsPath);
     } else {
         console.log(`❌ ERROR: Consolidated listings file not found at: ${consolidatedListingsPath}`);
         return res.status(404).send('Listings not found');
@@ -382,7 +422,7 @@ app.get('/listings', (req, res) => {
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
         res.setHeader('Last-Modified', new Date().toUTCString());
-        return res.sendFile(consolidatedListingsPath);
+        return sendInjectedHtml(res, consolidatedListingsPath);
     } else {
         console.log(`❌ ERROR: Consolidated listings file not found at: ${consolidatedListingsPath}`);
         return res.status(404).send('Listings not found');
@@ -403,26 +443,20 @@ app.get('/listings-new', (req, res) => {
         res.setHeader('Expires', '0');
         res.setHeader('Last-Modified', new Date().toUTCString());
         res.setHeader('ETag', Date.now().toString());
-        return res.sendFile(consolidatedListingsPath);
+        return sendInjectedHtml(res, consolidatedListingsPath);
     } else {
         console.log(`❌ TEST ERROR: Consolidated listings file not found`);
         return res.status(404).send('Test listings not found');
     }
 });
 
-// Serve static files from parent directory (frontend files)
-const staticPath = path.join(__dirname, '..');
-console.log('📁 Serving static files from:', staticPath);
-app.use(express.static(staticPath, {
-    setHeaders: (res, path) => {
-        // Allow CORS for images
-        res.setHeader('Access-Control-Allow-Origin', '*');
-    }
-}));
-
-// Serve frontend files specifically (for /js/, /css/, etc.)
+// Serve static assets from frontend only (not entire repo root)
 const frontendPath = path.join(__dirname, '..', 'frontend');
 console.log('🌐 Serving frontend files from:', frontendPath);
+
+// Inject platform-status banner assets into HTML pages before static fallback
+app.use(createHtmlInjectionMiddleware(frontendPath));
+
 // Custom middleware to block static serving of listings.html
 app.use((req, res, next) => {
     if (req.path === '/listings.html' || req.path === '/listings') {
@@ -821,13 +855,20 @@ app.get('/api/listings', async (req, res) => {
 
         // Check if Supabase is connected
         if (!supabase) {
-            console.log('🔍 DEBUG /api/listings: Using mock data (no database)');
-            // Return mock listings when database is not connected
-            const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
-            return res.json({
-                success: true,
-                data: transformedListings,
-                message: 'Using demo listings (database not connected)'
+            if (shouldUseDemoFallback()) {
+                console.log('🔍 DEBUG /api/listings: Using mock data (demo mode)');
+                const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
+                return res.json({
+                    success: true,
+                    data: transformedListings,
+                    message: 'Using demo listings (database not connected)',
+                    demo: true
+                });
+            }
+            return res.status(503).json({
+                success: false,
+                data: null,
+                message: 'Database temporarily unavailable'
             });
         }
 
@@ -839,12 +880,19 @@ app.get('/api/listings', async (req, res) => {
 
         if (error) {
             console.error('Error fetching listings from Supabase:', error);
-            // Fallback to in-memory listings if database fetch fails
-            const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
-            return res.json({
-                success: true,
-                data: transformedListings,
-                message: 'Listings retrieved from cache'
+            if (shouldUseDemoFallback()) {
+                const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
+                return res.json({
+                    success: true,
+                    data: transformedListings,
+                    message: 'Listings retrieved from cache',
+                    demo: true
+                });
+            }
+            return res.status(503).json({
+                success: false,
+                data: null,
+                message: 'Failed to retrieve listings from database'
             });
         }
 
@@ -1018,13 +1066,42 @@ app.get('/api/listings/search', async (req, res) => {
 });
 
 // API: Get listing by ID
-app.get('/api/listings/:id', (req, res) => {
+app.get('/api/listings/:id', async (req, res) => {
     try {
-        const listing = listings.find(l => l.id === req.params.id);
-        if (!listing) {
-            return res.status(404).json({ error: 'Listing not found' });
+        const listingId = req.params.id;
+
+        if (supabase) {
+            const { data: dbListing, error } = await supabase
+                .from('listings')
+                .select('*')
+                .eq('id', listingId)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Error fetching listing from Supabase:', error);
+                return res.status(500).json({ error: 'Failed to retrieve listing' });
+            }
+
+            if (dbListing) {
+                return res.json({
+                    success: true,
+                    listing: transformListingForAndroid(dbListing, {}),
+                    data: transformListingForAndroid(dbListing, {})
+                });
+            }
         }
-        res.json({ listing });
+
+        const listing = listings.find(l => l.id === listingId);
+        if (listing && shouldUseDemoFallback()) {
+            return res.json({
+                success: true,
+                listing,
+                data: listing,
+                demo: true
+            });
+        }
+
+        return res.status(404).json({ error: 'Listing not found' });
     } catch (error) {
         console.error('Error in /api/listings/:id:', error.message);
         res.status(500).json({ error: 'Failed to retrieve listing' });
@@ -1760,7 +1837,13 @@ async function sendPasswordResetEmail(email, code, firstName) {
                 email: email,
                 name: firstName || 'User'
             }],
-            subject: "Reset your RoomFinderAI password",
+            // Append a short timestamp so each send has a distinct subject. Without
+            // this, Yahoo's anti-spam filter dedups near-identical messages from the
+            // same sender within a few minutes and silently drops the second one
+            // (a real "delivered but inboxed nowhere" failure mode we hit on resend).
+            // Once we move to a real sender domain + SPF/DKIM the dedup heuristic
+            // bites less, but keeping the variation is still useful.
+            subject: `Reset your RoomFinderAI password (${new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })})`,
             htmlContent: `
                 <!DOCTYPE html>
                 <html>
@@ -2057,7 +2140,7 @@ Date: ${new Date().toISOString()}
 }
 
 // API: Send verification email
-app.post('/api/send-verification', async (req, res) => {
+app.post('/api/send-verification', authRateLimitMiddleware, async (req, res) => {
     try {
         console.log('📧 Received verification request:', req.body);
         const { firstName, lastName, email, password } = req.body;
@@ -2244,7 +2327,7 @@ app.post('/api/verify-email', async (req, res) => {
 });
 
 // API: User login with Supabase authentication
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -3523,7 +3606,7 @@ app.post('/api/update-profile', async (req, res) => {
 });
 
 // API: Send password reset code
-app.post('/api/send-reset-code', async (req, res) => {
+app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
     try {
         console.log('📧 Received password reset request for:', req.body.email);
         const { email } = req.body;
@@ -3563,9 +3646,14 @@ app.post('/api/send-reset-code', async (req, res) => {
         }
         
         if (!user) {
-            // Don't reveal if user exists or not for security
-            return res.json({ 
-                message: 'If an account exists with this email, a reset code will be sent.',
+            // Anti-enumeration: still return 200 so we don't leak whether the email
+            // is registered, BUT soften the copy so users who typo'd or aren't signed
+            // up don't think their email is on its way and end up staring at an inbox.
+            // The defensive log makes the silent path visible in Railway logs — was
+            // invisible before, easy to miss when triaging "no email arrived" reports.
+            console.log('🔕 send-reset-code: no profile/user for email, returning silent 200:', email);
+            return res.json({
+                message: "If this email is registered, a 6-digit code is on its way. Didn't get it? Check spam, or make sure you signed up with this address.",
                 sessionId: uuidv4()
             });
         }
@@ -3692,59 +3780,69 @@ app.post('/api/reset-password', async (req, res) => {
                 }
                 
                 console.log('🔄 Attempting to update password for:', email);
-                
-                // Now we have service role key, so we can update Supabase Auth password
-                const hashedPassword = await bcrypt.hash(newPassword, 10);
-                
-                // First, find the user in Supabase Auth
+
+                // Find the user in Supabase Auth
                 const { data: { users: authUsers }, error: listError } = await supabase.auth.admin.listUsers();
-                
+
                 if (listError) {
                     console.error('❌ Failed to list users in Supabase Auth:', listError);
                     return res.status(500).json({ error: 'Failed to access user accounts' });
                 }
-                
+
                 const authUser = authUsers?.find(u => u.email === email);
-                
+
                 if (authUser) {
-                    // Update password in Supabase Auth (this will replace the old password)
+                    // email_confirm: true ensures users who signed up but never confirmed
+                    // can sign in immediately — the verified 6-digit code is proof of email
+                    // ownership, equivalent to clicking a confirmation link.
                     const { error: authUpdateError } = await supabase.auth.admin.updateUserById(
                         authUser.id,
-                        { password: newPassword }
+                        { password: newPassword, email_confirm: true }
                     );
-                    
+
                     if (authUpdateError) {
                         console.error('❌ Failed to update password in Supabase Auth:', authUpdateError);
-                        return res.status(500).json({ error: 'Failed to update password in authentication system' });
+                        return res.status(500).json({ error: 'Failed to update password: ' + authUpdateError.message });
                     }
-                    
-                    console.log('✅ Password updated in Supabase Auth for:', email);
+
+                    console.log('✅ Password updated + email confirmed in Supabase Auth for:', email);
                 } else {
-                    console.log('⚠️ User not found in Supabase Auth, updating profiles table only');
-                    
-                    // Update password in profiles table as fallback
-                    const { error: updateError } = await supabase
-                        .from('profiles')
-                        .update({ 
-                            password: hashedPassword
-                        })
-                        .eq('email', email);
-                    
-                    if (updateError) {
-                        console.error('❌ Failed to update password in profiles:', updateError);
-                        return res.status(500).json({ error: 'Failed to update password' });
+                    // Legacy profile with no auth.users row — provision one now, reusing
+                    // the existing profile.id so listings/favorites/etc. that FK to it
+                    // stay linked to the same user.
+                    console.log('🆕 Provisioning Supabase Auth user for legacy profile:', email);
+                    const { error: createError } = await supabase.auth.admin.createUser({
+                        id: profile.id,
+                        email,
+                        password: newPassword,
+                        email_confirm: true,
+                        user_metadata: {
+                            first_name: profile.first_name,
+                            last_name: profile.last_name
+                        }
+                    });
+
+                    if (createError) {
+                        console.warn('⚠️ createUser with profile.id failed, retrying with fresh UUID:', createError.message);
+                        const { data: created, error: retryError } = await supabase.auth.admin.createUser({
+                            email,
+                            password: newPassword,
+                            email_confirm: true,
+                            user_metadata: {
+                                first_name: profile.first_name,
+                                last_name: profile.last_name
+                            }
+                        });
+                        if (retryError) {
+                            console.error('❌ Failed to provision Supabase Auth user:', retryError);
+                            return res.status(500).json({ error: 'Failed to update password: ' + retryError.message });
+                        }
+                        console.log('✅ Provisioned new auth.users entry (fresh UUID) for legacy account:', email, created?.user?.id);
+                    } else {
+                        console.log('✅ Provisioned Supabase Auth user with existing profile.id for:', email);
                     }
-                    
-                    console.log('✅ Password updated in profiles table for:', email);
                 }
-                
-                // Also update in-memory if user exists there (replace old password)
-                const user = users.find(u => u.email === email);
-                if (user) {
-                    user.password = hashedPassword;
-                    console.log('✅ In-memory password also updated for:', email);
-                }
-                
+
             } catch (dbError) {
                 console.error('Database update error:', dbError);
                 return res.status(500).json({ error: 'Failed to update password' });
@@ -3897,7 +3995,7 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // Test endpoint for email functionality (remove in production)
-app.post('/api/test-email', async (req, res) => {
+app.post('/api/test-email', blockInProduction, async (req, res) => {
     try {
         const { email, type = 'password-reset' } = req.body;
         
@@ -4071,6 +4169,196 @@ app.post('/api/analyze-property-photo', async (req, res) => {
 });
 
 // ========================================
+// FORWARD GEOCODING + CACHE (Google Maps -> listings.latitude/longitude)
+// ========================================
+
+// Single-address forward geocode via Google Maps. Returns { lat, lng } on success or
+// { error, error_message } on failure. REQUEST_DENIED with "Billing" in error_message
+// means the Google Cloud project hasn't enabled billing; the caller should switch to
+// Nominatim for the rest of the batch.
+async function geocodeViaGoogle(address) {
+    try {
+        const r = await axios.get(
+            `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_API_KEY}`,
+            { timeout: 10000 }
+        );
+        if (r.data.status === 'OK' && r.data.results?.[0]) {
+            const loc = r.data.results[0].geometry.location;
+            return { lat: loc.lat, lng: loc.lng };
+        }
+        return { error: r.data.status || 'unknown', error_message: r.data.error_message || null };
+    } catch (e) {
+        return { error: 'http_error', error_message: e.message };
+    }
+}
+
+// Single-address forward geocode via OpenStreetMap Nominatim. Free, no key needed,
+// but caller MUST throttle to at most 1 request per second (Nominatim usage policy).
+async function geocodeViaNominatim(address) {
+    try {
+        const r = await axios.get(
+            `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(address)}&format=json&limit=1`,
+            {
+                headers: {
+                    'User-Agent': 'RoomFinderAI/1.0 (property listing app)',
+                    'Accept-Language': 'en'
+                },
+                timeout: 10000
+            }
+        );
+        if (Array.isArray(r.data) && r.data[0]) {
+            const lat = parseFloat(r.data[0].lat);
+            const lng = parseFloat(r.data[0].lon);
+            if (Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+        }
+        return { error: 'no_results' };
+    } catch (e) {
+        return { error: 'http_error', error_message: e.message };
+    }
+}
+
+/**
+ * POST /api/geocode/batch
+ * Body: { ids: ["uuid1", "uuid2", ...] }
+ * Response: { success: true, coords: { uuid1: { lat, lng, cached, source }, ... } }
+ *
+ * Per id: if the row already has latitude+longitude, returns them (cache hit, zero
+ * upstream calls). Otherwise geocodes the row's address and writes coords back so
+ * subsequent loads are cache hits.
+ *
+ * Geocoder strategy: try Google Maps first (fast, accurate, but requires billing on
+ * the GCP project). If Google returns REQUEST_DENIED with a billing-related message,
+ * automatically fall back to Nominatim (free, public OSM, throttled to 1 req/s) for
+ * the remainder of this batch. Each row's response includes a `source` field so the
+ * caller can see which path was taken.
+ *
+ * Bounded to 100 ids per call. Requires SUPABASE_SERVICE_ROLE_KEY on the backend so
+ * RLS does not block writes against rows owned by other users.
+ */
+app.post('/api/geocode/batch', async (req, res) => {
+    console.log('📍 /api/geocode/batch called');
+
+    try {
+        const { ids } = req.body || {};
+        if (!Array.isArray(ids) || ids.length === 0) {
+            return res.status(400).json({ success: false, error: 'Body must be { ids: [uuid, ...] }' });
+        }
+        if (ids.length > 100) {
+            return res.status(400).json({ success: false, error: 'Max 100 ids per batch' });
+        }
+        if (!supabase) {
+            return res.status(503).json({ success: false, error: 'Supabase not initialized on backend' });
+        }
+        if (!GOOGLE_API_KEY) {
+            console.warn('⚠️ GOOGLE_API_KEY not configured — falling back to Nominatim only (slower, 1 req/s).');
+        }
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.warn('⚠️ SUPABASE_SERVICE_ROLE_KEY not set — coord writes will be blocked by RLS for non-owner rows');
+        }
+
+        let { data: rows, error: fetchErr } = await supabase
+            .from('listings')
+            .select('id, street, city, postalCode, country, latitude, longitude')
+            .in('id', ids);
+
+        // Fallback if latitude/longitude columns aren't in the schema yet (pg 42703).
+        // Geocode still runs and returns coords; cache writes will fail per-row and
+        // surface as writeError in the response — caller treats it as a cache miss.
+        const latLngMissing = fetchErr && (
+            fetchErr.code === '42703' ||
+            /column[^.]*\.(latitude|longitude)[^.]* does not exist/i.test(fetchErr.message || '')
+        );
+        if (latLngMissing) {
+            console.warn('⚠️ listings.latitude/longitude columns not present — geocoding without cache. Apply database/migrations/add_listings_coordinates.sql.');
+            ({ data: rows, error: fetchErr } = await supabase
+                .from('listings')
+                .select('id, street, city, postalCode, country')
+                .in('id', ids));
+            if (rows) {
+                for (const r of rows) { r.latitude = null; r.longitude = null; }
+            }
+        }
+
+        if (fetchErr) {
+            console.error('❌ Supabase fetch error:', fetchErr);
+            return res.status(500).json({ success: false, error: fetchErr.message });
+        }
+
+        const result = {};
+        let googleDenied = !GOOGLE_API_KEY;   // sticky: skip Google entirely if not configured or billing denied
+        let lastNominatimAt = 0;              // for the 1-req/s throttle
+
+        for (const row of rows) {
+            if (row.latitude != null && row.longitude != null) {
+                result[row.id] = { lat: row.latitude, lng: row.longitude, cached: true, source: 'cache' };
+                continue;
+            }
+
+            const parts = [row.street, row.city, row.postalCode, row.country].filter(Boolean);
+            if (parts.length === 0) {
+                console.warn(`⚠️ Listing ${row.id} has no address components, skipping`);
+                result[row.id] = { error: 'no_address' };
+                continue;
+            }
+            const address = parts.join(', ');
+
+            // Try Google first unless we already learned it's denied for this batch
+            let geo = null;
+            let source = null;
+            if (!googleDenied) {
+                geo = await geocodeViaGoogle(address);
+                if (geo.lat != null) {
+                    source = 'google';
+                } else if (geo.error === 'REQUEST_DENIED' && /bill/i.test(geo.error_message || '')) {
+                    console.warn(`⚠️ Google denied (billing not enabled). Falling back to Nominatim for the rest of this batch.`);
+                    googleDenied = true;
+                    geo = null;
+                } else if (geo.error && geo.error !== 'ZERO_RESULTS') {
+                    // Other Google error — log but still try Nominatim as a one-off fallback for this row
+                    console.warn(`⚠️ Google error for ${row.id}: ${geo.error} ${geo.error_message || ''}`);
+                    geo = null;
+                }
+            }
+
+            if (geo == null) {
+                // Nominatim path: enforce 1 req/s throttle
+                const sinceLast = Date.now() - lastNominatimAt;
+                if (sinceLast < 1100) await new Promise(r => setTimeout(r, 1100 - sinceLast));
+                lastNominatimAt = Date.now();
+                geo = await geocodeViaNominatim(address);
+                if (geo.lat != null) source = 'nominatim';
+            }
+
+            if (geo.lat == null) {
+                console.warn(`⚠️ Geocode failed for ${row.id} (${address}): ${geo.error}`);
+                result[row.id] = { error: geo.error || 'geocode_failed' };
+                continue;
+            }
+
+            const { lat, lng } = geo;
+            const { error: updateErr } = await supabase
+                .from('listings')
+                .update({ latitude: lat, longitude: lng, geocoded_at: new Date().toISOString() })
+                .eq('id', row.id);
+
+            if (updateErr) {
+                console.error(`❌ Coord write failed for ${row.id}:`, updateErr.message);
+                result[row.id] = { lat, lng, cached: false, source, writeError: updateErr.message };
+            } else {
+                result[row.id] = { lat, lng, cached: false, source };
+                console.log(`✅ Geocoded + cached (${source}) ${row.id}: ${address} → (${lat}, ${lng})`);
+            }
+        }
+
+        res.json({ success: true, coords: result });
+
+    } catch (error) {
+        console.error('❌ /api/geocode/batch error:', error);
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// ========================================
 // REVERSE GEOCODING (OpenStreetMap Nominatim)
 // ========================================
 
@@ -4168,7 +4456,7 @@ app.post('/api/reverse-geocode', async (req, res) => {
 });
 
 // API: AI Negotiator chat with OpenAI integration
-app.post('/api/ai-negotiate', async (req, res) => {
+app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
     console.log('🤖 AI Negotiate endpoint called');
     console.log('📝 Request body keys:', Object.keys(req.body));
 
@@ -4339,12 +4627,86 @@ app.post('/api/ai-negotiate', async (req, res) => {
     }
 });
 
+// API: Landlord simulator — INTERNAL TESTING ONLY. Used by
+// scripts/negotiation_battle.js to drive the landlord side of an end-to-end
+// negotiation harness. Wraps OpenAI gpt-3.5-turbo with a landlord persona so
+// we can stress-test the AI Negotiator without a real human on the other end.
+// Not exposed in any UI; safe to remove if the testing harness is retired.
+app.post('/api/landlord-simulator', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
+            return res.status(503).json({ error: 'AI service not available' });
+        }
+        const { messageHistory = [], listing = {}, persona = 'realistic' } = req.body;
+        const listingTitle = sanitizeForPrompt(listing.title, 200) || 'the place';
+        const listingPrice = Number(listing.price) || 2000;
+        const listingCity = sanitizeForPrompt(listing.city, 100) || 'town';
+
+        const personaText = ({
+            firm:        'You are a no-nonsense landlord who rarely budges on price. Hold firm. Counter at most $50 below asking.',
+            flexible:    'You are a flexible landlord. You can come down 10-15% if the tenant seems solid.',
+            chatty:      'You are friendly and chatty. You answer property questions thoroughly. You can budge ~5-10% on rent.',
+            realistic:   'You are a realistic landlord. Sometimes hold firm, sometimes counter, accept solid offers at or near asking. Be human.'
+        })[persona] || 'You are a realistic landlord.';
+
+        const systemPrompt = `${personaText}
+
+YOU OWN: "${listingTitle}" in ${listingCity}, listed at $${listingPrice}/month.
+
+RULES:
+- Reply in 1-2 short sentences, like texting back.
+- No emojis. No formal letter language.
+- Don't give away the place for free — negotiate.
+- If the tenant proposes a meeting day, accept or counter naturally.
+- If they ask about the place, answer briefly (laundry/parking/pets — pick a realistic answer for this listing).
+- If they push hard on price, you can come down a bit OR hold firm.
+- When you're ready to close, use words like "deal", "sounds good", "let's meet [day]".
+- Do not break character. Do not mention being AI.`;
+
+        const messages = [
+            { role: 'system', content: systemPrompt },
+            ...(Array.isArray(messageHistory) ? messageHistory.slice(-10) : []).map(m => ({
+                // In the harness, the AI Negotiator's messages are the "tenant"
+                // (user role from landlord's POV), landlord's prior replies are
+                // "assistant" (landlord-sim's POV).
+                role: m.sender === 'landlord' ? 'assistant' : 'user',
+                content: sanitizeForPrompt(String(m.content || ''), 800)
+            }))
+        ];
+
+        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+                'Content-Type': 'application/json',
+                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+            },
+            body: JSON.stringify({
+                model: 'gpt-3.5-turbo',
+                messages,
+                max_tokens: 90,
+                temperature: 0.85
+            })
+        });
+        if (!openaiResponse.ok) {
+            const errorData = await openaiResponse.json().catch(() => ({}));
+            return res.status(502).json({ error: 'landlord-simulator upstream error', details: errorData });
+        }
+        const data = await openaiResponse.json();
+        const reply = String(data.choices?.[0]?.message?.content || '').trim();
+        res.json({ reply, tokensUsed: data.usage?.total_tokens || 0 });
+    } catch (error) {
+        console.error('Error in /api/landlord-simulator:', error.message);
+        res.status(500).json({ error: 'landlord-simulator failed', details: error.message });
+    }
+});
+
 // API: General AI Chat endpoint for conversational rental assistant
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', openAiRateLimitMiddleware, async (req, res) => {
     console.log('💬 AI Chat endpoint called');
 
     try {
-        const { message, conversationHistory, userEmail } = req.body;
+        const { message, conversationHistory, userEmail, tenantGoals } = req.body;
 
         if (!message) {
             return res.status(400).json({ error: 'Message is required' });
@@ -4362,8 +4724,36 @@ app.post('/api/chat', async (req, res) => {
             });
         }
 
+        // If the caller forwarded locked-in negotiation goals, prepend them to
+        // the system prompt so the AI can answer follow-up questions about
+        // the user's settings. The deterministic "list back" is handled
+        // client-side; this block covers natural-language follow-ups (e.g.
+        // "do I have pets listed?", "what's my tone set to?").
+        let goalsBlock = '';
+        if (tenantGoals && typeof tenantGoals === 'object' && Object.keys(tenantGoals).length > 0 && typeof summarizeGoals === 'function') {
+            const summary = summarizeGoals(tenantGoals);
+            if (summary) {
+                const rules = [];
+                if (tenantGoals.monthly_budget) {
+                    rules.push(`DO NOT ask the user for their monthly budget — they already set $${tenantGoals.monthly_budget}/mo above. Use that number. If you must confirm, frame it as "so you're looking around $${tenantGoals.monthly_budget}/month, right?" — never "what's your monthly budget?".`);
+                }
+                if (Array.isArray(tenantGoals.must_haves) && tenantGoals.must_haves.length) {
+                    rules.push(`DO NOT ask the user about preferences or must-haves — they already listed: ${tenantGoals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}. Acknowledge them ("I'll prioritize listings with X and Y") instead of re-asking.`);
+                }
+                if (tenantGoals.pets && tenantGoals.pets !== 'none') {
+                    rules.push(`DO NOT ask if the user has pets — they told you (${tenantGoals.pets}). Acknowledge it ("I'll focus on pet-friendly places") instead of re-asking.`);
+                }
+                if (tenantGoals.employment) {
+                    rules.push(`DO NOT ask about employment status — they're ${tenantGoals.employment.replace(/_/g, ' ')}.`);
+                }
+                const rulesBlock = rules.length ? '\n\n' + rules.map(r => '- ' + r).join('\n') : '';
+                goalsBlock = `\n\nUSER'S LOCKED-IN NEGOTIATION GOALS (reference these in any answer about preferences, parameters, criteria, or "what's set"):\n${summary}\n\nIMPORTANT: If the user asks "what are my goals / parameters / preferences / settings", list these back clearly. If they ask about specific fields (e.g. "do I have pets?"), answer from this block.${rulesBlock}\n`;
+                console.log('🎯 /api/chat: forwarding tenant goals to system prompt.');
+            }
+        }
+
         // Build the system prompt for conversational rental assistant
-        const systemPrompt = `You are a friendly and helpful rental assistant for RoomFinderAI. Your name is "Negotiator" and you help users find rental properties and negotiate better prices.
+        const systemPrompt = `You are a friendly and helpful rental assistant for RoomFinderAI. Your name is "Negotiator" and you help users find rental properties and negotiate better prices.${goalsBlock}
 
 YOUR CAPABILITIES:
 - Help users search for rental properties by understanding their needs
@@ -4452,6 +4842,16 @@ Examples:
             }
         }
 
+        // Fall back to locked-in goals when the LLM didn't extract a value
+        // from the user's natural-language message. Prevents the chat from
+        // looping "what's your budget?" when the user has it set in the panel.
+        if (tenantGoals && typeof tenantGoals === 'object') {
+            if (!extractedCriteria.price && tenantGoals.monthly_budget) {
+                extractedCriteria.price = Number(tenantGoals.monthly_budget);
+                console.log('🎯 /api/chat: filled criteria.price from goals.monthly_budget:', extractedCriteria.price);
+            }
+        }
+
         // Log activity
         if (userEmail && supabase) {
             try {
@@ -4484,7 +4884,7 @@ Examples:
 });
 
 // API: Test endpoint to verify deployment
-app.get('/api/test-negotiate', (req, res) => {
+app.get('/api/test-negotiate', blockInProduction, (req, res) => {
     console.log('🧪 Test negotiate endpoint called - server is running updated code');
     res.json({ 
         message: 'Test endpoint working',
@@ -4594,9 +4994,27 @@ function buildNegotiationSystemPrompt(phase = 'INTRODUCTION', context = {}) {
     const propertyTitle = context.propertyTitle || 'your place';
     const propertyFeature = context.propertyFeature || 'the layout';
     const city = context.city || 'the area';
-    const userBudget = context.userBudget || 1500;
-    const listingPrice = context.listingPrice || userBudget;
+    const goals = context.tenantGoals || {};
+    // Treat the goals panel's target_reduction as authoritative for the price
+    // floor. If the user didn't set one, fall back to the legacy userBudget.
+    const listingPrice = context.listingPrice || context.userBudget || 1500;
+    const userBudget = goals.target_reduction
+        ? Math.max(0, listingPrice - Number(goals.target_reduction))
+        : (context.userBudget || listingPrice);
     const lastLandlordMessage = context.lastLandlordMessage || '';
+
+    // Pre-render hints for the phase prompts below.
+    const availableDaysHint = Array.isArray(goals.available_days) && goals.available_days.length
+        ? goals.available_days.join('/')
+        : '';
+    const leaseHint = goals.lease_length
+        ? (goals.lease_length === 'm2m' ? 'month-to-month' : goals.lease_length.replace('mo', '-month'))
+        : '';
+    const concessionAsks = [
+        goals.ask_utilities_included && 'utilities included',
+        goals.ask_lower_deposit && 'lower deposit',
+        goals.ask_first_month_free && 'first month free or move-in incentive'
+    ].filter(Boolean).join(', ');
 
     const basePersonality = `You are a REAL PERSON - a working professional looking for a rental. You are NOT an AI assistant. You are a genuine tenant reaching out to a landlord.
 
@@ -4653,31 +5071,29 @@ CURRENT PHASE: BUILDING CONNECTION (Rapport)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
-YOUR GOAL: Build rapport by asking about the property and showing genuine interest. Get to know the place better.
+YOUR GOAL: Keep things moving toward renting the place. Be friendly but efficient — briefly acknowledge their reply and ask ONE practical question that actually matters for renting.
 
 WHAT TO DO:
-- Respond naturally to what they said (acknowledge their response)
-- Ask 1-2 genuine questions about the property or neighborhood
-- Share something brief about why you're looking (if natural)
-- Keep it conversational, like chatting with someone
+- Briefly acknowledge what they said (one short clause, not gushing)
+- Ask ONE practical question that moves the rental forward
+- Sound natural and human, just direct
 
-GOOD QUESTIONS TO ASK (pick 1-2 naturally):
-- "What's the neighborhood like?"
-- "Is it pretty quiet generally?"
-- "How's parking around there?"
-- "Are there good coffee shops or restaurants nearby?"
-- "How long have you had the place?"
-- "Any issues I should know about?"
-- "Does it get good natural light?"
-- "Is there laundry in the building?"
+GOOD QUESTIONS TO ASK (pick ONE — practical, not lifestyle):
+- "Is it still available for my move-in timeframe?"
+- "What lease length are you looking for?"
+- "Are utilities or parking included in the rent?"
+- "Is there in-unit laundry?"
+- "How soon are you hoping to have someone move in?"
+- "What do you need from a tenant to move forward?"
 
 WHAT NOT TO DO:
+- HARDEST RULE: If the landlord asks "when would you like to view" or proposes a meeting time/day, DO NOT agree, do NOT say "Saturday works" / "see you Monday" / "yes that works" — that's premature. Instead, deflect to a question about the property OR mention that you want to nail down a few things first. The viewing comes AFTER price has been touched.
 - Don't mention price or budget yet
 - Don't list all your qualifications
-- Don't ask too many questions at once
-- Don't be robotic
+- Don't ask lifestyle / small-talk questions (natural light, coffee shops, "how's the neighborhood", "how long have you had it"). Landlords don't care and it stalls the deal — ask only what's practical for renting.
+- Ask only ONE question. Don't be robotic.
 
-Generate a natural rapport-building response. Still NO pricing discussion.`,
+Generate a natural, straightforward response with ONE practical question. Still NO pricing yet. NO meeting-time agreement.`,
 
         QUALIFICATION: `${basePersonality}
 
@@ -4685,7 +5101,7 @@ CURRENT PHASE: SHARING BACKGROUND (Qualification)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
-YOUR GOAL: Naturally share why you'd be a great tenant - but don't sound like you're reading a resume.
+YOUR GOAL: In ONE quick line, reassure them you're a reliable tenant and keep moving toward securing the place. Relevant reassurance only — not lifestyle trivia or filler.
 
 WHAT TO DO:
 - Respond to what they said naturally
@@ -4694,7 +5110,7 @@ WHAT TO DO:
 - Reference good rental history if it fits
 - Keep it humble and genuine, not salesy
 
-THINGS TO MENTION NATURALLY (don't list them all):
+THINGS TO MENTION NATURALLY (pick AT MOST ONE — don't stack):
 - "I work in [industry/field], pretty stable job"
 - "Been at my current place for X years, my landlord can vouch for me"
 - "I'm pretty low-maintenance honestly"
@@ -4703,33 +5119,40 @@ THINGS TO MENTION NATURALLY (don't list them all):
 - "I'm quiet, not into parties"
 
 WHAT NOT TO DO:
-- Don't make it sound like a job interview
-- Don't list everything about yourself
+- HARD RULE: Stick to ONE topic per message. Do NOT combine a credential pitch with a scheduling ask, a question, or anything else. Pick one and stop.
+- DO NOT ask about a viewing, meeting, or "when can I check out the place". That's a later phase — bringing it up here is premature and skips rent negotiation.
+- DO NOT list more than two qualifications in a single reply. One is usually better.
+- Don't make it sound like a job interview or recite a resume
 - Don't be boastful
 - Still no direct price negotiation yet
 
-Generate a natural message that shares your background. Can acknowledge budget range if they ask, but don't negotiate yet.`,
+Generate a SHORT, straightforward message: ONE relevant reliability point (steady income / good references / reliable tenant) framed as wanting to move forward — e.g. "I'm a working professional with steady income and solid references, happy to share whatever you need to move forward." Skip lifestyle chit-chat and filler. At most 2 sentences. No meeting ask, no price talk yet.`,
 
         AVAILABILITY_DISCUSSION: `${basePersonality}
 
 CURRENT PHASE: LOGISTICS (Availability)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
+${goals.movein_date ? `YOUR DESIRED MOVE-IN: ${goals.movein_date}${goals.movein_flexibility ? ` (${goals.movein_flexibility})` : ''}` : ''}
+${leaseHint ? `YOUR LEASE PREFERENCE: ${leaseHint}` : ''}
+${availableDaysHint ? `YOU CAN ONLY MEET ON: ${availableDaysHint}` : ''}
+${(!context.currentOffer && !context.landlordCounterOffer) ? `PRICE HAS NOT BEEN DISCUSSED YET. The landlord and you have not exchanged any $ amounts. You MUST raise rent before agreeing to a meeting time.` : ''}
 
 YOUR GOAL: Discuss practical stuff - when you can move in, lease terms, maybe schedule a viewing.
 
 WHAT TO DO:
+${(!context.currentOffer && !context.landlordCounterOffer) ? `- HARDEST RULE (highest priority): Price has not been touched. Do NOT agree to a meeting day yet — even if it's in your available days. Counter with: "Monday could work — quick first though, is the $${listingPrice} firm or any wiggle room? Want to make sure we're aligned before locking in a time."` : ''}
+${availableDaysHint ? `- HARD RULE: If the landlord proposes a meeting day NOT in [${availableDaysHint}], politely counter with a day that IS in that list. NEVER say "works for me" or "sounds good" to any other day.
+- If suggesting a meeting yourself, name a day from [${availableDaysHint}] — never any other day.` : '- Maybe suggest meeting to see the place'}
 - Respond naturally to their message
 - Mention when you'd want to move in
-- Ask about lease length if relevant
-- Maybe suggest meeting to see the place
-- Show flexibility where you can
+- Ask about lease length if relevant${leaseHint ? ` (you'd prefer ${leaseHint})` : ''}
+- Show flexibility where you can${availableDaysHint ? ' EXCEPT on which day you meet' : ''}
 
 EXAMPLE THINGS TO SAY:
-- "I'm looking to move by [timeframe], would that work?"
-- "Is the 12-month lease firm or would you consider longer?"
-- "Would love to see the place in person if you're free sometime"
-- "I'm pretty flexible on the exact move-in date"
+- "I'm looking to move by ${goals.movein_date || '[timeframe]'}, would that work?"
+- ${leaseHint ? `"I was hoping for a ${leaseHint} lease - is that something you'd consider?"` : '"Is the 12-month lease firm or would you consider longer?"'}
+- ${availableDaysHint ? `"Would love to see the place — could we do ${availableDaysHint.split('/')[0]}?"` : '"Would love to see the place in person if you\'re free sometime"'}
 
 This is the bridge phase - if it feels natural, you can start transitioning to price in your next message.
 
@@ -4743,8 +5166,10 @@ LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
 YOUR GOAL: Bring up the price topic naturally - not as a demand, but as "figuring out if this works for both of us."
 
-YOUR BUDGET: Around $${userBudget}/month
+YOUR TARGET RENT: Around $${userBudget}/month${goals.target_reduction ? ` (that's $${goals.target_reduction} below the asking $${listingPrice})` : ''}
 LISTING PRICE: $${listingPrice}/month
+${concessionAsks ? `EXTRAS TO ASK FOR (alongside lower rent, where natural): ${concessionAsks}` : ''}
+${leaseHint ? `LEVERAGE: offer a ${leaseHint} commitment if it helps swing the price.` : ''}
 
 WHAT TO DO:
 - Respond to what they said
@@ -4773,33 +5198,53 @@ CURRENT PHASE: NEGOTIATING (Active)
 
 LANDLORD'S LAST MESSAGE: "${lastLandlordMessage}"
 
-YOUR BUDGET: Around $${userBudget}/month
+YOUR TARGET RENT: ~$${userBudget}/month${goals.target_reduction ? ` (target reduction: $${goals.target_reduction} off the asking $${listingPrice})` : ''}
 LISTING PRICE: $${listingPrice}/month
 ${context.currentOffer ? `YOUR LAST OFFER: $${context.currentOffer}/month` : ''}
 ${context.landlordCounterOffer ? `THEIR COUNTER: $${context.landlordCounterOffer}/month` : ''}
+${concessionAsks ? `VALUE-ADDS YOU CAN TRADE FOR PRICE: ${concessionAsks}` : ''}
+${leaseHint ? `LEVERAGE YOU CAN OFFER: ${leaseHint} commitment.` : ''}
 
 YOUR GOAL: Work toward a price that works for both of you. You can negotiate now, but still sound human.
+
+${context.landlordCounterOffer && context.landlordCounterOffer > userBudget + 150 ? `HARDEST RULE (highest priority — this is the biggest leak we see):
+The landlord just countered at $${context.landlordCounterOffer} but your target is ~$${userBudget}. You MUST NOT accept this counter. Make a counter of your own — propose somewhere between your last offer ($${context.currentOffer || userBudget}) and their counter, but NOT just rubber-stamp their number. Example: "I hear you on $${context.landlordCounterOffer}, but $${Math.round((userBudget + context.landlordCounterOffer) / 2)} is more in my range — could we land there?" Do not say "yes that works" / "deal" / "sounds good" to their counter while it's still above your target.` : ''}
+
+YOUR #1 JOB IS TO SECURE THIS APARTMENT — NOT to win the haggle. A tenant who walks away has nowhere to live; that is the WORST outcome, far worse than paying a bit more than hoped.
+
+${goals.assertiveness === 'low'
+  ? 'STANCE: relaxed — you are fine paying the asking price. Make at most ONE light ask for a small break, then ACCEPT and close.'
+  : goals.assertiveness === 'high'
+  ? 'STANCE: firm — push for your target with up to TWO counters or a value-trade. But if the landlord holds firm, you STILL accept their price and close. Never lose the place over money.'
+  : 'STANCE: balanced — try about TWO counters or one value-trade, then accept their price and close.'}
+
+CONVERGENCE ASSIST: Once you have made ~2 counter-offers (or the landlord has said no / "firm" twice), STOP haggling and CLOSE THE DEAL:
+- You may try at most ONE value-trade (longer lease / quicker move-in / larger deposit) for a small reduction.
+- If they still won't move, ACCEPT their number and close: "Okay, $X works — I'd love to take it. When can I come see it and sign?"
+- NEVER walk away. NEVER say "I'll think about it", "I'll let you know", "I'll get back to you", "appreciate the time though", or anything that leaves without a deal. Securing the apartment beats saving a little rent.
+Don't loop the same "could we do $Y" — two counters max, then accept + close.
 
 NEGOTIATION APPROACH:
 - Acknowledge their position genuinely
 - Explain your constraints honestly (not as tactics)
-- Make reasonable counter-offers
-- Be willing to meet in the middle
+- Make reasonable counter-offers — propose a SPECIFIC NUMBER, not just "could you come down"
+- Be willing to meet in the middle, but make THEM come down too
 - Express genuine interest in making this work
 
 GOOD NEGOTIATION PHRASES:
-- "I hear you. Let me see if I can stretch to $X..."
-- "That's a bit above what I was hoping, but I really want this place. Could you do $X?"
-- "I totally understand. What if we met somewhere in the middle?"
+- "I hear you. Could you do $X?" (where X is between your offer and their counter)
+- "That's still a bit above what I was hoping. What about $X — I can commit to a longer lease."
+- "I totally understand. What if we met in the middle at $X?"
 - "Would $X work for you? I can commit to [value-add: longer lease, immediate move-in, etc.]"
 
 WHAT NOT TO DO:
+- DO NOT accept the landlord's counter on the first try if it's significantly above your target. Always counter back at least once with your own number.
 - Don't say "My final offer is..." unless you mean it
 - Don't be aggressive or confrontational
 - Don't use formal negotiation language
-- Don't threaten to walk away (unless genuine)
+- NEVER walk away, defer, or say "I'll think about it" / "I'll let you know". Your job is to secure the apartment — if the landlord won't budge, accept their price and close.
 
-Generate a natural negotiation response. Sound like a real person trying to make a deal work.`,
+Generate a natural negotiation response with a SPECIFIC counter-offer number when there's still daylight between you and the landlord. Sound like a real person trying to make a deal work.`,
 
         COUNTER_OFFER: `${basePersonality}
 
@@ -4869,6 +5314,1059 @@ app.post('/api/ai-negotiator', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/ai-negotiator:', error.message);
         res.status(500).json({ error: 'Failed to process AI request' });
+    }
+});
+
+// ========================================
+// SECURE AI NEGOTIATION PROXY ENDPOINTS
+// ========================================
+// These endpoints proxy OpenAI calls so API keys never touch the frontend
+
+// Helper: Sanitize user-controlled text before injecting into prompts
+function sanitizeForPrompt(text, maxLength = 500) {
+    if (!text) return '';
+    return String(text)
+        .replace(/["""]/g, "'")
+        .replace(/\n/g, ' ')
+        .replace(/\r/g, '')
+        .substring(0, maxLength)
+        .trim();
+}
+
+// Helper: Make OpenAI API call (centralized)
+async function callOpenAI({ messages, model = 'gpt-4', maxTokens = 300, temperature = 0.7 }) {
+    if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
+        throw new Error('OpenAI not configured');
+    }
+
+    const useModel = model === 'gpt-4' ? (config.OPENAI_MODEL || 'gpt-4') : 'gpt-3.5-turbo';
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+            ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
+        },
+        body: JSON.stringify({
+            model: useModel,
+            messages,
+            max_tokens: maxTokens,
+            temperature,
+            presence_penalty: 0.1,
+            frequency_penalty: 0.1
+        })
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`OpenAI API error: ${response.status} - ${errorData.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return {
+        content: data.choices[0].message.content.trim(),
+        tokensUsed: data.usage?.total_tokens || 0
+    };
+}
+
+// ========================================
+// OPENAI RATE LIMITING SYSTEM
+// ========================================
+const openAiRateLimitStore = new Map();
+const OPENAI_HOURLY_LIMIT = 100;
+const OPENAI_DAILY_LIMIT = 500;
+
+function getHourKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}-${now.getHours()}`;
+}
+
+function getDayKey() {
+    const now = new Date();
+    return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
+}
+
+function openAiRateLimitMiddleware(req, res, next) {
+    const userId = getUserId(req);
+    const hourKey = `openai-hour-${userId}-${getHourKey()}`;
+    const dayKey = `openai-day-${userId}-${getDayKey()}`;
+
+    const hourlyUsage = openAiRateLimitStore.get(hourKey) || 0;
+    const dailyUsage = openAiRateLimitStore.get(dayKey) || 0;
+
+    if (hourlyUsage >= OPENAI_HOURLY_LIMIT) {
+        return res.status(429).json({
+            error: 'Rate limit exceeded',
+            message: `Maximum ${OPENAI_HOURLY_LIMIT} AI requests per hour. Please wait before trying again.`,
+            retryAfter: 'next hour'
+        });
+    }
+
+    if (dailyUsage >= OPENAI_DAILY_LIMIT) {
+        return res.status(429).json({
+            error: 'Daily rate limit exceeded',
+            message: `Maximum ${OPENAI_DAILY_LIMIT} AI requests per day. Limit resets at midnight.`,
+            retryAfter: 'tomorrow'
+        });
+    }
+
+    openAiRateLimitStore.set(hourKey, hourlyUsage + 1);
+    openAiRateLimitStore.set(dayKey, dailyUsage + 1);
+
+    next();
+}
+
+// ========================================
+// AUTHENTICATION MIDDLEWARE
+// ========================================
+async function requireAuth(req, res, next) {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Authentication required' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    if (!token || token === 'null' || token === 'undefined') {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+        const { data: { user }, error } = await supabase.auth.getUser(token);
+        if (error || !user) {
+            return res.status(401).json({ error: 'Invalid or expired session' });
+        }
+        req.user = user;
+        req.userEmail = user.email;
+        next();
+    } catch (error) {
+        console.error('Auth middleware error:', error.message);
+        return res.status(401).json({ error: 'Authentication failed' });
+    }
+}
+
+// POST /api/negotiate/phase-message - Generate phase conversation message (GPT-4)
+
+// Format tenant-side negotiation goals (set via the Goals panel on
+// /ai-negotiator) into a compact prompt block. Returns an empty string when
+// no goals are set so the prompt stays clean for users who skip the panel.
+function summarizeGoals(goals) {
+    if (!goals || typeof goals !== 'object') return '';
+    const lines = [];
+
+    const days = Array.isArray(goals.available_days) ? goals.available_days : [];
+    const times = Array.isArray(goals.available_time) ? goals.available_time : [];
+    const fmts = Array.isArray(goals.meeting_format) ? goals.meeting_format : [];
+    if (days.length || times.length || fmts.length) {
+        const parts = [];
+        if (days.length) parts.push(`only ${days.join('/')}`);
+        if (times.length) parts.push(times.join('/'));
+        if (fmts.length) parts.push(fmts.map(f => f.replace('_', '-')).join(' or ') + ' ok');
+        lines.push(`- meet on: ${parts.join('; ')}`);
+    }
+
+    const moveinBits = [];
+    if (goals.movein_date) moveinBits.push(`target ${goals.movein_date}`);
+    const FLEX_LABEL = { exact: 'exact date', '1week': '± 1 week', '2weeks': '± 2 weeks', flexible: 'flexible' };
+    if (goals.movein_flexibility) moveinBits.push(FLEX_LABEL[goals.movein_flexibility] || goals.movein_flexibility);
+    const LEASE_LABEL = { '6mo': '6-month', '12mo': '12-month', m2m: 'month-to-month', flexible: 'flexible' };
+    if (goals.lease_length) moveinBits.push(`${LEASE_LABEL[goals.lease_length] || goals.lease_length} lease`);
+    if (moveinBits.length) lines.push(`- move-in: ${moveinBits.join('; ')}`);
+
+    const priceBits = [];
+    if (goals.monthly_budget) priceBits.push(`max budget $${goals.monthly_budget}/month`);
+    if (goals.target_reduction) priceBits.push(`$${goals.target_reduction}/month below asking`);
+    if (goals.ask_utilities_included) priceBits.push('ask for utilities included');
+    if (goals.ask_lower_deposit) priceBits.push('ask for lower deposit');
+    if (goals.ask_first_month_free) priceBits.push('ask for first month free / move-in incentive');
+    if (priceBits.length) lines.push(`- price goal: ${priceBits.join('; ')}`);
+
+    const aboutBits = [];
+    if (goals.employment) aboutBits.push(goals.employment.replace('_', ' '));
+    if (goals.income_confidence) aboutBits.push(`${goals.income_confidence} income`);
+    if (goals.pets) aboutBits.push(goals.pets === 'none' ? 'no pets' : `has ${goals.pets}`);
+    if (goals.non_smoker) aboutBits.push('non-smoker');
+    if (goals.occupants) aboutBits.push(`${goals.occupants} occupant${Number(goals.occupants) > 1 ? 's' : ''}`);
+    if (aboutBits.length) lines.push(`- about tenant: ${aboutBits.join(', ')}`);
+
+    if (Array.isArray(goals.must_haves) && goals.must_haves.length) {
+        lines.push(`- must-have: ${goals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}`);
+    }
+
+    const styleBits = [];
+    if (goals.tone) styleBits.push(`${goals.tone} tone`);
+    if (goals.assertiveness) styleBits.push(`${goals.assertiveness} assertiveness`);
+    if (styleBits.length) lines.push(`- style: ${styleBits.join(', ')}`);
+
+    return lines.length ? lines.join('\n') : '';
+}
+
+// Format the structured facts memory into a 1-2 line summary the prompt can
+// include cheaply (vs sending the entire raw chat history every turn).
+function summarizeFacts(facts) {
+    if (!facts) return '(none yet)';
+    const parts = [];
+    if (facts.listing_held_months != null) parts.push(`landlord has had place for ${facts.listing_held_months} months`);
+    if (facts.has_laundry === true) parts.push('laundry: yes');
+    else if (facts.has_laundry === false) parts.push('laundry: no');
+    if (facts.has_parking === true) parts.push('parking: yes');
+    else if (facts.has_parking === false) parts.push('parking: no');
+    if (facts.pets_allowed === true) parts.push('pets: allowed');
+    else if (facts.pets_allowed === false) parts.push('pets: NOT allowed');
+    if (facts.proposed_meet_date) parts.push(`landlord proposed meeting: ${facts.proposed_meet_date}`);
+    if (facts.deposit_amount) parts.push(`deposit: $${facts.deposit_amount}`);
+    if (facts.landlord_offered_closing) parts.push('landlord wants to CLOSE');
+    if (facts.landlord_last_named_price) parts.push(`landlord last named: $${facts.landlord_last_named_price}`);
+    if (facts.agreed_price) parts.push(`AGREED PRICE: $${facts.agreed_price}`);
+    return parts.length ? parts.join('; ') : '(none yet)';
+}
+
+// Phase-locked / tone-locked system prompt. CLOSING and FRUSTRATED override
+// the regular per-phase prompt entirely; other phases use the existing prompt
+// builder but prepend the structured-memory summary. This is the prompt
+// engineering that prevents the AI from re-asking already-answered questions
+// and from cheerfully spamming a hostile landlord.
+function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alreadySharedCredentials, tenantGoals, context }) {
+    const factsSummary = summarizeFacts(facts);
+    const askedSummary = Array.isArray(alreadyAsked) && alreadyAsked.length
+        ? alreadyAsked.join(', ')
+        : 'nothing yet';
+    const lastLandlordMessage = context.lastLandlordMessage || '';
+    const goalsSummary = summarizeGoals(tenantGoals);
+
+    // Hard rules synthesized from tenant goals — surfaced even in CLOSING so
+    // the AI doesn't accidentally agree to a meeting day the tenant flagged
+    // unavailable, or to a price above the tenant's stated target.
+    const goalRules = [];
+    if (tenantGoals && Array.isArray(tenantGoals.available_days) && tenantGoals.available_days.length) {
+        goalRules.push(`- If the landlord proposes a meeting day NOT in [${tenantGoals.available_days.join(', ')}], politely counter-propose one that is — do not agree.`);
+    }
+    if (tenantGoals && tenantGoals.target_reduction) {
+        // Coerce defensively — listing.price can be "$1,500", 1500, or null.
+        // Number("$1,500") is NaN and would render "~$NaN/month" in the prompt.
+        const lp = Number(String(context?.listingPrice ?? '').replace(/[^\d.]/g, ''));
+        const tr = Number(tenantGoals.target_reduction);
+        if (Number.isFinite(lp) && lp > 0 && Number.isFinite(tr) && tr > 0) {
+            const targetRent = Math.max(0, lp - tr);
+            goalRules.push(`- Tenant's target rent is ~$${targetRent}/month (~$${tr} below the asking $${lp}). Push back if the landlord names a number higher than that without value in return.`);
+        }
+    }
+    const goalRulesBlock = goalRules.length ? `\n\nGOAL-DRIVEN RULES:\n${goalRules.join('\n')}\n` : '';
+    const goalsBlock = goalsSummary ? `\n\nTENANT GOALS (your client set these — honor them):\n${goalsSummary}\n` : '';
+
+    // Day-availability rule — shared across ALL closing-phase branches (main
+    // accept, price-probe override, anchor override). Previous version only
+    // included this in the main accept branch, so when the price-probe
+    // override re-routed the prompt, tenants accepted days outside their
+    // available_days. Refactor: compute once here.
+    const _availDays = Array.isArray(tenantGoals?.available_days) ? tenantGoals.available_days : [];
+    const _availDaysStr = _availDays.join(', ');
+    const sharedDayRule = _availDays.length
+        ? `\n- AVAILABILITY: You can ONLY meet on [${_availDaysStr}]. If the landlord proposes any other day, politely counter-propose ${_availDays[0]}. NEVER say "works for me" / "sounds good" / "see you {day}" to a day outside [${_availDaysStr}].`
+        : '';
+
+    // Diagnostic log: if a user reports "the goals aren't working", a single
+    // Railway log line confirms whether the prompt actually saw them this turn.
+    if (goalsSummary) {
+        console.log('🎯 Negotiation goals applied:', { phase, tone, goals: goalsSummary.replace(/\n/g, ' | '), rules: goalRules.length });
+    }
+
+    if (phase === 'CLOSING') {
+        // SAFETY GATE: phase locked to CLOSING but no price was ever
+        // discussed (landlord didn't name a number, AI didn't offer one).
+        // This happens when the landlord eagerly proposes "let's meet
+        // Saturday" off the bat and the closing-signals regex jumps phase
+        // before any rent talk. Without this gate the AI rubber-stamps
+        // the meeting and burns the entire negotiation lever. Push back
+        // to PRICE_INTRODUCTION semantics instead.
+        const priceTouched = !!(facts?.landlord_last_named_price)
+            || !!(context && (context.currentOffer || context.landlordCounterOffer));
+        if (!priceTouched) {
+            console.log('🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.');
+            const askPrice = (context && context.listingPrice) ? `the $${context.listingPrice}` : 'the rent';
+            // If we've already probed once before (look at messageHistory for
+            // earlier "is X firm" patterns from us) and got no $ in response,
+            // STOP probing and ANCHOR with a specific number. The landlord may
+            // be deliberately vague — anchoring is how you break the deadlock.
+            const tenantTargetRent = (context && context.userBudget) ? Number(context.userBudget) : 0;
+            const probedBefore = Array.isArray(context && context.messageHistory)
+                ? false  // we don't get messageHistory passed here; rely on facts.alreadyAsked instead
+                : false;
+            // Heuristic: if any previous fact suggests we've been around this
+            // block once already (no landlord price still, multiple closing-attempts),
+            // anchor at target_rent.
+            const shouldAnchor = tenantTargetRent > 0 && context && (
+                (Array.isArray(context.tenantOffersMade) && context.tenantOffersMade.length > 0) ||
+                (typeof context.priceProbesSent === 'number' && context.priceProbesSent >= 1)
+            );
+
+            if (shouldAnchor) {
+                return `The landlord keeps dodging a concrete rent number. Stop asking — ANCHOR with your own number.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}${goalsBlock}
+
+HARD RULES:
+- Reply in under 35 words.
+- Acknowledge their flexibility.
+- Then state YOUR target as a concrete number: $${tenantTargetRent}/month. Frame it as what you can comfortably do.
+- Ask if that works for them.
+- DO NOT keep asking "is X firm" — you've done that already, no answer.${sharedDayRule}
+- Example: "Appreciate the flexibility — to be straight, I was hoping to land at $${tenantTargetRent}/month. Is that workable on your end?"
+
+Write the anchor reply now.`;
+            }
+
+            return `The landlord is trying to wrap things up, but you haven't discussed rent yet. Push back politely with a price probe FIRST.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}${goalsBlock}
+
+HARD RULES:
+- Reply in under 30 words.
+- Acknowledge their meeting suggestion (e.g. "That could work…").
+- Then ask ONE direct price question — is ${askPrice} firm? Is there any wiggle room?
+- DO NOT confirm a meeting day yet — make it conditional on the price conversation.${sharedDayRule}
+- No emojis. No "Hey there!". No filler.
+- Example: "${_availDays.length ? _availDays[0].charAt(0).toUpperCase() + _availDays[0].slice(1) : 'Sunday'} could work, but quick first — is ${askPrice} firm or any room there? Want to be aligned before locking a time."
+
+Write the price-probe reply now.`;
+        }
+
+        // If the deal is already verbally accepted (numeric convergence OR
+        // both sides used closing words), shift the prompt from "agree" to
+        // "confirm next steps" — this is the bug fix for the AI asking
+        // "what's the neighborhood like?" after both sides said "deal".
+        const agreedPrice = facts?.agreed_price;
+        const dealClosedHint = agreedPrice
+            ? `\nDEAL ALREADY VERBALLY ACCEPTED at $${agreedPrice}/month. Do NOT renegotiate the price. Just confirm logistics: meeting time, deposit, or "see you ${facts.proposed_meet_date || 'then'}".`
+            : '';
+
+        // Tenant's available days override the default "agree to any proposed day"
+        // rule. Without this, the CLOSING prompt's later rules drown out the
+        // earlier goal-driven rule and the AI agrees to days the tenant
+        // explicitly flagged unavailable.
+        const availDays = Array.isArray(tenantGoals?.available_days) ? tenantGoals.available_days : [];
+        const availDaysStr = availDays.join(', ');
+        const dayRule = availDays.length
+            ? `- If they propose a meeting day:
+  * If that day IS in [${availDaysStr}], reply with a confirmation ("Yes, that works. See you {day}.").
+  * If that day is NOT in [${availDaysStr}], politely counter-propose ONE day from that list ("Could we do ${availDays[0]} instead?"). Never agree to a day outside [${availDaysStr}].
+- If they ask yes/no: answer YES, UNLESS it's asking to meet on a day not in [${availDaysStr}] — in that case counter-propose ${availDays[0]}.`
+            : `- If they propose a time/place/day: reply "Yes, that works. See you ${facts?.proposed_meet_date || 'then'}." or equivalent confirmation.
+- If they ask yes/no: answer YES.`;
+
+        return `You are closing a rental deal. The landlord is ready to sign and JUST signaled it.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}${dealClosedHint}${goalsBlock}
+
+HARD RULES — VIOLATION OF ANY RULE = IMMEDIATE REJECTION:
+- Reply in 12 words or fewer.
+- DO NOT ask any questions. Zero. None.
+${dayRule}
+- No emojis. No "Hey there!". No filler. Sound calm and direct.
+- DO NOT pitch credentials. DO NOT ask about laundry/parking/duration/neighborhood — already known or no longer relevant.
+- DO NOT reintroduce discovery topics like the neighborhood, the apartment layout, or anything unrelated to closing.
+- The deal terms are SETTLED. Do NOT bring up utilities, deposit, or any NEW request, and do NOT propose a different rent number. If you already asked about utilities and they said no, it is OFF the table.
+${agreedPrice ? `- Price ($${agreedPrice}) is FINAL. Do not negotiate it again or restate it as an offer.` : ''}
+
+Write the confirmation message now.`;
+    }
+
+    if (tone === 'FRUSTRATED') {
+        return `The landlord is hostile or annoyed. Repair the conversation and close immediately.
+
+LANDLORD JUST SAID: "${lastLandlordMessage}"
+KNOWN FACTS: ${factsSummary}${goalsBlock}${goalRulesBlock}
+
+HARD RULES:
+- Open with a 3-word apology max ("My bad — sorry.").
+- Then move straight to closing intent ("I'm in. When can we meet?").
+- 15 words TOTAL maximum.
+- No emojis. No exclamation points. No "Hey there!". No filler.
+- DO NOT pitch credentials again. DO NOT ask discovery questions.
+- DO NOT mention any rent number, utilities, or a new demand. DO NOT counter-offer or re-open price. Just de-escalate and signal you're still interested.
+
+Write the damage-control reply now.`;
+    }
+
+    // Default: reuse the existing per-phase prompt builder but prepend our
+    // structured-memory summary so the AI literally cannot ask about a fact
+    // we already know or re-ask a question we've already asked.
+    const memoryHeader = `\n\nSTRUCTURED MEMORY (use this, DO NOT re-ask):\n- KNOWN FACTS: ${factsSummary}\n- ALREADY ASKED: ${askedSummary}\n- CREDENTIALS SHARED: ${alreadySharedCredentials ? 'YES — DO NOT repeat them' : 'no — okay to mention once if natural'}${goalsBlock}${goalRulesBlock}\n\nHARD RULES:\n- First sentence: acknowledge the landlord's last reply specifically.\n- Then ask AT MOST ONE new question that is NOT in ALREADY ASKED.\n- Never re-ask a topic in KNOWN FACTS.\n- Under 35 words.\n`;
+    return buildNegotiationSystemPrompt(phase, Object.assign({}, context, { tenantGoals })) + memoryHeader;
+}
+
+app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { phase, context, messageHistory, tone, facts, alreadyAsked, alreadySharedCredentials, tenantGoals } = req.body;
+
+        if (!phase) {
+            return res.status(400).json({ error: 'Phase is required' });
+        }
+
+        const safeContext = {
+            ...context,
+            userName: sanitizeForPrompt(context?.userName, 100),
+            propertyTitle: sanitizeForPrompt(context?.propertyTitle, 200),
+            propertyFeature: sanitizeForPrompt(context?.propertyFeature, 200),
+            city: sanitizeForPrompt(context?.city, 100),
+            lastLandlordMessage: sanitizeForPrompt(context?.lastLandlordMessage, 500)
+        };
+
+        // Count how many price probes the AI has already sent in this convo
+        // ("is the rent firm" / "any wiggle room"). After 1 unanswered probe,
+        // the prompt swaps to "anchor at target" mode instead of looping the
+        // same question.
+        if (Array.isArray(messageHistory)) {
+            const probeRe = /\b(is (the )?(\$\d+|rent|price)? ?(firm|negotiable|flexible)|any (room|wiggle|flexibility)|wiggle room|firm at)\b/i;
+            safeContext.priceProbesSent = messageHistory.filter(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') && probeRe.test(String(m.content || ''))
+            ).length;
+            // Count concrete tenant offers already made too (for the same anchor logic).
+            safeContext.tenantOffersMade = messageHistory.filter(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') &&
+                /\$\s*\d/.test(String(m.content || '')) &&
+                /\b(how about|could (we|you) do|i can (do|stretch|commit)|propose|more in my range|land at|meet (in )?(the )?middle)\b/i.test(String(m.content || ''))
+            ).map(m => m.content);
+        }
+
+        // Defensively sanitize free-text fields inside tenantGoals so a
+        // malicious client can't smuggle prompt-injection text via the panel.
+        const safeGoals = (tenantGoals && typeof tenantGoals === 'object') ? {
+            ...tenantGoals,
+            employment: sanitizeForPrompt(tenantGoals.employment, 50),
+            income_confidence: sanitizeForPrompt(tenantGoals.income_confidence, 50),
+            pets: sanitizeForPrompt(tenantGoals.pets, 50),
+            tone: sanitizeForPrompt(tenantGoals.tone, 50),
+            assertiveness: sanitizeForPrompt(tenantGoals.assertiveness, 50),
+            movein_flexibility: sanitizeForPrompt(tenantGoals.movein_flexibility, 50),
+            lease_length: sanitizeForPrompt(tenantGoals.lease_length, 50),
+            movein_date: sanitizeForPrompt(tenantGoals.movein_date, 30)
+        } : {};
+
+        // New phase-locked prompt when the frontend sends the structured fields;
+        // falls back to the legacy prompt path for old clients that haven't been
+        // updated yet (no tone/facts in the request body).
+        const hasStructuredFields = tone != null || facts != null || Array.isArray(alreadyAsked) || (tenantGoals && Object.keys(tenantGoals).length);
+        const systemPrompt = hasStructuredFields
+            ? buildPhaseLockedSystemPrompt({
+                phase,
+                tone,
+                facts: facts || {},
+                alreadyAsked: alreadyAsked || [],
+                alreadySharedCredentials: !!alreadySharedCredentials,
+                tenantGoals: safeGoals,
+                context: safeContext
+            })
+            : buildNegotiationSystemPrompt(phase, safeContext);
+
+        const messages = [{ role: 'system', content: systemPrompt }];
+
+        // In CLOSING/FRUSTRATED we DON'T send the chat history — the prompt has
+        // everything it needs from KNOWN FACTS + the last landlord message, and
+        // the history is the main source of "repeat your credentials again"
+        // hallucinations. For other phases, pass last 4 (down from 6) for the
+        // model to stay grounded without ballooning tokens.
+        const shouldIncludeHistory = !(phase === 'CLOSING' || tone === 'FRUSTRATED');
+        if (shouldIncludeHistory && messageHistory && Array.isArray(messageHistory)) {
+            const recent = messageHistory.slice(-4);
+            for (const msg of recent) {
+                messages.push({
+                    role: msg.sender === 'ai' ? 'assistant' : 'user',
+                    content: sanitizeForPrompt(msg.content, 1000)
+                });
+            }
+        }
+
+        if (safeContext.lastLandlordMessage) {
+            messages.push({ role: 'user', content: safeContext.lastLandlordMessage });
+        }
+
+        // Tighter generation knobs in locked modes: lower max_tokens makes the
+        // model physically unable to ramble; lower temperature reduces the
+        // chance it improvises a question we explicitly forbade.
+        const maxTokens = (phase === 'CLOSING') ? 60 : (tone === 'FRUSTRATED') ? 80 : 250;
+        const temperature = (phase === 'CLOSING' || tone === 'FRUSTRATED') ? 0.3 : 0.8;
+
+        const result = await callOpenAI({
+            messages,
+            model: 'gpt-4',
+            maxTokens,
+            temperature
+        });
+
+        // Backend-side validator: catch the AI agreeing to a meeting day before
+        // any price was discussed. Mirrors the frontend validator so callers
+        // that bypass the frontend (mobile app, test harness) get the same
+        // protection. The negotiation_battle harness surfaced this leak at
+        // 46% of conversations at N=50, even with strengthened phase prompts.
+        let safeResponse = String(result.content || '').trim();
+        try {
+            const recentHistory = Array.isArray(messageHistory) ? messageHistory : [];
+            const aiPriceMentioned = recentHistory.some(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') && /\$\s*\d/.test(String(m.content || '')));
+            const landlordPriceMentioned = !!(facts && facts.landlord_last_named_price);
+            const priceTouched = aiPriceMentioned || landlordPriceMentioned;
+            const dayInReply = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight|this weekend)\b/i.test(safeResponse);
+            const meetingAffirm = /\b(works|sounds good|that works|see you|let.?s meet|let.?s do|will do|of course|absolutely)\b/i.test(safeResponse);
+            // Validator fires in any phase EXCEPT ACTIVE_NEGOTIATION (price is
+            // already on the table there by definition). Specifically includes
+            // CLOSING because the harness showed 56% of CLOSING-phase replies
+            // affirming a meeting without price ever having been touched —
+            // the closing-signals regex jumps phase too eagerly.
+            const phaseSafe = phase !== 'ACTIVE_NEGOTIATION';
+            if (!priceTouched && dayInReply && meetingAffirm && phaseSafe) {
+                console.warn(`🛡️ Backend validator: AI affirmed meeting before price was discussed. Rewriting (phase=${phase}).`);
+                safeResponse = `That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.`;
+            }
+
+            // Second validator: in ACTIVE_NEGOTIATION (or CLOSING), if the AI
+            // tries to accept an above-target counter without making its own
+            // counter first, rewrite to a counter. Harness at N=100 showed
+            // 71% of post-iter5 deals settled too high — the AI rubber-stamps
+            // the landlord's first counter when the landlord makes one.
+            //
+            // IMPORTANT: only fire ONCE per conversation. The harness showed
+            // identical "I hear you on $X, but $Y is more in my range" rewrites
+            // on every turn — validator was fighting the prompt. After we've
+            // rewritten once, the AI has been "primed" and should be trusted
+            // to close naturally. Also accept landlord offers within $150 of
+            // target — at that point fighting harder costs more than it saves.
+            const tenantTargetRent = (safeContext && safeContext.userBudget) ? Number(safeContext.userBudget) : 0;
+            const landlordCounter = facts?.landlord_last_named_price || (safeContext && Number(safeContext.landlordCounterOffer)) || 0;
+            const gap = (tenantTargetRent > 0 && landlordCounter > 0) ? landlordCounter - tenantTargetRent : 0;
+            const tooHigh = gap > 150; // raised from 75 — within $150 of target is "close enough"
+            const acceptanceWord = /\b(yes,? that works|sounds (good|great)|deal|done|works for me|happy with that|i.?ll take it|let.?s do (it|that))\b/i.test(safeResponse);
+            const counterWord = /\b(could|how about|what (about|if)|would|propose|how does|stretch to|meet (in )?(the )?middle)\b/i.test(safeResponse);
+            const aiNamedPrice = /\$\s*\d/.test(safeResponse);
+            // Check if we've already issued this rewrite template earlier in the convo —
+            // if so, trust the AI to close instead of forcing another identical counter.
+            const validatorAlreadyFired = Array.isArray(messageHistory) && messageHistory.some(m =>
+                m && (m.sender === 'ai' || m.sender === 'assistant') &&
+                /\bmore in my range\b.*could we land there/i.test(String(m.content || '')));
+            if (tooHigh && acceptanceWord && !counterWord && !aiNamedPrice && !validatorAlreadyFired
+                && phase !== 'INTRODUCTION' && phase !== 'RAPPORT_BUILDING' && phase !== 'QUALIFICATION') {
+                const midpoint = Math.round((tenantTargetRent + landlordCounter) / 2);
+                console.warn(`🛡️ Backend validator (1x): AI accepted $${landlordCounter} but target was $${tenantTargetRent}. Counter at $${midpoint}.`);
+                safeResponse = `I hear you on $${landlordCounter}, but $${midpoint} is more in my range. Could we land there?`;
+            }
+
+            // CLOSING / FRUSTRATED guard: once the deal is converging the AI must
+            // NOT re-open settled terms. The coach surfaced two bad patterns:
+            // (1) re-asking "include utilities?" after the meeting was already set,
+            // (2) after the landlord got frustrated, lowballing a brand-new number
+            // ($1721 + utilities) instead of de-escalating. Hard-rewrite both.
+            if (tone === 'FRUSTRATED') {
+                if (/\$\s*\d{3,5}|\butilit|\bdeposit\b|\binclude\b/i.test(safeResponse)) {
+                    const meet = facts?.proposed_meet_date ? `See you ${facts.proposed_meet_date}.` : 'When works to meet?';
+                    safeResponse = `Sorry — didn't mean to push. I'm still keen on the place. ${meet}`;
+                    console.warn('🛡️ Backend validator: FRUSTRATED reply re-negotiated price/utilities — rewrote to de-escalation.');
+                }
+            } else if (phase === 'CLOSING') {
+                if (/\butilit|\bdeposit\b|throw in|include .*(in the )?rent/i.test(safeResponse)) {
+                    const meet = facts?.proposed_meet_date ? `See you ${facts.proposed_meet_date}.` : 'See you then.';
+                    safeResponse = `Sounds good — that works. ${meet}`;
+                    console.warn('🛡️ Backend validator: CLOSING reply re-opened utilities/deposit — rewrote to a clean confirmation.');
+                }
+            }
+
+            // "Never walk away" guard: the tool exists to SECURE the apartment.
+            // The coach showed the AI bailing ("I'll think about it", "appreciate
+            // the time") when the landlord held firm — leaving the tenant with no
+            // place. In the negotiating/closing phases, rewrite any walk-away or
+            // defer into an acceptance + close at the landlord's number (or asking).
+            if (phase === 'ACTIVE_NEGOTIATION' || phase === 'CLOSING' || phase === 'AVAILABILITY_DISCUSSION' || phase === 'PRICE_INTRODUCTION') {
+                const walkAwayRe = /\b(think about it|think it over|mull it over|i.?ll let you know|i.?ll consider|appreciate (your|the) time|make the math work|all the best|i.?ll pass|get back to you)\b/i;
+                if (walkAwayRe.test(safeResponse)) {
+                    const closePrice = (facts && facts.landlord_last_named_price)
+                        || (safeContext && Number(safeContext.landlordCounterOffer))
+                        || (safeContext && Number(safeContext.listingPrice)) || 0;
+                    safeResponse = closePrice
+                        ? `Okay, $${closePrice} works for me — I'd love to take it. Happy to come by and sign whenever suits you.`
+                        : `Okay, that works for me — I'd love to take it. Happy to come by and sign whenever suits you.`;
+                    console.warn('🛡️ Backend validator: AI tried to walk away/defer — rewrote to accept + close.');
+                }
+            }
+        } catch (validatorErr) {
+            console.warn('Backend response validator threw (non-fatal):', validatorErr?.message || validatorErr);
+        }
+
+        res.json({ response: safeResponse, tokensUsed: result.tokensUsed, phase, tone });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/phase-message:', error.message);
+        res.status(500).json({ error: 'Failed to generate message', details: error.message });
+    }
+});
+
+// POST /api/negotiate/analyze-reply - Analyze landlord reply (GPT-3.5 - fast/cheap)
+app.post('/api/negotiate/analyze-reply', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { replyContent, negotiationState, listing } = req.body;
+
+        if (!replyContent) {
+            return res.status(400).json({ error: 'Reply content is required' });
+        }
+
+        const state = negotiationState || {};
+        const safeReply = sanitizeForPrompt(replyContent, 1000);
+        const safeListingTitle = sanitizeForPrompt(listing?.title, 200);
+
+        const prompt = `You are analyzing a landlord's reply in a rental negotiation.
+
+CONTEXT:
+- Property: ${safeListingTitle}
+- Our last offer: $${state.lastOffer || 'not yet made'}
+- Offers we've made: ${(state.offersMade || []).join(', ') || 'none yet'}
+- Listing price: $${listing?.price || 'unknown'}
+
+LANDLORD'S MESSAGE: "${safeReply}"
+
+Analyze and return JSON:
+{
+    "sentiment": "positive/neutral/negative",
+    "priceOffered": null or number,
+    "acceptsOffer": true/false,
+    "makesCounterOffer": true/false,
+    "shouldRespond": true/false,
+    "isFinalized": true/false,
+    "agreedPrice": null or number,
+    "responseStrategy": "accept/counter/negotiate/thank/clarify",
+    "suggestedResponse": "brief response if shouldRespond is true",
+    "negotiationPhase": "initial/bargaining/closing/rejected"
+}
+
+RULES:
+1. "sure","yes","ok","okay","sounds good","deal","fine","agreed" = ACCEPTANCE, isFinalized=true, agreedPrice=${state.lastOffer || 'last offer'}
+2. Any $ amount = makesCounterOffer=true, priceOffered=that amount
+3. "no","can't","too low","firm","fixed" = rejection, shouldRespond=true
+4. Don't assume rejection if they're discussing or asking questions
+5. Extract prices carefully - $ or number followed by "month"`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-3.5-turbo',
+            maxTokens: 300,
+            temperature: 0.1
+        });
+
+        try {
+            const analysis = JSON.parse(result.content);
+            res.json({ analysis, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({ analysis: { sentiment: 'neutral', shouldRespond: true, responseStrategy: 'clarify' }, tokensUsed: result.tokensUsed, parseError: true });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/analyze-reply:', error.message);
+        res.status(500).json({ error: 'Failed to analyze reply', details: error.message });
+    }
+});
+
+// POST /api/negotiate/counter-offer - Generate counter-offer message (GPT-4)
+app.post('/api/negotiate/counter-offer', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { prompt: userPrompt, conversationHistory } = req.body;
+
+        if (!userPrompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        const safePrompt = sanitizeForPrompt(userPrompt, 3000);
+        const messages = [{ role: 'system', content: safePrompt }];
+
+        if (conversationHistory && Array.isArray(conversationHistory)) {
+            for (const msg of conversationHistory.slice(-6)) {
+                messages.push({
+                    role: msg.role || 'user',
+                    content: sanitizeForPrompt(msg.content, 1000)
+                });
+            }
+        }
+
+        const result = await callOpenAI({
+            messages,
+            model: 'gpt-4',
+            maxTokens: 300,
+            temperature: 0.7
+        });
+
+        res.json({ response: result.content, tokensUsed: result.tokensUsed });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/counter-offer:', error.message);
+        res.status(500).json({ error: 'Failed to generate counter-offer', details: error.message });
+    }
+});
+
+// POST /api/negotiate/market-estimate - Get AI market data estimate (GPT-3.5)
+app.post('/api/negotiate/market-estimate', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { location, houseType, bedrooms } = req.body;
+
+        const safeLocation = sanitizeForPrompt(location, 200);
+        const safeType = sanitizeForPrompt(houseType, 50);
+
+        const prompt = `You are a real estate market analyst. Provide realistic rental market data for:
+- Location: ${safeLocation || 'General area'}
+- Property Type: ${safeType || 'Any'}
+- Bedrooms: ${bedrooms || 'Any'}
+
+Return realistic estimates in this JSON format:
+{
+    "average": 1200,
+    "median": 1150,
+    "min": 900,
+    "max": 1500,
+    "analysis": "Brief market analysis",
+    "negotiationTips": "Tips for negotiating in this market"
+}`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-3.5-turbo',
+            maxTokens: 300,
+            temperature: 0.3
+        });
+
+        try {
+            const marketData = JSON.parse(result.content);
+            res.json({ marketData: { ...marketData, count: 0, source: 'ai_estimate' }, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({
+                marketData: { average: 1200, median: 1150, min: 900, max: 1500, count: 0, source: 'fallback' },
+                tokensUsed: result.tokensUsed,
+                parseError: true
+            });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/market-estimate:', error.message);
+        res.status(500).json({ error: 'Failed to get market estimate', details: error.message });
+    }
+});
+
+// POST /api/negotiate/contextual-response - Generate tactical response (GPT-4)
+app.post('/api/negotiate/contextual-response', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { prompt: userPrompt } = req.body;
+
+        if (!userPrompt) {
+            return res.status(400).json({ error: 'Prompt is required' });
+        }
+
+        const safePrompt = sanitizeForPrompt(userPrompt, 3000);
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: safePrompt }],
+            model: 'gpt-4',
+            maxTokens: 250,
+            temperature: 0.7
+        });
+
+        res.json({ response: result.content, tokensUsed: result.tokensUsed });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/contextual-response:', error.message);
+        res.status(500).json({ error: 'Failed to generate response', details: error.message });
+    }
+});
+
+// POST /api/negotiate/landlord-prediction - Predict landlord behavior (GPT-4)
+app.post('/api/negotiate/landlord-prediction', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { conversationHistory, listing, negotiationState } = req.body;
+
+        const safeHistory = (conversationHistory || []).slice(-10).map(m => ({
+            sender: m.sender,
+            content: sanitizeForPrompt(m.content, 500)
+        }));
+
+        const prompt = `Analyze this landlord's behavior in a rental negotiation and predict their likely minimum acceptable price.
+
+PROPERTY: ${sanitizeForPrompt(listing?.title, 200)} - Listed at $${listing?.price || 'unknown'}/month
+
+CONVERSATION HISTORY:
+${safeHistory.map(m => `${m.sender}: ${m.content}`).join('\n')}
+
+NEGOTIATION STATE:
+- Our offers so far: ${(negotiationState?.offersMade || []).join(', ') || 'none'}
+- Their counters so far: ${(negotiationState?.landlordCounters || []).join(', ') || 'none'}
+- Rejections: ${negotiationState?.offersRejected || 0}
+
+Analyze and return JSON:
+{
+    "predictedMinimum": number (their likely lowest acceptable price),
+    "flexibility": "high/moderate/low/none",
+    "confidence": 0.0 to 1.0,
+    "signals": ["list of behavioral signals detected"],
+    "recommendedNextOffer": number,
+    "strategy": "brief recommended strategy"
+}`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-4',
+            maxTokens: 400,
+            temperature: 0.3
+        });
+
+        try {
+            const prediction = JSON.parse(result.content);
+            res.json({ prediction, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({ prediction: null, tokensUsed: result.tokensUsed, parseError: true });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/landlord-prediction:', error.message);
+        res.status(500).json({ error: 'Failed to predict behavior', details: error.message });
+    }
+});
+
+// POST /api/negotiate/lease-review - Review lease document for red flags (GPT-4)
+app.post('/api/negotiate/lease-review', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { leaseText } = req.body;
+
+        if (!leaseText) {
+            return res.status(400).json({ error: 'Lease text is required' });
+        }
+
+        const safeText = sanitizeForPrompt(leaseText, 8000);
+
+        const prompt = `You are a tenant-side lease review assistant. Analyze this lease agreement and flag any concerning clauses, unusual terms, or red flags that a tenant should be aware of.
+
+LEASE TEXT:
+${safeText}
+
+Return a JSON analysis:
+{
+    "overallRating": "good/fair/concerning/problematic",
+    "flags": [
+        {
+            "severity": "high/medium/low",
+            "clause": "the problematic text",
+            "issue": "explanation of the issue",
+            "recommendation": "what the tenant should do"
+        }
+    ],
+    "summary": "brief overall assessment",
+    "negotiationPoints": ["list of terms worth negotiating"]
+}`;
+
+        const result = await callOpenAI({
+            messages: [{ role: 'system', content: prompt }],
+            model: 'gpt-4',
+            maxTokens: 800,
+            temperature: 0.2
+        });
+
+        try {
+            const review = JSON.parse(result.content);
+            res.json({ review, tokensUsed: result.tokensUsed });
+        } catch {
+            res.json({ review: { overallRating: 'unknown', flags: [], summary: result.content }, tokensUsed: result.tokensUsed });
+        }
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/lease-review:', error.message);
+        res.status(500).json({ error: 'Failed to review lease', details: error.message });
+    }
+});
+
+// POST /api/rentcast/market-data - Proxy RentCast API calls (keeps key server-side)
+app.post('/api/rentcast/market-data', rentCastRateLimitMiddleware, async (req, res) => {
+    try {
+        const { city, state: stateCode, bedrooms, propertyType, zipCode } = req.body;
+
+        if (!config.RENTCAST_KEY) {
+            return res.status(503).json({ error: 'RentCast service not configured' });
+        }
+
+        const params = new URLSearchParams();
+        if (city) params.append('city', city);
+        if (stateCode) params.append('state', stateCode);
+        if (bedrooms) params.append('bedrooms', bedrooms);
+        if (propertyType) params.append('propertyType', propertyType);
+        if (zipCode) params.append('zipCode', zipCode);
+
+        const response = await fetch(`https://api.rentcast.io/v1/avm/rent/long-term?${params}`, {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/json',
+                'X-Api-Key': config.RENTCAST_KEY
+            }
+        });
+
+        if (!response.ok) {
+            return res.status(response.status).json({ error: 'RentCast API error', status: response.status });
+        }
+
+        // Increment usage after successful call
+        const userId = getUserId(req);
+        incrementRentCastUsage(userId);
+
+        const data = await response.json();
+        const stats = {
+            average: Math.round(data.rent || data.rentEstimate || 0),
+            median: Math.round(data.rent || data.rentEstimate || 0),
+            min: Math.round((data.rent || data.rentEstimate || 0) * 0.85),
+            max: Math.round((data.rent || data.rentEstimate || 0) * 1.15),
+            count: 1,
+            confidence: data.confidence || 'medium',
+            priceRange: data.priceRange || null,
+            source: 'rentcast'
+        };
+
+        res.json({ marketData: stats, rateLimitInfo: req.rateLimitInfo });
+
+    } catch (error) {
+        console.error('Error in /api/rentcast/market-data:', error.message);
+        res.status(500).json({ error: 'Failed to fetch market data', details: error.message });
+    }
+});
+
+// GET /api/negotiate/dashboard - Get user's negotiation analytics
+app.get('/api/negotiate/dashboard', requireAuth, async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+
+        const userEmail = req.userEmail;
+
+        const { data: negotiations, error } = await supabase
+            .from('ai_negotiations')
+            .select('*')
+            .eq('user_email', userEmail)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching negotiations:', error);
+            return res.status(500).json({ error: 'Failed to fetch negotiations' });
+        }
+
+        const stats = {
+            totalNegotiations: negotiations?.length || 0,
+            successful: (negotiations || []).filter(n => n.negotiation_status === 'completed' || n.negotiation_status === 'finalized').length,
+            active: (negotiations || []).filter(n => n.negotiation_status === 'active').length,
+            totalSavings: (negotiations || []).reduce((sum, n) => {
+                if (n.initial_price && n.final_price && n.final_price < n.initial_price) {
+                    return sum + (n.initial_price - n.final_price);
+                }
+                return sum;
+            }, 0),
+            averageSavingsPercent: 0,
+            negotiations: negotiations || []
+        };
+
+        if (stats.successful > 0) {
+            const savingsPercents = (negotiations || [])
+                .filter(n => n.initial_price && n.final_price && n.final_price < n.initial_price)
+                .map(n => ((n.initial_price - n.final_price) / n.initial_price) * 100);
+            stats.averageSavingsPercent = savingsPercents.length > 0
+                ? Math.round(savingsPercents.reduce((a, b) => a + b, 0) / savingsPercents.length)
+                : 0;
+        }
+
+        res.json(stats);
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/dashboard:', error.message);
+        res.status(500).json({ error: 'Failed to load dashboard' });
+    }
+});
+
+// POST /api/negotiate/record-tactic - Record tactic effectiveness for learning
+app.post('/api/negotiate/record-tactic', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { tactic, landlordEmotionalState, city, propertyType, success, priceMovement } = req.body;
+
+        if (!tactic || !supabase) {
+            return res.status(400).json({ error: 'Tactic name required' });
+        }
+
+        const { data, error } = await supabase
+            .from('negotiation_tactics_effectiveness')
+            .insert({
+                tactic: sanitizeForPrompt(tactic, 100),
+                landlord_emotional_state: sanitizeForPrompt(landlordEmotionalState, 50),
+                city: sanitizeForPrompt(city, 100),
+                property_type: sanitizeForPrompt(propertyType, 50),
+                success: !!success,
+                price_movement: priceMovement || 0
+            })
+            .select()
+            .single();
+
+        if (error) {
+            console.error('Error recording tactic:', error);
+            return res.status(500).json({ error: 'Failed to record tactic' });
+        }
+
+        res.json({ success: true, record: data });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/record-tactic:', error.message);
+        res.status(500).json({ error: 'Failed to record tactic' });
+    }
+});
+
+// GET /api/negotiate/tactic-effectiveness - Get tactic effectiveness data for learning
+app.get('/api/negotiate/tactic-effectiveness', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ error: 'Database not available' });
+        }
+
+        const { city, propertyType, landlordState } = req.query;
+
+        let query = supabase
+            .from('negotiation_tactics_effectiveness')
+            .select('tactic, success, price_movement, landlord_emotional_state, city, property_type');
+
+        if (city) query = query.eq('city', city);
+        if (propertyType) query = query.eq('property_type', propertyType);
+        if (landlordState) query = query.eq('landlord_emotional_state', landlordState);
+
+        const { data, error } = await query;
+
+        if (error) {
+            return res.status(500).json({ error: 'Failed to fetch effectiveness data' });
+        }
+
+        // Aggregate by tactic
+        const tacticStats = {};
+        (data || []).forEach(record => {
+            if (!tacticStats[record.tactic]) {
+                tacticStats[record.tactic] = { total: 0, successes: 0, avgPriceMovement: 0, movements: [] };
+            }
+            tacticStats[record.tactic].total++;
+            if (record.success) tacticStats[record.tactic].successes++;
+            if (record.price_movement) tacticStats[record.tactic].movements.push(record.price_movement);
+        });
+
+        // Calculate success rates
+        Object.keys(tacticStats).forEach(tactic => {
+            const stats = tacticStats[tactic];
+            stats.successRate = stats.total > 0 ? Math.round((stats.successes / stats.total) * 100) : 0;
+            stats.avgPriceMovement = stats.movements.length > 0
+                ? Math.round(stats.movements.reduce((a, b) => a + b, 0) / stats.movements.length)
+                : 0;
+            delete stats.movements;
+        });
+
+        res.json({ tacticEffectiveness: tacticStats, totalRecords: data?.length || 0 });
+
+    } catch (error) {
+        console.error('Error in /api/negotiate/tactic-effectiveness:', error.message);
+        res.status(500).json({ error: 'Failed to fetch tactic data' });
     }
 });
 
@@ -5523,7 +7021,7 @@ app.delete('/api/payment-methods/:id', async (req, res) => {
 });
 
 // Test endpoint for Supabase connection
-app.get('/api/test-supabase', async (req, res) => {
+app.get('/api/test-supabase', blockInProduction, async (req, res) => {
     try {
         if (!supabase) {
             return res.status(503).json({ error: 'Supabase not configured' });
@@ -5914,8 +7412,8 @@ app.post('/api/admin/verify-user', async (req, res) => {
         const { adminKey, userEmail, action, reason } = req.body;
 
         // Simple admin key check (you should use proper auth in production)
-        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
-        if (adminKey !== validAdminKey) {
+        const validAdminKey = getAdminKey();
+        if (!validAdminKey || adminKey !== validAdminKey) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
@@ -5964,9 +7462,9 @@ app.post('/api/admin/verify-user', async (req, res) => {
 app.get('/api/admin/pending-verifications', async (req, res) => {
     try {
         const adminKey = req.headers['x-admin-key'] || req.query.adminKey;
-        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+        const validAdminKey = getAdminKey();
 
-        if (adminKey !== validAdminKey) {
+        if (!validAdminKey || adminKey !== validAdminKey) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
@@ -6039,9 +7537,9 @@ app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) =
 app.post('/api/admin/clear-data', async (req, res) => {
     try {
         const { adminKey, tables } = req.body;
-        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+        const validAdminKey = getAdminKey();
 
-        if (adminKey !== validAdminKey) {
+        if (!validAdminKey || adminKey !== validAdminKey) {
             return res.status(401).json({ error: 'Invalid admin key' });
         }
 
@@ -6190,37 +7688,20 @@ app.get('/api/verify/service-status', (req, res) => {
 app.get('/api/config', (req, res) => {
     // Try to reinitialize Azure clients if they're not available
     reinitializeAzureClients();
-    console.log('📋 Config endpoint called - checking environment variables:');
-    console.log('- OPENAI_API_KEY:', config.OPENAI_API_KEY ? `Present (${config.OPENAI_API_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- OPENAI_ORG_ID:', config.OPENAI_ORG_ID ? `Present (${config.OPENAI_ORG_ID})` : 'MISSING');
-    console.log('- SUPABASE_URL:', config.SUPABASE_URL ? `Present (${config.SUPABASE_URL.substring(0, 30)}...)` : 'MISSING');
-    console.log('- SUPABASE_ANON_KEY:', config.SUPABASE_ANON_KEY ? `Present (${config.SUPABASE_ANON_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT})` : 'MISSING');
-    console.log('- AZURE_FACE_KEY:', config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_FACE_ENDPOINT:', config.AZURE_FACE_ENDPOINT ? `Present (${config.AZURE_FACE_ENDPOINT})` : 'MISSING');
-    console.log('- RENTCAST_KEY:', config.RENTCAST_KEY ? `Present (${config.RENTCAST_KEY.substring(0, 10)}...)` : 'MISSING');
+    console.log('📋 Config endpoint called');
     
     const configData = {
         STRIPE_PUBLISHABLE_KEY: config.STRIPE_PUBLISHABLE_KEY,
         GOOGLE_API_KEY: config.GOOGLE_API_KEY,
         SUPABASE_URL: config.SUPABASE_URL,
         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
-        OPENAI_API_KEY: config.OPENAI_API_KEY,
-        OPENAI_ORG_ID: config.OPENAI_ORG_ID,
         GOOGLE_OAUTH_CLIENT_ID: config.GOOGLE_OAUTH_CLIENT_ID,
         APPLE_CLIENT_ID: config.APPLE_CLIENT_ID,
-        OPENAI_MODEL: config.OPENAI_MODEL,
-        RENTCAST_KEY: config.RENTCAST_KEY,
-        // Azure service status (without exposing keys)
+        TURNSTILE_SITE_KEY: config.TURNSTILE_SITE_KEY,
+        platforms: PLATFORM_STATUS.platforms,
         azureServicesAvailable: {
             documentIntelligence: !!documentClient,
             faceAPI: !!faceClient
-        },
-        // Add debug info about missing variables
-        _debug: {
-            missingVars: config.getMissingVars ? config.getMissingVars() : [],
-            isValid: config.isValid ? config.isValid() : false
         }
     };
     
@@ -6228,7 +7709,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // Debug endpoint to check Azure configuration status
-app.get('/api/debug/azure', (req, res) => {
+app.get('/api/debug/azure', blockInProduction, (req, res) => {
     console.log('🔍 Azure debug endpoint called');
     
     // Force reinitialization
@@ -7692,10 +9173,18 @@ app.get('/debug-test', (req, res) => {
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
+    const degraded = !serviceStatus.supabase;
     const health = {
-        status: 'running',
+        status: degraded && IS_PRODUCTION ? 'degraded' : 'running',
         timestamp: new Date().toISOString(),
         services: serviceStatus,
+        platforms: {
+            web: PLATFORM_STATUS.platforms.web.status,
+            android: PLATFORM_STATUS.platforms.android.status,
+            ios: PLATFORM_STATUS.platforms.ios.status,
+            message: PLATFORM_STATUS.message,
+            documentation: PLATFORM_STATUS.documentation
+        },
         mode: {
             demo: DEMO_MODE,
             anonymousBrowsing: ANONYMOUS_BROWSING,
@@ -7703,7 +9192,20 @@ app.get('/health', (req, res) => {
         },
         uptime: process.uptime()
     };
-    res.status(200).json(health);
+    res.status(degraded && IS_PRODUCTION ? 503 : 200).json(health);
+});
+
+// Public platform availability for web and mobile clients
+app.get('/api/platform-status', (req, res) => {
+    res.json({
+        updatedAt: PLATFORM_STATUS.updatedAt,
+        message: PLATFORM_STATUS.message,
+        platforms: PLATFORM_STATUS.platforms,
+        activePlatform: 'web',
+        mobileAppsClosed: true,
+        statusPage: PLATFORM_STATUS.statusPage,
+        documentation: PLATFORM_STATUS.documentation
+    });
 });
 
 // Service status endpoint for frontend
@@ -7728,7 +9230,7 @@ app.get('/', (req, res) => {
     try {
         const indexPath = path.join(__dirname, '..', 'frontend', 'index.html');
         console.log('📄 Serving index.html from:', indexPath);
-        res.sendFile(indexPath);
+        sendInjectedHtml(res, indexPath);
     } catch (error) {
         console.error('Error serving index.html:', error);
         res.status(200).send('✅ RoomFinderAI server is running');
@@ -7757,7 +9259,7 @@ app.get('/:page', (req, res) => {
             console.log(`🔍 DEBUG: Checking for modular listings at: ${modularListingsPath}`);
             if (fs.existsSync(modularListingsPath)) {
                 console.log(`📄 SUCCESS: Serving modular listings from: ${modularListingsPath}`);
-                return res.sendFile(modularListingsPath);
+                return sendInjectedHtml(res, modularListingsPath);
             } else {
                 console.log(`❌ ERROR: Modular listings file not found at: ${modularListingsPath}`);
             }
@@ -7769,14 +9271,14 @@ app.get('/:page', (req, res) => {
         // Check if file exists in root
         if (fs.existsSync(htmlPath)) {
             console.log(`📄 Serving ${pageName}.html from root:`, htmlPath);
-            res.sendFile(htmlPath);
+            sendInjectedHtml(res, htmlPath);
         } else {
             // Check frontend directory as fallback
             const frontendHtmlPath = path.join(__dirname, '..', 'frontend', `${pageName}.html`);
             
             if (fs.existsSync(frontendHtmlPath)) {
                 console.log(`📄 Serving ${pageName}.html from frontend:`, frontendHtmlPath);
-                res.sendFile(frontendHtmlPath);
+                sendInjectedHtml(res, frontendHtmlPath);
             } else {
                 console.log(`❌ Page not found: ${pageName}.html (checked root and frontend directories)`);
                 res.status(404).send(`Page not found: /${pageName}`);
@@ -7803,12 +9305,13 @@ async function initializeStorage() {
     try {
         console.log('📦 Initializing storage buckets...');
         
-        // Check if Supabase is initialized
         if (!supabase) {
             console.log('⚠️ Skipping storage initialization - Supabase not available');
-            if (DEMO_MODE) {
-                console.log('📝 Demo mode - Storage features will use mock functionality');
-            }
+            return;
+        }
+
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.log('ℹ️ Skipping bucket creation — set SUPABASE_SERVICE_ROLE_KEY for admin storage setup (buckets may already exist in Supabase dashboard)');
             return;
         }
         
@@ -8414,46 +9917,8 @@ async function findAndCreateMatches(requestId, requestType) {
     }
 }
 
-// Simple test endpoint to verify Supabase connection
-app.get('/api/test-supabase', async (req, res) => {
-    try {
-        console.log('🧪 Testing Supabase connection...');
-        
-        // Test basic connection
-        const { data, error } = await supabase
-            .from('sublease_requests')
-            .select('id')
-            .limit(1);
-            
-        if (error) {
-            console.error('Supabase test error:', error);
-            return res.json({
-                success: false,
-                error: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint
-            });
-        }
-        
-        console.log('✅ Supabase connection test successful');
-        res.json({
-            success: true,
-            message: 'Supabase connection working',
-            rowCount: data ? data.length : 0
-        });
-        
-    } catch (error) {
-        console.error('Test endpoint error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
 // Debug endpoint to check database setup
-app.get('/api/sublease/debug', async (req, res) => {
+app.get('/api/sublease/debug', blockInProduction, async (req, res) => {
     try {
         console.log('🔍 Debugging sublease database setup...');
         
@@ -8675,6 +10140,8 @@ app.post('/api/distance-matrix', async (req, res) => {
     }
 });
 
+registerErrorHandler(app, multer);
+
 // Declare server variable in global scope
 let server;
 
@@ -8689,7 +10156,8 @@ server = app.listen(port, '0.0.0.0', () => {
 server.on('error', (err) => {
     console.error('❌ Server error:', err);
     if (err.code === 'EADDRINUSE') {
-        console.log(`Port ${port} is busy, trying alternative...`);
+        console.error(`Port ${port} is already in use. Set PORT or stop the other process.`);
+        process.exit(1);
     }
 });
 

@@ -74,18 +74,6 @@
   --ios-shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --ios-background: var(--ios-dark-background);
-    --ios-secondary-background: var(--ios-dark-secondary-background);
-    --ios-tertiary-background: var(--ios-dark-tertiary-background);
-    --ios-label: var(--ios-dark-label);
-    --ios-secondary-label: var(--ios-dark-secondary-label);
-    --ios-tertiary-label: var(--ios-dark-tertiary-label);
-  }
-}
-
 /* Base iOS Styling */
 * {
   -webkit-font-smoothing: antialiased;

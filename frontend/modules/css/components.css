@@ -77,8 +77,8 @@
 
 /* ==================== MODALS ==================== */
 
-/* Modal base style (hidden state) */
-.modal, .chat-modal {
+/* Modal base style (hidden state) — for fullscreen modals only (e.g. listing details) */
+.modal {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -98,10 +98,35 @@
     backdrop-filter: blur(4px);
 }
 
-/* Modal active state (visible) */
-.modal.active, .chat-modal.active {
+.modal.active {
     opacity: 1;
     transform: scale(1) perspective(800px) rotateX(0deg);
+    pointer-events: auto;
+}
+
+/* Chat "modal" is a Facebook-style docked bubble at bottom-right — NOT a fullscreen
+   overlay. Listings behind it stay visible and clickable. No backdrop, no blur. */
+.chat-modal {
+    position: fixed;
+    z-index: var(--z-modal);
+    /* Bubble sits on the SAME bottom row as #messageToggleBtn but pushed to its left.
+       The toggle button is ~64px wide at right-8 (32px) — total ~96px of right-edge
+       real estate. right: 6.5rem (104px) leaves an 8px gap between bubble and button. */
+    right: 6.5rem;
+    bottom: 1rem;
+    width: auto;
+    height: auto;
+    background: transparent;
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+    transition: opacity var(--duration-normal) var(--ease-out),
+                transform var(--duration-normal) var(--ease-out);
+    pointer-events: none;
+}
+
+.chat-modal.active {
+    opacity: 1;
+    transform: translateY(0) scale(1);
     pointer-events: auto;
 }
 
@@ -153,29 +178,66 @@
 
 /* ==================== CHAT MODAL ==================== */
 
+/* Fixed-size compact bubble, ~360px wide, anchored bottom-right by the parent
+   .chat-modal. Internal layout is flex-column: header / messages / input. */
 .chat-modal-content {
     background-color: white;
-    margin: 5% auto;
-    padding: 1.5rem;
+    margin: 0;
+    padding: 0;
     border-radius: var(--border-radius-md);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-    width: 90%;
-    max-width: 600px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15),
+                0 10px 10px -5px rgba(0, 0, 0, 0.05);
+    width: 360px;
+    max-width: calc(100vw - 2rem);
+    height: 70vh;
+    max-height: 560px;
+    min-height: 360px;
     display: flex;
     flex-direction: column;
-    max-height: 80vh;
+    overflow: hidden;
+    border: 1px solid rgba(229, 231, 235, 0.5);
 }
 
 .chat-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--color-gray-200);
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: 0;
+    flex-shrink: 0;
+}
+
+.chat-header h2 {
+    color: white;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Inside the docked chat: messages flex-grow within the fixed container, no extra
+   margin (the parent's overflow:hidden gives clean edges). */
+.chat-modal-content .chat-messages {
+    min-height: 0;
+    max-height: none;
+    margin-bottom: 0;
+    border-radius: 0;
+    padding: 0.75rem 1rem;
+}
+
+.chat-modal-content .chat-input-container {
+    flex-shrink: 0;
+    padding: 0.5rem 0.75rem 0.75rem;
+    border-top: 1px solid var(--color-gray-200);
 }
 
 .chat-messages {
+    /* Flex column so .message.sent and .message.received can use align-self to
+       reliably right/left-align. margin-left/right:auto only worked on elements
+       with an explicit width, which the bubbles don't have (shrink-to-fit). */
+    display: flex;
+    flex-direction: column;
     flex-grow: 1;
     overflow-y: auto;
     padding: 1rem;
@@ -187,9 +249,9 @@
 }
 
 .message {
-    margin: 0.75rem 0;
-    padding: 0.75rem 1rem;
-    border-radius: var(--border-radius-sm);
+    margin: 0.25rem 0;
+    padding: 0.5rem 0.85rem;
+    border-radius: 1.1rem;
     max-width: 80%;
     word-wrap: break-word;
 }
@@ -197,16 +259,17 @@
 .message.sent {
     background-color: var(--color-primary);
     color: white;
-    margin-left: auto;
-    border-bottom-right-radius: 0.25rem;
+    align-self: flex-end;
+    border-bottom-right-radius: 0.35rem;
 }
 
 .message.received {
-    background-color: white;
+    /* iMessage-style: light grey fill, no border. The grey is the affordance
+       on its own; adding a border on top looks like a generic chat app. */
+    background-color: #e9e9eb;
     color: var(--color-gray-800);
-    margin-right: auto;
-    border: 1px solid var(--color-gray-200);
-    border-bottom-left-radius: 0.25rem;
+    align-self: flex-start;
+    border-bottom-left-radius: 0.35rem;
 }
 
 .message-timestamp {
@@ -409,8 +472,7 @@
 /* ==================== RESPONSIVE DESIGN ==================== */
 
 @media (max-width: 768px) {
-    .modal-content,
-    .chat-modal-content {
+    .modal-content {
         width: 95%;
         margin: 2% auto;
         padding: 1rem;
@@ -443,11 +505,26 @@
         bottom: 5rem;
     }
 
-    .modal-content,
-    .chat-modal-content {
+    .modal-content {
         width: 98%;
         margin: 1% auto;
         padding: 0.75rem;
         max-height: 95vh;
+    }
+
+    /* Phones: bubble sits to the LEFT of the toggle button on the same bottom row.
+       Toggle button is at right-6 (24px) + ~56px wide = ~80px right-edge real estate;
+       right: 5.5rem (88px) gives an 8px gap. The bubble narrows to fit. */
+    .chat-modal {
+        right: 5.5rem;
+        bottom: 1rem;
+        left: 0.5rem;
+    }
+
+    .chat-modal-content {
+        width: 100%;
+        max-width: 100%;
+        height: 70vh;
+        min-height: 320px;
     }
 }

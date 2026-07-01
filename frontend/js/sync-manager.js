@@ -24,23 +24,28 @@ class SyncManager {
     async init(user) {
         this.currentUser = user;
         this.lastSyncTime = this.getLastSyncTime();
-        
+
         // Check if Supabase is properly initialized
         if (!this.supabase || typeof this.supabase.from !== 'function') {
             console.warn('⚠️ SyncManager: Supabase not properly initialized, skipping sync');
             return;
         }
-        
+
         try {
-            // Initial sync from server
+            // Initial sync from server. syncFromServer detects the user_sync_data
+            // table being absent (Postgres error 42P01) and self-disables; in that
+            // case we skip the periodic/realtime setup too.
             await this.syncFromServer();
-            
+            if (this._disabled) {
+                return false;
+            }
+
             // Set up real-time sync
             this.setupRealTimeSync();
-            
+
             // Start periodic sync
             this.startPeriodicSync();
-            
+
             console.log('✅ Cross-device sync initialized for user:', user.email);
             return true;
         } catch (error) {
@@ -67,37 +72,44 @@ class SyncManager {
 
     // Sync all data from server to local
     async syncFromServer() {
+        if (this._disabled) return;
         if (!this.currentUser) return;
-        
+
         // Check if Supabase is properly initialized
         if (!this.supabase || typeof this.supabase.from !== 'function') {
             console.warn('⚠️ SyncManager: Cannot sync - Supabase not properly initialized');
             return;
         }
-        
+
         console.log('📥 Syncing data from server...');
-        
-        try {
-            const { data, error } = await this.supabase
-                .from('user_sync_data')
-                .select('*')
-                .eq('user_email', this.currentUser.email)
-                .gt('updated_at', this.lastSyncTime || '1970-01-01');
-            
-            if (error) throw error;
-            
-            if (data && data.length > 0) {
-                for (const syncRecord of data) {
-                    await this.applyServerData(syncRecord);
-                }
-                
-                console.log(`📥 Synced ${data.length} records from server`);
-                this.updateLastSyncTime();
+
+        const { data, error } = await this.supabase
+            .from('user_sync_data')
+            .select('*')
+            .eq('user_email', this.currentUser.email)
+            .gt('updated_at', this.lastSyncTime || '1970-01-01');
+
+        if (error) {
+            // Postgres 42P01 = "relation does not exist". The user_sync_data
+            // table is part of a cross-device sync feature that hasn't been
+            // provisioned yet. Disable the manager silently rather than
+            // logging an error every periodic tick.
+            if (error.code === '42P01') {
+                this._disabled = true;
+                console.log('ℹ️ SyncManager: user_sync_data table not provisioned; cross-device sync disabled.');
+                return;
             }
-            
-        } catch (error) {
             console.error('Failed to sync from server:', error);
             throw error;
+        }
+
+        if (data && data.length > 0) {
+            for (const syncRecord of data) {
+                await this.applyServerData(syncRecord);
+            }
+
+            console.log(`📥 Synced ${data.length} records from server`);
+            this.updateLastSyncTime();
         }
     }
 

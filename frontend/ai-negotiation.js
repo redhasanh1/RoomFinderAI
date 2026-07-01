@@ -8,7 +8,7 @@ class AINegotiator {
         this.activeNegotiations = new Map(); // Track ongoing negotiations
         this.marketData = new Map(); // Cache market data
         this.aiUserInitialized = false;
-        this.rentcastApiKey = '90680b91c3984ae095227bf9e4b02c78'; // RentCast API key for real market data
+        this.rentcastApiKey = null; // RentCast calls now proxied through backend
         this.rentcastCache = new Map(); // Cache RentCast results per negotiation
         this.conversationStates = new Map(); // Track conversation phases per negotiation
         this.init();
@@ -17,6 +17,14 @@ class AINegotiator {
     // ========================================
     // HUMAN-LIKE CONVERSATION PHASE SYSTEM
     // ========================================
+
+    // Single source of truth for closing signals. Used by both
+    // detectPhaseTransition (landlord-side detection) and the post-response
+    // check (AI-side detection: if the AI itself just said "YES. Deal." we
+    // lock CLOSING so the next turn doesn't drift back into discovery
+    // questions). Expanding this regex was the fix for the "ok deal → AI
+    // asked about the neighborhood" bug.
+    CLOSING_SIGNALS_RE = /\b(meet|deposit|sign|lease|tomorrow|address|move in|done deal|call it (a )?day|when can you|let.?s do it|i.?ll take it|we.?ll take it|deal|agreed|sold|sounds good|works for me|that works|fine by me|happy with that)\b/i;
 
     // Conversation phases - mimics natural human-to-landlord flow
     CONVERSATION_PHASES = {
@@ -44,21 +52,26 @@ class AINegotiator {
             description: 'Share tenant background naturally',
             noPricing: true
         },
-        AVAILABILITY_DISCUSSION: {
-            name: 'AVAILABILITY_DISCUSSION',
-            order: 4,
-            minMessages: 1,
-            maxMessages: 1,
-            description: 'Discuss move-in, lease terms',
-            noPricing: false // Can mention if asked
-        },
+        // PRICE_INTRODUCTION now precedes AVAILABILITY_DISCUSSION. Real-world
+        // negotiation: confirm rent terms before scheduling a viewing — otherwise
+        // the tenant burns leverage by agreeing to meet without ever haggling.
+        // (Previously this was reversed; the AI kept jumping to "Sunday works!"
+        // without ever discussing price.)
         PRICE_INTRODUCTION: {
             name: 'PRICE_INTRODUCTION',
-            order: 5,
+            order: 4,
             minMessages: 1,
             maxMessages: 1,
             description: 'Bring up budget naturally',
             noPricing: false
+        },
+        AVAILABILITY_DISCUSSION: {
+            name: 'AVAILABILITY_DISCUSSION',
+            order: 5,
+            minMessages: 1,
+            maxMessages: 1,
+            description: 'Discuss move-in, lease terms — only AFTER price is touched',
+            noPricing: false // Can mention if asked
         },
         ACTIVE_NEGOTIATION: {
             name: 'ACTIVE_NEGOTIATION',
@@ -66,6 +79,18 @@ class AINegotiator {
             minMessages: 1,
             maxMessages: 10,
             description: 'Actual price negotiation',
+            noPricing: false
+        },
+        // Terminal lock. Entered when the landlord signals readiness to close
+        // ("meet", "deposit", "sign", "tomorrow"...). Once here, the AI is
+        // forbidden from asking new discovery questions or pitching credentials
+        // again — see detectPhaseTransition + validateAndRepair.
+        CLOSING: {
+            name: 'CLOSING',
+            order: 7,
+            minMessages: 1,
+            maxMessages: 99,
+            description: 'Landlord ready to sign — confirm/schedule only',
             noPricing: false
         }
     };
@@ -88,10 +113,205 @@ class AINegotiator {
             currentOffer: null,
             landlordCounterOffer: null,
             agreedPrice: null,
-            propertyFeature: this.extractPropertyFeature(listing)
+            propertyFeature: this.extractPropertyFeature(listing),
+            // --- Phase-locked emotional engine state ---
+            // Tone tracks the landlord's mood. NEUTRAL by default. Goes
+            // FRUSTRATED on hostility keywords and is STICKY (doesn't unset
+            // just because the landlord typed one calm word in between).
+            tone: 'NEUTRAL',
+            // facts: monotonically-growing structured memory. Once we set a
+            // field from a landlord answer, we never overwrite it back to null,
+            // so the AI literally cannot "forget" and re-ask.
+            facts: {
+                listing_held_months: null,    // e.g. "4 months" -> 4
+                deposit_amount: null,         // numeric
+                proposed_meet_date: null,     // "tomorrow", "saturday", etc.
+                has_laundry: null,            // null = unknown, true/false = answered
+                has_parking: null,
+                pets_allowed: null,
+                landlord_said_yes_to_meet: false,
+                landlord_offered_closing: false,
+                landlord_last_named_price: null,  // most recent $X landlord mentioned
+                agreed_price: null               // set on numeric convergence
+            },
+            // alreadyAsked: simple set of topic keys we've already asked about.
+            // The system prompt sees this and is instructed to NOT repeat.
+            alreadyAsked: new Set(),
+            // alreadySharedCredentials: once we've pitched "stable job,
+            // landlord can vouch" once, never again.
+            alreadySharedCredentials: false
         };
         this.conversationStates.set(negotiationId, state);
         return state;
+    }
+
+    // ===== Phase-locked emotional engine helpers =====
+
+    // Pure local extraction (no LLM call). Reads a landlord message and
+    // monotonically updates the facts object. Once a fact is set, this never
+    // overwrites it back to null — so the AI can't undo what it already knows.
+    extractFactsFromLandlordMessage(text, facts) {
+        if (!text || !facts) return;
+        const t = String(text).toLowerCase();
+
+        // Duration: "4 months", "for 6 months", "4 mionths" (typo-tolerant via simple digit+word)
+        const monthsMatch = t.match(/(\d+)\s*m[io]+nth/);
+        if (monthsMatch && facts.listing_held_months == null) {
+            facts.listing_held_months = parseInt(monthsMatch[1], 10);
+        }
+
+        // Laundry: explicit yes/no signals
+        if (facts.has_laundry == null) {
+            if (/(laundry|washer|wash[\/ ]?dry|dryer)\b.*(yes|available|in[- ]?unit|on site|onsite|there is|we have)/i.test(text)
+                || /(yes|available|in[- ]?unit|on site|onsite|there is|we have).*(laundry|washer)/i.test(text)
+                || /\blaundry\b/i.test(t) && /\b(is|available|yes|yep|yeah|sure)\b/i.test(t)) {
+                facts.has_laundry = true;
+            } else if (/no\s+laundry|laundry.*not|don.?t have laundry/i.test(t)) {
+                facts.has_laundry = false;
+            }
+        }
+
+        // Parking
+        if (facts.has_parking == null) {
+            if (/\b(parking|garage|spot)\b.*\b(yes|available|included|free|on[- ]?site|yep|yeah)\b/i.test(t)) {
+                facts.has_parking = true;
+            } else if (/no\s+parking|parking.*not|don.?t have parking/i.test(t)) {
+                facts.has_parking = false;
+            }
+        }
+
+        // Pets
+        if (facts.pets_allowed == null) {
+            if (/\b(pet|dog|cat)s?\s+(are\s+)?(ok|fine|allowed|welcome|yes)\b/i.test(t)) {
+                facts.pets_allowed = true;
+            } else if (/no\s+pets?|pets?.*not allowed/i.test(t)) {
+                facts.pets_allowed = false;
+            }
+        }
+
+        // Closing signals — landlord proposes meet/deposit/etc.
+        const meetDate = t.match(/\b(tomorrow|today|tonight|monday|tuesday|wednesday|thursday|friday|saturday|sunday|next week|this week|this weekend)\b/);
+        if (meetDate && !facts.proposed_meet_date) {
+            facts.proposed_meet_date = meetDate[1];
+        }
+        if (/\b(meet|see you|come by|stop by|swing by)\b/i.test(t)) {
+            facts.landlord_offered_closing = true;
+        }
+        if (/\b(deposit|sign|lease|done deal|call it (a )?day|when can you|move in)\b/i.test(t)) {
+            facts.landlord_offered_closing = true;
+        }
+
+        // Deposit amount
+        const dep = t.match(/\$(\d{2,5})/);
+        if (dep && /deposit/.test(t) && !facts.deposit_amount) {
+            facts.deposit_amount = parseInt(dep[1], 10);
+        }
+
+        // Landlord's most recent named price (for numeric convergence on close).
+        // Captures "$5600", "5,600", "5600 a month", etc. Bounded to plausible
+        // monthly rent range so we don't trip on "I've lived here 4 months".
+        const priceMatches = text.match(/\$?\s*(\d{1,3}(?:[,]\d{3})+|\d{3,5})(?:\.\d{1,2})?/g);
+        if (priceMatches) {
+            for (const raw of priceMatches) {
+                const n = parseFloat(raw.replace(/[$,\s]/g, ''));
+                if (n >= 500 && n <= 50000) {
+                    facts.landlord_last_named_price = n;
+                    break; // first plausible number wins
+                }
+            }
+        }
+    }
+
+    // Returns flags for tone classification + closing detection. Independent
+    // of facts so the prompt builder can switch shape on these without
+    // needing to inspect facts.
+    extractIntentFromLandlordMessage(text) {
+        const t = String(text || '').toLowerCase();
+        const closing = this.CLOSING_SIGNALS_RE.test(t);
+        const frustrated = /(idgaf|wtf|stop|yes or no|just (say|tell)|\bfuck|done with|annoying|stop asking)/i.test(t);
+        return { closing, frustrated };
+    }
+
+    // Post-OpenAI safety net. The prompt does the heavy lifting; this validator
+    // catches model violations (trailing questions in CLOSING, emojis when
+    // landlord is hostile, agreeing to a day outside the tenant's availability)
+    // and either trims or hard-replaces with a sane fallback.
+    validateAndRepair(rawResponse, { phase, tone, facts, tenantGoals, messageHistory }) {
+        if (!rawResponse) return rawResponse;
+        let out = String(rawResponse).trim();
+
+        // Phase-agnostic check: never agree to a meeting day until price has
+        // been raised at least once. Skipping price negotiation is the single
+        // biggest failure mode of the auto-negotiator — landlord says
+        // "sunday?", AI says "works for me!", and rent never gets discussed.
+        // If the AI tries to confirm a viewing day with no prior price touch,
+        // rewrite the reply to make a price probe first.
+        const hist = Array.isArray(messageHistory) ? messageHistory : [];
+        const priceMentionedAi = hist.some(m => m && (m.sender === 'ai' || m.sender === 'assistant') && /\$\s*\d/.test(String(m.content || '')));
+        const priceMentionedLandlord = !!(facts && facts.landlord_last_named_price);
+        const priceTouched = priceMentionedAi || priceMentionedLandlord;
+        const dayInReply = /\b(monday|tuesday|wednesday|thursday|friday|saturday|sunday|tomorrow|tonight)\b/i.test(out);
+        const meetingAffirm = /\b(works|sounds good|that works|see you|let.?s meet|let.?s do|will do|of course|absolutely)\b/i.test(out);
+        const phaseSafe = phase !== 'CLOSING' && phase !== 'ACTIVE_NEGOTIATION'; // in CLOSING the deal may already be done; ACTIVE means price is already on the table
+        if (!priceTouched && dayInReply && meetingAffirm && phaseSafe) {
+            console.warn(`🛡️ Validator: AI affirmed a meeting (${out.slice(0, 60)}) before price was discussed. Rewriting to price-probe first.`);
+            const lp = facts?.landlord_last_named_price; // most likely null here
+            return lp
+                ? `That could work — quick first though, is $${lp} firm or is there any wiggle room? Want to make sure we're aligned before locking it in.`
+                : `That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.`;
+        }
+
+        // Phase-agnostic check: tenant said they can only meet on certain days.
+        // If the AI confirms/affirms a different day, replace with a polite
+        // counter-proposal. The prompt rules ask for this too, but GPT-4 often
+        // loses the rule against the phase template's "maybe suggest meeting"
+        // soft guidance, so a deterministic rewrite is the only reliable fix.
+        const avail = Array.isArray(tenantGoals?.available_days) ? tenantGoals.available_days : [];
+        if (avail.length) {
+            const SHORT = { mon:'monday', tue:'tuesday', wed:'wednesday', thu:'thursday', fri:'friday', sat:'saturday', sun:'sunday' };
+            const availFull = avail.map(d => SHORT[d] || String(d).toLowerCase());
+            const DAYS = ['monday','tuesday','wednesday','thursday','friday','saturday','sunday'];
+            const lower = out.toLowerCase();
+            const mentioned = DAYS.find(d => new RegExp(`\\b${d}\\b`).test(lower));
+            const affirms = mentioned && /\b(works|sounds good|sure,? yes|that works|deal|let.?s do|see you|let.?s meet|let.?s plan|absolutely|of course|will do|i can(?:'?| ?)? do)\b/i.test(out);
+            const counters = mentioned && /\binstead\b|\bcould we (?:do|meet)\b|\binstead of\b/i.test(out);
+            if (mentioned && affirms && !counters && !availFull.includes(mentioned)) {
+                const askCap = availFull[0].charAt(0).toUpperCase() + availFull[0].slice(1);
+                const propCap = mentioned.charAt(0).toUpperCase() + mentioned.slice(1);
+                const altList = availFull.length === 1
+                    ? availFull[0]
+                    : availFull.slice(0, -1).join(', ') + ' or ' + availFull[availFull.length - 1];
+                console.warn(`🛡️ Validator: AI affirmed ${mentioned} — outside tenant availability [${availFull.join(',')}]. Replacing with counter.`);
+                return `${propCap} could work, but I'm actually only free on ${altList}. Any chance we could do ${askCap} instead?`;
+            }
+        }
+
+        if (phase === 'CLOSING') {
+            const hasQuestion = /\?/.test(out);
+            if (hasQuestion) {
+                console.warn('🛡️ Validator: AI emitted question(s) in CLOSING. Replacing with fallback.');
+                return facts?.proposed_meet_date
+                    ? `Yes, that works. See you ${facts.proposed_meet_date}.`
+                    : `Yes, that works. See you then.`;
+            }
+            const words = out.split(/\s+/);
+            if (words.length > 15) {
+                console.warn('🛡️ Validator: AI exceeded 15-word cap in CLOSING. Truncating.');
+                return words.slice(0, 12).join(' ').replace(/[.!?,]*$/, '') + '.';
+            }
+        }
+
+        if (tone === 'FRUSTRATED') {
+            // Strip all emoji ranges
+            out = out.replace(/[\u{1F300}-\u{1FAFF}\u{1F600}-\u{1F64F}\u{1F900}-\u{1F9FF}]/gu, '').trim();
+            const words = out.split(/\s+/);
+            if (words.length > 15 || /\?/.test(out)) {
+                console.warn('🛡️ Validator: AI rambled or asked questions during FRUSTRATED tone. Replacing with damage-control fallback.');
+                return `Sorry about that. I'm in — let's meet.`;
+            }
+        }
+
+        return out;
     }
 
     // Get conversation state
@@ -137,11 +357,27 @@ class AINegotiator {
         return features[Math.floor(Math.random() * Math.min(features.length, 5))];
     }
 
-    // Detect when to transition to next phase based on landlord's response
+    // Detect when to transition to next phase based on landlord's response.
+    // CLOSING is a TERMINAL LOCK — once entered, can never downgrade. The
+    // closing-signal regex below (meet, deposit, sign, tomorrow, address,
+    // "let's do it", "I'll take it"...) trumps every other phase rule. This
+    // is the single most important behavior fix: it stops the AI from asking
+    // discovery questions after the landlord has offered to close the deal.
     detectPhaseTransition(landlordMessage, currentPhase, conversationState) {
         const message = (landlordMessage || '').toLowerCase();
         const messageCount = conversationState.phaseMessageCount || 0;
         const phaseConfig = this.CONVERSATION_PHASES[currentPhase];
+
+        // FORWARD-ONLY: once locked into CLOSING, stay there.
+        if (currentPhase === 'CLOSING') {
+            return 'CLOSING';
+        }
+
+        // CLOSING signal trumps everything — landlord wants to wrap up.
+        if (this.CLOSING_SIGNALS_RE.test(message)) {
+            console.log('🔒 LANDLORD SIGNALED CLOSING — locking phase to CLOSING (terminal).');
+            return 'CLOSING';
+        }
 
         // Skip to PRICE_INTRODUCTION if landlord brings up price/money
         const priceKeywords = /\$\d+|price|rent|budget|cost|afford|monthly|per month|how much|offer/i;
@@ -172,17 +408,13 @@ class AINegotiator {
                 }
             },
             QUALIFICATION: {
-                nextPhase: 'AVAILABILITY_DISCUSSION',
+                // Go to PRICE first, not AVAILABILITY. We never want to schedule
+                // a viewing before the rent has been raised — burns negotiation
+                // leverage. AVAILABILITY is now AFTER price negotiation.
+                nextPhase: 'PRICE_INTRODUCTION',
                 conditions: () => {
                     const positiveResponse = /sounds good|great|perfect|stable|reliable|good tenant/i.test(message);
                     return messageCount >= 1 || positiveResponse;
-                }
-            },
-            AVAILABILITY_DISCUSSION: {
-                nextPhase: 'PRICE_INTRODUCTION',
-                conditions: () => {
-                    const discussedAvailability = /available|move.?in|when|date|lease|month/i.test(message);
-                    return messageCount >= 1 || discussedAvailability;
                 }
             },
             PRICE_INTRODUCTION: {
@@ -190,6 +422,15 @@ class AINegotiator {
                 conditions: () => {
                     const priceDiscussion = /\$\d+|counter|offer|agree|deal|accept|firm|flexible|negotiate/i.test(message);
                     return priceDiscussion;
+                }
+            },
+            // Reached only after ACTIVE_NEGOTIATION progresses (landlord
+            // mentions move-in / scheduling, or the deal is essentially set).
+            AVAILABILITY_DISCUSSION: {
+                nextPhase: 'CLOSING',
+                conditions: () => {
+                    const closing = /meet|see you|come by|stop by|swing by|sunday|monday|tuesday|wednesday|thursday|friday|saturday|tomorrow/i.test(message);
+                    return messageCount >= 1 || closing;
                 }
             },
             ACTIVE_NEGOTIATION: {
@@ -250,69 +491,79 @@ class AINegotiator {
         return result;
     }
 
+    async postJSON(path, body) {
+        const response = await fetch(path, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body || {})
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => '');
+            throw new Error(`Request failed (${response.status}) ${errorText}`.trim());
+        }
+
+        return await response.json();
+    }
+
     // Generate phase-specific message using OpenAI
     async generatePhaseMessage(conversationState, phase = null) {
         const currentPhase = phase || conversationState.currentPhase;
         const context = this.buildPhaseContext(conversationState);
 
-        console.log(`🎭 Generating ${currentPhase} phase message`);
+        console.log(`🎭 Generating ${currentPhase} phase message (tone: ${conversationState.tone || 'NEUTRAL'})`);
+
+        // Pull tenant goals from the page panel (if present). When this script
+        // runs on a page without the goals panel (e.g. embedded usage), the
+        // helper is undefined and we ship an empty object — backend treats it
+        // as "no goals set" and uses the legacy behavior.
+        const tenantGoals = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+
+        // Round-trip visibility: log what we're sending so the user can verify
+        // in dev tools that the goals panel is actually being applied. Pairs
+        // with the backend's "🎯 Negotiation goals applied:" log line.
+        if (Object.keys(tenantGoals).length > 0) {
+            console.log('🎯 Sending negotiation goals:', tenantGoals);
+        } else {
+            // Goals helper returned empty — either the panel has no values,
+            // OR the user hasn't clicked the 🔒 Lock in button yet.
+            console.log('🎯 No goals sent (panel empty OR Lock-in not clicked yet).');
+        }
 
         try {
-            // Build the system prompt for this phase
-            const systemPrompt = this.buildPhaseSystemPrompt(currentPhase, context);
-
-            // Build conversation history for context
-            const messages = [
-                { role: 'system', content: systemPrompt }
-            ];
-
-            // Add recent message history for context (last 4 messages)
-            const recentHistory = conversationState.messageHistory.slice(-4);
-            for (const msg of recentHistory) {
-                messages.push({
-                    role: msg.sender === 'ai' ? 'assistant' : 'user',
-                    content: msg.content
-                });
-            }
-
-            // Add instruction to generate response
-            if (conversationState.lastLandlordMessage) {
-                messages.push({
-                    role: 'user',
-                    content: conversationState.lastLandlordMessage
-                });
-            }
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    ...(this.config.OPENAI_ORG_ID && { 'OpenAI-Organization': this.config.OPENAI_ORG_ID })
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: messages,
-                    max_tokens: 150,
-                    temperature: 0.8
-                })
+            const data = await this.postJSON('/api/negotiate/phase-message', {
+                phase: currentPhase,
+                context,
+                // Phase-locked engine fields. Backend builds a tighter prompt
+                // off these instead of relying on raw history. Sent alongside
+                // messageHistory for backwards compat — backend will prefer
+                // the structured fields when present.
+                tone: conversationState.tone || 'NEUTRAL',
+                facts: conversationState.facts || {},
+                alreadyAsked: [...(conversationState.alreadyAsked || [])],
+                alreadySharedCredentials: !!conversationState.alreadySharedCredentials,
+                tenantGoals,
+                messageHistory: conversationState.messageHistory || []
             });
 
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
+            let message = (data.response || '').trim();
+            if (!message) throw new Error('Empty phase-message response');
+
+            // Skip "human variations" (random cheerful fillers, ":)", "Thanks!")
+            // when we're closing or repairing — they read as gaslighting on top
+            // of an angry/finalizing landlord.
+            const suppressVariations = currentPhase === 'CLOSING' || conversationState.tone === 'FRUSTRATED';
+            if (!suppressVariations) {
+                message = this.addHumanVariations(message);
             }
-
-            const data = await response.json();
-            let message = data.choices[0].message.content.trim();
-
-            // Add human variations
-            message = this.addHumanVariations(message);
 
             console.log(`✅ Generated ${currentPhase} message:`, message);
             return message;
 
         } catch (error) {
-            console.warn('⚠️ OpenAI unavailable, using fallback template');
+            console.warn('⚠️ AI phase-message unavailable, using fallback template');
             return this.getFallbackMessage(currentPhase, context);
         }
     }
@@ -453,6 +704,14 @@ Write 2-3 sentences negotiating naturally.`
                 `I hear you. Would $${context.currentOffer || context.userBudget} work? I can commit to a longer lease if that helps.`,
                 `That's a bit above what I was hoping, but I really want this place. Could you do $${context.currentOffer || context.userBudget}?`,
                 `I understand. What if we met somewhere in the middle?`
+            ],
+            // CLOSING was missing — without it the gate below silently fell back
+            // to an INTRODUCTION line ("Is it still available?") when the deal was
+            // already being closed, which reads as the AI restarting the convo.
+            CLOSING: [
+                `Sounds good — works for me.`,
+                `That works. See you then.`,
+                `Perfect, let's lock it in.`
             ]
         };
 
@@ -461,9 +720,30 @@ Write 2-3 sentences negotiating naturally.`
     }
 
     // Start conversation with introduction (new human-like flow) - v2
-    async startHumanLikeConversation(listing, userBudget, userEmail, userName = null) {
+    async startHumanLikeConversation(listing, userBudget, userEmail, userName = null, conversationId = null) {
         try {
             console.log('🚀 [HUMAN-LIKE v2] Starting phased conversation for:', listing.title);
+
+            // Defense-in-depth idempotency: even if a caller bypassed the
+            // ai-chat.js guard, if a prior AI-authored message already exists
+            // in this conversation, do NOT generate a fresh intro. This is
+            // the last line of defense against duplicate intros.
+            if (conversationId) {
+                try {
+                    const { data: priorAi } = await this.supabase
+                        .from('messages')
+                        .select('id')
+                        .eq('conversation_id', conversationId)
+                        .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%Sent via RoomFinder AI%,content.ilike.%AI Negotiator on behalf%')
+                        .limit(1);
+                    if (priorAi && priorAi.length > 0) {
+                        console.log('🛡️ startHumanLikeConversation: AI message already exists for conversation', conversationId, '— skipping intro generation.');
+                        return { message: null, negotiationId: null, phase: 'INTRODUCTION', skipped: true };
+                    }
+                } catch (e) {
+                    console.warn('⚠️ Pre-check inside startHumanLikeConversation failed (non-fatal):', e?.message || e);
+                }
+            }
 
             // Create negotiation ID
             const negotiationId = `neg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -538,6 +818,28 @@ Write 2-3 sentences negotiating naturally.`
         try {
             console.log('💬 Processing landlord reply for phased conversation');
 
+            // Fire a browser notification when a landlord replies while the
+            // tab is in the background. Reuses the existing Web Push system
+            // (notification-manager.js). Skipped silently if permission
+            // hasn't been granted or the user is actively focused on the page.
+            try {
+                if (typeof window !== 'undefined'
+                    && window.notificationManager
+                    && typeof window.notificationManager.sendLocalNotification === 'function'
+                    && typeof document !== 'undefined'
+                    && document.hidden) {
+                    const listingTitle = listing?.title || 'a listing';
+                    const preview = String(landlordMessage || '').slice(0, 90);
+                    window.notificationManager.sendLocalNotification(
+                        `Landlord replied: ${listingTitle}`,
+                        preview,
+                        { tag: `negotiator-${negotiationId}`, requireInteraction: false }
+                    );
+                }
+            } catch (notifyErr) {
+                console.warn('Landlord-reply notification failed (non-fatal):', notifyErr?.message || notifyErr);
+            }
+
             // Get conversation state
             let conversationState = this.getConversationState(negotiationId);
 
@@ -566,6 +868,59 @@ Write 2-3 sentences negotiating naturally.`
                 timestamp: new Date()
             });
 
+            // Backfill phase-locked state for negotiations that were created
+            // before this engine existed (e.g. reconstructed from activeNegotiations).
+            if (!conversationState.facts) conversationState.facts = {
+                listing_held_months: null, deposit_amount: null, proposed_meet_date: null,
+                has_laundry: null, has_parking: null, pets_allowed: null,
+                landlord_said_yes_to_meet: false, landlord_offered_closing: false
+            };
+            if (!conversationState.alreadyAsked) conversationState.alreadyAsked = new Set();
+            if (conversationState.alreadySharedCredentials == null) conversationState.alreadySharedCredentials = false;
+            if (!conversationState.tone) conversationState.tone = 'NEUTRAL';
+
+            // Pre-filter pass over the landlord message — extracts structured
+            // facts (laundry available, duration, meet date...) and detects
+            // tone signals. This runs BEFORE any LLM call so the prompt
+            // builder downstream can switch shape based on the result.
+            this.extractFactsFromLandlordMessage(landlordMessage, conversationState.facts);
+            const intent = this.extractIntentFromLandlordMessage(landlordMessage);
+            // Tone is STICKY on frustration: once the landlord swore at us, we
+            // stay in damage-control mode even if their next message is calm.
+            if (intent.frustrated) {
+                conversationState.tone = 'FRUSTRATED';
+                console.log('😡 Landlord frustration detected — tone locked to FRUSTRATED.');
+            } else if (intent.closing && conversationState.tone !== 'FRUSTRATED') {
+                conversationState.tone = 'ENGAGED';
+            }
+            // Best-effort: record what the landlord just answered so the AI
+            // doesn't re-ask. Topics align with the facts fields we extract.
+            if (conversationState.facts.has_laundry != null) conversationState.alreadyAsked.add('laundry');
+            if (conversationState.facts.has_parking != null) conversationState.alreadyAsked.add('parking');
+            if (conversationState.facts.pets_allowed != null) conversationState.alreadyAsked.add('pets');
+            if (conversationState.facts.listing_held_months != null) conversationState.alreadyAsked.add('duration');
+
+            // Numeric convergence check: if the landlord just named a price
+            // that matches a price the AI offered in its prior turn (within
+            // $50 tolerance), the deal is mutually accepted in numbers even
+            // if neither side wrote the word "deal". Locks CLOSING.
+            if (conversationState.facts.landlord_last_named_price && conversationState.currentPhase !== 'CLOSING') {
+                const lastAi = (conversationState.messageHistory || []).slice().reverse().find(m => m.sender === 'ai');
+                if (lastAi) {
+                    const aiPriceMatch = String(lastAi.content || '').match(/\$?\s*(\d{1,3}(?:,\d{3})+|\d{3,5})(?:\.\d{1,2})?/);
+                    if (aiPriceMatch) {
+                        const aiPrice = parseFloat(aiPriceMatch[1].replace(/,/g, ''));
+                        const landlordPrice = conversationState.facts.landlord_last_named_price;
+                        if (aiPrice >= 500 && Math.abs(aiPrice - landlordPrice) < 50) {
+                            console.log(`🤝 Numeric convergence at ~$${landlordPrice} (AI prior: $${aiPrice}). Locking CLOSING.`);
+                            conversationState.currentPhase = 'CLOSING';
+                            conversationState.facts.agreed_price = landlordPrice;
+                            conversationState.phaseHistory.push('CLOSING');
+                        }
+                    }
+                }
+            }
+
             // Detect phase transition
             const newPhase = this.detectPhaseTransition(
                 landlordMessage,
@@ -592,7 +947,48 @@ Write 2-3 sentences negotiating naturally.`
             }
 
             // Generate response for current phase
-            const responseMessage = await this.generatePhaseMessage(conversationState);
+            const rawResponse = await this.generatePhaseMessage(conversationState);
+
+            // Re-read goals at validation time too, so a goal set DURING the
+            // chat takes effect on the very next reply (not the one after).
+            const tenantGoalsForValidator = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+                ? window.getTenantGoals()
+                : {};
+
+            // Post-OpenAI validator: hard-replaces violations even if the LLM
+            // ignored the prompt rules (questions in CLOSING, emojis when
+            // FRUSTRATED, agreeing to a day outside tenant availability,
+            // agreeing to meet before price was even discussed).
+            // Cheap safety net behind the prompt itself.
+            const responseMessage = this.validateAndRepair(rawResponse, {
+                phase: conversationState.currentPhase,
+                tone: conversationState.tone,
+                facts: conversationState.facts,
+                tenantGoals: tenantGoalsForValidator,
+                messageHistory: conversationState.messageHistory
+            });
+
+            // Once we've actually shipped a phase response (especially in
+            // QUALIFICATION which is the credentials pitch), mark credentials
+            // as shared so future prompts know not to repeat them.
+            if (conversationState.currentPhase === 'QUALIFICATION') {
+                conversationState.alreadySharedCredentials = true;
+            }
+
+            // Closing detection on the AI's OWN response. The bug we just hit:
+            // AI said "YES. Deal." but the next landlord message ("ok deal")
+            // came in while phase was still ACTIVE_NEGOTIATION, so the AI
+            // produced a rapport-style reply ("what's the neighborhood like?").
+            // By inspecting our own output for closing intent right after
+            // validateAndRepair, we lock CLOSING *before* the next inbound
+            // message arrives — its handler then renders a calm confirmation
+            // instead of restarting discovery.
+            if (this.CLOSING_SIGNALS_RE.test(responseMessage) && conversationState.currentPhase !== 'CLOSING') {
+                console.log('🔒 AI itself signaled acceptance — locking phase to CLOSING.');
+                conversationState.currentPhase = 'CLOSING';
+                conversationState.phaseHistory.push('CLOSING');
+                conversationState.facts.landlord_said_yes_to_meet = true;
+            }
 
             // Record our response
             conversationState.messageHistory.push({
@@ -2201,56 +2597,13 @@ Example: "Would it be unreasonable to consider $X?" (They say "No, not unreasona
     async getAIMarketData(location, houseType, bedrooms) {
         try {
             console.log('🤖 Getting AI market estimates for:', { location, houseType, bedrooms });
+            const data = await this.postJSON('/api/negotiate/market-estimate', { location, houseType, bedrooms });
+            const marketData = data.marketData || {};
 
-            const prompt = `
-            You are a real estate market analyst. Provide realistic rental market data for:
-            - Location: ${location || 'General area'}
-            - Property Type: ${houseType || 'Any'}
-            - Bedrooms: ${bedrooms || 'Any'}
-
-            Based on current market conditions, provide realistic estimates in this JSON format:
-            {
-                "average": 1200,
-                "median": 1150,
-                "min": 900,
-                "max": 1500,
-                "analysis": "Brief market analysis explaining the pricing",
-                "negotiationTips": "Tips for negotiating in this market"
-            }
-
-            Focus on realistic prices for the specified location and property type.
-            `;
-
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 300,
-                    temperature: 0.3
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const marketData = JSON.parse(data.choices[0].message.content.trim());
-            
-            return {
-                ...marketData,
-                count: 0,
-                source: 'ai_estimate'
-            };
+            return { ...marketData, count: marketData.count ?? 0, source: marketData.source || 'ai_estimate' };
 
         } catch (error) {
-            console.warn('⚠️ OpenAI market analysis unavailable, using estimates');
+            console.warn('⚠️ AI market analysis unavailable, using estimates');
 
             // Fallback to basic estimates
             return {
@@ -2346,33 +2699,15 @@ Build rapport through genuine appreciation of the property.
 Generate ONLY the message. No greetings, no signatures.
 `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 100,
-                    temperature: 0.7
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const message = data.choices[0].message.content.trim();
+            const data = await this.postJSON('/api/negotiate/contextual-response', { prompt });
+            const message = (data.response || '').trim();
+            if (!message) throw new Error('Empty negotiation message');
 
             console.log('✅ Generated elite negotiation message with offer:', initialOffer);
             return message;
 
         } catch (error) {
-            console.warn('⚠️ OpenAI unavailable, using elite fallback');
+            console.warn('⚠️ AI unavailable, using elite fallback');
 
             // Strategic fallback - still uses elite style
             // CRITICAL: Never offer more than the listing price
@@ -3060,28 +3395,14 @@ Generate ONLY the message. No greetings, no signatures.
             5. Extract prices carefully - any $ or number followed by "month" or "per month"
             `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 250,
-                    temperature: 0.1
-                })
+            const data = await this.postJSON('/api/negotiate/analyze-reply', {
+                replyContent,
+                negotiationState: negotiation?.negotiationState,
+                listing
             });
 
-            if (!response.ok) {
-                console.warn('OpenAI API failed, using fallback analysis');
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            let analysis = JSON.parse(data.choices[0].message.content.trim());
+            const analysis = data.analysis;
+            if (!analysis) throw new Error('Empty analysis');
 
             console.log('📊 AI Analysis result:', analysis);
             return analysis;
@@ -3467,41 +3788,25 @@ Generate ONLY the message. No greetings, no signatures.
             Generate ONLY the response:
             `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 150,
-                    temperature: 0.7
-                })
-            });
+            const data = await this.postJSON('/api/negotiate/contextual-response', { prompt });
+            const responseText = (data.response || '').trim();
+            if (!responseText) throw new Error('Empty contextual response');
 
-            if (response.ok) {
-                const data = await response.json();
-                const responseText = data.choices[0].message.content.trim();
-
-                // Track the tactic used
-                if (!negotiation.negotiationState) {
-                    negotiation.negotiationState = { tacticsUsed: [], offersMade: [], lastOffer: negotiation.userBudget };
-                }
-                negotiation.negotiationState.tacticsUsed.push(tacticToUse);
-
-                // Track any price mentioned
-                const priceMatch = responseText.match(/\$(\d+)/);
-                if (priceMatch) {
-                    negotiation.negotiationState.lastOffer = parseInt(priceMatch[1]);
-                    negotiation.negotiationState.offersMade.push(parseInt(priceMatch[1]));
-                }
-
-                console.log('✅ Generated contextual response with tactic:', tacticToUse);
-                return responseText;
+            // Track the tactic used
+            if (!negotiation.negotiationState) {
+                negotiation.negotiationState = { tacticsUsed: [], offersMade: [], lastOffer: negotiation.userBudget };
             }
+            negotiation.negotiationState.tacticsUsed.push(tacticToUse);
+
+            // Track any price mentioned
+            const priceMatch = responseText.match(/\$(\d+)/);
+            if (priceMatch) {
+                negotiation.negotiationState.lastOffer = parseInt(priceMatch[1]);
+                negotiation.negotiationState.offersMade.push(parseInt(priceMatch[1]));
+            }
+
+            console.log('✅ Generated contextual response with tactic:', tacticToUse);
+            return responseText;
         } catch (error) {
             console.error('Error generating contextual response:', error);
         }
@@ -3512,32 +3817,84 @@ Generate ONLY the message. No greetings, no signatures.
     }
 
     // Send negotiation message and notify landlord
-    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null) {
+    // Build a deterministic UUID v5 from a string. Two browsers/tabs computing this
+    // with the same input produce the EXACT same UUID — used below as the AI
+    // response's primary key so Postgres' uniqueness constraint hard-stops races.
+    async _deterministicUUID(input) {
+        const data = new TextEncoder().encode(`roomfinder-ai-response:${input}`);
+        const hashBuf = await crypto.subtle.digest('SHA-1', data);
+        const bytes = new Uint8Array(hashBuf);
+        bytes[6] = (bytes[6] & 0x0f) | 0x50;  // version 5
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;  // RFC 4122 variant
+        const hex = Array.from(bytes.slice(0, 16)).map(b => b.toString(16).padStart(2, '0')).join('');
+        return `${hex.substring(0,8)}-${hex.substring(8,12)}-${hex.substring(12,16)}-${hex.substring(16,20)}-${hex.substring(20,32)}`;
+    }
+
+    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null, respondsToMessageId = null) {
         try {
             // Ensure AI user exists first
             await this.ensureAIUserExists();
 
             const senderEmail = 'ai-negotiator@roomfinder.com';
+            // Disclosure as a small footer rather than a loud header. The
+            // landlord still sees the message is AI-assisted (regulatory /
+            // transparency intact), but the body reads first — which is what
+            // determines whether the landlord engages seriously. The earlier
+            // "🤖 AI Negotiator on behalf of …:" header was disclosing it on
+            // every message and crushing negotiation effectiveness.
+            // Disclosure as a fully-separated footer paragraph. The em-dash
+            // divider line ("———") on its own row, with blank lines above and
+            // below, makes the footer read as a distinct signature block
+            // rather than a trailing sentence on the message body.
+            const fullContent = `${message}\n\n———\n\nSent via RoomFinder AI on behalf of ${userEmail}`;
+            const createdAt = new Date().toISOString();
+            let finalSenderEmail = senderEmail;
+            let finalContent = fullContent;
+
+            // If we know which landlord message we're responding to, derive a deterministic
+            // primary key for THIS AI reply. Two tabs/sessions racing the same OpenAI call
+            // will both compute the same uuid; Postgres' PK uniqueness ensures only one
+            // INSERT wins. The loser gets 23505 and bails — never a duplicate user-visible
+            // message, no matter how many sessions raced.
+            const insertPayload = {
+                conversation_id: conversationId,
+                sender_email: senderEmail,
+                content: fullContent,
+                created_at: createdAt
+            };
+            if (respondsToMessageId) {
+                try {
+                    insertPayload.id = await this._deterministicUUID(respondsToMessageId);
+                } catch (e) {
+                    console.warn('Could not derive deterministic id (proceeding without dedup):', e.message);
+                }
+            }
 
             const { error } = await this.supabase
                 .from('messages')
-                .insert({
-                    conversation_id: conversationId,
-                    sender_email: senderEmail,
-                    content: `🤖 AI Negotiator on behalf of ${userEmail}:\n\n${message}`
-                });
+                .insert(insertPayload);
+
+            // 23505 = unique_violation = another session already inserted the same AI
+            // response for this landlord message. We've definitively lost the race. Bail.
+            if (error?.code === '23505') {
+                console.log('📨 Lost dedup race — another session already responded to this landlord message. Skipping.');
+                return false;
+            }
 
             if (error) {
                 console.error('Error sending negotiation message with AI email:', error);
 
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
+                finalSenderEmail = userEmail;
+                finalContent = `${message}\n\n———\n\nSent via RoomFinder AI`;
                 const { error: retryError } = await this.supabase
                     .from('messages')
                     .insert({
                         conversation_id: conversationId,
-                        sender_email: userEmail,
-                        content: `🤖 AI Negotiator:\n\n${message}`
+                        sender_email: finalSenderEmail,
+                        content: finalContent,
+                        created_at: createdAt
                     });
 
                 if (retryError) {
@@ -3547,6 +3904,33 @@ Generate ONLY the message. No greetings, no signatures.
             }
 
             console.log('✅ Sent negotiation message');
+
+            // Live broadcast on the same chat-{conversationId} channel the docked chat
+            // subscribes to in listings.html. Without this the landlord's screen has to
+            // wait for the postgres_changes path (500ms-2s) to surface the AI's reply.
+            // Fire-and-forget; the DB INSERT above is the source of truth.
+            try {
+                const ch = this.supabase.channel(`chat-${conversationId}`);
+                ch.subscribe((status) => {
+                    if (status !== 'SUBSCRIBED') return;
+                    ch.send({
+                        type: 'broadcast',
+                        event: 'new_message',
+                        payload: {
+                            conversation_id: conversationId,
+                            sender_email: finalSenderEmail,
+                            content: finalContent,
+                            message_type: 'text',
+                            created_at: createdAt
+                        }
+                    }).finally(() => {
+                        // Short-lived channel; clean up after the send so we don't leak.
+                        setTimeout(() => { try { ch.unsubscribe(); } catch (e) {} }, 500);
+                    });
+                });
+            } catch (broadcastErr) {
+                console.warn('AI broadcast send failed (non-fatal):', broadcastErr);
+            }
 
             // Create notification for landlord in ai_chats table
             if (landlordEmail) {
@@ -3600,6 +3984,11 @@ Generate ONLY the message. No greetings, no signatures.
                     schema: 'public',
                     table: 'messages'
                 }, async (payload) => {
+                    // Wrap the entire handler: an unhandled throw inside an async
+                    // realtime callback becomes a silent unhandled rejection, which
+                    // presents to the user as "the AI just stopped replying" with
+                    // zero on-screen signal. Surface it loudly instead.
+                    try {
                     const newMessage = payload.new;
                     console.log('🔔 [AI NEGOTIATION] New message received:', newMessage);
                     console.log('🔔 Message sender:', newMessage.sender_email);
@@ -3609,16 +3998,63 @@ Generate ONLY the message. No greetings, no signatures.
                     if (newMessage.sender_email !== 'ai-negotiator@roomfinder.com') {
                         console.log('📨 Processing reply from:', newMessage.sender_email);
                         console.log('📨 Looking for conversation:', newMessage.conversation_id);
-                        
+
                         const { data: conversation, error: convError } = await this.supabase
                             .from('conversations')
                             .select('*')
                             .eq('id', newMessage.conversation_id)
                             .maybeSingle();
-                            
+
                         if (convError) {
                             console.log('❌ Conversation lookup error:', convError.message);
                             return;
+                        }
+
+                        // Dedup: only the TENANT'S browser should generate the AI's next
+                        // reply. Without this gate, every browser/tab subscribed to this
+                        // conversation (tenant tab + landlord tab + any duplicate session)
+                        // fires its own OpenAI call against the same landlord message →
+                        // N near-identical AI responses get spammed into the chat.
+                        // The AI Negotiator works on behalf of the tenant, so we ground
+                        // the gate on conversation.sender_email (the tenant).
+                        const meEmail = JSON.parse(localStorage.getItem('currentUser') || '{}')?.email?.toLowerCase();
+                        const tenantEmail = conversation?.sender_email?.toLowerCase();
+                        if (!meEmail || !tenantEmail || meEmail !== tenantEmail) {
+                            console.log('📨 Skipping AI response — this session is not the tenant for this negotiation', { me: meEmail, tenant: tenantEmail });
+                            return;
+                        }
+
+                        // Per-message lock: if we already started processing this exact
+                        // landlord message, skip. Cheap in-memory guard against the same
+                        // INSTANCE firing twice for any reason (re-subscribe, duplicate
+                        // INSERT events, etc.).
+                        if (!this._processedLandlordMessages) this._processedLandlordMessages = new Set();
+                        if (this._processedLandlordMessages.has(newMessage.id)) {
+                            console.log('📨 Already processed landlord message', newMessage.id, '— skipping duplicate');
+                            return;
+                        }
+                        this._processedLandlordMessages.add(newMessage.id);
+
+                        // DB-level lock across instances: another AINegotiator instance
+                        // (different tab, different page in the same browser, etc.) has
+                        // its own _processedLandlordMessages Set, so the in-memory gate
+                        // can't catch cross-instance duplicates. Check Postgres for an
+                        // existing AI reply timestamped after this landlord message — if
+                        // any session already responded, we don't generate another.
+                        try {
+                            const { data: alreadyResponded } = await this.supabase
+                                .from('messages')
+                                .select('id')
+                                .eq('conversation_id', newMessage.conversation_id)
+                                .eq('sender_email', 'ai-negotiator@roomfinder.com')
+                                .gt('created_at', newMessage.created_at)
+                                .limit(1);
+                            if (alreadyResponded && alreadyResponded.length > 0) {
+                                console.log('📨 AI already responded in DB for this landlord message — another session won the race, skipping');
+                                return;
+                            }
+                        } catch (lockErr) {
+                            console.warn('⚠️ DB dedup check failed (proceeding anyway):', lockErr.message);
                         }
                         
                         console.log('📨 Found conversation:', conversation);
@@ -3637,7 +4073,7 @@ Generate ONLY the message. No greetings, no signatures.
                                 .from('messages')
                                 .select('*')
                                 .eq('conversation_id', conversation.id)
-                                .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%AI Negotiator on behalf%')
+                                .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%Sent via RoomFinder AI%,content.ilike.%AI Negotiator on behalf%')
                                 .limit(5);
                             
                             if (aiMessages && aiMessages.length > 0) {
@@ -3709,18 +4145,26 @@ Generate ONLY the message. No greetings, no signatures.
                                     console.log(`⏳ Waiting ${delay}ms before responding...`);
                                     await new Promise(resolve => setTimeout(resolve, delay));
 
-                                    // Send the phased response
+                                    // Send the phased response. Pass newMessage.id as the
+                                    // dedup key — the AI's INSERT will use a deterministic
+                                    // UUID derived from it, and the DB enforces uniqueness.
                                     await this.sendNegotiationMessage(
                                         conversation.id,
                                         response.message,
                                         conversation.sender_email,
                                         listing.user_email,
-                                        listing.title
+                                        listing.title,
+                                        newMessage.id
                                     );
                                     console.log(`✅ [PHASED v2] Sent ${response.phase} response`);
+                                } else {
+                                    console.error('❌ [AI NEGOTIATION] Reply was generated but NOT sent (response/response.message falsy) — no AI reply will appear in the chat.', { hasResponse: !!response });
                                 }
                             }
                         }
+                    }
+                    } catch (cbErr) {
+                        console.error('❌ [AI NEGOTIATION] Unhandled error in realtime message handler — no AI reply will be sent:', cbErr?.message || cbErr, cbErr);
                     }
                 })
                 .subscribe((status, err) => {
@@ -3730,6 +4174,21 @@ Generate ONLY the message. No greetings, no signatures.
                     }
                     if (status === 'SUBSCRIBED') {
                         console.log('✅ [AI NEGOTIATION] Message listener active and ready');
+                    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                        // Realtime subscription failed. Without it, landlord replies
+                        // never reach this browser and the AI cannot respond — this is
+                        // the exact "nothing happens / no replies" symptom. Make it
+                        // loud + visible instead of a single buried console line.
+                        console.error(`❌ [AI NEGOTIATION] Realtime subscription FAILED (status=${status}). Landlord replies will NOT be received and the AI cannot respond.`, err || '');
+                        try {
+                            if (typeof document !== 'undefined' && !document.getElementById('ai-negotiator-realtime-error')) {
+                                const banner = document.createElement('div');
+                                banner.id = 'ai-negotiator-realtime-error';
+                                banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#b91c1c;color:#fff;padding:10px 16px;font:13px/1.4 sans-serif;text-align:center;';
+                                banner.textContent = `AI Negotiator: live connection failed (${status}). Landlord replies won't be received — try reloading the page.`;
+                                if (document.body) document.body.appendChild(banner);
+                            }
+                        } catch (bannerErr) { /* non-fatal */ }
                     }
                 });
 
@@ -4089,27 +4548,12 @@ Reference if natural: "${propertyContext}"
 Generate ONLY the response message. No explanations. No "As an AI". Just the human-sounding negotiation message.
 `;
 
-            const response = await fetch('https://api.openai.com/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${this.config.OPENAI_API_KEY}`,
-                    'OpenAI-Organization': this.config.OPENAI_ORG_ID
-                },
-                body: JSON.stringify({
-                    model: this.config.OPENAI_MODEL || 'gpt-4',
-                    messages: [{ role: 'system', content: prompt }],
-                    max_tokens: 200,
-                    temperature: 0.7
-                })
+            const data = await this.postJSON('/api/negotiate/counter-offer', {
+                prompt,
+                conversationHistory: []
             });
-
-            if (!response.ok) {
-                throw new Error(`OpenAI API error: ${response.status}`);
-            }
-
-            const data = await response.json();
-            const negotiationResponse = data.choices[0].message.content.trim();
+            const negotiationResponse = (data.response || '').trim();
+            if (!negotiationResponse) throw new Error('Empty market-based response');
 
             // Update negotiation state with the tactic used and new offer
             if (!negotiation.negotiationState) {

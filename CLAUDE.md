@@ -104,7 +104,7 @@ Use `gemini -p` when:
 
 - Before pushing, please pull latest code if there is a new one and merge it successfully
 - Pull code before pushing. Always!
-- Pull latest code from the hasan branch before pushing
+- Pull latest code from the **main** branch before pushing
 
 ## Commit Message Format
 

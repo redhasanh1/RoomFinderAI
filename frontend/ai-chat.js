@@ -34,6 +34,14 @@ class AIChatHandler {
         this.requirementsComplete = false;
         this.listingSelectionMode = false;
         this.currentViewedListing = null;
+
+        // Per-AIChat-instance memory of which conversations already had an
+        // intro message sent. Without this, multiple entry paths
+        // (manual Contact, startNegotiationsForAllListings, post-affirmation
+        // auto-trigger) each re-fire generatePhaseMessage('INTRODUCTION')
+        // and the landlord receives 2-3 near-duplicate "Hey saw your listing"
+        // messages back-to-back.
+        this.sentIntroConversations = new Set();
     }
 
     // Initialize the chat system
@@ -219,8 +227,14 @@ class AIChatHandler {
                 senderLabel = 'Tenant';
             }
 
-            // Check if this is an AI message on behalf of tenant
-            if (message.content && message.content.includes('AI Negotiator on behalf of')) {
+            // Check if this is an AI message on behalf of tenant.
+            // Detect both the new footer format ("— Sent via RoomFinder AI")
+            // and the legacy header ("AI Negotiator on behalf of") so older
+            // messages still classify correctly.
+            if (message.content && (
+                message.content.includes('Sent via RoomFinder AI') ||
+                message.content.includes('AI Negotiator on behalf of')
+            )) {
                 senderLabel = 'AI Negotiator';
             }
 
@@ -308,6 +322,40 @@ class AIChatHandler {
         }
     }
 
+    // Build a deterministic markdown list of the user's locked-in negotiation
+    // goals. Used by the intent-intercept in processMessage so questions like
+    // "what parameters do we have set" always get a reliable list-back,
+    // independent of LLM whims.
+    formatLockedGoalsForChat() {
+        const g = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+        if (!g || Object.keys(g).length === 0) {
+            return "You haven't locked in any negotiation goals yet. Open the **🎯 Your Negotiation Goals** panel above, set what matters to you, then click **🔒 Lock in negotiation goals** to activate them.";
+        }
+        const lines = ['Here are your locked-in negotiation goals:'];
+        if (g.available_days?.length) lines.push(`• Meeting days: ${g.available_days.map(d => d[0].toUpperCase() + d.slice(1)).join(', ')}`);
+        if (g.available_time?.length) lines.push(`• Time of day: ${g.available_time.join(', ')}`);
+        if (g.meeting_format?.length) lines.push(`• Meeting format: ${g.meeting_format.map(f => f.replace('_', ' ')).join(', ')}`);
+        if (g.movein_date) lines.push(`• Move-in date: ${g.movein_date}${g.movein_flexibility ? ' (' + g.movein_flexibility + ')' : ''}`);
+        if (g.lease_length) lines.push(`• Lease length: ${g.lease_length}`);
+        if (g.monthly_budget) lines.push(`• Monthly budget: $${g.monthly_budget}/mo`);
+        if (g.target_reduction) lines.push(`• Target reduction: $${g.target_reduction}/month off asking`);
+        const concessions = [g.ask_utilities_included && 'utilities included', g.ask_lower_deposit && 'lower deposit', g.ask_first_month_free && 'first month free'].filter(Boolean);
+        if (concessions.length) lines.push(`• Concessions to ask for: ${concessions.join(', ')}`);
+        if (g.employment) lines.push(`• Employment: ${g.employment.replace('_', ' ')}`);
+        if (g.income_confidence) lines.push(`• Income: ${g.income_confidence}`);
+        if (g.pets) lines.push(`• Pets: ${g.pets === 'none' ? 'none' : g.pets}`);
+        if (g.non_smoker) lines.push('• Non-smoker: yes');
+        if (g.occupants) lines.push(`• Occupants: ${g.occupants}`);
+        if (g.must_haves?.length) lines.push(`• Must-haves: ${g.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}`);
+        if (g.tone) lines.push(`• Tone: ${g.tone}`);
+        if (g.assertiveness) lines.push(`• Assertiveness: ${g.assertiveness}`);
+        lines.push('');
+        lines.push('Edit anything in the panel above; the lock automatically clears when you change something, so re-click **🔒 Lock in** to re-activate.');
+        return lines.join('\n');
+    }
+
     // Process user message
     async processMessage(message) {
         console.log('🔄 Processing user message:', message);
@@ -322,6 +370,33 @@ class AIChatHandler {
 
         // Check if this is a negotiation response first
         if (this.checkForNegotiationResponse(message)) {
+            return;
+        }
+
+        // Pre-fill maxPrice from locked-in monthly_budget so the chat doesn't
+        // ask "what's your budget?" when the user already set one in the panel.
+        try {
+            const _g = (typeof window.getTenantGoals === 'function') ? window.getTenantGoals() : {};
+            if (_g.monthly_budget && !this.userNeeds.maxPrice) {
+                this.userNeeds.maxPrice = Number(_g.monthly_budget);
+                this.requiredFields.budget = Number(_g.monthly_budget);
+                console.log('💰 Prefilled max price from locked goals:', _g.monthly_budget);
+            }
+        } catch (_) { /* non-fatal */ }
+
+        // Intent intercept: any reference to parameters/goals/preferences/
+        // settings — even a STATEMENT like "I locked in parameters" — counts
+        // as wanting to see or work with the goals. Broadened from earlier
+        // (which required BOTH a goal keyword AND a question word) because
+        // statements without question words were falling through to the LLM
+        // and getting generic "what city?" replies.
+        const goalKeyword = /\b(parameter|goal|preference|setting|criteria|negotiation goal|lock(ed)?[\s-]?in)s?\b/i;
+        if (goalKeyword.test(message)) {
+            console.log('🎯 Goals intent intercepted — replying with locked-in goals locally.');
+            const reply = this.formatLockedGoalsForChat();
+            this.appendMessage('AI', reply, 'left');
+            this.conversationHistory.push({ role: 'assistant', content: reply });
+            this.saveConversationHistory();
             return;
         }
 
@@ -348,8 +423,15 @@ class AIChatHandler {
                 this.saveConversationHistory();
             }
 
-            // Handle extracted criteria
+            // Handle extracted criteria. Augment OpenAI's price with a local range-aware
+            // pass — OpenAI often grabs just the lower bound of a range like "6k to 7k"
+            // and we want to search up to the MAX the user is willing to pay.
             if (chatResponse.criteria) {
+                const localMax = this.extractPriceFromMessage(message);
+                if (localMax && (!chatResponse.criteria.price || localMax > chatResponse.criteria.price)) {
+                    console.log('💰 Augmenting OpenAI budget with local range max:', localMax, '(OpenAI had:', chatResponse.criteria.price, ')');
+                    chatResponse.criteria.price = localMax;
+                }
                 this.handleExtractedData(chatResponse.criteria, chatResponse.response);
             }
 
@@ -364,6 +446,15 @@ class AIChatHandler {
     // Call the backend AI chat endpoint
     async callAIChatEndpoint(message) {
         try {
+            // Forward the user's locked-in negotiation goals so the AI can
+            // answer follow-up questions like "do I have pets listed?" or
+            // "what's my tone set to?" naturally. The deterministic
+            // list-back is handled by the intent-intercept in processMessage;
+            // this covers natural-language follow-ups the regex misses.
+            const tenantGoals = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+                ? window.getTenantGoals()
+                : {};
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
                 headers: {
@@ -372,7 +463,8 @@ class AIChatHandler {
                 body: JSON.stringify({
                     message: message,
                     conversationHistory: this.conversationHistory.slice(-10),
-                    userEmail: this.currentUser?.email
+                    userEmail: this.currentUser?.email,
+                    tenantGoals
                 })
             });
 
@@ -424,8 +516,12 @@ class AIChatHandler {
         console.log('🔍 Requirements status:', status);
 
         if (!status.complete) {
-            // Ask for the missing requirement (only if AI didn't already ask)
-            if (!aiResponse || !aiResponse.toLowerCase().includes(status.missing)) {
+            // The backend AI (/api/chat) already drives the conversation and asks
+            // for whatever's missing in natural language. Only emit the scripted
+            // fallback question when there is NO AI response (API down / manual
+            // extraction) — otherwise we double-message and re-ask for info the
+            // user already gave (e.g. repeating "What area or city?" after "toronto").
+            if (!aiResponse) {
                 this.appendMessage('AI', status.question, 'left');
             }
             console.log(`⏳ Missing requirement: ${status.missing}`);
@@ -436,7 +532,8 @@ class AIChatHandler {
         this.requirementsComplete = true;
         console.log('✅ All requirements collected, starting search...');
 
-        const summary = `Got it! Searching for ${this.requiredFields.bedrooms}-bedroom places in ${this.requiredFields.location} under $${this.requiredFields.budget}/month...`;
+        const bedText = this.requiredFields.bedrooms ? `${this.requiredFields.bedrooms}-bedroom ` : '';
+        const summary = `Got it! Searching for ${bedText}places in ${this.requiredFields.location} under $${this.requiredFields.budget}/month...`;
         this.appendMessage('AI', summary, 'left');
 
         setTimeout(() => this.searchAndMessage(), 1000);
@@ -453,19 +550,45 @@ class AIChatHandler {
         return chatResponse.criteria;
     }
 
+    // Range-aware budget extractor. Returns the MAX of any range expressed in the
+    // message, with `k` suffix support. Returns null if no plausible number found.
+    // Handles: "6k to 7k", "6000-7000", "$6,000 to $7,500", "between 5 and 7k",
+    //          "around 1500", "$6k", "max 7500". For ranges we use MAX because
+    //          when a user says "5 to 7k" they mean "willing to pay up to 7k".
+    extractPriceFromMessage(message) {
+        if (!message) return null;
+        const normalized = String(message).replace(/[$,]/g, '').toLowerCase();
+
+        // Range: two numbers connected by to/-/–/—/or/and/until/through, optional k on either
+        const range = normalized.match(/(\d+(?:\.\d+)?)\s*(k)?\s*(?:to|-|–|—|or|and|until|through)\s*(\d+(?:\.\d+)?)\s*(k)?/);
+        if (range) {
+            const useK = range[2] === 'k' || range[4] === 'k';
+            const a = parseFloat(range[1]) * (useK ? 1000 : 1);
+            const b = parseFloat(range[3]) * (useK ? 1000 : 1);
+            const max = Math.max(a, b);
+            if (max > 100) return max;
+        }
+
+        // Single value with optional intent prefix and optional k suffix
+        const single = normalized.match(/(?:under|below|max|up\s*to|for|at|around|about|near|roughly)?\s*(\d+(?:\.\d+)?)\s*(k)?/);
+        if (single) {
+            const value = parseFloat(single[1]) * (single[2] === 'k' ? 1000 : 1);
+            if (value > 100) return value;
+        }
+
+        return null;
+    }
+
     // Manual extraction fallback
     extractManually(message) {
         console.log('Using manual extraction for:', message);
         const result = {};
-        
-        // Extract price
-        const priceMatch = message.match(/(?:under|below|max|up to|for|at|around)?\s*\$?(\d{1,5})/i);
-        if (priceMatch) {
-            const extractedPrice = Number(priceMatch[1]);
-            if (extractedPrice > 100) {
-                result.price = extractedPrice;
-                console.log('💰 Extracted price:', extractedPrice);
-            }
+
+        // Extract price (range-aware, k-suffix-aware)
+        const extracted = this.extractPriceFromMessage(message);
+        if (extracted) {
+            result.price = extracted;
+            console.log('💰 Extracted price:', extracted);
         }
         
         // Extract city - international cities
@@ -591,16 +714,47 @@ class AIChatHandler {
                 question: "What's your monthly budget for rent?"
             };
         }
-        if (!bedrooms) {
-            return {
-                complete: false,
-                missing: 'bedrooms',
-                question: "How many bedrooms do you need?"
-            };
-        }
-
-        console.log('✅ All requirements complete!');
+        // Bedrooms is OPTIONAL. Requiring it made the assistant loop forever when
+        // the user said "no preferences" — it never collected a bedroom count, so
+        // it never searched (and findMatchingListings doesn't even filter on
+        // bedrooms). Once we have location + budget, search; bedrooms only refines
+        // the summary line if it happens to be known.
+        console.log('✅ Core requirements complete (location + budget)!');
         return { complete: true };
+    }
+
+    // Run the same filters as findMatchingListings but scoped to the
+    // current user's own listings. Used to surface "your own listing matched
+    // but is hidden" instead of a confusing silent "no matches" — the search
+    // self-excludes own listings (you can't negotiate with yourself), but
+    // the user has a right to know when their own inventory matched.
+    // Returns { count, firstHit:{title, price, city, house_type, bedrooms, id} } or null.
+    async _checkUserOwnedMatches() {
+        if (!this.currentUser?.email) return null;
+        const needs = this.userNeeds || {};
+        if (!needs.preferredLocation && !needs.maxPrice && !needs.houseType) return null;
+        try {
+            let q = this.supabase
+                .from('listings')
+                .select('id, title, city, price, house_type, bedrooms')
+                .eq('user_email', this.currentUser.email);
+            if (needs.preferredLocation) {
+                const loc = needs.preferredLocation.trim().toLowerCase();
+                q = q.or(`city.ilike.*${loc}*,street.ilike.*${loc}*,title.ilike.*${loc}*,country.ilike.*${loc}*`);
+            }
+            if (needs.houseType) q = q.eq('house_type', needs.houseType);
+            if (needs.maxPrice) q = q.lte('price', needs.maxPrice);
+            const { data, error } = await q.limit(5);
+            if (error) {
+                console.warn('⚠️ own-match check query failed (non-fatal):', error.message);
+                return null;
+            }
+            if (!data || data.length === 0) return null;
+            return { count: data.length, firstHit: data[0] };
+        } catch (e) {
+            console.warn('⚠️ own-match check threw (non-fatal):', e?.message || e);
+            return null;
+        }
     }
 
     // Search for matching listings in Supabase
@@ -616,7 +770,14 @@ class AIChatHandler {
         
         let appliedFilters = [];
         let hasSpecificCriteria = false;
-        
+
+        // Pre-flight: did any of the user's OWN listings match these filters?
+        // We run this BEFORE applying the .neq() exclusion below so we can
+        // tell the user "your own listing matched but was hidden" instead of
+        // silently returning empty. Result is stashed on `this._lastSearchOwnMatch`
+        // and consumed by `searchAndMessage` and `handleNoMatches`.
+        this._lastSearchOwnMatch = await this._checkUserOwnedMatches();
+
         // Step 1: Exclude user's own listings
         if (this.currentUser?.email) {
             query = query.neq('user_email', this.currentUser.email);
@@ -706,7 +867,52 @@ class AIChatHandler {
             });
         }
         
-        return listings || [];
+        // Post-search filter: drop listings whose title+description text
+        // EXPLICITLY excludes a locked-in must-have or the user's pets.
+        // Best-effort because listings have no structured amenity columns;
+        // we only drop on negative language (e.g. "no pets", "no parking",
+        // "unfurnished") — never on absence of positive mention. So
+        // listings with thin descriptions just pass through.
+        const goalsForFilter = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+        const filterResult = this._filterByGoals(listings || [], goalsForFilter);
+        if (filterResult.droppedCount > 0) {
+            console.log(`🎯 Goals post-filter: dropped ${filterResult.droppedCount} listings (${filterResult.reasons.join(', ')})`);
+        }
+        this._lastSearchGoalsApplied = { goals: goalsForFilter, droppedCount: filterResult.droppedCount, reasons: filterResult.reasons };
+        return filterResult.kept;
+    }
+
+    // Build exclusion regexes from the user's locked-in goals. Each entry is
+    // { re, reason } — if `re` matches a listing's title+description, the
+    // listing is dropped (we treat it as an explicit incompatibility with
+    // the user's must-haves / pets).
+    _buildGoalExclusions(goals) {
+        const ex = [];
+        const m = new Set(Array.isArray(goals?.must_haves) ? goals.must_haves : []);
+        if (m.has('in_unit_laundry')) ex.push({ re: /no\s+(in.?unit\s+)?(laundry|washer)\b/i, reason: 'excludes in-unit laundry' });
+        if (m.has('parking'))         ex.push({ re: /no\s+parking\b|street parking only\b/i, reason: 'excludes parking' });
+        if (m.has('pet_friendly') || (goals?.pets && goals.pets !== 'none')) {
+            ex.push({ re: /no\s+pets?\b|no\s+dogs?\b|no\s+cats?\b|pet[- ]?free\b/i, reason: 'no pets allowed' });
+        }
+        if (m.has('furnished'))       ex.push({ re: /unfurnished\b/i, reason: 'unfurnished' });
+        if (m.has('dishwasher'))      ex.push({ re: /no\s+dishwasher\b/i, reason: 'no dishwasher' });
+        return ex;
+    }
+
+    _filterByGoals(listings, goals) {
+        const exclusions = this._buildGoalExclusions(goals || {});
+        if (!exclusions.length) return { kept: listings, droppedCount: 0, reasons: [] };
+        const reasons = new Set();
+        const kept = listings.filter(l => {
+            const t = `${l.title || ''} ${l.description || ''}`.toLowerCase();
+            for (const ex of exclusions) {
+                if (ex.re.test(t)) { reasons.add(ex.reason); return false; }
+            }
+            return true;
+        });
+        return { kept, droppedCount: listings.length - kept.length, reasons: [...reasons] };
     }
 
     // Update left sidebar with matching listings
@@ -824,6 +1030,47 @@ class AIChatHandler {
             // Show found listings with numbered selection
             this.appendMessage('AI', `Found ${this.matchingListings.length} matching listing(s)!`, 'left');
 
+            // Transparency: show the user which goals were applied to the
+            // search filter, which were applied as a post-filter on listing
+            // descriptions, and which are queued for the negotiation
+            // conversation. Answers the "does this take into account
+            // everything?" question explicitly.
+            try {
+                const appliedGoals = this._lastSearchGoalsApplied?.goals || {};
+                if (Object.keys(appliedGoals).length > 0) {
+                    const searchFilters = [];
+                    if (this.userNeeds.preferredLocation) searchFilters.push(this.userNeeds.preferredLocation);
+                    if (this.userNeeds.houseType)        searchFilters.push(this.userNeeds.houseType.toLowerCase());
+                    if (this.userNeeds.maxPrice)         searchFilters.push(`under $${this.userNeeds.maxPrice}/mo`);
+                    if (this.userNeeds.bedrooms)         searchFilters.push(`${this.userNeeds.bedrooms}BR`);
+
+                    const goalsForSearch = [];
+                    if (appliedGoals.must_haves?.length) goalsForSearch.push(`must-haves: ${appliedGoals.must_haves.map(m => m.replace(/_/g, ' ')).join(', ')}`);
+                    if (appliedGoals.pets && appliedGoals.pets !== 'none') goalsForSearch.push(`pet-friendly (${appliedGoals.pets})`);
+
+                    const goalsForNegotiation = [];
+                    if (appliedGoals.target_reduction) goalsForNegotiation.push(`target $${appliedGoals.target_reduction}/mo reduction`);
+                    if (appliedGoals.lease_length)     goalsForNegotiation.push(`${appliedGoals.lease_length} lease`);
+                    if (appliedGoals.available_days?.length) goalsForNegotiation.push('meeting days');
+                    if (appliedGoals.tone || appliedGoals.assertiveness) goalsForNegotiation.push('tone / assertiveness');
+                    if (appliedGoals.ask_utilities_included || appliedGoals.ask_lower_deposit || appliedGoals.ask_first_month_free) goalsForNegotiation.push('concession asks');
+
+                    const lines = [];
+                    if (searchFilters.length) lines.push(`🔎 Search filters applied: ${searchFilters.join(' · ')}`);
+                    if (goalsForSearch.length) {
+                        const dropped = this._lastSearchGoalsApplied?.droppedCount || 0;
+                        const droppedNote = dropped > 0 ? ` (dropped ${dropped} listing${dropped > 1 ? 's' : ''} that explicitly excluded them)` : '';
+                        lines.push(`🎯 Filtered out listings that explicitly exclude: ${goalsForSearch.join(', ')}${droppedNote}`);
+                    }
+                    if (goalsForNegotiation.length) {
+                        lines.push(`💬 The AI will also leverage these during landlord negotiation: ${goalsForNegotiation.join(', ')}`);
+                    }
+                    if (lines.length) this.appendMessage('AI', lines.join('\n'), 'left');
+                }
+            } catch (e) {
+                console.warn('Goals transparency message failed (non-fatal):', e?.message || e);
+            }
+
             // Update the left sidebar with matching listings
             this.updateSidebarWithListings(this.matchingListings);
 
@@ -861,6 +1108,14 @@ class AIChatHandler {
                 this.appendMessage('AI', `...and ${this.matchingListings.length - 5} more listings available.`, 'left');
             }
 
+            // Transparency footer: if the user's own listings ALSO matched but
+            // were filtered out of negotiation targets, let them know — silent
+            // exclusion was the bug we're fixing.
+            if (this._lastSearchOwnMatch && this._lastSearchOwnMatch.count > 0) {
+                const ct = this._lastSearchOwnMatch.count;
+                this.appendMessage('AI', `📌 Note: ${ct} of your own listing${ct > 1 ? 's' : ''} also matched and ${ct > 1 ? 'were' : 'was'} hidden (you can't negotiate with yourself).`, 'left');
+            }
+
             // Ask user to select a listing to view
             this.appendMessage('AI', 'Click "View Details" on any listing to see more information.', 'left');
 
@@ -882,30 +1137,60 @@ class AIChatHandler {
         if (this.userNeeds.preferredLocation) extracted.push(`Location: ${this.userNeeds.preferredLocation}`);
         if (this.userNeeds.maxPrice) extracted.push(`Max Price: $${this.userNeeds.maxPrice}`);
         if (this.userNeeds.houseType) extracted.push(`Type: ${this.userNeeds.houseType}`);
-        
+
         this.appendMessage('AI', `❌ No exact matches found. I searched for: ${extracted.join(', ')}`, 'left');
-        
-        // Try to find similar listings with your actual database schema
+
+        // Special case: the user's OWN listings actually matched the criteria,
+        // but were hidden by the self-exclusion filter. Tell them — this is
+        // the bug fix for "I have this listing already, why doesn't it show up".
+        if (this._lastSearchOwnMatch && this._lastSearchOwnMatch.count > 0) {
+            const ct = this._lastSearchOwnMatch.count;
+            const own = this._lastSearchOwnMatch.firstHit || {};
+            const ownTitle = own.title || 'Your listing';
+            const ownPrice = own.price ? ` ($${own.price}/mo)` : '';
+            const otherN = ct - 1;
+            const others = otherN > 0 ? ` (and ${otherN} other${otherN > 1 ? 's' : ''})` : '';
+            this.appendMessage('AI', `📌 Your own listing **"${ownTitle}"**${ownPrice}${others} matches your search — but it's hidden here because you can't negotiate with yourself.`, 'left');
+            this.appendMessage('AI', `💡 To work with it, search from a different account, or open it directly from your dashboard / My Listings.`, 'left');
+            this.negotiationState = 'idle';
+            return;
+        }
+
+        // No own-listing match either. Try to find similar listings from other
+        // users — but apply the SAME location/price/type filters this time
+        // (the previous version ignored them, which is why the user saw
+        // Toronto results when searching for LA).
         let query = this.supabase
             .from('listings')
             .select('*')
             .neq('user_email', this.currentUser?.email || '')
             .limit(10);
 
-        // Show any available listings since we don't have all filtering options
+        if (this.userNeeds.preferredLocation) {
+            const loc = this.userNeeds.preferredLocation.trim().toLowerCase();
+            query = query.or(`city.ilike.*${loc}*,street.ilike.*${loc}*,title.ilike.*${loc}*,country.ilike.*${loc}*`);
+        }
+        if (this.userNeeds.houseType) {
+            query = query.eq('house_type', this.userNeeds.houseType);
+        }
+        // For "similar" we relax price: show listings up to 20% over budget so
+        // results aren't an exact replay of the empty primary search.
+        if (this.userNeeds.maxPrice) {
+            query = query.lte('price', Math.round(this.userNeeds.maxPrice * 1.2));
+        }
+
         const { data: similarListings } = await query.order('updated_at', { ascending: false });
-        
+
         if (similarListings?.length > 0) {
             const criteria = [];
             if (this.userNeeds.houseType) criteria.push(this.userNeeds.houseType.toLowerCase());
             if (this.userNeeds.preferredLocation) criteria.push(`in ${this.userNeeds.preferredLocation}`);
-            if (this.userNeeds.maxPrice) criteria.push(`under $${this.userNeeds.maxPrice}`);
-            
-            this.appendMessage('AI', `I searched for: ${criteria.join(' + ')}. Here are similar listings:`, 'left');
-            
+            if (this.userNeeds.maxPrice) criteria.push(`up to ~$${Math.round(this.userNeeds.maxPrice * 1.2)}`);
+
+            this.appendMessage('AI', `Here are similar listings (${criteria.join(' + ')}):`, 'left');
+
             let shownCount = 0;
             for (const listing of similarListings.slice(0, 5)) {
-                // Display with your actual database schema
                 const titleText = listing.title || 'Untitled Property';
                 const cityText = listing.city || 'City not specified';
                 const streetText = listing.street ? ` - ${listing.street}` : '';
@@ -913,25 +1198,19 @@ class AIChatHandler {
                 const typeText = listing.house_type ? ` (${listing.house_type})` : '';
                 this.appendMessage('AI', `📋 ${titleText} - ${cityText}${streetText}${priceText}${typeText}`, 'left');
                 shownCount++;
-                
                 if (shownCount >= 3) break;
             }
-            
-            if (shownCount === 0) {
-                this.appendMessage('AI', 'No suitable listings found in the database. Try creating a listing or contact an administrator to add listings in your preferred location.', 'left');
-            } else {
-                const suggestions = [];
-                if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
-                if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or add "${this.userNeeds.preferredLocation}" to listing titles`);
-                
-                if (suggestions.length > 0) {
-                    this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
-                }
+
+            const suggestions = [];
+            if (this.userNeeds.maxPrice) suggestions.push(`increase your budget above $${this.userNeeds.maxPrice}`);
+            if (this.userNeeds.preferredLocation) suggestions.push(`try nearby areas or relax the location filter`);
+            if (suggestions.length > 0) {
+                this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
             }
         } else {
-            this.appendMessage('AI', 'No listings found in database. The database may be empty or all listings are from your account.', 'left');
+            this.appendMessage('AI', 'No matching listings in the database — try a different city, a higher budget, or a different property type.', 'left');
         }
-        
+
         this.negotiationState = 'idle';
     }
 
@@ -1087,8 +1366,61 @@ class AIChatHandler {
         }
     }
 
+    // Out-of-band landlord notification after the AI's intro lands. Fires
+    // two channels in parallel — in-app notification row (so the landlord
+    // sees it in their notifications panel next time they open the site)
+    // and a Brevo email (so they get pinged even when offline). Both
+    // fire-and-forget; failures only log warnings.
+    _notifyLandlordOfIntro(listing, message) {
+        const landlordEmail = listing?.user_email;
+        if (!landlordEmail || !this.currentUser?.email) return;
+        const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
+        const listingTitle = listing.title || 'your listing';
+        const truncated = String(message || '').slice(0, 120);
+
+        // Fire and forget — don't block the chat UI.
+        (async () => {
+            // 1. In-app notification row via the SECURITY DEFINER RPC.
+            try {
+                const { error } = await this.supabase.rpc('create_notification', {
+                    recipient_email: landlordEmail,
+                    notification_title: `New inquiry: ${listingTitle}`,
+                    notification_content: `New message from ${userName} (${this.currentUser.email})\n\nProperty: ${listingTitle}\n\nMessage: "${truncated}"\n\nReply in the chat to continue the conversation.`
+                });
+                if (error) console.warn('⚠️ create_notification RPC failed (non-fatal):', error.message);
+                else console.log('🔔 In-app notification created for landlord:', landlordEmail);
+            } catch (e) {
+                console.warn('⚠️ create_notification threw (non-fatal):', e?.message || e);
+            }
+
+            // 2. Brevo email (works even when landlord is offline).
+            try {
+                const r = await fetch('/api/message-landlord', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        listingId: listing.id,
+                        landlordEmail,
+                        message,
+                        userEmail: this.currentUser.email,
+                        userName
+                    })
+                });
+                if (!r.ok) console.warn('⚠️ /api/message-landlord returned', r.status);
+                else console.log('📧 Landlord email queued for listing:', listing.id);
+            } catch (e) {
+                console.warn('⚠️ /api/message-landlord threw (non-fatal):', e?.message || e);
+            }
+        })();
+    }
+
     // Start negotiation for a specific listing - HUMAN-LIKE PHASED APPROACH
     async startNegotiationForListing(listing) {
+        // DEBUG: log the call stack so we can pin down WHICH caller is firing
+        // the duplicate intro path. Three intros ~60s apart were still
+        // appearing after the earlier idempotency fix; this trace identifies
+        // the leaking caller in production. Remove once root cause is fixed.
+        console.log('📍 startNegotiationForListing called for listing', listing?.id, '— stack:\n', new Error().stack);
         try {
             this.appendMessage('AI', `Starting conversation with landlord for "${listing.title}"...`, 'left');
 
@@ -1170,6 +1502,50 @@ class AIChatHandler {
                 console.log('✅ Created new conversation with ID:', conversationId);
             }
 
+            // Idempotency guard — don't re-send an intro for a conversation
+            // that already has one. Two checks:
+            //   1. In-memory Set: catches re-entry within the same page session
+            //      (e.g. user clicks Contact twice, or post-affirmation handler
+            //      re-fires for an already-introduced listing).
+            //   2. DB history scan: catches re-entry across page reloads —
+            //      if an AI-authored message already exists in this conversation,
+            //      we're rejoining an existing chat and must not send a fresh intro.
+            if (this.sentIntroConversations.has(conversationId)) {
+                console.log('🛡️ Intro already sent for conversation', conversationId, '— skipping generation, just ensuring auto-reply listener is up.');
+                this.activeConversationId = conversationId;
+                this.activeListing = listing;
+                this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                return;
+            }
+            try {
+                // BUGFIX: the earlier version of this guard filtered by
+                // `sender_email = this.currentUser.email` (the tenant), but
+                // AI messages are inserted with sender_email
+                // 'ai-negotiator@roomfinder.com' — so the filter never matched
+                // an existing AI intro and the guard NEVER triggered. We now
+                // match either the AI sender OR the disclosure footer/legacy
+                // header in the message body, so any prior AI-authored message
+                // in this conversation blocks re-introduction.
+                const { data: existingAiMessages } = await this.supabase
+                    .from('messages')
+                    .select('id, sender_email, content')
+                    .eq('conversation_id', conversationId)
+                    .or('sender_email.eq.ai-negotiator@roomfinder.com,content.ilike.%Sent via RoomFinder AI%,content.ilike.%AI Negotiator on behalf%')
+                    .limit(1);
+                if (existingAiMessages && existingAiMessages.length > 0) {
+                    console.log('🛡️ Conversation', conversationId, 'already has an AI-authored message — skipping intro generation (likely a page reload or re-entry).');
+                    this.sentIntroConversations.add(conversationId);
+                    this.activeConversationId = conversationId;
+                    this.activeListing = listing;
+                    this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                    return;
+                }
+            } catch (historyCheckErr) {
+                // Non-fatal — if the history check itself fails we fall through
+                // to the normal path. Better to risk a rare dup than a missing intro.
+                console.warn('⚠️ History check before intro failed (non-fatal):', historyCheckErr?.message || historyCheckErr);
+            }
+
             // Step 3: Use HUMAN-LIKE phased conversation approach
             if (this.negotiationEngine) {
                 console.log('🎭 [NEW CODE v2] Starting human-like phased conversation - NO PRICING IN FIRST MESSAGE');
@@ -1177,13 +1553,28 @@ class AIChatHandler {
                 const budget = this.userNeeds.maxPrice || listing.price * 0.85; // Default to 85% of listing price
                 const userName = this.currentUser.firstName || this.currentUser.email.split('@')[0];
 
-                // Start with introduction phase (NO pricing)
+                // Start with introduction phase (NO pricing). Pass conversationId
+                // so the engine can run its own DB-level dedup check as a
+                // belt-and-suspenders guard.
                 const conversationData = await this.negotiationEngine.startHumanLikeConversation(
                     listing,
                     budget,
                     this.currentUser.email,
-                    userName
+                    userName,
+                    conversationId
                 );
+
+                // If the engine determined an AI message already exists in this
+                // conversation, treat it as a re-entry: set up the auto-reply
+                // listener but skip the intro send.
+                if (conversationData && conversationData.skipped) {
+                    console.log('🛡️ Engine skipped intro generation (already exists). Setting up listener only.');
+                    this.sentIntroConversations.add(conversationId);
+                    this.activeConversationId = conversationId;
+                    this.activeListing = listing;
+                    this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                    return;
+                }
 
                 if (conversationData && conversationData.message) {
                     // Store the negotiation ID for tracking
@@ -1202,12 +1593,22 @@ class AIChatHandler {
                     );
 
                     if (sent) {
+                        // Mark as sent BEFORE the UI messages so a re-entry that
+                        // races with this branch sees the flag immediately.
+                        this.sentIntroConversations.add(conversationId);
+
                         this.appendMessage('AI', `Reached out to the landlord for "${listing.title}"`, 'left');
                         this.appendMessage('AI', `Sent: "${conversationData.message}"`, 'left');
                         this.appendMessage('AI', `I'll continue the conversation naturally when they reply - building rapport before discussing price.`, 'left');
 
                         // Set up auto-reply listener for this conversation
                         this.setupConversationAutoReply(conversationId, conversationData.negotiationId, listing);
+
+                        // Fan out landlord notifications so they actually know
+                        // someone reached out — the real-time message listener
+                        // only fires while the landlord is on the site. Both
+                        // channels are fire-and-forget; failures don't block.
+                        this._notifyLandlordOfIntro(listing, conversationData.message);
                     } else {
                         this.appendMessage('AI', `Failed to send message to landlord`, 'left');
                     }
@@ -1233,8 +1634,10 @@ class AIChatHandler {
                     return;
                 }
 
+                this.sentIntroConversations.add(conversationId);
                 this.appendMessage('AI', `Sent message to landlord for "${listing.title}"`, 'left');
                 this.appendMessage('AI', `Message: "${message}"`, 'left');
+                this._notifyLandlordOfIntro(listing, message);
             }
         } catch (error) {
             console.error('Conversation error:', error);
@@ -1244,6 +1647,19 @@ class AIChatHandler {
 
     // Set up auto-reply for landlord responses
     setupConversationAutoReply(conversationId, negotiationId, listing) {
+        // Idempotency: Supabase's Realtime client tracks channels globally by name. If
+        // we call .channel('conversation_X') a second time, we get back the ALREADY
+        // SUBSCRIBED instance — calling .on('postgres_changes', ...) on it then throws
+        // "cannot add postgres_changes callbacks ... after subscribe()". Bail early
+        // when we've already wired this conversation. The autoReplyChannels Map is
+        // populated below at the same time the subscription is created, so it's the
+        // authoritative "already subscribed" signal.
+        if (!this.autoReplyChannels) this.autoReplyChannels = new Map();
+        if (this.autoReplyChannels.has(conversationId)) {
+            console.log('🔔 Auto-reply already set up for', conversationId, '— skipping duplicate subscription');
+            return;
+        }
+
         console.log('🔔 Setting up auto-reply listener for conversation:', conversationId);
 
         // Subscribe to new messages in this conversation
@@ -1304,14 +1720,20 @@ class AIChatHandler {
 
                 await new Promise(resolve => setTimeout(resolve, delay));
 
-                // Send the response
+                // Send the response. Pass landlordMessage.id as respondsToMessageId so
+                // sendNegotiationMessage uses the deterministic UUID for the INSERT.
+                // Without this, the parallel setupMessageListener path computes the
+                // dedup UUID but this path uses a random one, so both paths' INSERTs
+                // succeed — user sees duplicates. With it, both paths collide on the
+                // same primary key and Postgres rejects the slower one with 23505.
                 const userName = this.currentUser?.firstName || this.currentUser?.email?.split('@')[0] || 'Tenant';
                 const sent = await this.negotiationEngine.sendNegotiationMessage(
                     conversationId,
                     response.message,
                     this.currentUser.email,
                     listing.user_email,
-                    listing.title
+                    listing.title,
+                    landlordMessage.id
                 );
 
                 if (sent) {
@@ -1329,18 +1751,67 @@ class AIChatHandler {
         }
     }
 
-    // Load conversation history from Supabase
+    // Load conversation history from Supabase on page init. Fetches the user's
+    // single row from public.ai_chat_history and replays each message into the
+    // chat panel using displayMessage (UI-only — no history push, no save
+    // round-trip). The _replaying flag suppresses saveConversationHistory()
+    // calls while we're restoring, so we don't re-upsert the messages we just
+    // loaded back to Supabase.
     async loadConversationHistory() {
-        // Disabled - table doesn't exist in database
-        // Each session starts fresh
-        return;
+        if (!this.currentUser?.email || !this.supabase) return;
+        try {
+            const { data, error } = await this.supabase
+                .from('ai_chat_history')
+                .select('messages')
+                .eq('user_email', this.currentUser.email)
+                .maybeSingle();
+            if (error) {
+                console.warn('loadConversationHistory query error:', error.message);
+                return;
+            }
+            if (!data || !Array.isArray(data.messages) || data.messages.length === 0) return;
+
+            this._replaying = true;
+            for (const msg of data.messages) {
+                if (!msg || typeof msg.content !== 'string') continue;
+                const sender = msg.role === 'assistant' ? 'AI'
+                             : msg.role === 'user'      ? 'You'
+                             : (msg.role || 'AI');
+                const align  = msg.role === 'user' ? 'right' : 'left';
+                this.displayMessage(sender, msg.content, align);
+                this.conversationHistory.push({ role: msg.role, content: msg.content });
+            }
+            this._replaying = false;
+            console.log(`✅ Restored ${data.messages.length} message(s) from history for ${this.currentUser.email}`);
+        } catch (e) {
+            console.warn('loadConversationHistory exception:', e.message);
+            this._replaying = false;
+        }
     }
 
-    // Save conversation history to Supabase
+    // Save conversation history to Supabase. Throttled (500ms debounce) because
+    // appendMessage fires save on every message; without the throttle a quick
+    // burst (e.g. system showing five welcome messages on page load) would
+    // produce N upserts. Capped at the last 200 messages so the row can't grow
+    // unbounded. No-op if the user isn't logged in.
     async saveConversationHistory() {
-        // Disabled - table doesn't exist in database
-        // Chat history is stored in memory only during session
-        return;
+        if (!this.currentUser?.email || !this.supabase) return;
+        clearTimeout(this._saveTimer);
+        this._saveTimer = setTimeout(async () => {
+            try {
+                const payload = {
+                    user_email: this.currentUser.email,
+                    messages: (this.conversationHistory || []).slice(-200),
+                    updated_at: new Date().toISOString()
+                };
+                const { error } = await this.supabase
+                    .from('ai_chat_history')
+                    .upsert(payload, { onConflict: 'user_email' });
+                if (error) console.warn('saveConversationHistory upsert failed:', error.message);
+            } catch (e) {
+                console.warn('saveConversationHistory exception:', e.message);
+            }
+        }, 500);
     }
 
     // Clear conversation history
@@ -1406,14 +1877,17 @@ class AIChatHandler {
         // Display the message
         this.displayMessage(sender, message, align, isTypingIndicator);
 
-        // Save to history and localStorage (skip typing indicators)
+        // Save to history (skip typing indicators).
         if (!isTypingIndicator) {
             // Map display names to OpenAI-compatible roles
             const role = sender.toLowerCase() === 'you' ? 'user' :
                         sender.toLowerCase() === 'ai' ? 'assistant' :
                         sender.toLowerCase();
             this.conversationHistory.push({ role: role, content: message });
-            this.saveConversationHistory();
+            // Don't fire save while we're restoring messages from Supabase —
+            // loadConversationHistory pushed them already and an echo upsert
+            // is pure waste + an unnecessary throttled write.
+            if (!this._replaying) this.saveConversationHistory();
         }
     }
 

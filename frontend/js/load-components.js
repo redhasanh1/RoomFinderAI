@@ -16,7 +16,7 @@ async function loadComponent(element) {
     }
 
     try {
-        const response = await fetch(`/frontend/components/${componentName}.html`);
+        const response = await fetch(`/components/${componentName}.html`);
 
         if (response.ok) {
             const html = await response.text();
