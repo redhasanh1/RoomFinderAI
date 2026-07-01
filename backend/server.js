@@ -5,6 +5,15 @@ const path = require('path');
 const fs = require('fs');
 const { PLATFORM_STATUS } = require('./platform-status');
 const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
+const {
+    IS_PRODUCTION,
+    blockInProduction,
+    authRateLimitMiddleware,
+    registerProcessHandlers,
+    registerErrorHandler,
+    shouldUseDemoFallback,
+    getAdminKey
+} = require('./reliability');
 // Branch state secured - Jul 1, 2025
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
@@ -78,7 +87,10 @@ config = {
     AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim() || config.AZURE_FACE_ENDPOINT,
     GOOGLE_OAUTH_CLIENT_ID: process.env.GOOGLE_OAUTH_CLIENT_ID?.trim() || config.GOOGLE_OAUTH_CLIENT_ID,
     GOOGLE_OAUTH_CLIENT_SECRET: process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim() || config.GOOGLE_OAUTH_CLIENT_SECRET,
-    APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID
+    APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID,
+    RENTCAST_KEY: process.env.RENTCAST_KEY?.trim() || config.RENTCAST_KEY,
+    TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY?.trim() || config.TURNSTILE_SITE_KEY,
+    ADMIN_KEY: process.env.ADMIN_KEY?.trim() || config.ADMIN_KEY
 };
 
 console.log('🔧 Configuration priority: Environment variables > Config file > Defaults');
@@ -106,6 +118,7 @@ async function testBrevoApiKey() {
         });
         
         console.log('✅ Brevo API key is valid');
+        serviceStatus.brevo = true;
         console.log('📧 Account info:', {
             email: response.data.email,
             company: response.data.companyName,
@@ -134,6 +147,13 @@ const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+registerProcessHandlers();
+app.set('trust proxy', 1);
+
+if (config.GOOGLE_API_KEY) {
+    serviceStatus.google = true;
+}
 
 // ========================================
 // RENTCAST RATE LIMITING SYSTEM
@@ -350,10 +370,23 @@ const upload = multer({
 });
 
 // Middleware
+const allowedOrigins = [
+    'https://www.roomfinderai.com',
+    'https://roomfinderai.com',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000'
+];
+
 app.use(cors({
-    origin: '*',
+    origin(origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+            return;
+        }
+        callback(null, false);
+    },
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+    allowedHeaders: ['Content-Type', 'Authorization', 'user-email']
 }));
 // Increase payload limits for profile image uploads
 app.use(express.json({ limit: '10mb' }));
@@ -822,13 +855,20 @@ app.get('/api/listings', async (req, res) => {
 
         // Check if Supabase is connected
         if (!supabase) {
-            console.log('🔍 DEBUG /api/listings: Using mock data (no database)');
-            // Return mock listings when database is not connected
-            const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
-            return res.json({
-                success: true,
-                data: transformedListings,
-                message: 'Using demo listings (database not connected)'
+            if (shouldUseDemoFallback()) {
+                console.log('🔍 DEBUG /api/listings: Using mock data (demo mode)');
+                const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
+                return res.json({
+                    success: true,
+                    data: transformedListings,
+                    message: 'Using demo listings (database not connected)',
+                    demo: true
+                });
+            }
+            return res.status(503).json({
+                success: false,
+                data: null,
+                message: 'Database temporarily unavailable'
             });
         }
 
@@ -840,12 +880,19 @@ app.get('/api/listings', async (req, res) => {
 
         if (error) {
             console.error('Error fetching listings from Supabase:', error);
-            // Fallback to in-memory listings if database fetch fails
-            const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
-            return res.json({
-                success: true,
-                data: transformedListings,
-                message: 'Listings retrieved from cache'
+            if (shouldUseDemoFallback()) {
+                const transformedListings = listings.map(l => transformListingForAndroid(l, {}));
+                return res.json({
+                    success: true,
+                    data: transformedListings,
+                    message: 'Listings retrieved from cache',
+                    demo: true
+                });
+            }
+            return res.status(503).json({
+                success: false,
+                data: null,
+                message: 'Failed to retrieve listings from database'
             });
         }
 
@@ -1019,13 +1066,42 @@ app.get('/api/listings/search', async (req, res) => {
 });
 
 // API: Get listing by ID
-app.get('/api/listings/:id', (req, res) => {
+app.get('/api/listings/:id', async (req, res) => {
     try {
-        const listing = listings.find(l => l.id === req.params.id);
-        if (!listing) {
-            return res.status(404).json({ error: 'Listing not found' });
+        const listingId = req.params.id;
+
+        if (supabase) {
+            const { data: dbListing, error } = await supabase
+                .from('listings')
+                .select('*')
+                .eq('id', listingId)
+                .maybeSingle();
+
+            if (error) {
+                console.error('Error fetching listing from Supabase:', error);
+                return res.status(500).json({ error: 'Failed to retrieve listing' });
+            }
+
+            if (dbListing) {
+                return res.json({
+                    success: true,
+                    listing: transformListingForAndroid(dbListing, {}),
+                    data: transformListingForAndroid(dbListing, {})
+                });
+            }
         }
-        res.json({ listing });
+
+        const listing = listings.find(l => l.id === listingId);
+        if (listing && shouldUseDemoFallback()) {
+            return res.json({
+                success: true,
+                listing,
+                data: listing,
+                demo: true
+            });
+        }
+
+        return res.status(404).json({ error: 'Listing not found' });
     } catch (error) {
         console.error('Error in /api/listings/:id:', error.message);
         res.status(500).json({ error: 'Failed to retrieve listing' });
@@ -2064,7 +2140,7 @@ Date: ${new Date().toISOString()}
 }
 
 // API: Send verification email
-app.post('/api/send-verification', async (req, res) => {
+app.post('/api/send-verification', authRateLimitMiddleware, async (req, res) => {
     try {
         console.log('📧 Received verification request:', req.body);
         const { firstName, lastName, email, password } = req.body;
@@ -2251,7 +2327,7 @@ app.post('/api/verify-email', async (req, res) => {
 });
 
 // API: User login with Supabase authentication
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -3530,7 +3606,7 @@ app.post('/api/update-profile', async (req, res) => {
 });
 
 // API: Send password reset code
-app.post('/api/send-reset-code', async (req, res) => {
+app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
     try {
         console.log('📧 Received password reset request for:', req.body.email);
         const { email } = req.body;
@@ -3919,7 +3995,7 @@ app.post('/api/contact', async (req, res) => {
 });
 
 // Test endpoint for email functionality (remove in production)
-app.post('/api/test-email', async (req, res) => {
+app.post('/api/test-email', blockInProduction, async (req, res) => {
     try {
         const { email, type = 'password-reset' } = req.body;
         
@@ -4380,7 +4456,7 @@ app.post('/api/reverse-geocode', async (req, res) => {
 });
 
 // API: AI Negotiator chat with OpenAI integration
-app.post('/api/ai-negotiate', async (req, res) => {
+app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
     console.log('🤖 AI Negotiate endpoint called');
     console.log('📝 Request body keys:', Object.keys(req.body));
 
@@ -4556,7 +4632,7 @@ app.post('/api/ai-negotiate', async (req, res) => {
 // negotiation harness. Wraps OpenAI gpt-3.5-turbo with a landlord persona so
 // we can stress-test the AI Negotiator without a real human on the other end.
 // Not exposed in any UI; safe to remove if the testing harness is retired.
-app.post('/api/landlord-simulator', async (req, res) => {
+app.post('/api/landlord-simulator', openAiRateLimitMiddleware, async (req, res) => {
     try {
         if (!config.OPENAI_API_KEY || !config.OPENAI_API_KEY.startsWith('sk-')) {
             return res.status(503).json({ error: 'AI service not available' });
@@ -4626,7 +4702,7 @@ RULES:
 });
 
 // API: General AI Chat endpoint for conversational rental assistant
-app.post('/api/chat', async (req, res) => {
+app.post('/api/chat', openAiRateLimitMiddleware, async (req, res) => {
     console.log('💬 AI Chat endpoint called');
 
     try {
@@ -4808,7 +4884,7 @@ Examples:
 });
 
 // API: Test endpoint to verify deployment
-app.get('/api/test-negotiate', (req, res) => {
+app.get('/api/test-negotiate', blockInProduction, (req, res) => {
     console.log('🧪 Test negotiate endpoint called - server is running updated code');
     res.json({ 
         message: 'Test endpoint working',
@@ -6945,7 +7021,7 @@ app.delete('/api/payment-methods/:id', async (req, res) => {
 });
 
 // Test endpoint for Supabase connection
-app.get('/api/test-supabase', async (req, res) => {
+app.get('/api/test-supabase', blockInProduction, async (req, res) => {
     try {
         if (!supabase) {
             return res.status(503).json({ error: 'Supabase not configured' });
@@ -7336,8 +7412,8 @@ app.post('/api/admin/verify-user', async (req, res) => {
         const { adminKey, userEmail, action, reason } = req.body;
 
         // Simple admin key check (you should use proper auth in production)
-        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
-        if (adminKey !== validAdminKey) {
+        const validAdminKey = getAdminKey();
+        if (!validAdminKey || adminKey !== validAdminKey) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
@@ -7386,9 +7462,9 @@ app.post('/api/admin/verify-user', async (req, res) => {
 app.get('/api/admin/pending-verifications', async (req, res) => {
     try {
         const adminKey = req.headers['x-admin-key'] || req.query.adminKey;
-        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+        const validAdminKey = getAdminKey();
 
-        if (adminKey !== validAdminKey) {
+        if (!validAdminKey || adminKey !== validAdminKey) {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
@@ -7461,9 +7537,9 @@ app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) =
 app.post('/api/admin/clear-data', async (req, res) => {
     try {
         const { adminKey, tables } = req.body;
-        const validAdminKey = process.env.ADMIN_KEY || 'roomfinder-admin-2024';
+        const validAdminKey = getAdminKey();
 
-        if (adminKey !== validAdminKey) {
+        if (!validAdminKey || adminKey !== validAdminKey) {
             return res.status(401).json({ error: 'Invalid admin key' });
         }
 
@@ -7621,7 +7697,8 @@ app.get('/api/config', (req, res) => {
         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
         GOOGLE_OAUTH_CLIENT_ID: config.GOOGLE_OAUTH_CLIENT_ID,
         APPLE_CLIENT_ID: config.APPLE_CLIENT_ID,
-        // Azure service status (without exposing keys)
+        TURNSTILE_SITE_KEY: config.TURNSTILE_SITE_KEY,
+        platforms: PLATFORM_STATUS.platforms,
         azureServicesAvailable: {
             documentIntelligence: !!documentClient,
             faceAPI: !!faceClient
@@ -7632,7 +7709,7 @@ app.get('/api/config', (req, res) => {
 });
 
 // Debug endpoint to check Azure configuration status
-app.get('/api/debug/azure', (req, res) => {
+app.get('/api/debug/azure', blockInProduction, (req, res) => {
     console.log('🔍 Azure debug endpoint called');
     
     // Force reinitialization
@@ -9096,8 +9173,9 @@ app.get('/debug-test', (req, res) => {
 
 // Health check route for Railway monitoring - MUST BE BEFORE /:page
 app.get('/health', (req, res) => {
+    const degraded = !serviceStatus.supabase;
     const health = {
-        status: 'running',
+        status: degraded && IS_PRODUCTION ? 'degraded' : 'running',
         timestamp: new Date().toISOString(),
         services: serviceStatus,
         platforms: {
@@ -9114,7 +9192,7 @@ app.get('/health', (req, res) => {
         },
         uptime: process.uptime()
     };
-    res.status(200).json(health);
+    res.status(degraded && IS_PRODUCTION ? 503 : 200).json(health);
 });
 
 // Public platform availability for web and mobile clients
@@ -9839,46 +9917,8 @@ async function findAndCreateMatches(requestId, requestType) {
     }
 }
 
-// Simple test endpoint to verify Supabase connection
-app.get('/api/test-supabase', async (req, res) => {
-    try {
-        console.log('🧪 Testing Supabase connection...');
-        
-        // Test basic connection
-        const { data, error } = await supabase
-            .from('sublease_requests')
-            .select('id')
-            .limit(1);
-            
-        if (error) {
-            console.error('Supabase test error:', error);
-            return res.json({
-                success: false,
-                error: error.message,
-                code: error.code,
-                details: error.details,
-                hint: error.hint
-            });
-        }
-        
-        console.log('✅ Supabase connection test successful');
-        res.json({
-            success: true,
-            message: 'Supabase connection working',
-            rowCount: data ? data.length : 0
-        });
-        
-    } catch (error) {
-        console.error('Test endpoint error:', error);
-        res.status(500).json({
-            success: false,
-            error: error.message
-        });
-    }
-});
-
 // Debug endpoint to check database setup
-app.get('/api/sublease/debug', async (req, res) => {
+app.get('/api/sublease/debug', blockInProduction, async (req, res) => {
     try {
         console.log('🔍 Debugging sublease database setup...');
         
@@ -10100,6 +10140,8 @@ app.post('/api/distance-matrix', async (req, res) => {
     }
 });
 
+registerErrorHandler(app, multer);
+
 // Declare server variable in global scope
 let server;
 
@@ -10114,7 +10156,8 @@ server = app.listen(port, '0.0.0.0', () => {
 server.on('error', (err) => {
     console.error('❌ Server error:', err);
     if (err.code === 'EADDRINUSE') {
-        console.log(`Port ${port} is busy, trying alternative...`);
+        console.error(`Port ${port} is already in use. Set PORT or stop the other process.`);
+        process.exit(1);
     }
 });
 

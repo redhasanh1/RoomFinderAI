@@ -368,7 +368,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- Unified CSS System - No Inline Styles -->
-    <link rel="stylesheet" href="/frontend/modules/css/main.css"/>
+    <link rel="stylesheet" href="/modules/css/main.css"/>
     
 </head>
 <body class="flex flex-col min-h-screen">
@@ -828,7 +828,7 @@
             <div class="mt-4 flex justify-center space-x-4">
                 <a href="/index" class="hover:text-purple-400">Home</a>
                 <a href="/index#about" class="hover:text-purple-400">About</a>
-                <a href="/sublease" class="hover:text-purple-400">Sublease</a>
+                <a href="coming-soon.html" class="hover:text-purple-400">Sublease</a>
                 <a href="/ai-negotiator" class="hover:text-purple-400">AI Negotiator</a>
                 <a href="/listings" class="hover:text-purple-400">Listings</a>
                 <a href="/index#contact" class="hover:text-purple-400">Contact</a>
@@ -5958,7 +5958,7 @@
                                 <a href="login.html" class="bg-white text-blue-600 px-4 py-2 rounded-lg border border-blue-600 hover:bg-blue-50 transition duration-300">
                                     Login
                                 </a>
-                                <a href="register.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
+                                <a href="signup.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
                                     Register
                                 </a>
                             </div>
@@ -5992,8 +5992,8 @@
                                 <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden z-50">
                                     <a href="profile.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Profile</a>
                                     <a href="profile.html#saved-listings" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Favorites</a>
-                                    <a href="my-listings.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">My Listings</a>
-                                    <a href="messages.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Messages</a>
+                                    <a href="profile.html#my-listings" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">My Listings</a>
+                                    <a href="listings.html#messages" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Messages</a>
                                     <hr class="my-2">
                                     <button onclick="logout()" class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
                                 </div>
@@ -6010,8 +6010,8 @@
                                     </div>
                                     <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">👤 Profile</a>
                                     <a href="profile.html#saved-listings" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">❤️ Favorites</a>
-                                    <a href="my-listings.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">🏠 My Listings</a>
-                                    <a href="messages.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">💬 Messages</a>
+                                    <a href="profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">🏠 My Listings</a>
+                                    <a href="listings.html#messages" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">💬 Messages</a>
                                     <button onclick="logout(); closeMobileMenu();" class="mobile-menu-item" style="width: 100%; text-align: left; padding: 0.5rem 0.75rem; color: #ef4444; border: none; background: none; cursor: pointer;">🚪 Logout</button>
                                 </div>
                             `;

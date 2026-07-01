@@ -59,6 +59,7 @@ body.rf-platform-banner-visible {
 }
 
 body.rf-platform-banner-visible header.fixed,
+body.rf-platform-banner-visible header.sticky,
 body.rf-platform-banner-visible .premium-header {
     top: var(--rf-platform-banner-offset, 44px);
 }
