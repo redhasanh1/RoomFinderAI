@@ -238,7 +238,10 @@ struct OptimizedHomeScreen: View {
                 GridItem(.flexible(), spacing: 16)
             ], spacing: 16) {
                 ForEach(filteredListings) { listing in
-                    OptimizedListingCard(listing: listing)
+                    NavigationLink(destination: HomeListingDetailView(listing: listing)) {
+                        OptimizedListingCard(listing: listing)
+                    }
+                    .buttonStyle(.plain)
                         .onAppear {
                             // Infinite scroll trigger
                             if listingsService.shouldLoadMore(for: listing) {
@@ -418,5 +421,57 @@ struct OptimizedHomeScreen: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
         return formatter.string(from: Date())
+    }
+}
+
+struct HomeListingDetailView: View {
+    let listing: HomePageListing
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                if let urlString = listing.coverURLString, let url = URL(string: urlString) {
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .success(let image):
+                            image.resizable().scaledToFill()
+                        default:
+                            Color(.systemGray5)
+                        }
+                    }
+                    .frame(height: 240)
+                    .clipped()
+                    .cornerRadius(12)
+                }
+
+                Text(listing.title ?? "Property")
+                    .font(.title2)
+                    .fontWeight(.bold)
+
+                if let price = listing.price {
+                    Text("$\(price)/month")
+                        .font(.title3)
+                        .foregroundColor(.blue)
+                }
+
+                if let city = listing.city {
+                    Label(city, systemImage: "mappin.and.ellipse")
+                        .foregroundColor(.secondary)
+                }
+
+                if let bedrooms = listing.bedrooms {
+                    Text("\(bedrooms) bedroom\(bedrooms == 1 ? "" : "s")")
+                        .font(.subheadline)
+                }
+
+                if let description = listing.description, !description.isEmpty {
+                    Text(description)
+                        .font(.body)
+                }
+            }
+            .padding()
+        }
+        .navigationTitle("Details")
+        .navigationBarTitleDisplayMode(.inline)
     }
 }

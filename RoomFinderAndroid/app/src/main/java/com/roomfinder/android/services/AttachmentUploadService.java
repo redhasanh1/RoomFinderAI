@@ -110,9 +110,24 @@ public class AttachmentUploadService {
     }
     
     /**
+     * Upload listing photo to listing-media bucket (matches web app).
+     */
+    public void uploadListingPhoto(Uri fileUri, String fileName, UploadCallback callback) {
+        uploadToBucket(fileUri, "listing-media", "Photos/" + fileName, callback);
+    }
+
+    /**
      * Upload file to Supabase Storage
      */
     public void uploadFile(Uri fileUri, String fileName, String conversationId, UploadCallback callback) {
+        if (conversationId == null || conversationId.isEmpty()) {
+            uploadListingPhoto(fileUri, fileName, callback);
+            return;
+        }
+        uploadToBucket(fileUri, "chat-attachments", "conversations/" + conversationId + "/" + fileName, callback);
+    }
+
+    private void uploadToBucket(Uri fileUri, String bucketName, String uploadPath, UploadCallback callback) {
         new Thread(() -> {
             try {
                 // Validate file first
@@ -152,11 +167,6 @@ public class AttachmentUploadService {
                 
                 callback.onProgress(60);
                 
-                // Upload to Supabase Storage
-                String bucketName = "chat-attachments";
-                String uploadPath = "conversations/" + conversationId + "/" + fileName;
-                
-                // Fix URL construction
                 String baseUrl = ApiKeys.SUPABASE_URL;
                 if (baseUrl.endsWith("/")) {
                     baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
@@ -189,7 +199,8 @@ public class AttachmentUploadService {
                     
                     Log.d(TAG, "File uploaded successfully to Supabase: " + publicUrl);
                     callback.onProgress(100);
-                    callback.onSuccess(publicUrl, fileName, validation.mimeType);
+                    String storedFileName = uploadPath.substring(uploadPath.lastIndexOf('/') + 1);
+                    callback.onSuccess(publicUrl, storedFileName, validation.mimeType);
                     
                 } else {
                     String errorBody = response.body() != null ? response.body().string() : "Unknown error";

@@ -23,15 +23,29 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
 import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
+import com.roomfinder.android.activities.LoginActivity;
+import com.roomfinder.android.auth.AuthManager;
 import com.roomfinder.android.databinding.FragmentPostBinding;
 import com.roomfinder.android.services.AttachmentUploadService;
 import java.io.File;
 import java.io.IOException;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+import java.util.Map;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class PostFragment extends Fragment {
     
@@ -473,9 +487,8 @@ public class PostFragment extends Fragment {
         // Show uploading progress
         Toast.makeText(getContext(), "Uploading photo...", Toast.LENGTH_SHORT).show();
         
-        // Upload to Supabase storage
-        String bucketPath = "listing-photos/" + fileName;
-        attachmentService.uploadFile(photoUri, bucketPath, null, new AttachmentUploadService.UploadCallback() {
+        // Upload to Supabase storage (listing-media bucket, same as web)
+        attachmentService.uploadListingPhoto(photoUri, fileName, new AttachmentUploadService.UploadCallback() {
             @Override
             public void onSuccess(String publicUrl, String fileName, String mimeType) {
                 if (getActivity() != null) {
@@ -646,10 +659,75 @@ public class PostFragment extends Fragment {
     }
     
     private void submitListing() {
-        // TODO: Implement actual API submission
-        Toast.makeText(getContext(), "Listing posted successfully!", Toast.LENGTH_LONG).show();
-        
-        // Reset form
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        if (!authManager.isUserAuthenticated()) {
+            Toast.makeText(getContext(), "Please sign in to post a listing", Toast.LENGTH_LONG).show();
+            startActivity(new Intent(requireContext(), LoginActivity.class));
+            return;
+        }
+
+        final String userEmail = authManager.getUserEmail();
+        if (userEmail == null || userEmail.isEmpty()) {
+            Toast.makeText(getContext(), "Unable to determine your account email", Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        binding.postButton.setEnabled(false);
+        Toast.makeText(getContext(), "Publishing listing...", Toast.LENGTH_SHORT).show();
+
+        new Thread(() -> {
+            try {
+                JSONObject body = new JSONObject();
+                String location = binding.locationInput.getText().toString().trim();
+                body.put("title", binding.titleInput.getText().toString().trim());
+                body.put("city", location);
+                body.put("street", location);
+                body.put("postalCode", "");
+                body.put("price", binding.priceInput.getText().toString().trim());
+                body.put("houseType", selectedPropertyType.isEmpty() ? "apartment" : selectedPropertyType);
+                String bedroomsValue = selectedBedrooms.replace("+", "").trim();
+                body.put("bedrooms", bedroomsValue.isEmpty() ? "1" : bedroomsValue);
+                body.put("utilities", "included");
+                body.put("description", binding.descriptionInput.getText().toString().trim());
+                body.put("media", new JSONArray(uploadedPhotoUrls));
+                body.put("userEmail", userEmail);
+
+                OkHttpClient client = new OkHttpClient.Builder()
+                        .connectTimeout(30, TimeUnit.SECONDS)
+                        .readTimeout(30, TimeUnit.SECONDS)
+                        .build();
+
+                Request request = new Request.Builder()
+                        .url("https://www.roomfinderai.com/api/listings")
+                        .post(RequestBody.create(body.toString(), MediaType.parse("application/json")))
+                        .build();
+
+                try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) {
+                        String errorBody = response.body() != null ? response.body().string() : "Unknown error";
+                        throw new IOException("Server error " + response.code() + ": " + errorBody);
+                    }
+
+                    if (getActivity() != null) {
+                        getActivity().runOnUiThread(() -> {
+                            Toast.makeText(getContext(), "Listing posted successfully!", Toast.LENGTH_LONG).show();
+                            resetFormAfterSubmit();
+                        });
+                    }
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Failed to submit listing", e);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        Toast.makeText(getContext(), "Failed to post listing: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        binding.postButton.setEnabled(true);
+                    });
+                }
+            }
+        }).start();
+    }
+
+    private void resetFormAfterSubmit() {
         currentStep = 1;
         selectedPropertyType = "";
         selectedBedrooms = "";
@@ -666,6 +744,7 @@ public class PostFragment extends Fragment {
         binding.bedroomsChipGroup.clearCheck();
         binding.bathroomsChipGroup.clearCheck();
         binding.photoCounter.setText("0 / 10 photos added");
+        binding.postButton.setEnabled(true);
         
         updateStepUI();
     }

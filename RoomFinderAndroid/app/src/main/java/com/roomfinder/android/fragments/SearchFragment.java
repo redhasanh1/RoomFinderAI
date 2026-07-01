@@ -19,6 +19,7 @@ import com.google.android.material.chip.Chip;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 import com.roomfinder.android.R;
 import com.roomfinder.android.activities.IndividualChatActivity;
+import com.roomfinder.android.activities.ListingDetailActivity;
 import com.roomfinder.android.activities.LoginActivity;
 import com.roomfinder.android.adapters.ListingsAdapter;
 import com.roomfinder.android.auth.AuthManager;
@@ -631,7 +632,9 @@ public class SearchFragment extends Fragment implements ListingsAdapter.OnListin
     
     @Override
     public void onListingClick(Listing listing) {
-        // TODO: Navigate to detail
+        Intent intent = new Intent(requireContext(), ListingDetailActivity.class);
+        intent.putExtra("listing", listing);
+        startActivity(intent);
     }
     
     @Override
