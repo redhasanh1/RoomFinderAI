@@ -119,6 +119,7 @@ Use `gemini -p` when:
   - Example: "Generated with Claude Code" ❌
 - **When committing**: use only a short summary of what was edited/changed/fixed
 - **When user pushes from their laptop**: EricT2003 appears as git author only
+- **Never add Co-authored-by trailers** (Cursor, Claude, bots) — enable `scripts/git-hooks/prepare-commit-msg` with `git config core.hooksPath scripts/git-hooks`
 
 ## Project Scope
 
