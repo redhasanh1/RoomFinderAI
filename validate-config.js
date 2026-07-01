@@ -171,13 +171,20 @@ class ConfigValidator {
         // Core requirements
         this.checkEnvVar('SUPABASE_URL', true, (v) => v.includes('supabase.co'));
         this.checkEnvVar('SUPABASE_ANON_KEY', true, (v) => v.startsWith('eyJ'));
+        this.checkEnvVar('SUPABASE_SERVICE_ROLE_KEY', false, (v) => v.startsWith('eyJ'));
+        this.checkEnvVar('GROQ_API_KEY', false, (v) => v.startsWith('gsk_'));
         this.checkEnvVar('OPENAI_API_KEY', false, (v) => v.startsWith('sk-'));
+        this.checkEnvVar('ADMIN_KEY', false);
         
         // Optional services
         this.checkEnvVar('STRIPE_SECRET_KEY', false, (v) => v.startsWith('sk_'));
         this.checkEnvVar('STRIPE_PUBLISHABLE_KEY', false, (v) => v.startsWith('pk_'));
         this.checkEnvVar('GOOGLE_API_KEY', false);
-        this.checkEnvVar('BREVO_API_KEY', false);
+        this.checkEnvVar('GOOGLE_OAUTH_CLIENT_ID', false);
+        this.checkEnvVar('GOOGLE_OAUTH_CLIENT_SECRET', false);
+        this.checkEnvVar('BREVO_API_KEY', false, (v) => v.startsWith('xkeysib-'));
+        this.checkEnvVar('TURNSTILE_SITE_KEY', false);
+        this.checkEnvVar('TURNSTILE_SECRET_KEY', false);
         
         // Azure services
         this.checkEnvVar('AZURE_DOCUMENT_INTELLIGENCE_KEY', false);
@@ -188,6 +195,15 @@ class ConfigValidator {
         // Server config
         this.checkEnvVar('PORT', false);
         this.checkEnvVar('NODE_ENV', false);
+        if (process.env.NODE_ENV === 'production') {
+            this.log('Production mode detected', 'success');
+            this.checkEnvVar('ADMIN_KEY', true);
+            this.checkEnvVar('ENABLE_DEMO_MODE', false);
+            if (process.env.ENABLE_DEMO_MODE === 'true') {
+                this.log('ENABLE_DEMO_MODE should be false in production', 'error');
+                this.results.invalid.push('ENABLE_DEMO_MODE (must be false in prod)');
+            }
+        }
         
         // Feature flags
         this.checkEnvVar('ENABLE_DEMO_MODE', false);

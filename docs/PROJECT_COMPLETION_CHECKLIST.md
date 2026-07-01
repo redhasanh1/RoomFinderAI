@@ -124,6 +124,12 @@ curl https://www.roomfinderai.com/api/service-status
 
 ### 4b — Browser smoke test
 
+After redeploy, run:
+
+```bash
+bash scripts/production-smoke-test.sh
+```
+
 | Status | Page / action | URL |
 |--------|---------------|-----|
 | ☐ | Homepage loads, nav works | `/` |
@@ -209,7 +215,8 @@ These are **not** required to mark the web project complete:
 
 | Document | Purpose |
 |----------|---------|
-| [`DOCUMENTATION.md`](../DOCUMENTATION.md) | Full technical reference |
+| [`LIVE_INTEGRATIONS_AUDIT.md`](LIVE_INTEGRATIONS_AUDIT.md) | Railway, Supabase, third-party live status |
+| [`QA_AUDIT_JULY_2026.md`](QA_AUDIT_JULY_2026.md) | Code-level fixes |
 | [`RAILWAY_ONLY.md`](RAILWAY_ONLY.md) | Railway-only quick guide |
 | [`FEATURE_STATUS_AND_TODO.md`](FEATURE_STATUS_AND_TODO.md) | Feature matrix |
 | [`.env.example`](../.env.example) | All environment variables |

@@ -161,6 +161,10 @@ const port = process.env.PORT || 3000;
 registerProcessHandlers();
 app.set('trust proxy', 1);
 
+if (process.env.RAILWAY_ENVIRONMENT && process.env.NODE_ENV !== 'production') {
+    console.warn('⚠️ Running on Railway but NODE_ENV is not "production". Set NODE_ENV=production in Railway Variables.');
+}
+
 if (config.GOOGLE_API_KEY) {
     serviceStatus.google = true;
 }

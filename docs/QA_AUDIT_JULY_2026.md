@@ -37,4 +37,8 @@ Full pass on web UI + backend before Railway final deploy.
 
 ## Smoke test after Railway deploy
 
-See `docs/PROJECT_COMPLETION_CHECKLIST.md` Phase 4.
+```bash
+bash scripts/production-smoke-test.sh
+```
+
+See also: [`LIVE_INTEGRATIONS_AUDIT.md`](LIVE_INTEGRATIONS_AUDIT.md) — deployment, Supabase, and all third-party live status.
