@@ -1,5 +1,7 @@
 # RoomFinder Android App
 
+> **TEMPORARILY CLOSED** — This app is not available on Google Play or for public download. Use **[roomfinderai.com](https://www.roomfinderai.com)** (web only). See [`PLATFORMS_LOCKED.md`](PLATFORMS_LOCKED.md) and [`docs/PLATFORM_STATUS.md`](../docs/PLATFORM_STATUS.md).
+
 A native Android application for finding and listing rental properties, built to complement the RoomFinderAI website.
 
 ## Features

@@ -1,5 +1,7 @@
 # RoomFinderAI - Native iOS App
 
+> **TEMPORARILY CLOSED** — This app is not on the App Store or TestFlight. Use **[roomfinderai.com](https://www.roomfinderai.com)** (web only). See [`PLATFORMS_LOCKED.md`](PLATFORMS_LOCKED.md) and [`docs/PLATFORM_STATUS.md`](../docs/PLATFORM_STATUS.md).
+
 A native iOS application built with SwiftUI that provides AI-powered rental property search and negotiation capabilities.
 
 ## Features
