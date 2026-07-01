@@ -69,6 +69,7 @@ __pycache__/
 
 # Android specific
 android/local.properties
+RoomFinderAndroid/local.properties
 android/app/google-services.json
 android/keystore.properties
 android/app/release/

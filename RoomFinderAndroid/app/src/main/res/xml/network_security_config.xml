@@ -9,7 +9,7 @@
     <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="true">api.openai.com</domain>
         <domain includeSubdomains="true">supabase.co</domain>
-        <domain includeSubdomains="true">roomfinder.com</domain>
+        <domain includeSubdomains="true">roomfinderai.com</domain>
         
         <trust-anchors>
             <certificates src="system"/>

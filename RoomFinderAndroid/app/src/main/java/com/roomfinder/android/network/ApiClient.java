@@ -7,7 +7,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 import java.util.concurrent.TimeUnit;
 
 public class ApiClient {
-    private static final String BASE_URL = "https://roomfinderai.com/"; // Change this to your actual API URL
+    private static final String BASE_URL = "https://www.roomfinderai.com/";
     private static ApiClient instance;
     private final ApiService apiService;
     

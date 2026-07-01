@@ -18,21 +18,7 @@
     
     <!-- Supabase CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    
-    <!-- App Configuration -->
-    <script>
-        // Initialize AppConfig for auth.js
-        window.AppConfig = {
-            supabase: null // Will be initialized if needed
-        };
-        
-        // Initialize Supabase if available
-        if (typeof supabase !== 'undefined') {
-            const SUPABASE_URL = 'https://fkktwhjybuflxqzopaex.supabase.co';
-            const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs';
-            window.AppConfig.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        }
-    </script>
+    <script src="js/supabase-config-init.js"></script>
     
     <!-- Auth Manager -->
     <script src="/js/auth.js"></script>
