@@ -16,8 +16,8 @@ archive/
 builds/
 scripts/maintenance/
 scripts/migrations/
-RoomFinderAndroid/
-RoomFinderAI-IOS/
+RoomFinderAndroid-CLOSED/
+RoomFinderAI-IOS-CLOSED/
 tests/
 
 # Keep essential files

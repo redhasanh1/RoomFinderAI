@@ -19,18 +19,18 @@ const PLATFORM_STATUS = {
             id: 'android',
             name: 'Android',
             status: 'closed',
-            path: 'RoomFinderAndroid/',
+            path: 'RoomFinderAndroid-CLOSED/',
             note: 'Temporarily closed. Not available on Google Play or as a downloadable APK.'
         },
         ios: {
             id: 'ios',
             name: 'iOS',
             status: 'closed',
-            path: 'RoomFinderAI-IOS/',
+            path: 'RoomFinderAI-IOS-CLOSED/',
             note: 'Temporarily closed. Not available on the App Store or TestFlight.'
         }
     },
-    documentation: '/docs/PLATFORM_STATUS.md',
+    documentation: '/DOCUMENTATION.md',
     statusPage: '/platform-status.html'
 };
 

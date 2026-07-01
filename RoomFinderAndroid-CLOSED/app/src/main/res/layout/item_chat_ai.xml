@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:gravity="start">
+
+    <!-- AI Avatar with Enhanced Styling -->
+    <FrameLayout
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginTop="6dp">
+        
+        <ImageView
+            android:id="@+id/aiAvatar"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/ai_bubble_gradient"
+            android:src="@drawable/ic_ai_assistant_vector"
+            android:padding="8dp"
+            android:elevation="4dp"
+            android:contentDescription="AI Assistant Avatar" />
+            
+        
+    </FrameLayout>
+
+    <!-- Message Content Container -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginEnd="80dp">
+
+        <!-- Message Bubble -->
+        <FrameLayout
+            android:id="@+id/messageBubbleContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/ai_bubble_gradient"
+            android:elevation="2dp">
+
+            <TextView
+                android:id="@+id/messageText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_margin="18dp"
+                android:text="I found 3 properties that match your criteria. Here they are:"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:lineSpacingExtra="2dp"
+                android:fontFamily="sans-serif"
+                android:maxWidth="300dp"
+                android:textIsSelectable="true"
+                android:alpha="0.95" />
+
+        </FrameLayout>
+
+        <!-- Message Metadata -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="6dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <TextView
+                android:id="@+id/timestamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:35 PM"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif" />
+                
+            <!-- Message Status Indicator -->
+            <View
+                android:id="@+id/messageStatus"
+                android:layout_width="6dp"
+                android:layout_height="6dp"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/circle_background"
+                android:backgroundTint="@color/success"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

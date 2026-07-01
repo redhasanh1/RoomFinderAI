@@ -2,6 +2,8 @@
 
 **Last updated:** July 1, 2026
 
+> See also: [`DOCUMENTATION.md`](../DOCUMENTATION.md) for the full project reference.
+
 ## Current availability
 
 | Platform | Status | Where to use |
@@ -16,7 +18,7 @@
 
 ## Why mobile apps are closed
 
-The Android (`RoomFinderAndroid/`) and iOS (`RoomFinderAI-IOS/`) codebases are **temporarily locked** while we:
+The Android (`RoomFinderAndroid-CLOSED/`) and iOS (`RoomFinderAI-IOS-CLOSED/`) codebases are **temporarily locked** while we:
 
 1. Align all clients with the production API at `https://www.roomfinderai.com`
 2. Finish Supabase auth, storage, and realtime parity on web first
@@ -45,8 +47,8 @@ Check live service health: `GET /health` and `GET /api/platform-status`
 
 | Path | Purpose |
 |------|---------|
-| [`RoomFinderAndroid/`](../RoomFinderAndroid/) | Native Android (Java) — **do not distribute** |
-| [`RoomFinderAI-IOS/`](../RoomFinderAI-IOS/) | Native iOS (SwiftUI) — **do not distribute** |
+| [`RoomFinderAndroid-CLOSED/`](../RoomFinderAndroid-CLOSED/) | Native Android (Java) — **do not distribute** |
+| [`RoomFinderAI-IOS-CLOSED/`](../RoomFinderAI-IOS-CLOSED/) | Native iOS (SwiftUI) — **do not distribute** |
 | [`archive/legacy-android/`](../archive/legacy-android/android/) | Deprecated Capacitor Android — archived |
 
 Each mobile folder contains a `PLATFORMS_LOCKED.md` file with the same notice for contributors.

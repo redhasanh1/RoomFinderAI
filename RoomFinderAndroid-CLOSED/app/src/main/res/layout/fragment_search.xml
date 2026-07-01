@@ -1,0 +1,839 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/background"
+    android:orientation="vertical">
+
+    <!-- Search Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/gradient_primary"
+        android:elevation="2dp">
+
+        <!-- Title Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:paddingTop="32dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Search Properties"
+                android:textColor="@color/white"
+                android:textSize="26sp"
+                android:textStyle="bold"
+                android:fontFamily="sans-serif-medium"
+                android:elevation="2dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Find your perfect home with AI-powered search"
+                android:textColor="@color/white"
+                android:textSize="15sp"
+                android:alpha="0.95"
+                android:elevation="2dp" />
+
+        </LinearLayout>
+
+        <!-- Main Search Bar -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:layout_marginTop="-40dp">
+
+            <!-- Search Bar -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:background="@drawable/search_bar_background"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="20dp"
+                android:elevation="4dp">
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_search"
+                    android:tint="@color/purple_primary" />
+
+                <EditText
+                    android:id="@+id/searchInput"
+                    android:layout_width="0dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:layout_marginStart="12dp"
+                    android:background="@null"
+                    android:hint="Search properties..."
+                    android:textColorHint="@color/gray_500"
+                    android:textColor="@color/text_primary"
+                    android:textSize="16sp"
+                    android:inputType="text"
+                    android:imeOptions="actionSearch" />
+
+                <ImageView
+                    android:id="@+id/voiceSearchButton"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:src="@drawable/ic_mic"
+                    android:tint="@color/purple_primary"
+                    android:background="?attr/selectableItemBackgroundBorderless"
+                    android:padding="2dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Quick Filters -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="12dp"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/quickFiltersGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:chipSpacingHorizontal="8dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/quickFilterPrice"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Price"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
+                    android:checkable="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/quickFilterLocation"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Location"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
+                    android:checkable="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/quickFilterType"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Type"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
+                    android:checkable="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/quickFilterBeds"
+                    style="@style/Widget.MaterialComponents.Chip.Filter"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Bedrooms"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/gray_100"
+                    app:chipStrokeColor="@color/gray_300"
+                    app:chipStrokeWidth="1dp"
+                    android:textColor="@color/text_primary"
+                    app:checkedIconTint="@color/purple_primary"
+                    android:checkable="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/quickFilterMore"
+                    style="@style/Widget.MaterialComponents.Chip.Action"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="More Filters"
+                    android:textSize="14sp"
+                    app:chipBackgroundColor="@color/purple_light"
+                    app:chipStrokeWidth="0dp"
+                    android:textColor="@color/purple_primary"
+                    app:chipIcon="@drawable/ic_filter"
+                    app:chipIconTint="@color/purple_primary" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+        </HorizontalScrollView>
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="8dp">
+
+            <!-- Legacy elements for compatibility -->
+            <View
+                android:id="@+id/clearSearchButton"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:id="@+id/searchContainer"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:visibility="gone"
+                android:orientation="horizontal" />
+
+            <!-- Search Suggestions -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/searchSuggestionsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginHorizontal="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Popular Searches"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:layout_marginBottom="12dp" />
+
+                    <HorizontalScrollView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:scrollbars="none">
+
+                        <com.google.android.material.chip.ChipGroup
+                            android:id="@+id/searchSuggestionsChips"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            app:singleLine="true"
+                            app:chipSpacingHorizontal="8dp">
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionDowntown"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Downtown"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionAffordable"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Under $1200"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestion2Bed"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="2 Bedroom"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionPetFriendly"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Pet Friendly"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
+
+                            <com.google.android.material.chip.Chip
+                                android:id="@+id/suggestionNearby"
+                                style="@style/Widget.MaterialComponents.Chip.Choice"
+                                android:layout_width="wrap_content"
+                                android:layout_height="36dp"
+                                android:text="Near Me"
+                                android:textSize="14sp"
+                                app:chipBackgroundColor="@color/purple_light"
+                                android:textColor="@color/purple_primary"
+                                android:checkable="false" />
+
+                        </com.google.android.material.chip.ChipGroup>
+
+                    </HorizontalScrollView>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Active Filters Display -->
+            <LinearLayout
+                android:id="@+id/activeFiltersContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="16dp"
+                android:paddingHorizontal="16dp"
+                android:visibility="gone">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Active Filters"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/clearAllFiltersButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="32dp"
+                        android:layout_marginStart="8dp"
+                        android:text="Clear All"
+                        android:textColor="@color/purple_primary"
+                        android:textSize="12sp"
+                        android:background="@android:color/transparent"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="0dp"
+                        app:cornerRadius="16dp" />
+
+                </LinearLayout>
+
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:id="@+id/activeFiltersChips"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal" />
+
+                </HorizontalScrollView>
+
+            </LinearLayout>
+
+            <!-- Advanced Filters -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="16dp"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="16dp"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="@color/white">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Filters Header -->
+                    <LinearLayout
+                        android:id="@+id/filtersHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="16dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:foreground="?android:attr/selectableItemBackground">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_filter"
+                            android:tint="@color/purple_primary"
+                            android:layout_marginEnd="12dp" />
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Advanced Filters"
+                            android:textColor="@color/text_primary"
+                            android:textSize="16sp"
+                            android:textStyle="bold" />
+
+                        <ImageView
+                            android:id="@+id/filterExpandIcon"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_arrow_right"
+                            android:tint="@color/text_secondary" />
+
+                    </LinearLayout>
+
+                    <!-- Filter Content -->
+                    <LinearLayout
+                        android:id="@+id/filtersScrollView"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:visibility="gone"
+                        android:padding="16dp">
+
+                        <!-- Price Range Section -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Price Range"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp" />
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/priceChipGroup"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:singleSelection="true"
+                                app:chipSpacingHorizontal="8dp"
+                                app:chipSpacingVertical="4dp">
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/priceUnder1000"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Under $1000"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/price1000to1500"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="$1000 - $1500"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/price1500to2000"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="$1500 - $2000"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/priceOver2000"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Over $2000"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                            </com.google.android.material.chip.ChipGroup>
+
+                        </LinearLayout>
+
+                        <!-- Property Type Section -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Property Type"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp" />
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/propertyTypeChipGroup"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:singleSelection="false"
+                                app:chipSpacingHorizontal="8dp"
+                                app:chipSpacingVertical="4dp">
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/typeApartment"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Apartment"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/typeHouse"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="House"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/typeCondo"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Condo"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/typeStudio"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="Studio"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                            </com.google.android.material.chip.ChipGroup>
+
+                        </LinearLayout>
+
+                        <!-- Bedrooms Section -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginBottom="20dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Bedrooms"
+                                android:textColor="@color/text_primary"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:layout_marginBottom="12dp" />
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/bedroomsChipGroup"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                app:singleSelection="true"
+                                app:chipSpacingHorizontal="8dp">
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/bedroom1"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="1 Bed"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/bedroom2"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="2 Beds"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/bedroom3"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="3 Beds"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                                <com.google.android.material.chip.Chip
+                                    android:id="@+id/bedroom4Plus"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="40dp"
+                                    android:text="4+ Beds"
+                                    android:textSize="14sp"
+                                    style="@style/Widget.MaterialComponents.Chip.Filter" />
+
+                            </com.google.android.material.chip.ChipGroup>
+
+                        </LinearLayout>
+
+                        <!-- Apply Filters Button -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/clearFiltersButton"
+                            android:layout_width="match_parent"
+                            android:layout_height="48dp"
+                            android:layout_marginTop="8dp"
+                            android:text="Apply Filters"
+                            android:textSize="16sp"
+                            android:backgroundTint="@color/purple_primary"
+                            android:textColor="@color/white"
+                            app:cornerRadius="8dp" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Results Section -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:layout_marginTop="8dp">
+
+                <!-- Results RecyclerView -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/recyclerView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingHorizontal="16dp"
+                    android:clipToPadding="false"
+                    android:nestedScrollingEnabled="false" />
+
+                <!-- Loading State -->
+                <LinearLayout
+                    android:id="@+id/progressBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="48dp"
+                    android:visibility="gone">
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:layout_width="48dp"
+                        android:layout_height="48dp"
+                        android:indeterminate="true"
+                        app:indicatorColor="@color/purple_primary"
+                        app:trackColor="@color/gray_200" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="Searching properties..."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="16sp" />
+
+                </LinearLayout>
+
+                <!-- Empty State -->
+                <LinearLayout
+                    android:id="@+id/emptyLayout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="48dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="120dp"
+                        android:layout_height="120dp"
+                        android:src="@drawable/ic_search_empty"
+                        android:tint="@color/gray_400" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="24dp"
+                        android:text="No properties found"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="Try adjusting your search criteria"
+                        android:textSize="14sp"
+                        android:textColor="@color/text_secondary"
+                        android:gravity="center" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/clearSearchFiltersButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="24dp"
+                        android:text="Clear Filters"
+                        android:textSize="14sp"
+                        android:background="@android:color/transparent"
+                        android:textColor="@color/purple_primary"
+                        app:strokeColor="@color/purple_primary"
+                        app:strokeWidth="1dp"
+                        app:cornerRadius="24dp" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+    </ScrollView>
+
+    <!-- Bottom Bar -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@color/white"
+        android:elevation="4dp">
+
+        <!-- Results Summary -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="20dp"
+            android:paddingVertical="12dp">
+
+            <TextView
+                android:id="@+id/resultsCountText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="0 properties found"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <!-- Sort Button -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/sortButton"
+                android:layout_width="wrap_content"
+                android:layout_height="36dp"
+                android:text="Sort"
+                android:textSize="14sp"
+                android:textColor="@color/purple_primary"
+                android:background="@android:color/transparent"
+                app:icon="@drawable/ic_arrow_right"
+                app:iconTint="@color/purple_primary"
+                app:iconGravity="end"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minWidth="0dp"
+                android:paddingHorizontal="12dp" />
+
+        </LinearLayout>
+
+        <!-- Sort Options -->
+        <HorizontalScrollView
+            android:id="@+id/sortOptionsContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingHorizontal="20dp"
+            android:paddingBottom="12dp"
+            android:scrollbars="none"
+            android:visibility="gone">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/sortChipGroup"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleLine="true"
+                app:singleSelection="true"
+                app:chipSpacingHorizontal="8dp">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/sortRelevance"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Relevance"
+                    android:textSize="13sp"
+                    android:checked="true" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/sortPriceLow"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Price: Low to High"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/sortPriceHigh"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Price: High to Low"
+                    android:textSize="13sp" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/sortNewest"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="36dp"
+                    android:text="Newest First"
+                    android:textSize="13sp" />
+
+            </com.google.android.material.chip.ChipGroup>
+
+        </HorizontalScrollView>
+
+    </LinearLayout>
+
+    <!-- Legacy elements for compatibility -->
+    <View
+        android:id="@+id/resultsHeader"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:visibility="gone" />
+
+</LinearLayout>

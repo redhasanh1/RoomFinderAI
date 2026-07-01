@@ -2,15 +2,17 @@
 
 AI-powered rental search, negotiation, and marketplace platform.
 
-> **Platform notice (July 2026):** Only the **web app** is live at [roomfinderai.com](https://www.roomfinderai.com). **Android and iOS native apps are temporarily closed** — not on Google Play or the App Store. See [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md).
+📖 **Full documentation:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
+
+> **Platform notice (July 2026):** Only the **web app** is live at [roomfinderai.com](https://www.roomfinderai.com). **Android and iOS native apps are temporarily closed** — not on Google Play or the App Store. See [`DOCUMENTATION.md`](DOCUMENTATION.md) and [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md).
 
 ## Platforms
 
 | Platform | Path | Status |
 |----------|------|--------|
 | **Web** | [`frontend/`](frontend/) + [`backend/`](backend/) | **Active** — primary platform on Railway |
-| **Android** | [`RoomFinderAndroid/`](RoomFinderAndroid/) | **Closed (temporary)** — source retained, not distributed |
-| **iOS** | [`RoomFinderAI-IOS/`](RoomFinderAI-IOS/) | **Closed (temporary)** — source retained, not distributed |
+| **Android** | [`RoomFinderAndroid-CLOSED/`](RoomFinderAndroid-CLOSED/) | **Closed (temporary)** — source retained, not distributed |
+| **iOS** | [`RoomFinderAI-IOS-CLOSED/`](RoomFinderAI-IOS-CLOSED/) | **Closed (temporary)** — source retained, not distributed |
 | Legacy Android | [`archive/legacy-android/android/`](archive/legacy-android/android/) | Archived — deprecated Capacitor app |
 
 Public status page: **[/platform-status.html](https://www.roomfinderai.com/platform-status.html)** · API: `GET /api/platform-status`
@@ -32,8 +34,8 @@ See [`docs/guides/SETUP_GUIDE.md`](docs/guides/SETUP_GUIDE.md) for full setup.
 RoomFinderAI/
 ├── backend/              # Express API server (production entry: backend/server.js)
 ├── frontend/             # Web UI (HTML/CSS/JS)
-├── RoomFinderAndroid/    # Native Android app
-├── RoomFinderAI-IOS/     # Native iOS app
+├── RoomFinderAndroid-CLOSED/  # Native Android app (CLOSED)
+├── RoomFinderAI-IOS-CLOSED/   # Native iOS app (CLOSED)
 ├── database/
 │   ├── migrations/     # Supabase schema migrations
 │   └── sql/              # One-off SQL scripts
@@ -60,6 +62,7 @@ Health check: `GET /health`
 
 Native mobile apps are **not available** to users at this time. Use the website instead.
 
+- Full documentation: [`DOCUMENTATION.md`](DOCUMENTATION.md)
 - Status & reopening plan: [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md)
-- Android (locked): [`RoomFinderAndroid/PLATFORMS_LOCKED.md`](RoomFinderAndroid/PLATFORMS_LOCKED.md)
-- iOS (locked): [`RoomFinderAI-IOS/PLATFORMS_LOCKED.md`](RoomFinderAI-IOS/PLATFORMS_LOCKED.md)
+- Android (locked): [`RoomFinderAndroid-CLOSED/PLATFORMS_LOCKED.md`](RoomFinderAndroid-CLOSED/PLATFORMS_LOCKED.md)
+- iOS (locked): [`RoomFinderAI-IOS-CLOSED/PLATFORMS_LOCKED.md`](RoomFinderAI-IOS-CLOSED/PLATFORMS_LOCKED.md)
