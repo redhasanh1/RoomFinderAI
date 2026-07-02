@@ -85,6 +85,7 @@ config = {
     OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
     GROQ_API_KEY: process.env.GROQ_API_KEY?.trim() || config.GROQ_API_KEY,
     GROQ_MODEL: process.env.GROQ_MODEL?.trim() || config.GROQ_MODEL || 'llama-3.1-8b-instant',
+    GROQ_FALLBACK_MODEL: process.env.GROQ_FALLBACK_MODEL?.trim() || config.GROQ_FALLBACK_MODEL || 'llama-3.3-70b-versatile',
     BREVO_API_KEY: process.env.BREVO_API_KEY?.trim() || config.BREVO_API_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_KEY,
     AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim() || config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
