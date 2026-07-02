@@ -95,6 +95,7 @@ config = {
     APPLE_CLIENT_ID: process.env.APPLE_CLIENT_ID?.trim() || config.APPLE_CLIENT_ID,
     RENTCAST_KEY: process.env.RENTCAST_KEY?.trim() || config.RENTCAST_KEY,
     TURNSTILE_SITE_KEY: process.env.TURNSTILE_SITE_KEY?.trim() || config.TURNSTILE_SITE_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || config.SUPABASE_SERVICE_ROLE_KEY,
     ADMIN_KEY: process.env.ADMIN_KEY?.trim() || config.ADMIN_KEY
 };
 
@@ -147,6 +148,26 @@ async function testBrevoApiKey() {
 
 // Test API key after a short delay to let server start
 setTimeout(testBrevoApiKey, 2000);
+
+async function verifyTurnstileToken(token) {
+    const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
+    if (!secret) return { ok: true, skipped: true };
+    if (!token) return { ok: false, error: 'Bot verification required' };
+    try {
+        const params = new URLSearchParams();
+        params.append('secret', secret);
+        params.append('response', token);
+        const response = await axios.post(
+            'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+            params,
+            { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, timeout: 10000 }
+        );
+        return { ok: response.data?.success === true };
+    } catch (err) {
+        console.error('Turnstile verify error:', err.message);
+        return { ok: false, error: 'Bot verification failed' };
+    }
+}
 
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
@@ -3622,7 +3643,12 @@ app.post('/api/update-profile', async (req, res) => {
 app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
     try {
         console.log('📧 Received password reset request for:', req.body.email);
-        const { email } = req.body;
+        const { email, turnstileToken } = req.body;
+
+        const turnstile = await verifyTurnstileToken(turnstileToken);
+        if (!turnstile.ok) {
+            return res.status(400).json({ error: turnstile.error || 'Bot verification failed' });
+        }
         
         if (!email) {
             return res.status(400).json({ error: 'Email is required' });
