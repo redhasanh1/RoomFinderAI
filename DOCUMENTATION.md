@@ -1,6 +1,6 @@
 # RoomFinderAI — Full Documentation
 
-**Last updated:** July 1, 2026 (post QA audit)  
+**Last updated:** July 2, 2026 (production deploy + AI fallback + homepage)  
 **Production URL:** [https://www.roomfinderai.com](https://www.roomfinderai.com)  
 **Primary branch:** `main` (deploy from `main`; `hasan` merged in July 2026)
 
@@ -44,6 +44,7 @@ RoomFinderAI/
 ├── README.md                 # GitHub landing page (short overview)
 ├── backend/                  # Express 5 API server (production entry)
 │   ├── server.js             # Main server (~10k lines)
+│   ├── ai-providers.js       # OpenAI + Groq failover chain
 │   ├── platform-status.js    # Platform flags (web/android/ios)
 │   ├── reliability.js        # Rate limits, error handling, prod gates
 │   └── html-inject.js        # Injects platform banner into HTML
@@ -57,7 +58,7 @@ RoomFinderAI/
 ├── RoomFinderAI-IOS-CLOSED/  # Native iOS (SwiftUI) — LOCKED
 ├── database/
 │   ├── migrations/           # Supabase schema migrations
-│   └── sql/                  # One-off SQL scripts
+│   └── sql/                  # One-off SQL scripts (storage, seed data)
 ├── scripts/
 │   ├── maintenance/          # Debug & test scripts
 │   ├── migrations/           # Data migration scripts
@@ -106,6 +107,13 @@ npm start
 - `GET http://localhost:3000/api/platform-status`
 - `GET http://localhost:3000/api/service-status`
 
+**Production smoke test (after deploy):**
+```bash
+bash scripts/production-smoke-test.sh
+# If TLS fails locally: SMOKE_CURL_INSECURE=1 bash scripts/production-smoke-test.sh
+```
+Verify in browser: `/health` (JSON), `/debug-test` (404), `/listings.html` (map loads).
+
 ---
 
 ## 4. Environment variables
@@ -119,7 +127,11 @@ Copy `.env.example` → `.env`. On **Railway**, set the same keys in the project
 | `SUPABASE_URL` | Supabase project URL |
 | `SUPABASE_ANON_KEY` | Public anon key for client auth |
 | `SUPABASE_SERVICE_ROLE_KEY` | Admin ops (storage buckets, auth admin) — **set on Railway** |
-| `OPENAI_API_KEY` | AI negotiator & chat |
+| `OPENAI_API_KEY` | AI negotiator & chat (primary provider) |
+| `GROQ_API_KEY` | AI fallback when OpenAI fails or is out of quota (free at console.groq.com) |
+| `AI_PROVIDER` | `auto` (default), `openai`, or `groq` |
+| `GROQ_MODEL` | Groq primary model (default `llama-3.1-8b-instant`) |
+| `GROQ_FALLBACK_MODEL` | Groq secondary model (default `llama-3.3-70b-versatile`) |
 | `PORT` | Server port (Railway sets automatically) |
 | `NODE_ENV` | `production` on Railway |
 
@@ -165,7 +177,9 @@ Copy `.env.example` → `.env`. On **Railway**, set the same keys in the project
 - **Runtime:** Node.js 18+
 - **Framework:** Express 5
 - **Database / Auth:** Supabase (PostgreSQL + Auth + Storage + Realtime)
-- **AI:** OpenAI API (negotiation, chat, landlord simulator)
+- **AI:** OpenAI (primary) with Groq failover (`backend/ai-providers.js`)
+  - Chain when `AI_PROVIDER=auto`: OpenAI → `llama-3.1-8b-instant` → `llama-3.3-70b-versatile`
+  - Set `GROQ_API_KEY` on Railway so AI keeps working if OpenAI quota/billing fails
 - **Payments:** Stripe
 - **Email:** Brevo (Sendinblue)
 - **Deploy:** Railway (Nixpacks)
@@ -175,6 +189,7 @@ Copy `.env.example` → `.env`. On **Railway**, set the same keys in the project
 | File | Role |
 |------|------|
 | `backend/server.js` | Routes, Supabase init, static serving, AI endpoints |
+| `backend/ai-providers.js` | Multi-provider AI with automatic failover |
 | `backend/platform-status.js` | Single source of truth for platform availability |
 | `backend/reliability.js` | Rate limits, prod debug gating, global errors |
 | `backend/html-inject.js` | Injects platform banner into all HTML responses |
@@ -224,7 +239,7 @@ Full API docs: `docs/API_DOCUMENTATION.md`
 
 | Page | File | Purpose |
 |------|------|---------|
-| Home | `frontend/index.html` | Landing, auth, hero |
+| Home | `frontend/index.html` | Landing — links to all features (AI, listings, RoomPal, sublease, legal, disputes) |
 | Listings | `frontend/listings.html` | Browse, search, chat, post |
 | AI Negotiator | `frontend/ai-negotiator.html` | AI rental negotiation |
 | Legal | `frontend/legal.html` | AI documents + lease review |
@@ -269,7 +284,19 @@ Production uses a Supabase project configured via env vars. Credentials are **ne
 - Schema migrations: `database/migrations/`
 - One-off fixes: `database/sql/`
   - `setup-supabase-storage.sql` — storage buckets
+  - `seed-test-data.sql` — demo listings, sublease, RoomPal, AI history (safe to re-run)
+  - `seed-test-data-cleanup.sql` — remove all `@roomfinderai.test` seed rows
   - `supabase-migrations.sql` — core tables
+
+### Tables (feature coverage)
+
+| Table | Feature | Migration / seed |
+|-------|---------|------------------|
+| `listings` | Browse, map, post | Core schema + `add_listings_coordinates.sql` |
+| `sublease_requests` | Sublease marketplace | `simple_sublease_schema.sql` |
+| `roommate_profiles` | RoomPal matching | `roommate_profiles_schema_v2.sql` |
+| `ai_negotiations` | AI negotiator history | Created by `seed-test-data.sql` (backend inserts) |
+| `ai_chat_history` | AI chat persistence | `add_ai_chat_history.sql` |
 
 ### Storage buckets
 
@@ -342,6 +369,7 @@ git push origin main
 - [ ] `database/sql/setup-supabase-storage.sql` — listing photo uploads
 - [ ] `database/migrations/roommate_profiles_schema_v2.sql` — RoomPal
 - [ ] `database/migrations/simple_sublease_schema.sql` — sublease marketplace
+- [ ] `database/sql/seed-test-data.sql` — sample data for testing all features (optional)
 
 ---
 
@@ -385,7 +413,8 @@ git push origin main
 |---------|--------------|-----|
 | Listings empty / demo data | Supabase down or `ENABLE_DEMO_MODE` | Check `/health`, verify env vars |
 | Email verification broken | Invalid `BREVO_API_KEY` | Rotate key in Brevo, update Railway |
-| AI negotiator 429 | OpenAI rate limit | Wait or check key quota |
+| AI negotiator error / blank | OpenAI quota or Supabase init probe | Add `GROQ_API_KEY`; redeploy. Init no longer blocks on listings count. |
+| AI negotiator 429 | OpenAI rate limit | Groq fallback if `GROQ_API_KEY` set; else wait or refill OpenAI billing |
 | Upload fails | Storage bucket missing | Run `database/sql/setup-supabase-storage.sql` |
 | AI negotiator blank page | Wrong asset paths | Use root paths, not `/frontend/...` |
 | Maps not loading | Google key missing/restricted | Set `GOOGLE_API_KEY`, check referrer rules |
@@ -409,6 +438,7 @@ curl http://localhost:3000/health
 | Phase 5 setup guide | `docs/PHASE_5_SETUP_GUIDE.md` |
 | **Project completion checklist** | `docs/PROJECT_COMPLETION_CHECKLIST.md` |
 | **Feature status & your action list** | `docs/FEATURE_STATUS_AND_TODO.md` |
+| Production smoke test | `scripts/production-smoke-test.sh` |
 | Platform status (detail) | `docs/PLATFORM_STATUS.md` |
 | Setup guide | `docs/guides/SETUP_GUIDE.md` |
 | Railway deployment | `docs/RAILWAY_ONLY.md` (quick) · `docs/RAILWAY_DEPLOYMENT.md` (full) |

@@ -1572,7 +1572,7 @@
     </section>
 
     <!-- Premium Features Section -->
-    <section class="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
+    <section id="about" class="py-32 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-r from-blue-50/50 to-purple-50/50"></div>
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-20 reveal">
@@ -1595,25 +1595,25 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"></path>
                         </svg>
                     </div>
-                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Your Profile</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Access your personalized profile to track searches, saved listings, and rental applications.</p>
-                    <a href="profile.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold text-base hover:from-blue-600 hover:to-purple-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
-                        View Profile
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">AI Negotiator</h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Let our AI negotiate rent on your behalf with market-backed counter-offers and message drafting.</p>
+                    <a href="ai-negotiator.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl font-semibold text-base hover:from-blue-600 hover:to-purple-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
+                        Start Negotiating
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                         </svg>
                     </a>
                 </div>
-                
-                <!-- Market Analysis Feature -->
-                <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="animation-delay: 0.4s;">
+
+                <!-- Rental Listings Feature -->
+                <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="animation-delay: 0.2s;">
                     <div class="feature-icon w-20 h-20 bg-gradient-to-r from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
                         <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
                         </svg>
                     </div>
                     <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Rental Listings</h3>
-                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Browse all available rental listings with advanced filters and real-time availability updates.</p>
+                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Browse all available rental listings with advanced filters, an interactive map, and real-time availability.</p>
                     <a href="listings.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-orange-500 to-red-600 text-white rounded-xl font-semibold text-base hover:from-orange-600 hover:to-red-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
                         Browse Listings
                         <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1621,7 +1621,41 @@
                         </svg>
                     </a>
                 </div>
-                
+
+                <!-- RoomPal Roommate Matching Feature -->
+                <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="animation-delay: 0.4s;">
+                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-1.13a4 4 0 10-4-4 4 4 0 004 4zm6 0a4 4 0 10-3-6.65"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">RoomPal Matching</h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Find compatible roommates with our smart 47-factor compatibility matching system.</p>
+                    <a href="roommate-matching.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-teal-500 to-emerald-600 text-white rounded-xl font-semibold text-base hover:from-teal-600 hover:to-emerald-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
+                        Find Roommates
+                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </a>
+                </div>
+
+                <!-- Sublease Feature -->
+                <div class="feature-card text-center reveal scale-in flex flex-col h-full" style="animation-delay: 0.6s;">
+                    <div class="feature-icon w-20 h-20 bg-gradient-to-r from-pink-500 to-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-8 shadow-xl">
+                        <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Sublease &amp; Transfer</h3>
+                    <p class="text-gray-600 mb-8 leading-relaxed flex-grow">Post or find a sublease and get matched with people transferring or seeking a lease takeover.</p>
+                    <a href="sublease.html" class="inline-flex items-center justify-center w-full px-6 py-3.5 bg-gradient-to-r from-pink-500 to-rose-600 text-white rounded-xl font-semibold text-base hover:from-pink-600 hover:to-rose-700 transition-all duration-300 group mt-auto" style="cursor: pointer; position: relative; z-index: 10;">
+                        Explore Subleases
+                        <svg class="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                        </svg>
+                    </a>
+                </div>
+
             </div>
         </div>
         
@@ -1649,7 +1683,7 @@
             
             <!-- Three Main Service Cards -->
             <div class="grid lg:grid-cols-3 gap-8 mb-20">
-                <!-- HIDDEN FOR DEVELOPMENT: Student Housing Card -->
+                <!-- Student Housing Card -->
                 <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border-2 border-transparent hover:border-purple-200">
                     <div class="text-center flex flex-col h-full">
                         <div class="w-20 h-20 bg-gradient-to-r from-purple-500 to-pink-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
@@ -1737,6 +1771,53 @@
                         
                         <button onclick="window.location.href='legal.html'" class="w-full bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-700 transition-all duration-300 group mt-auto">
                             Get Legal Help
+                            <svg class="w-5 h-5 ml-2 inline group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dispute Resolution Card -->
+                <div class="group bg-white rounded-3xl p-8 shadow-xl hover:shadow-2xl transition-all duration-500 transform hover:-translate-y-2 border-2 border-transparent hover:border-amber-200">
+                    <div class="text-center flex flex-col h-full">
+                        <div class="w-20 h-20 bg-gradient-to-r from-amber-500 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-2xl font-bold text-gray-900 mb-4 font-display">Dispute Resolution</h3>
+                        <p class="text-gray-600 mb-8 leading-relaxed">File and track rental disputes with landlords or roommates, and get guided resolution steps.</p>
+
+                        <div class="space-y-4 mb-8 flex-grow">
+                            <div class="flex items-center text-left">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">File a Dispute Online</span>
+                            </div>
+                            <div class="flex items-center text-left">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Track Dispute Status</span>
+                            </div>
+                            <div class="flex items-center text-left">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Guided Resolution Steps</span>
+                            </div>
+                            <div class="flex items-center text-left">
+                                <svg class="w-5 h-5 text-green-500 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span class="text-gray-700">Email Notifications</span>
+                            </div>
+                        </div>
+
+                        <button onclick="window.location.href='file-dispute.html'" class="w-full bg-gradient-to-r from-amber-500 to-orange-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-amber-600 hover:to-orange-700 transition-all duration-300 group mt-auto">
+                            Resolve a Dispute
                             <svg class="w-5 h-5 ml-2 inline group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
                             </svg>

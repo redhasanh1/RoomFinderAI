@@ -1002,9 +1002,15 @@
 
                 debugAuthState('AFTER_AUTH');
 
-                // Test Supabase connection
-                await supabaseClient.from('listings').select('count', { count: 'exact', head: true });
-                console.log('Supabase connection test successful');
+                // Probe Supabase connection (non-fatal). A failed count query
+                // (RLS, transient network, empty table) must NOT block the AI
+                // Negotiator — the chat itself runs server-side via /api/ai-negotiate.
+                try {
+                    await supabaseClient.from('listings').select('count', { count: 'exact', head: true });
+                    console.log('Supabase connection test successful');
+                } catch (probeError) {
+                    console.warn('Supabase connection probe failed (non-fatal):', probeError?.message || probeError);
+                }
                 
                 // Check if AIChatHandler class is available
                 if (typeof AIChatHandler === 'undefined') {

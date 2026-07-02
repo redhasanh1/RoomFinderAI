@@ -4510,31 +4510,15 @@ app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
         console.log('📞 Message length:', message.length);
         console.log('📊 Conversation history length:', conversationHistory?.length || 0);
 
-        // Check if OpenAI is configured
-        console.log('🔍 Checking OpenAI configuration...');
-        console.log('- Config keys available:', Object.keys(config));
-        console.log('- OPENAI_API_KEY present:', !!config.OPENAI_API_KEY);
-        console.log('- OPENAI_API_KEY type:', typeof config.OPENAI_API_KEY);
-        console.log('- OPENAI_API_KEY starts with sk-:', config.OPENAI_API_KEY?.startsWith?.('sk-'));
-        
-        if (!config.OPENAI_API_KEY) {
-            console.log('❌ OpenAI API key not configured');
-            return res.status(503).json({ 
-                error: 'AI service not available - OpenAI not configured',
-                configKeys: Object.keys(config),
-                hasKey: !!config.OPENAI_API_KEY
+        // Verify at least one AI provider is configured (OpenAI primary, Groq fallback).
+        const aiStatus = getAIStatus(config);
+        if (!aiStatus.available || aiStatus.available.length === 0) {
+            console.log('❌ No AI provider configured (OpenAI or Groq)');
+            return res.status(503).json({
+                error: 'AI service not available - no AI provider configured'
             });
         }
-        
-        if (!config.OPENAI_API_KEY.startsWith('sk-')) {
-            console.log('❌ OpenAI API key format invalid');
-            return res.status(503).json({ 
-                error: 'AI service not available - OpenAI key format invalid',
-                keyLength: config.OPENAI_API_KEY.length
-            });
-        }
-        
-        console.log('✅ OpenAI API key is configured and valid format');
+        console.log('✅ AI providers available:', aiStatus.chain.join(' → '));
 
         // Build the conversation context for OpenAI
         let systemPrompt;
@@ -4558,63 +4542,41 @@ app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
         // Add the current user message
         messages.push({ role: 'user', content: message });
 
-        console.log('📨 Total messages for OpenAI:', messages.length);
-        console.log('🤖 Sending OpenAI request for negotiation...');
-        
-        // Call OpenAI API
-        const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${config.OPENAI_API_KEY}`,
-                'Content-Type': 'application/json',
-                ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
-            },
-            body: JSON.stringify({
-                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                messages: messages,
-                max_tokens: 150,
-                temperature: 0.7,
-                presence_penalty: 0.1,
-                frequency_penalty: 0.1
-            })
-        });
+        console.log('📨 Total messages for AI:', messages.length);
+        console.log('🤖 Sending AI request (OpenAI primary, Groq fallback)...');
 
-        console.log('📡 OpenAI response status:', openaiResponse.status);
-        
-        if (!openaiResponse.ok) {
-            const errorData = await openaiResponse.json().catch(() => ({}));
-            console.error('❌ OpenAI API error:', errorData);
-            console.error('OpenAI error details:', {
-                status: openaiResponse.status,
-                error: errorData.error,
-                message: errorData.error?.message,
-                type: errorData.error?.type,
-                code: errorData.error?.code
+        // Call the AI with automatic failover: OpenAI → Groq llama-instant → Groq versatile.
+        let aiResult;
+        try {
+            aiResult = await callAI(config, { messages, maxTokens: 150, temperature: 0.7 });
+        } catch (aiError) {
+            console.error('❌ All AI providers failed:', aiError.message);
+            return res.status(503).json({
+                error: 'AI service temporarily unavailable. Please try again shortly.',
+                details: aiError.message
             });
-            throw new Error(`OpenAI API error: ${openaiResponse.status} - ${errorData.error?.message || JSON.stringify(errorData)}`);
         }
 
-        console.log('✅ OpenAI API call successful');
-        const data = await openaiResponse.json();
-        console.log('📦 OpenAI response data keys:', Object.keys(data));
-        
-        if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-            throw new Error('Invalid OpenAI response format');
-        }
+        const aiResponse = aiResult.content;
+        const tokensUsed = aiResult.tokensUsed || 0;
+        console.log(`✅ AI response generated via ${aiResult.provider} (${aiResult.model})`);
 
-        const aiResponse = data.choices[0].message.content.trim();
-        
-        // Log AI negotiation assistant usage
+        // Log AI negotiation assistant usage (non-fatal — never block the reply).
         if (userEmail) {
-            await logUserActivity(userEmail, 'ai_negotiation_assistant', `Used AI negotiation assistant for rental advice`, {
-                message_length: message.length,
-                response_length: aiResponse.length,
-                model_used: config.OPENAI_MODEL || 'gpt-3.5-turbo',
-                tokens_used: data.usage?.total_tokens || 0
-            });
+            try {
+                await logUserActivity(userEmail, 'ai_negotiation_assistant', 'Used AI negotiation assistant for rental advice', {
+                    message_length: message.length,
+                    response_length: aiResponse.length,
+                    model_used: aiResult.model,
+                    provider: aiResult.provider,
+                    tokens_used: tokensUsed
+                });
+            } catch (logErr) {
+                console.warn('Non-fatal: failed to log AI activity:', logErr.message);
+            }
         }
 
-        // Store conversation in database if Supabase is available
+        // Store conversation if Supabase is available (non-fatal — never block the reply).
         if (supabase && userEmail) {
             try {
                 await supabase.from('ai_negotiations').insert({
@@ -4628,20 +4590,21 @@ app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
                         type: 'Various',
                         size: 'Various'
                     },
-                    tokens_used: data.usage?.total_tokens || 0,
+                    tokens_used: tokensUsed,
                     created_at: new Date().toISOString()
                 });
             } catch (dbError) {
-                console.error('Error storing negotiation assistant session in database:', dbError);
+                console.warn('Non-fatal: could not store negotiation session:', dbError.message);
             }
         }
-        
+
         console.log('✅ AI negotiation assistant response generated successfully');
-        res.json({ 
+        res.json({
             response: aiResponse,
-            tokensUsed: data.usage?.total_tokens || 0
+            tokensUsed,
+            provider: aiResult.provider
         });
-        
+
     } catch (error) {
         console.error('❌ Error in /api/ai-negotiate:', error.message);
         console.error('Full error:', error);
