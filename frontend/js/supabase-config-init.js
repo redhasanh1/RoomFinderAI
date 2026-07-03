@@ -6,10 +6,22 @@
     window.AppConfig = window.AppConfig || { supabase: null };
 
     window.supabaseConfigReady = (async function initSupabaseFromApiConfig() {
-        if (typeof supabase === 'undefined') {
-            console.warn('Supabase library not loaded');
+        // Already initialized (this script or another ran first) — reuse the client.
+        if (window.AppConfig.supabase) {
+            return window.AppConfig.supabase;
+        }
+
+        // Resolve the Supabase UMD library. Note: on some pages other code sets
+        // window.supabase to the *client* instance (which has no createClient),
+        // so keep a stable reference to the real library under window.supabaseLib.
+        var supabaseLib = window.supabaseLib
+            || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+
+        if (!supabaseLib || typeof supabaseLib.createClient !== 'function') {
+            console.warn('Supabase library not loaded yet');
             return null;
         }
+        window.supabaseLib = supabaseLib;
 
         const response = await fetch('/api/config', {
             headers: { 'Cache-Control': 'no-cache' }
@@ -25,8 +37,9 @@
             throw new Error('Missing SUPABASE_URL or SUPABASE_ANON_KEY in /api/config');
         }
 
-        const client = supabase.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        const client = supabaseLib.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
         window.AppConfig.supabase = client;
+        window.supabaseClient = client;
         window.supabase = client;
         window.SUPABASE_URL = config.SUPABASE_URL;
         window.SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
