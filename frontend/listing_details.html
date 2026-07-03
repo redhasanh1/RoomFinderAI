@@ -401,7 +401,19 @@
 
                 SUPABASE_URL = config.SUPABASE_URL;
                 SUPABASE_ANON_KEY = config.SUPABASE_ANON_KEY;
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+                // Prefer the client created by supabase-config-init.js. Fall back to the
+                // raw library (window.supabaseLib) since window.supabase may already have
+                // been overwritten with the client instance (which has no createClient).
+                if (window.supabaseConfigReady) {
+                    try { supabase = await window.supabaseConfigReady; } catch (e) { /* fall through */ }
+                }
+                if (!supabase) {
+                    const supabaseLib = window.supabaseLib
+                        || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+                    if (!supabaseLib) throw new Error('Supabase library not available');
+                    supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                }
 
                 console.time('Supabase query');
                 await loadListingDetails();
