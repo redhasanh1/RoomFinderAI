@@ -277,8 +277,15 @@
                     document.getElementById('authLink').textContent = 'Profile';
                     document.getElementById('authLink').href = 'profile.html';
                     searchSubleases();
+                    return;
                 }
             }
+            // Not logged in — show a clear prompt instead of an empty Browse panel.
+            document.getElementById('browseResults').innerHTML =
+                '<div class="col-span-full text-center py-12 text-gray-500">'
+                + '<p class="mb-4">Log in to browse and post sublease requests.</p>'
+                + '<a href="login.html?redirect=sublease.html" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700">Log in</a>'
+                + '</div>';
         });
     </script>
 </body>
