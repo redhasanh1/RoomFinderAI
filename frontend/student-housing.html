@@ -396,7 +396,7 @@
             <h2 class="text-4xl font-bold mb-6">Ready to Master Student Housing?</h2>
             <p class="text-xl mb-8 text-white/90">Join 2.3M+ students who've found their perfect housing solution</p>
             <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onclick="showTab('budget')" class="bg-white text-purple-600 px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300">
+                <button onclick="document.getElementById('budget-step')?.scrollIntoView({behavior:'smooth'})" class="bg-white text-purple-600 px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300">
                     Start Budget Calculator
                 </button>
                 <button onclick="document.getElementById('roommate-agreement-section').scrollIntoView({behavior:'smooth'})" class="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-purple-600 transition-all duration-300">
@@ -702,8 +702,43 @@
         });
     </script>
 
-    <!-- Student Portal Section -->
+    <!-- Student Tools Hub (real, working features) -->
     <section class="py-20 bg-gradient-to-br from-indigo-50 to-purple-50">
+        <div class="w-[90%] max-w-7xl mx-auto px-4">
+            <div class="text-center mb-12">
+                <div class="inline-flex items-center bg-purple-100 rounded-full px-6 py-3 mb-6">
+                    <span class="text-purple-600 font-semibold">🎓 Student Tools</span>
+                </div>
+                <h2 class="text-4xl md:text-5xl font-bold mb-6 gradient-text-student">Your Housing Hub</h2>
+                <p class="text-xl text-gray-600 max-w-3xl mx-auto">Real tools to find housing near your school, match with roommates, plan a budget, and draft a roommate agreement.</p>
+            </div>
+            <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <a href="listings.html" class="block bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-all border border-purple-100 text-center">
+                    <div class="text-3xl mb-3">🏠</div>
+                    <h3 class="font-bold text-gray-900 mb-1">Find Housing</h3>
+                    <p class="text-sm text-gray-600">Browse real listings on RoomFinderAI.</p>
+                </a>
+                <a href="roommate-matching.html" class="block bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-all border border-blue-100 text-center">
+                    <div class="text-3xl mb-3">👥</div>
+                    <h3 class="font-bold text-gray-900 mb-1">Roommate Finder</h3>
+                    <p class="text-sm text-gray-600">Match with roommates via RoomPal.</p>
+                </a>
+                <button type="button" onclick="document.getElementById('budget-step')?.scrollIntoView({behavior:'smooth'});" class="block w-full bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-all border border-green-100 text-center">
+                    <div class="text-3xl mb-3">💰</div>
+                    <h3 class="font-bold text-gray-900 mb-1">Budget Calculator</h3>
+                    <p class="text-sm text-gray-600">Plan rent and living costs.</p>
+                </button>
+                <button type="button" onclick="document.getElementById('roommate-agreement-section')?.scrollIntoView({behavior:'smooth'});" class="block w-full bg-white rounded-2xl shadow p-6 hover:shadow-lg transition-all border border-pink-100 text-center">
+                    <div class="text-3xl mb-3">📝</div>
+                    <h3 class="font-bold text-gray-900 mb-1">Roommate Agreement</h3>
+                    <p class="text-sm text-gray-600">Generate an AI-drafted agreement.</p>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Legacy student portal (static mockup) — hidden until backed by real data -->
+    <section class="py-20 bg-gradient-to-br from-indigo-50 to-purple-50" style="display:none;">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center mb-16">
                 <div class="inline-flex items-center bg-purple-100 rounded-full px-6 py-3 mb-6">
