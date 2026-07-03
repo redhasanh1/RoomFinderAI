@@ -479,6 +479,7 @@
           const existingUser = users.find(u=>u?.email?.toLowerCase()===pendingUserData.email.toLowerCase());
           
           const user = { 
+            id: result.user?.id || existingUser?.id || null,
             firstName:pendingUserData.firstName, 
             lastName:pendingUserData.lastName, 
             email:pendingUserData.email, 
