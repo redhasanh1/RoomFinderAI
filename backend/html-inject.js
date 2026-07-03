@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const SITE_SHELL_MARKER = 'site-bootstrap.js';
+const SITE_SHELL_MARKER = 'src="/js/site-bootstrap.js"';
 
 function injectSiteShell(html) {
     if (!html || html.includes(SITE_SHELL_MARKER)) {

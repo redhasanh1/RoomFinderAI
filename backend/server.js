@@ -3994,6 +3994,31 @@ app.post('/api/contact', async (req, res) => {
             clientIP: clientIP
         });
 
+        // Best-effort: persist the message to Supabase so it is never lost,
+        // even if the email provider (Brevo) rejects the send.
+        let stored = false;
+        if (supabase) {
+            try {
+                const { error: storeError } = await supabase
+                    .from('contact_messages')
+                    .insert([{
+                        first_name: firstName.trim(),
+                        last_name: lastName?.trim() || null,
+                        email: email.trim(),
+                        message: message.trim(),
+                        created_at: new Date().toISOString()
+                    }]);
+                if (storeError) {
+                    console.warn(`⚠️ [${requestId}] Could not store contact message (non-fatal):`, storeError.message);
+                } else {
+                    stored = true;
+                    console.log(`✅ [${requestId}] Contact message stored in Supabase`);
+                }
+            } catch (storeErr) {
+                console.warn(`⚠️ [${requestId}] Contact message storage skipped (non-fatal):`, storeErr.message);
+            }
+        }
+
         // Send contact email with enhanced logging
         const emailResult = await sendContactEmail(firstName.trim(), email.trim(), message.trim(), lastName?.trim());
         
@@ -4006,6 +4031,17 @@ app.post('/api/contact', async (req, res) => {
             res.json({ 
                 message: 'Message sent successfully! We will get back to you soon.',
                 success: true,
+                requestId: requestId,
+                processingTime: processingTime
+            });
+        } else if (stored) {
+            // Email failed but we captured the message — treat as success for the user.
+            console.log(`⚠️ [${requestId}] Email send failed but message stored; returning success. Reason:`, emailResult.error);
+            
+            res.json({ 
+                message: 'Message received! We will get back to you soon.',
+                success: true,
+                stored: true,
                 requestId: requestId,
                 processingTime: processingTime
             });

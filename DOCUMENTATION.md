@@ -158,6 +158,7 @@ Copy `.env.example` → `.env`. On **Railway**, set the same keys in the project
 | `AZURE_DOCUMENT_INTELLIGENCE_*` | ID document verification |
 | `AZURE_FACE_*` | Face API verification |
 | `RENTCAST_KEY` | Market data API |
+| `VOYAGE_API_KEY` | Voyage embeddings — **reserved** for future semantic search (not implemented yet) |
 | `TURNSTILE_SITE_KEY` | Cloudflare Turnstile |
 | `ADMIN_KEY` | Protected admin routes (required in production) |
 | `ENABLE_DEMO_MODE` | `false` in production |
