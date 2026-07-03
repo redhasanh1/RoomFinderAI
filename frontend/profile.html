@@ -552,9 +552,15 @@
                     hasSupabaseKey: !!configData.SUPABASE_ANON_KEY
                 });
 
-                // Initialize Supabase
+                // Initialize Supabase. window.supabase may already be the client
+                // instance (no createClient), so resolve the real library first.
                 try {
-                    supabaseClient = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                    var supabaseLib = window.supabaseLib
+                        || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+                    supabaseClient = supabaseLib
+                        ? supabaseLib.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY)
+                        : (window.supabaseClient || window.AppConfig?.supabase);
+                    if (!supabaseClient) throw new Error('Supabase library not available');
                     console.log('✅ Supabase client created successfully');
 
                     // Initialize the profile page if not already done
