@@ -121,11 +121,19 @@
             }
         }
 
-        // Initialize when page loads
+        // Initialize when page loads. If the Turnstile script never loads (e.g. blocked
+        // by an ad blocker or CDN outage), don't trap the user — redirect through after
+        // a bounded wait so they can still reach the app.
+        let turnstileWaitElapsed = 0;
         function waitForTurnstile() {
             if (window.turnstile && typeof window.turnstile.render === 'function') {
                 initializeTurnstile();
+            } else if (turnstileWaitElapsed >= 8000) {
+                console.warn('Turnstile failed to load in time; redirecting without verification.');
+                const urlParams = new URLSearchParams(window.location.search);
+                window.location.href = urlParams.get('redirect') || '/index.html';
             } else {
+                turnstileWaitElapsed += 100;
                 setTimeout(waitForTurnstile, 100);
             }
         }
