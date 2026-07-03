@@ -365,10 +365,13 @@
             // Merge backend data with local data (backend takes priority for profile image)
             let finalUser;
             
+            // Backend returns the user's DB id at result.userId (RoomPal + messaging need it).
+            const backendUserId = result.userId || backendUser.id || null;
             if (existingLocal) {
               // Merge: Use backend profile image if available, otherwise keep local
               finalUser = {
                 ...existingLocal,
+                id: backendUserId || existingLocal.id,
                 firstName: backendUser.firstName || existingLocal.firstName,
                 lastName: backendUser.lastName || existingLocal.lastName,
                 email: email,
@@ -379,6 +382,7 @@
             } else {
               // No local data - use backend data or create new
               finalUser = {
+                id: backendUserId,
                 firstName: backendUser.firstName || 'User',
                 lastName: backendUser.lastName || 'Name',
                 email: email,

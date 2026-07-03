@@ -2637,6 +2637,7 @@ app.post('/api/auth/google-signin', async (req, res) => {
             message: 'Google Sign-In successful',
             access_token: `token_${existingUser.id}`,
             user: {
+                id: existingUser.id,
                 firstName: existingUser.firstName,
                 lastName: existingUser.lastName,
                 email: existingUser.email,
@@ -2835,6 +2836,7 @@ app.post('/api/auth/google', async (req, res) => {
         res.json({ 
             message: 'Google Sign-In successful',
             user: {
+                id: existingUser.id,
                 firstName: existingUser.firstName,
                 lastName: existingUser.lastName,
                 email: existingUser.email,
@@ -2966,6 +2968,7 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
         res.json({ 
             message: 'Google Sign-In successful',
             user: {
+                id: existingUser.id,
                 firstName: existingUser.firstName,
                 lastName: existingUser.lastName,
                 email: existingUser.email,
@@ -3109,6 +3112,7 @@ app.post('/api/auth/apple', async (req, res) => {
         res.json({ 
             message: 'Apple Sign-In successful', 
             user: {
+                id: existingUser.id,
                 firstName: existingUser.firstName,
                 lastName: existingUser.lastName,
                 email: existingUser.email,
