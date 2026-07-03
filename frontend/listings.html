@@ -128,14 +128,18 @@
 
                 // Initialize Supabase client with error handling
                 try {
-                    if (!window.supabase) {
-                        throw new Error('Supabase library not loaded');
-                    }
                     if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
                         throw new Error('Missing Supabase credentials');
                     }
 
-                    supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                    // window.supabase may already be the client instance (no createClient),
+                    // so resolve the real library via window.supabaseLib first.
+                    var supabaseLib = window.supabaseLib
+                        || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+                    if (!supabaseLib) {
+                        throw new Error('Supabase library not loaded');
+                    }
+                    supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
                     // Make client available globally for other modules
                     window.supabaseClient = supabase;
                     console.log('📡 Supabase client initialized successfully');
@@ -4308,9 +4312,11 @@
                 if (typeof supabase !== 'undefined' && supabase) {
                     searchSupabase = supabase;
                     console.log('🔍 Using global Supabase client');
-                } else if (window.supabase && SUPABASE_URL && SUPABASE_ANON_KEY) {
-                    // Create independent client
-                    searchSupabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                } else if ((window.supabaseLib || window.supabase) && SUPABASE_URL && SUPABASE_ANON_KEY) {
+                    // Create independent client from the real library (window.supabase may be a client instance)
+                    var searchLib = window.supabaseLib
+                        || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+                    searchSupabase = searchLib ? searchLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : (window.supabaseClient || supabase);
                     console.log('🔍 Created independent Supabase client');
                 } else {
                     console.error('🔍 Supabase not available for search');

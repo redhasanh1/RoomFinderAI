@@ -961,12 +961,20 @@
                 configData = await configResponse.json();
                 console.log('Configuration loaded successfully');
                 
-                // Initialize Supabase
-                if (!window.supabase) {
-                    throw new Error('Supabase library not loaded from CDN');
+                // Initialize Supabase. Prefer the client created by supabase-config-init.js.
+                // Fall back to the raw library (window.supabaseLib) since window.supabase may
+                // already be the client instance (which has no createClient).
+                if (window.supabaseConfigReady) {
+                    try { supabaseClient = await window.supabaseConfigReady; } catch (e) { /* fall through */ }
                 }
-
-                supabaseClient = window.supabase.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                if (!supabaseClient) {
+                    const supabaseLib = window.supabaseLib
+                        || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+                    if (!supabaseLib) {
+                        throw new Error('Supabase library not loaded from CDN');
+                    }
+                    supabaseClient = supabaseLib.createClient(configData.SUPABASE_URL, configData.SUPABASE_ANON_KEY);
+                }
                 window.supabaseClient = supabaseClient; // Make globally available for chat system
                 console.log('Supabase client initialized');
                 
