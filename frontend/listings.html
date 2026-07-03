@@ -3227,6 +3227,19 @@
             startConversation(listing);
         }
 
+        async function ensureUserEmailRow(email, firstName, lastName) {
+            if (!email || !supabase) return;
+            const { data: existing } = await supabase.from('users').select('email').eq('email', email).maybeSingle();
+            if (existing) return;
+            const { error } = await supabase.from('users').insert({
+                email,
+                first_name: firstName || 'User',
+                last_name: lastName || '',
+                created_at: new Date().toISOString()
+            });
+            if (error) console.warn('Could not create users row (may already exist):', error.message);
+        }
+
         async function startConversation(listing) {
             try {
                 console.log('🚀 Starting conversation for listing:', listing?.title || 'Unknown listing');
@@ -3342,6 +3355,9 @@
                 }
                 console.log('✅ Created profile for listing owner');
             }
+
+            await ensureUserEmailRow(currentUser.email, currentUser.firstName, currentUser.lastName);
+            await ensureUserEmailRow(listing.user_email, 'User', '');
 
             // Verify chat title element exists
             const chatTitle = document.getElementById('chatTitle');
@@ -4726,6 +4742,25 @@
             
             // Handle messaging popup if openChat parameter exists
             if (window.location.href.includes('openChat=true')) {
+                const pendingListingId = allParams.get('listingId') || sessionStorage.getItem('pendingChatListingId');
+                if (pendingListingId) {
+                    sessionStorage.removeItem('pendingChatListingId');
+                    setTimeout(async () => {
+                        try {
+                            const { data: listingRow, error: listingErr } = await supabase
+                                .from('listings')
+                                .select('id, title, price, street, city, postalCode, bedrooms, house_type, utilities, user_email, created_at')
+                                .eq('id', pendingListingId)
+                                .single();
+                            if (!listingErr && listingRow) {
+                                await startConversation(listingRow);
+                                return;
+                            }
+                        } catch (e) {
+                            console.warn('Could not open chat for listing:', e.message);
+                        }
+                    }, 1200);
+                }
                 setTimeout(() => {
                     const messagingBtn = document.querySelector('.messaging-toggle-btn');
                     if (messagingBtn) {

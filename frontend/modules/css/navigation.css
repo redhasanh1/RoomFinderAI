@@ -48,6 +48,58 @@
     background: rgba(102, 126, 234, 0.1);
 }
 
+/* Nav links (used by index and several pages) */
+.nav-link {
+    position: relative;
+    color: var(--color-gray-700, #374151);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border-radius: 0.75rem;
+    transition: var(--transition-smooth, all 0.3s ease);
+    overflow: hidden;
+    text-decoration: none;
+}
+
+.nav-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: var(--primary-gradient);
+    opacity: 0;
+    transform: translateY(100%);
+    transition: var(--transition-smooth, all 0.3s ease);
+    z-index: -1;
+}
+
+.nav-link:hover::before {
+    opacity: 0.1;
+    transform: translateY(0);
+}
+
+.nav-link:hover {
+    color: var(--color-primary, #667eea);
+    transform: translateY(-2px);
+}
+
+/* Brand logo */
+.brand-logo {
+    background: var(--primary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: 800;
+    font-size: 1.75rem;
+    transition: var(--transition-smooth, all 0.3s ease);
+}
+
+.brand-logo:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
 /* Auth Links */
 .auth-link {
     color: var(--color-gray-700);
@@ -438,4 +490,98 @@ body.mobile-menu-open {
 
 .login-link:hover {
     color: var(--color-primary);
+}
+
+/* ==================== CANONICAL INJECTED NAV LAYOUT ==================== */
+
+.site-fixed-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    z-index: 50;
+}
+
+body.site-has-header {
+    padding-top: 72px;
+}
+
+.site-nav-inner {
+    width: 90%;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+}
+
+.site-nav-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    gap: 1rem;
+}
+
+.site-brand-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.site-show-mobile {
+    display: flex;
+    align-items: center;
+}
+
+.site-show-desktop {
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+    .site-nav-inner {
+        flex-wrap: nowrap;
+    }
+
+    .site-nav-brand-row {
+        width: auto;
+        flex: 0 0 auto;
+    }
+
+    .site-show-mobile {
+        display: none !important;
+    }
+
+    .site-show-desktop {
+        display: flex !important;
+    }
+
+    .desktop-auth.site-show-desktop {
+        display: block !important;
+        flex: 0 0 auto;
+    }
+
+    .desktop-nav.site-show-desktop {
+        flex: 1 1 auto;
+        justify-content: center;
+        gap: 0.25rem;
+    }
+}
+
+.site-mobile-profile-img {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    object-fit: cover;
+}
+
+.z-50 {
+    z-index: 50;
 }

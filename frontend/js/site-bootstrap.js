@@ -51,6 +51,9 @@
         await loadScript('/universal-auth-manager.js');
 
         function onReady() {
+            if (typeof window.renderCanonicalSiteNav === 'function') {
+                window.renderCanonicalSiteNav();
+            }
             if (document.getElementById('header') || document.querySelector('.premium-header')) {
                 document.body.classList.add('site-has-header');
             }

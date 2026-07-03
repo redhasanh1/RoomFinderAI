@@ -207,6 +207,7 @@
         }
 
         function renderListing(listing) {
+            currentListingDetail = listing;
             // Update page title
             document.getElementById('page-title').textContent = listing.title;
             document.title = `${listing.title} - RoomFinderAI`;
@@ -277,7 +278,7 @@
                             </div>
 
                             <!-- Contact Button -->
-                            <button onclick="contactOwner('${listing.user_email}')" class="btn-primary w-full mb-3">
+                            <button onclick="contactOwner()" class="btn-primary w-full mb-3">
                                 <span class="flex items-center justify-center gap-2">
                                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
@@ -336,21 +337,33 @@
             thumbnail.classList.add('active');
         }
 
-        // Contact owner function
-        function contactOwner(email) {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+        // Contact owner — open in-app messaging on listings page
+        let currentListingDetail = null;
 
+        async function contactOwner() {
+            const listing = currentListingDetail;
+            if (!listing || !listing.user_email) {
+                alert('Cannot message: listing owner not available.');
+                return;
+            }
+
+            let currentUser = null;
+            if (window.UniversalAuth && typeof window.UniversalAuth.getCurrentUser === 'function') {
+                currentUser = await window.UniversalAuth.getCurrentUser();
+            }
             if (!currentUser) {
-                if (confirm('Please log in to contact the owner. Go to login page?')) {
+                try { currentUser = JSON.parse(localStorage.getItem('currentUser')); } catch (e) { /* ignore */ }
+            }
+
+            if (!currentUser || !currentUser.email) {
+                if (confirm('Please log in to message the owner. Go to login page?')) {
                     window.location.href = 'login.html';
                 }
                 return;
             }
 
-            // Open email client with pre-filled message
-            const subject = encodeURIComponent('Inquiry about your listing on RoomPal');
-            const body = encodeURIComponent('Hi,\n\nI am interested in your listing on RoomPal. Please let me know if it is still available.\n\nThank you!');
-            window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+            sessionStorage.setItem('pendingChatListingId', listing.id);
+            window.location.href = 'listings.html?openChat=true&listingId=' + encodeURIComponent(listing.id);
         }
 
         // Initialize immediately - DOM is ready since script is at bottom
@@ -396,6 +409,12 @@
 
                 clearTimeout(loadingTimeout);
                 console.timeEnd('Total load time');
+
+                if (typeof window.initUniversalAuth === 'function') {
+                    window.initUniversalAuth({ allowAnonymous: true });
+                } else if (window.UniversalAuth && typeof window.UniversalAuth.init === 'function') {
+                    window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+                }
             } catch (e) {
                 clearTimeout(loadingTimeout);
                 console.error('Init error:', e);

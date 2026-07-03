@@ -272,6 +272,24 @@ async function updateAuthSection() {
         
         console.log('✅ Auth section updated - showing login/register');
     }
+
+    // Mirror desktop auth into mobile nav when present
+    const mobileAuth = document.getElementById('mobileAuthSection');
+    if (mobileAuth && authSection) {
+        if (await isUserAuthenticated() && currentUser) {
+            mobileAuth.innerHTML = `
+                <a href="profile.html" class="mobile-menu-item auth-item" onclick="typeof closeMobileMenu==='function'&&closeMobileMenu()">
+                    <img src="${authSection.querySelector('img')?.src || DEFAULT_PROFILE_IMAGE}" alt="Profile" class="site-mobile-profile-img" onerror="this.src='${DEFAULT_PROFILE_IMAGE}'">
+                    My Profile
+                </a>
+                <a href="#" class="mobile-menu-item auth-item" onclick="event.preventDefault(); if(window.UniversalAuth&&UniversalAuth.logout) UniversalAuth.logout();">Log out</a>
+            `;
+        } else {
+            mobileAuth.innerHTML = `
+                <a href="login.html" class="mobile-menu-item auth-item" onclick="typeof closeMobileMenu==='function'&&closeMobileMenu()">Login/Register</a>
+            `;
+        }
+    }
 }
 
 /**
