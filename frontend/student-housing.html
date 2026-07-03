@@ -346,6 +346,50 @@
 
 
 
+    <!-- Roommate Agreement Generator -->
+    <section id="roommate-agreement-section" class="py-16 bg-white border-t border-gray-100">
+        <div class="w-[90%] max-w-3xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-2 text-gray-900">Roommate Agreement Generator</h2>
+            <p class="text-gray-600 text-center mb-8">AI-drafted agreement for student roommates — customize before signing</p>
+            <form id="roommateAgreementForm" class="bg-gray-50 rounded-2xl p-8 shadow-lg space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">University / City</label>
+                    <input type="text" id="agreementUniversity" required placeholder="e.g. York University, Toronto" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Monthly rent per person ($)</label>
+                        <input type="number" id="agreementBudget" required min="200" placeholder="800" class="w-full p-3 border border-gray-300 rounded-lg">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Housing type</label>
+                        <select id="agreementHousingType" class="w-full p-3 border border-gray-300 rounded-lg">
+                            <option value="shared apartment">Shared apartment</option>
+                            <option value="dorm room">Dorm / residence</option>
+                            <option value="house rental">House rental</option>
+                            <option value="sublet">Sublet</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">House rules & preferences (optional)</label>
+                    <textarea id="agreementNotes" rows="3" placeholder="Quiet hours, guests, cleaning schedule, pets..." class="w-full p-3 border border-gray-300 rounded-lg"></textarea>
+                </div>
+                <button type="submit" id="agreementSubmitBtn" class="w-full bg-purple-600 text-white py-4 rounded-xl font-semibold hover:bg-purple-700 transition-colors">
+                    Generate Agreement with AI
+                </button>
+            </form>
+            <div id="agreementResult" class="hidden mt-8 glass-card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-800">Your Draft Agreement</h3>
+                    <button type="button" onclick="copyAgreement()" class="text-sm text-purple-600 hover:underline">Copy</button>
+                </div>
+                <div id="agreementContent" class="whitespace-pre-wrap text-sm text-gray-800 max-h-96 overflow-y-auto"></div>
+                <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded">⚠️ AI draft only — have all roommates review and sign. Not a substitute for legal advice.</p>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="py-20 gradient-bg-student text-white">
         <div class="w-[90%] max-w-4xl mx-auto px-4 text-center">
@@ -355,7 +399,7 @@
                 <button onclick="showTab('budget')" class="bg-white text-purple-600 px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300">
                     Start Budget Calculator
                 </button>
-                <button onclick="showTab('roommate')" class="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-purple-600 transition-all duration-300">
+                <button onclick="document.getElementById('roommate-agreement-section').scrollIntoView({behavior:'smooth'})" class="border-2 border-white text-white px-8 py-4 rounded-full font-semibold hover:bg-white hover:text-purple-600 transition-all duration-300">
                     Create Roommate Agreement
                 </button>
             </div>
@@ -585,7 +629,54 @@
         }
         
         // Quick Match Form Handler
+        let lastAgreementText = '';
+
+        async function copyAgreement() {
+            if (!lastAgreementText) return;
+            await navigator.clipboard.writeText(lastAgreementText);
+            alert('Agreement copied to clipboard');
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            const agreementForm = document.getElementById('roommateAgreementForm');
+            if (agreementForm) {
+                agreementForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    const university = document.getElementById('agreementUniversity').value.trim();
+                    const budget = document.getElementById('agreementBudget').value;
+                    const housingType = document.getElementById('agreementHousingType').value;
+                    const notes = document.getElementById('agreementNotes').value.trim();
+                    const btn = document.getElementById('agreementSubmitBtn');
+                    const resultBox = document.getElementById('agreementResult');
+                    const content = document.getElementById('agreementContent');
+
+                    btn.disabled = true;
+                    btn.textContent = 'Generating...';
+                    resultBox.classList.remove('hidden');
+                    content.textContent = 'Drafting your roommate agreement...';
+
+                    try {
+                        const res = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                mode: 'legal-document',
+                                message: `Draft a comprehensive student roommate agreement for ${university}. Housing: ${housingType}. Rent share: $${budget}/month per person. ${notes ? 'Additional rules: ' + notes : ''} Include sections: parties, term, rent/utilities split, security deposit, quiet hours, guests, cleaning, damages, move-out, dispute resolution. Use placeholders [ROOMMATE 1], [ROOMMATE 2], [ADDRESS].`
+                            })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Generation failed');
+                        lastAgreementText = data.response || '';
+                        content.textContent = lastAgreementText;
+                    } catch (err) {
+                        content.textContent = 'Failed: ' + err.message;
+                    } finally {
+                        btn.disabled = false;
+                        btn.textContent = 'Generate Agreement with AI';
+                    }
+                });
+            }
+
             const quickMatchForm = document.getElementById('quickMatchForm');
             if (quickMatchForm) {
                 quickMatchForm.addEventListener('submit', function(e) {

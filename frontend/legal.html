@@ -497,6 +497,7 @@
                             </button>
                         </div>
                     </div>
+                    <div id="legalResourceResults" class="hidden mt-8 glass-card p-6 max-h-[70vh] overflow-y-auto"></div>
                 </div>
             </div>
 
@@ -1006,67 +1007,90 @@
             }
         }
 
-        // Attorney Search
-        function searchAttorneys() {
+        // Attorney Search — real AI recommendations (educational, not a live directory)
+        async function searchAttorneys() {
             const location = document.getElementById('attorneyLocation').value;
             const issue = document.getElementById('legalIssue').value;
             const budget = document.getElementById('budgetRange').value;
-            
+
             if (!location || !issue) {
                 alert('Please enter location and select legal issue');
                 return;
             }
-            
+
             const resultsDiv = document.getElementById('attorneyResults');
-            
-            // Simulate attorney search results
-            resultsDiv.innerHTML = `
-                <div class="space-y-4">
-                    <h4 class="font-semibold text-gray-800 mb-4">Found 3 attorneys in ${location}</h4>
-                    
-                    <div class="bg-white p-4 rounded-lg border border-gray-200">
-                        <div class="flex justify-between items-start mb-2">
-                            <h5 class="font-medium text-gray-800">Sarah Johnson, Esq.</h5>
-                            <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">⭐ 4.9</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-2">Tenant Rights Specialist • 8 years experience</p>
-                        <p class="text-sm text-gray-600 mb-3">Specializes in ${issue.replace('-', ' ')} cases</p>
-                        <div class="flex space-x-2">
-                            <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Contact</button>
-                            <button class="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">View Profile</button>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-4 rounded-lg border border-gray-200">
-                        <div class="flex justify-between items-start mb-2">
-                            <h5 class="font-medium text-gray-800">Legal Aid Society</h5>
-                            <span class="text-sm bg-green-100 text-green-800 px-2 py-1 rounded">Pro Bono</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-2">Free legal services for qualifying tenants</p>
-                        <p class="text-sm text-gray-600 mb-3">Income restrictions may apply</p>
-                        <div class="flex space-x-2">
-                            <button class="text-xs bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700">Apply</button>
-                            <button class="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">Learn More</button>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-white p-4 rounded-lg border border-gray-200">
-                        <div class="flex justify-between items-start mb-2">
-                            <h5 class="font-medium text-gray-800">Michael Chen, Esq.</h5>
-                            <span class="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">⭐ 4.7</span>
-                        </div>
-                        <p class="text-sm text-gray-600 mb-2">Housing Law Attorney • 12 years experience</p>
-                        <p class="text-sm text-gray-600 mb-3">Free consultation available</p>
-                        <div class="flex space-x-2">
-                            <button class="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700">Schedule</button>
-                            <button class="text-xs bg-gray-200 text-gray-700 px-3 py-1 rounded hover:bg-gray-300">View Profile</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+            resultsDiv.innerHTML = '<p class="text-gray-500">Searching legal resources with AI...</p>';
+
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        mode: 'legal-advice',
+                        message: `A tenant in ${location} needs help with: ${issue.replace(/-/g, ' ')}. Budget: ${budget || 'flexible'}.\n\nList 4-6 specific ways to find real legal help: (1) tenant rights attorneys, (2) local bar association lawyer referral services, (3) legal aid / pro bono organizations, (4) law school clinics, (5) government tenant hotlines if applicable.\nFor each, give: organization type, how to find/contact them, what to ask, and typical cost range.\nFormat as numbered sections. This is educational only — not a guarantee any specific attorney exists.`
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || data.details || 'Search failed');
+
+                resultsDiv.innerHTML = `
+                    <div class="space-y-4">
+                        <h4 class="font-semibold text-gray-800">Legal help options in ${escapeHtml(location)}</h4>
+                        <div class="whitespace-pre-wrap text-sm text-gray-800 bg-white p-4 rounded-lg border">${escapeHtml(data.response || '')}</div>
+                        <p class="text-xs text-amber-700 p-2 bg-amber-50 rounded">⚠️ Educational guidance only — verify all contacts independently. RoomFinderAI does not endorse specific attorneys.</p>
+                    </div>`;
+            } catch (err) {
+                resultsDiv.innerHTML = `<p class="text-red-600">${escapeHtml(err.message)}</p>`;
+            }
         }
 
-        // Utility Functions
+        async function showLegalResource(title, prompt) {
+            const panel = document.getElementById('legalResourceResults');
+            if (!panel) return;
+            panel.classList.remove('hidden');
+            panel.innerHTML = `<h3 class="text-xl font-bold mb-4">${escapeHtml(title)}</h3><p class="text-gray-500">Loading...</p>`;
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            try {
+                const response = await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mode: 'legal-advice', message: prompt })
+                });
+                const data = await response.json();
+                if (!response.ok) throw new Error(data.error || 'Request failed');
+                panel.innerHTML = `
+                    <h3 class="text-xl font-bold mb-4">${escapeHtml(title)}</h3>
+                    <div class="whitespace-pre-wrap text-sm text-gray-800">${escapeHtml(data.response || '')}</div>
+                    <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded">⚠️ General information only — not legal advice. Consult a licensed attorney for your situation.</p>`;
+            } catch (err) {
+                panel.innerHTML = `<p class="text-red-600">${escapeHtml(err.message)}</p>`;
+            }
+        }
+
+        function browseForms() {
+            showTab('resources');
+            showLegalResource('Free Legal Forms Guide',
+                'List the most important free legal forms for tenants and renters: lease agreement template, security deposit receipt, notice to landlord for repairs, complaint letter, move-in/move-out checklist, sublease agreement. For each form: what it is for, key fields to include, and when to use it. Format as a clear reference guide.');
+        }
+
+        function browseStateLaws() {
+            const jurisdiction = document.getElementById('jurisdictionSelect')?.value || 'general US/Canada';
+            showTab('resources');
+            showLegalResource('Tenant Rights & State/Provincial Laws',
+                `Provide an educational overview of tenant rights for jurisdiction: ${jurisdiction}. Cover: security deposit limits and return timelines, eviction notice requirements, rent increase rules, repair and habitability rights, entry notice requirements, and fair housing protections. Note differences where US states vs Canadian provinces apply.`);
+        }
+
+        function readLegalNews() {
+            showTab('resources');
+            showLegalResource('Recent Housing Law Trends',
+                'Summarize current major trends in rental housing law (2025-2026): rent control expansions, tenant protection bills, security deposit reforms, short-term rental regulations, and AI/fair housing considerations. Educational overview for tenants and landlords — note this is general and users should verify locally.');
+        }
+
+        function browseFAQ() {
+            showTab('resources');
+            showLegalResource('Tenant Legal FAQ',
+                'Answer these common tenant legal questions in FAQ format (question then answer): Can my landlord enter without notice? What can I do if repairs are not made? How do I get my security deposit back? Can I break my lease early? What are my rights if facing eviction? Are verbal lease agreements enforceable? How do roommate agreements work? Keep answers concise and practical.');
+        }
         function copyDocument() {
             if (!lastGeneratedDocument) {
                 alert('Generate a document first');
@@ -1089,32 +1113,12 @@
             URL.revokeObjectURL(url);
         }
 
-        function browseForms() {
-            // Implementation for browsing forms
-            console.log('Browse forms');
-        }
-
-        function browseStateLaws() {
-            // Implementation for browsing state laws
-            console.log('Browse state laws');
-        }
-
-        function useCalculators() {
-            showTab('calculator');
-        }
-
         function findAttorney() {
             showTab('attorney');
         }
 
-        function readLegalNews() {
-            // Implementation for reading legal news
-            console.log('Read legal news');
-        }
-
-        function browseFAQ() {
-            // Implementation for browsing FAQ
-            console.log('Browse FAQ');
+        function useCalculators() {
+            showTab('calculator');
         }
 
         // Initialize page

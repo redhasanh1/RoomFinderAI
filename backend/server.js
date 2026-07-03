@@ -4180,7 +4180,38 @@ app.post('/api/analyze-property-photo', async (req, res) => {
         console.log('✅ Cloudflare Worker response received');
         console.log('📊 Analysis result:', JSON.stringify(workerResponse.data).substring(0, 200) + '...');
 
-        res.json(workerResponse.data);
+        const workerData = workerResponse.data;
+        const analysisPayload = workerData.analysis || workerData;
+
+        // Reject obvious non-property uploads (memes, food, random images) before returning listing details.
+        const aiStatus = getAIStatus(config);
+        if (aiStatus.available.length && !DEMO_MODE) {
+            try {
+                const validateResult = await callAI(config, {
+                    messages: [{
+                        role: 'system',
+                        content: `You validate property photo analysis. The vision model analyzed an uploaded image and returned:\n${JSON.stringify(analysisPayload).slice(0, 2500)}\n\nWas the uploaded image likely a real rental property photo (room, apartment, house interior or exterior)? Or was it clearly NOT a property (food, meme, selfie, pet, blank, screenshot, random object)?\nReply JSON only: {"isPropertyPhoto":true|false,"reason":"one sentence"}`
+                    }],
+                    maxTokens: 120,
+                    temperature: 0.1
+                });
+                const jsonMatch = validateResult.content && validateResult.content.match(/\{[\s\S]*\}/);
+                if (jsonMatch) {
+                    const verdict = JSON.parse(jsonMatch[0]);
+                    if (verdict.isPropertyPhoto === false) {
+                        return res.status(422).json({
+                            success: false,
+                            rejected: true,
+                            error: verdict.reason || 'This image does not appear to be a property photo. Please upload a photo of the rental unit.'
+                        });
+                    }
+                }
+            } catch (validateErr) {
+                console.warn('Photo validation skipped (non-fatal):', validateErr.message);
+            }
+        }
+
+        res.json(workerData);
 
     } catch (error) {
         console.error('❌ Property photo analysis error:', error.message);
@@ -4733,6 +4764,8 @@ app.post('/api/chat', openAiRateLimitMiddleware, async (req, res) => {
             systemPrompt = `You are a legal document drafting assistant for tenants and renters on RoomFinderAI. Generate clear, jurisdiction-appropriate document drafts with standard sections and placeholders like [LANDLORD NAME] and [TENANT NAME]. Include a disclaimer that this is not legal advice. Output the full document text only — no JSON blocks.`;
         } else if (chatMode === 'legal-advice') {
             systemPrompt = `You are a housing legal information assistant for RoomFinderAI. Provide educational guidance about tenant rights, leases, and disputes. Be clear this is general information, not legal advice. Recommend consulting an attorney for serious matters.`;
+        } else if (chatMode === 'support') {
+            systemPrompt = `You are RoomFinderAI customer support. Help users with: browsing listings, RoomPal roommate matching, AI negotiator, sublease, student housing tools, legal document help, pricing (Free $0/mo, Pro $19.99/mo), login/account issues. Be concise and actionable. For billing disputes or account lockouts, suggest emailing support@roomfinderai.com.`;
         } else {
             // Rental assistant mode (default)
             let goalsBlock = '';
@@ -6065,19 +6098,31 @@ Return a JSON analysis:
     "negotiationPoints": ["list of terms worth negotiating"]
 }`;
 
-        const result = await callOpenAI({
+        const aiStatus = getAIStatus(config);
+        if (!aiStatus.available.length && !DEMO_MODE) {
+            return res.status(503).json({ error: 'AI service not available — set OPENAI_API_KEY or GROQ_API_KEY on Railway' });
+        }
+
+        const result = await callAI(config, {
             messages: [{ role: 'system', content: prompt }],
-            model: 'gpt-4',
             maxTokens: 800,
             temperature: 0.2
         });
 
+        // Models may wrap JSON in prose or code fences — extract the JSON object.
+        let review;
         try {
-            const review = JSON.parse(result.content);
-            res.json({ review, tokensUsed: result.tokensUsed });
+            review = JSON.parse(result.content);
         } catch {
-            res.json({ review: { overallRating: 'unknown', flags: [], summary: result.content }, tokensUsed: result.tokensUsed });
+            const match = result.content && result.content.match(/\{[\s\S]*\}/);
+            if (match) {
+                try { review = JSON.parse(match[0]); } catch { /* fall through */ }
+            }
         }
+        if (!review) {
+            review = { overallRating: 'unknown', flags: [], summary: result.content, negotiationPoints: [] };
+        }
+        res.json({ review, tokensUsed: result.tokensUsed, provider: result.provider });
 
     } catch (error) {
         console.error('Error in /api/negotiate/lease-review:', error.message);
