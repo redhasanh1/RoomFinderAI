@@ -938,10 +938,21 @@
                 // Add more topics as needed
             };
             
-            const info = rightsInfo[topic] || {
-                title: 'Legal Rights Information',
-                content: '<p>Detailed information about this topic is being prepared.</p>'
-            };
+            const info = rightsInfo[topic];
+            if (!info) {
+                // No hardcoded content — generate real, topic-specific guidance with the AI.
+                const topicLabels = {
+                    'eviction': 'Eviction Rights & Process',
+                    'repairs': 'Repair & Habitability Rights',
+                    'privacy': 'Tenant Privacy & Landlord Entry Rights',
+                    'discrimination': 'Fair Housing & Anti-Discrimination Rights'
+                };
+                const label = topicLabels[topic] || 'Tenant Legal Rights';
+                detailsDiv.classList.add('hidden');
+                showLegalResource(label,
+                    `Explain tenant rights regarding "${label}". Cover key legal protections, what landlords can and cannot do, common violations, and practical steps a tenant should take. Educational overview for US/Canada — note users should verify local laws.`);
+                return;
+            }
             
             titleDiv.textContent = info.title;
             contentDiv.innerHTML = info.content;
