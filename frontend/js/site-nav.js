@@ -72,13 +72,12 @@
             '<div class="desktop-nav site-show-desktop">' +
             '<a href="index.html" class="nav-item">Home</a>' +
             '<a href="roommate-matching.html" class="nav-item">RoomPal</a>' +
-            '<a href="listings.html" class="nav-item">Listings</a>' +
             '<div class="dropdown">' +
             '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'browse\')">Browse <span class="dropdown-arrow">▼</span></button>' +
             '<div class="dropdown-menu" id="browse-dropdown">' +
-            '<a href="listings.html" class="dropdown-item">Browse Listings</a>' +
+            '<a href="listings.html" class="dropdown-item">Listings</a>' +
             '<a href="student-housing.html" class="dropdown-item">Student Housing</a>' +
-            '<a href="sublease.html" class="dropdown-item">Sublease</a>' +
+            '<a href="sublease.html" class="dropdown-item">Subleasing</a>' +
             '</div></div>' +
             '<div class="dropdown">' +
             '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'tools\')">Tools <span class="dropdown-arrow">▼</span></button>' +
@@ -93,8 +92,14 @@
             '<a href="pricing.html" class="dropdown-item">Pricing</a>' +
             '<a href="index.html#contact" class="dropdown-item">Contact</a>' +
             '<a href="support.html" class="dropdown-item">Support</a>' +
-            '</div></div></div>' +
+            '</div></div>' +
+            '<a href="profile.html" id="navProfileLink" class="nav-item site-nav-profile-link" style="display:none">Profile</a>' +
+            '</div>' +
             '<div class="desktop-auth site-show-desktop">' +
+            '<div id="notificationBell" class="site-nav-notification relative cursor-pointer hidden p-2 hover:bg-gray-100 rounded-lg transition" onclick="typeof toggleNotificationPanel===\'function\'&&toggleNotificationPanel()" aria-label="Notifications">' +
+            '<svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>' +
+            '<span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>' +
+            '</div>' +
             '<div id="authSection">' +
             '<a href="login.html" class="auth-link login-register-btn">Login/Register</a>' +
             '</div></div></nav>' +
@@ -107,7 +112,6 @@
             '</div><div class="mobile-menu-items">' +
             '<a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()">Home</a>' +
             '<a href="roommate-matching.html" class="mobile-menu-item" onclick="closeMobileMenu()">RoomPal</a>' +
-            '<a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Listings</a>' +
             '<div class="mobile-section">' +
             '<button type="button" class="mobile-section-header" onclick="toggleMobileSection(\'profile\')">Profile <span class="mobile-arrow" id="profile-arrow">▼</span></button>' +
             '<div class="mobile-section-content" id="profile-section">' +
@@ -118,9 +122,9 @@
             '<div class="mobile-section">' +
             '<button type="button" class="mobile-section-header" onclick="toggleMobileSection(\'browse\')">Browse <span class="mobile-arrow" id="browse-arrow">▼</span></button>' +
             '<div class="mobile-section-content" id="browse-section">' +
-            '<a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>' +
+            '<a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Listings</a>' +
             '<a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>' +
-            '<a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease</a>' +
+            '<a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Subleasing</a>' +
             '</div></div>' +
             '<div class="mobile-section">' +
             '<button type="button" class="mobile-section-header" onclick="toggleMobileSection(\'tools\')">Tools <span class="mobile-arrow" id="tools-arrow">▼</span></button>' +

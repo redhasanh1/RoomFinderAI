@@ -22,7 +22,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   
   <!-- Auth helpers (loaded after Supabase library) -->
-  <script src="/supabase-auth-only.js"></script><!-- Auth handled by supabase-auth-only.js -->
+  <script src="/supabase-auth-only.js"></script>
+  <script src="/universal-auth-manager.js"></script>
   <!-- Google Identity Services -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!-- Apple Sign-In -->
@@ -407,7 +408,11 @@
             localStorage.setItem('users', JSON.stringify(users));
             localStorage.setItem('currentUser', JSON.stringify(finalUser));
             
-            window.location.href='verification-modal.html?redirect=index.html';
+            if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
+              UniversalAuth.redirectAfterLogin('index.html');
+            } else {
+              window.location.href = 'verification-modal.html?redirect=index.html';
+            }
           }else{
             alert(result.error || 'Login failed');
           }
@@ -502,7 +507,11 @@
           localStorage.setItem('users', JSON.stringify(users));
           localStorage.setItem('currentUser', JSON.stringify(user));
           alert('Email verified successfully! Welcome to RoomFinder AI.');
-          window.location.href='verification-modal.html?redirect=index.html';
+          if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
+            UniversalAuth.redirectAfterLogin('index.html');
+          } else {
+            window.location.href = 'verification-modal.html?redirect=index.html';
+          }
         }else{
           alert(result.error || 'Verification failed');
         }
@@ -622,7 +631,11 @@
           const i = users.findIndex(u=>u?.email?.toLowerCase()===userWithCustomPfp.email?.toLowerCase());
           if (i>=0) users[i]=userWithCustomPfp; else users.push(userWithCustomPfp);
           localStorage.setItem('users', JSON.stringify(users));
-          window.location.href='verification-modal.html?redirect=index.html';
+          if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
+            UniversalAuth.redirectAfterLogin('index.html');
+          } else {
+            window.location.href = 'verification-modal.html?redirect=index.html';
+          }
         }else{
           alert(result.error || 'Google Sign-In failed');
         }
@@ -645,7 +658,11 @@
           const i = users.findIndex(u=>u?.email?.toLowerCase()===userWithCustomPfp.email?.toLowerCase());
           if (i>=0) users[i]=userWithCustomPfp; else users.push(userWithCustomPfp);
           localStorage.setItem('users', JSON.stringify(users));
-          window.location.href='verification-modal.html?redirect=index.html';
+          if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
+            UniversalAuth.redirectAfterLogin('index.html');
+          } else {
+            window.location.href = 'verification-modal.html?redirect=index.html';
+          }
         }else{
           console.error('OAuth code exchange failed:', result);
           alert(result.error || 'Google Sign-In failed');
@@ -703,7 +720,11 @@
           const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
           if (i>=0) users[i]=result.user; else users.push(result.user);
           localStorage.setItem('users', JSON.stringify(users));
-          window.location.href='verification-modal.html?redirect=index.html';
+          if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
+            UniversalAuth.redirectAfterLogin('index.html');
+          } else {
+            window.location.href = 'verification-modal.html?redirect=index.html';
+          }
         }else{
           alert(result.error || 'Apple Sign-In failed');
         }

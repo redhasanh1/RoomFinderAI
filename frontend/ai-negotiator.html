@@ -840,18 +840,11 @@
 
                 // Update user with profile info
                 currentUser.id = profile.id;
-                currentUser.profileImage = profile.profile_image;
+                currentUser.profileImage = profile.profile_image_url || profile.profile_image || defaultProfileImage;
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
 
-                // Update auth section if it exists
-                const authSection = document.getElementById('authSection');
-                if (authSection) {
-                    const profileImg = currentUser.profileImage || defaultProfileImage;
-                    authSection.innerHTML = `
-                        <a href="profile.html" class="block">
-                            <img id="profileLogo" src="${profileImg}" alt="Profile" class="w-10 h-10 rounded-full object-cover border-2 border-gray-200 hover:border-purple-400 transition">
-                        </a>
-                    `;
+                if (typeof window.UniversalAuth !== 'undefined') {
+                    await window.UniversalAuth.refresh();
                 }
                 
                 console.log('Safe authentication completed successfully');

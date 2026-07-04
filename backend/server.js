@@ -785,16 +785,17 @@ app.post('/api/listings', async (req, res) => {
                     id: uuidv4(),
                     city,
                     street,
-                    postal_code: postalCode,
+                    postalCode: postalCode,
                     title,
                     price: parseFloat(price),
                     house_type: houseType,
-                    room_type: houseType, // For compatibility
                     bedrooms: parseInt(bedrooms),
                     utilities,
                     description,
                     media: media || [],
-                    user_email: user_email, // Store user email for messaging
+                    user_email: user_email,
+                    country: req.body.country || 'Canada',
+                    status: 'active',
                     created_at: new Date().toISOString(),
                     updated_at: new Date().toISOString()
                 };
@@ -2606,32 +2607,8 @@ app.post('/api/auth/google-signin', async (req, res) => {
             existingUser = userData;
         }
 
-        // Try to create/update user in Supabase if available
-        if (supabase) {
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .upsert({
-                        email: existingUser.email,
-                        first_name: existingUser.firstName,
-                        last_name: existingUser.lastName,
-                        profile_image: existingUser.profileImage,
-                        provider: 'google',
-                        provider_id: userData.providerId,
-                        email_verified: true,
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'email'
-                    });
-
-                if (error) {
-                    console.error('Supabase profile upsert error:', error);
-                }
-            } catch (dbError) {
-                console.error('Database error during Google auth:', dbError);
-                // Continue with in-memory auth even if DB fails
-            }
-        }
+        const profileId = await ensureProfileForOAuth(existingUser);
+        if (profileId) existingUser.id = profileId;
 
         res.json({ 
             message: 'Google Sign-In successful',
@@ -2758,6 +2735,37 @@ app.post('/api/auth/verify-code', async (req, res) => {
     }
 });
 
+/** Upsert OAuth user into profiles and return the real Supabase profile id */
+async function ensureProfileForOAuth(userInfo) {
+    if (!supabase || !userInfo?.email) return null;
+    try {
+        const row = {
+            email: userInfo.email,
+            first_name: userInfo.firstName,
+            last_name: userInfo.lastName,
+            profile_image_url: userInfo.profileImage,
+            profile_image: userInfo.profileImage,
+            email_verified: userInfo.emailVerified !== false,
+            updated_at: new Date().toISOString()
+        };
+        if (userInfo.provider) {
+            row.provider = userInfo.provider;
+            row.provider_id = userInfo.providerId;
+        }
+        const { error } = await supabase.from('profiles').upsert(row, { onConflict: 'email' });
+        if (error) console.error('Profile upsert error:', error.message);
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('email', userInfo.email)
+            .single();
+        return profile?.id || null;
+    } catch (err) {
+        console.error('ensureProfileForOAuth:', err);
+        return null;
+    }
+}
+
 // API: Google OAuth Sign-In (ID Token)
 app.post('/api/auth/google', async (req, res) => {
     try {
@@ -2806,32 +2814,8 @@ app.post('/api/auth/google', async (req, res) => {
             existingUser = userData;
         }
 
-        // Try to create/update user in Supabase if available
-        if (supabase) {
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .upsert({
-                        email: existingUser.email,
-                        first_name: existingUser.firstName,
-                        last_name: existingUser.lastName,
-                        profile_image: existingUser.profileImage,
-                        provider: 'google',
-                        provider_id: userData.providerId,
-                        email_verified: true,
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'email'
-                    });
-
-                if (error) {
-                    console.error('Supabase profile upsert error:', error);
-                }
-            } catch (dbError) {
-                console.error('Database error during Google auth:', dbError);
-                // Continue with in-memory auth even if DB fails
-            }
-        }
+        const profileId = await ensureProfileForOAuth(existingUser);
+        if (profileId) existingUser.id = profileId;
 
         res.json({ 
             message: 'Google Sign-In successful',
@@ -2938,32 +2922,8 @@ app.post('/api/auth/google/oauth-code', async (req, res) => {
             existingUser = userData;
         }
 
-        // Try to create/update user in Supabase if available
-        if (supabase) {
-            try {
-                const { error } = await supabase
-                    .from('profiles')
-                    .upsert({
-                        email: existingUser.email,
-                        first_name: existingUser.firstName,
-                        last_name: existingUser.lastName,
-                        profile_image: existingUser.profileImage,
-                        provider: 'google',
-                        provider_id: userData.providerId,
-                        email_verified: true,
-                        updated_at: new Date().toISOString()
-                    }, {
-                        onConflict: 'email'
-                    });
-
-                if (error) {
-                    console.error('Supabase profile upsert error:', error);
-                }
-            } catch (dbError) {
-                console.error('Database error during Google auth:', dbError);
-                // Continue with in-memory auth even if DB fails
-            }
-        }
+        const profileId = await ensureProfileForOAuth(existingUser);
+        if (profileId) existingUser.id = profileId;
 
         res.json({ 
             message: 'Google Sign-In successful',

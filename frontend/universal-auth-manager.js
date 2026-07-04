@@ -92,10 +92,11 @@ async function getCurrentUser() {
             }
             
             return {
+                id: profile.id,
                 email: profile.email,
                 firstName: profile.first_name || 'User',
                 lastName: profile.last_name || 'Name',
-                profileImage: profile.profile_image_url
+                profileImage: profile.profile_image_url || profile.profile_image
             };
         }
         
@@ -162,9 +163,46 @@ function storeProfileImage(email, imageData) {
 }
 
 /**
- * Update auth section with appropriate content
+ * Persist currentUser to localStorage after profile sync
  */
-async function updateAuthSection() {
+function syncCurrentUserToStorage(user) {
+    if (!user || !user.email) return;
+    try {
+        localStorage.setItem('currentUser', JSON.stringify(user));
+    } catch (e) {
+        console.warn('Could not persist currentUser:', e);
+    }
+}
+
+/**
+ * Whether the user already passed the Turnstile security check this session
+ */
+function isSecurityCheckPassed() {
+    return sessionStorage.getItem('turnstile_verified') === 'true' ||
+        localStorage.getItem('security_check_passed') === 'true';
+}
+
+/**
+ * Redirect after login — skip verification-modal if already verified
+ */
+function redirectAfterLogin(redirectUrl) {
+    const target = redirectUrl || 'index.html';
+    if (isSecurityCheckPassed()) {
+        window.location.href = target;
+    } else {
+        window.location.href = 'verification-modal.html?redirect=' + encodeURIComponent(target);
+    }
+}
+
+/**
+ * Toggle top-level Profile nav link visibility
+ */
+function updateNavProfileLink(isLoggedIn) {
+    const profileLink = document.getElementById('navProfileLink');
+    if (profileLink) {
+        profileLink.style.display = isLoggedIn ? '' : 'none';
+    }
+}
     const authSection = document.getElementById('authSection');
     if (!authSection) {
         console.log('No authSection found on this page');
@@ -260,6 +298,8 @@ async function updateAuthSection() {
                 <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200" onerror="this.src='${DEFAULT_PROFILE_IMAGE}'">
             </a>
         `;
+        syncCurrentUserToStorage(currentUser);
+        updateNavProfileLink(true);
         
         console.log('✅ Auth section updated - showing profile image');
     } else {
@@ -269,6 +309,7 @@ async function updateAuthSection() {
                 Login/Register
             </a>
         `;
+        updateNavProfileLink(false);
         
         console.log('✅ Auth section updated - showing login/register');
     }
@@ -318,10 +359,9 @@ async function initSupabaseAuth() {
             .single();
 
         if (error || !profile) {
-            // Create profile if it doesn't exist
             const newProfile = {
                 email: currentUser.email,
-                profile_image: DEFAULT_PROFILE_IMAGE
+                profile_image_url: DEFAULT_PROFILE_IMAGE
             };
             const { data, error: insertError } = await supabaseClient
                 .from('profiles')
@@ -336,10 +376,9 @@ async function initSupabaseAuth() {
             profile = data;
         }
 
-        // Update current user with profile data
         currentUser.id = profile.id;
-        currentUser.profileImage = profile.profile_image || DEFAULT_PROFILE_IMAGE;
-        // localStorage removed - using Supabase);
+        currentUser.profileImage = profile.profile_image_url || profile.profile_image || DEFAULT_PROFILE_IMAGE;
+        syncCurrentUserToStorage(currentUser);
 
         console.log('✅ Supabase profile synchronized');
         return true;
@@ -452,6 +491,8 @@ window.UniversalAuth = {
     logout: handleLogout,
     storeProfileImage: storeProfileImage,
     getStoredProfileImage: getStoredProfileImage,
+    redirectAfterLogin: redirectAfterLogin,
+    isSecurityCheckPassed: isSecurityCheckPassed,
     DEFAULT_PROFILE_IMAGE: DEFAULT_PROFILE_IMAGE
 };
 

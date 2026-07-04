@@ -1278,27 +1278,14 @@
         // Authentication check and header update
         async function initializeListingsPage() {
             console.log('DOMContentLoaded event fired');
-            const profileImages = [
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGNkI2QiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzRFQ0RDNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGRTY2RCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzZCNzI4MCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
-                'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGOUYxQyIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4='
-            ];
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
             console.log('Current user:', currentUser);
-            const authSection = document.getElementById('authSection');
+
+            if (typeof window.UniversalAuth !== 'undefined') {
+                await window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+            }
 
             if (!currentUser) {
-                console.log('No current user, showing anonymous interface');
-                // Show login/register interface for anonymous users
-                authSection.innerHTML = `
-                    <div class="flex items-center space-x-4">
-                        <a href="login.html" class="auth-link">Login</a>
-                        <a href="login.html" class="auth-link">Sign Up</a>
-                    </div>
-                `;
-                // Continue loading page without authentication
                 loadListings();
                 return;
             }
@@ -1318,24 +1305,6 @@
                 alert('Failed to initialize session. Please check your connection.');
                 return;
             }
-
-            if (!currentUser.profileImage) {
-                currentUser.profileImage = profileImages[Math.floor(Math.random() * profileImages.length)];
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-            }
-            authSection.innerHTML = `
-                <div class="flex items-center space-x-2">
-                    <div class="relative">
-                        <span id="profileNotificationBadge" class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center hidden z-10">0</span>
-                        <a href="profile.html">
-                            <img id="profileLogo" src="${currentUser.profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo">
-                        </a>
-                    </div>
-                </div>
-            `;
 
             // Initialize map
             initMap();
@@ -5999,119 +5968,18 @@
         function initializeAuthSystemAsync(initState) {
             setTimeout(async () => {
                 try {
-                    console.log('🔐 Initializing authentication system...');
-
-                    const profileImages = [
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iI0ZGNkI2QiIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4=',
-                        'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIyMCIgY3k9IjIwIiByPSIyMCIgZmlsbD0iIzRFQ0RDNCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBmb250LWZhbWlseT0iQXJpYWwiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IndoaXRlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+VTwvdGV4dD48L3N2Zz4='
-                    ];
-
+                    if (typeof window.UniversalAuth !== 'undefined') {
+                        await window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
+                    }
                     const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-                    const authSection = document.getElementById('authSection');
-                    const mobileAuthSection = document.getElementById('mobileAuthSection');
-
-                    if (!authSection) {
-                        console.warn('⚠️ Auth section element not found');
-                        return;
+                    if (currentUser && typeof initializeFavoriteSystem === 'function') {
+                        try { initializeFavoriteSystem(); } catch (e) { /* non-fatal */ }
                     }
-
-                    if (!currentUser) {
-                        // Show login/register interface for anonymous users
-                        authSection.innerHTML = `
-                            <div class="flex items-center space-x-4">
-                                <a href="login.html" class="bg-white text-blue-600 px-4 py-2 rounded-lg border border-blue-600 hover:bg-blue-50 transition duration-300">
-                                    Login
-                                </a>
-                                <a href="login.html" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition duration-300">
-                                    Register
-                                </a>
-                            </div>
-                        `;
-                        // Update mobile auth section
-                        if (mobileAuthSection) {
-                            mobileAuthSection.innerHTML = `
-                                <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()">👤 Login/Register</a>
-                            `;
-                        }
-                    } else {
-                        // Get user's display name (firstName + lastName or email fallback)
-                        const userDisplayName = currentUser.firstName
-                            ? `${currentUser.firstName}${currentUser.lastName ? ' ' + currentUser.lastName : ''}`
-                            : (currentUser.name || currentUser.email?.split('@')[0] || 'User');
-
-                        // Use provided profile image or default
-                        const userProfileImage = currentUser.profileImage ||
-                            profileImages[Math.abs((currentUser.firstName || currentUser.email || '').charCodeAt(0) + (currentUser.email || '').charCodeAt(0)) % profileImages.length];
-
-                        // Show profile dropdown for authenticated users
-                        authSection.innerHTML = `
-                            <div class="relative profile-dropdown">
-                                <button onclick="toggleProfileDropdown()" class="flex items-center space-x-2 focus:outline-none">
-                                    <img src="${userProfileImage}" alt="Profile" class="w-8 h-8 rounded-full">
-                                    <span class="text-white font-medium">${userDisplayName}</span>
-                                    <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                                    </svg>
-                                </button>
-                                <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2 hidden z-50">
-                                    <a href="profile.html" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Profile</a>
-                                    <a href="profile.html#saved-listings" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Favorites</a>
-                                    <a href="profile.html#my-listings" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">My Listings</a>
-                                    <a href="listings.html#messages" class="block px-4 py-2 text-gray-800 hover:bg-gray-100">Messages</a>
-                                    <hr class="my-2">
-                                    <button onclick="logout()" class="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">Logout</button>
-                                </div>
-                            </div>
-                        `;
-
-                        // Update mobile auth section for logged in user
-                        if (mobileAuthSection) {
-                            mobileAuthSection.innerHTML = `
-                                <div class="mobile-auth-logged-in" style="padding: 1rem; margin: 0.5rem 1rem; background: rgba(102, 126, 234, 0.1); border-radius: 0.5rem;">
-                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
-                                        <img src="${userProfileImage}" alt="Profile" style="width: 40px; height: 40px; border-radius: 50%;">
-                                        <span style="font-weight: 600; color: #667eea;">${userDisplayName}</span>
-                                    </div>
-                                    <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">👤 Profile</a>
-                                    <a href="profile.html#saved-listings" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">❤️ Favorites</a>
-                                    <a href="profile.html#my-listings" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">🏠 My Listings</a>
-                                    <a href="listings.html#messages" class="mobile-menu-item" onclick="closeMobileMenu()" style="padding: 0.5rem 0.75rem;">💬 Messages</a>
-                                    <button onclick="logout(); closeMobileMenu();" class="mobile-menu-item" style="width: 100%; text-align: left; padding: 0.5rem 0.75rem; color: #ef4444; border: none; background: none; cursor: pointer;">🚪 Logout</button>
-                                </div>
-                            `;
-                        }
-
-                        // Initialize favorite system for authenticated users
-                        try {
-                            if (typeof initializeFavoriteSystem === 'function') {
-                                initializeFavoriteSystem();
-                                console.log('✅ Favorite system initialized');
-                            }
-                        } catch (favoriteError) {
-                            console.error('❌ Failed to initialize favorite system:', favoriteError);
-                        }
-                    }
-
-                    // Initialize universal auth system
-                    if (window.initUniversalAuth) {
-                        try {
-                            await initUniversalAuth();
-                            console.log('✅ Universal auth system initialized');
-                        } catch (authError) {
-                            console.error('❌ Universal auth initialization failed:', authError);
-                            // Don't let auth failure block other functionality
-                        }
-                    }
-
                     initState.steps.authSystem = true;
-                    console.log('✅ Authentication system initialized');
-
                 } catch (error) {
-                    console.error('❌ Authentication system initialization failed:', error);
                     initState.errors.push({ step: 'authSystem', error: error.message });
-                    // Auth failure shouldn't block listings
                 }
-            }, 0); // Run async but immediately
+            }, 0);
         }
 
         // Step 3: Map Initialization (async, non-blocking)

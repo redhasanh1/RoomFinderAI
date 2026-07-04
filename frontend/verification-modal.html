@@ -7,6 +7,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="/js/supabase-config-init.js"></script>
     <script src="/supabase-auth-only.js"></script>
+    <script src="/universal-auth-manager.js"></script>
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
     
 
@@ -46,6 +47,7 @@
             // Store verification and redirect
             sessionStorage.setItem('turnstile_verified', 'true');
             sessionStorage.setItem('turnstile_token', turnstileToken);
+            localStorage.setItem('security_check_passed', 'true');
             
             // Get the redirect URL from URL parameters or default to home
             const urlParams = new URLSearchParams(window.location.search);
@@ -121,6 +123,17 @@
             }
         }
 
+        // Skip security check if already verified this session
+        function maybeSkipVerification() {
+            if (sessionStorage.getItem('turnstile_verified') === 'true' ||
+                localStorage.getItem('security_check_passed') === 'true') {
+                const urlParams = new URLSearchParams(window.location.search);
+                window.location.href = urlParams.get('redirect') || '/index.html';
+                return true;
+            }
+            return false;
+        }
+
         // Initialize when page loads. If the Turnstile script never loads (e.g. blocked
         // by an ad blocker or CDN outage), don't trap the user — redirect through after
         // a bounded wait so they can still reach the app.
@@ -139,7 +152,8 @@
         }
 
         // Start
-        if (document.readyState === 'loading') {
+        if (maybeSkipVerification()) { /* redirected */ }
+        else if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', waitForTurnstile);
         } else {
             waitForTurnstile();

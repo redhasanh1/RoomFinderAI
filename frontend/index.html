@@ -932,12 +932,12 @@
         /* House models only - Remove image backgrounds */
         .house-hero-corner { 
             position: absolute;
-            top: 15vh; 
-            right: 8%; 
-            width: 300px;
+            top: 12vh; 
+            right: 5%; 
+            width: 340px;
             height: auto;
-            opacity: 0.8;
-            z-index: 1;
+            opacity: 1;
+            z-index: 2;
             border-radius: 0;
             background: transparent;
             padding: 0;
@@ -955,10 +955,10 @@
             position: absolute;
             top: 20%; 
             left: 2%; 
-            width: 280px;
+            width: 300px;
             height: auto;
-            opacity: 0.7;
-            z-index: 1;
+            opacity: 0.95;
+            z-index: 2;
             border-radius: 0;
             background: transparent;
             padding: 0;
@@ -1190,9 +1190,45 @@
             .house-success-right,
             .house-search-corner,
             .house-footer-corner {
-                opacity: 0.25;
-                width: 200px;
+                opacity: 0.9;
+                width: 180px;
             }
+            .house-hero-corner { display: none; }
+            .house-features-left { display: none; }
+        }
+
+        /* 3D Property Models showcase — full visibility */
+        .house-models-showcase {
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            padding: 4rem 0 5rem;
+        }
+        .house-models-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .house-model-card {
+            background: #fff;
+            border-radius: 1rem;
+            padding: 1rem;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 180px;
+        }
+        .house-model-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 32px rgba(99,102,241,0.15);
+        }
+        .house-model-card img {
+            width: 100%;
+            height: 160px;
+            object-fit: contain;
+            opacity: 1;
         }
         
         @keyframes float-rotate {
@@ -1569,6 +1605,32 @@
         <img src="3D%20House%20Models/WhatsApp_Image_2025-07-03_at_10.51.16-removebg-preview.png" 
              alt="Modern House Model" loading="lazy" onerror="this.style.display='none'"
              class="house-hero-corner">
+    </section>
+
+    <!-- 3D Property Models Showcase -->
+    <section id="house-models" class="house-models-showcase relative">
+        <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-12 reveal">
+                <div class="inline-block px-4 py-2 bg-gradient-to-r from-indigo-100 to-purple-100 rounded-full text-sm font-medium text-gray-600 mb-4">
+                    🏠 3D Property Models
+                </div>
+                <h2 class="text-4xl sm:text-5xl font-black text-gray-900 mb-4 font-display">
+                    Explore <span class="gradient-text">Property Types</span>
+                </h2>
+                <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                    Browse our collection of 3D house and apartment models — from studios to family homes.
+                </p>
+            </div>
+            <div class="house-models-grid reveal" id="house-models-grid">
+                <!-- Populated by script below -->
+            </div>
+            <div class="text-center mt-10 reveal">
+                <a href="listings.html" class="inline-flex items-center px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-full font-semibold text-lg hover:from-indigo-700 hover:to-purple-700 transition-all shadow-lg">
+                    View Real Listings
+                    <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </a>
+            </div>
+        </div>
     </section>
 
     <!-- Premium Features Section -->
@@ -2073,7 +2135,7 @@
 
         // Scroll-triggered animations
         const revealElements = document.querySelectorAll('.reveal, .reveal-left, .reveal-right, .scale-in');
-        
+
         const revealOnScroll = () => {
             const windowHeight = window.innerHeight;
             revealElements.forEach(el => {
@@ -2082,7 +2144,7 @@
                     el.classList.add('active');
                 }
             });
-            
+
             // Animate counters when they are in view
             const statsSection = document.getElementById('about');
             if (statsSection) {
@@ -2093,8 +2155,58 @@
             }
         };
 
-        window.addEventListener('scroll', revealOnScroll);
-        document.addEventListener('DOMContentLoaded', revealOnScroll);
+        // Primary: reliably reveal each element as it enters the viewport
+        // (fires without a manual scroll event, so content never stays hidden).
+        if ('IntersectionObserver' in window) {
+            const revealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('active');
+                        revealObserver.unobserve(entry.target);
+                        if (entry.target.id === 'about') animateCounters();
+                    }
+                });
+            }, { rootMargin: '0px 0px -80px 0px' });
+            revealElements.forEach(el => revealObserver.observe(el));
+        }
+
+        window.addEventListener('scroll', revealOnScroll, { passive: true });
+        window.addEventListener('load', revealOnScroll);
+        revealOnScroll();
+
+        // Safety net: never leave content permanently invisible if the observer
+        // or scroll handler misbehaves (e.g. JS timing, unsupported browser).
+        setTimeout(() => revealElements.forEach(el => el.classList.add('active')), 2500);
+
+        // Populate 3D house models showcase grid
+        (function renderHouseModels() {
+            var models = [
+                'WhatsApp_Image_2025-07-01_at_12.18.07-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.18.07__1_-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.18.08-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.21.11-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.23.59-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.29.13-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.31.18-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.33.01-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.35.01-removebg-preview.png',
+                'WhatsApp_Image_2025-07-01_at_12.37.02-removebg-preview.png',
+                'WhatsApp_Image_2025-07-03_at_10.44.14-removebg-preview.png',
+                'WhatsApp_Image_2025-07-03_at_10.51.16-removebg-preview.png',
+                'WhatsApp_Image_2025-07-03_at_10.51.57-removebg-preview.png',
+                'WhatsApp_Image_2025-07-03_at_11.01.41-removebg-preview.png'
+            ];
+            var grid = document.getElementById('house-models-grid');
+            if (!grid) return;
+            var base = '3D%20House%20Models/';
+            grid.innerHTML = models.map(function (file, i) {
+                return '<div class="house-model-card reveal scale-in" style="animation-delay:' + (i * 0.05) + 's">' +
+                    '<img src="' + base + file + '" alt="3D property model ' + (i + 1) + '" loading="lazy">' +
+                    '</div>';
+            }).join('');
+            // Re-observe newly added reveal elements
+            grid.querySelectorAll('.reveal, .scale-in').forEach(function (el) { el.classList.add('active'); });
+        })();
 
         
         // Contact form handling
@@ -2208,115 +2320,11 @@
         
         // Initialize Universal Authentication Manager
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('DOMContentLoaded - Initializing auth...');
-            
-            // Use UniversalAuth as primary auth manager
             if (typeof window.UniversalAuth !== 'undefined') {
-                console.log('UniversalAuth found, initializing...');
                 window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
             }
-            // Fallback to AuthManager
-            else if (typeof window.AuthManager !== 'undefined') {
-                console.log('AuthManager found, initializing...');
-                window.AuthManager.initialize();
-            }
-            // Last resort: manual update
-            else {
-                console.error('No auth manager found! Falling back to manual auth update.');
-                updateAuthSectionManual();
-            }
-            
-            // Also update mobile auth section
-            updateMobileAuthSection();
         });
         
-        // Manual auth section update function (fallback)
-        function updateAuthSectionManual() {
-            const authSection = document.getElementById('authSection');
-            const currentUser = localStorage.getItem('currentUser');
-            
-            console.log('Manual auth update - currentUser:', currentUser);
-            
-            if (authSection) {
-                if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
-                    try {
-                        const userData = JSON.parse(currentUser);
-                        const profileImage = userData.profileImage || 'https://ui-avatars.com/api/?name=User&background=667eea&color=ffffff&size=128&format=svg';
-                        
-                        authSection.innerHTML = `
-                            <a href="profile.html" class="profile-link">
-                                <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200">
-                            </a>
-                        `;
-                        console.log('Showing profile image');
-                    } catch (e) {
-                        console.error('Error parsing user data:', e);
-                        authSection.innerHTML = `
-                            <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
-                                Login/Register
-                            </a>
-                        `;
-                        console.log('Showing login/register (error case)');
-                    }
-                } else {
-                    authSection.innerHTML = `
-                        <a href="login.html" class="auth-link login-register-btn px-4 py-2 rounded-lg transition-colors duration-200">
-                            Login/Register
-                        </a>
-                    `;
-                    console.log('Showing login/register (not logged in)');
-                }
-            }
-        }
-        
-        // Also update mobile auth section
-        function updateMobileAuthSection() {
-            const mobileAuthSection = document.getElementById('mobileAuthSection');
-            const currentUser = localStorage.getItem('currentUser');
-            
-            console.log('Updating mobile auth section - currentUser:', currentUser);
-            
-            if (currentUser && currentUser !== 'null' && currentUser !== 'undefined') {
-                try {
-                    const userData = JSON.parse(currentUser);
-                    const userName = userData.firstName || userData.email.split('@')[0];
-                    
-                    // Mobile - logged in
-                    if (mobileAuthSection) {
-                        mobileAuthSection.innerHTML = `
-                            <a href="profile.html" class="mobile-menu-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Welcome, ${userName}</a>
-                            <a href="#" onclick="logout()" class="mobile-menu-item auth-item">Logout</a>
-                        `;
-                    }
-                    console.log('Mobile: Showing logged in state');
-                } catch (e) {
-                    console.error('Error parsing current user:', e);
-                    // If error, show login link
-                    if (mobileAuthSection) {
-                        mobileAuthSection.innerHTML = `
-                            <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Login/Register</a>
-                        `;
-                    }
-                    console.log('Mobile: Showing login/register (error case)');
-                }
-            } else {
-                // Not logged in - show login link
-                if (mobileAuthSection) {
-                    mobileAuthSection.innerHTML = `
-                        <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Login/Register</a>
-                    `;
-                }
-                console.log('Mobile: Showing login/register (not logged in)');
-            }
-        }
-        
-        // Update mobile auth on page load 
-        document.addEventListener('DOMContentLoaded', function() {
-            setTimeout(() => {
-                updateMobileAuthSection();
-            }, 200);
-        });
-
         function logout() {
             // Use AuthManager logout if available
             if (typeof window.AuthManager !== 'undefined' && typeof window.AuthManager.logout === 'function') {

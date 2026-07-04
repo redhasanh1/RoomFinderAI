@@ -478,27 +478,15 @@
 
         // Update authentication section and check login status
         document.addEventListener('DOMContentLoaded', () => {
-            // Initialize Universal Auth Manager
             if (typeof window.UniversalAuth !== 'undefined') {
                 window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
             }
-            
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            const authSection = document.getElementById('authSection');
 
-            if (currentUser) {
-                authSection.innerHTML = `
-                    <a href="profile.html">
-                        <img src="${currentUser.profileImage || 'https://via.placeholder.com/40'}" alt="Profile" class="w-10 h-10 rounded-full">
-                    </a>
-                `;
-                
-                // Pre-fill email if user is logged in
-                if (currentUser.email) {
-                    document.getElementById('email').value = currentUser.email;
-                }
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (currentUser && currentUser.email) {
+                const emailEl = document.getElementById('email');
+                if (emailEl) emailEl.value = currentUser.email;
             } else {
-                // User is not logged in - show error message and disable form
                 showLoginRequiredError();
             }
         });
