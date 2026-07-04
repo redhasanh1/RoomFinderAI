@@ -2139,7 +2139,50 @@
         const modal = document.getElementById('listingModal');
         const closeButton = document.querySelector('.close-button');
 
+        const LISTING_PLACEHOLDER_IMAGE = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+
+        function parseListingMedia(raw) {
+            let media = raw || [];
+            if (typeof media === 'string') {
+                try {
+                    media = JSON.parse(media);
+                } catch (_) {
+                    return media.startsWith('http') ? [{ url: media, type: 'image/jpeg', name: 'photo' }] : [];
+                }
+            }
+            if (!Array.isArray(media)) return [];
+            return media.map(function (item) {
+                if (!item) return null;
+                if (typeof item === 'string') return { url: item, type: 'image/jpeg', name: 'photo' };
+                let type = item.type;
+                if (!type || type === 'application/json' || type === 'application/octet-stream') {
+                    const ext = (item.name || item.url || '').split('.').pop().toLowerCase();
+                    if (['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(ext)) type = 'image/jpeg';
+                    else if (ext === 'mp4') type = 'video/mp4';
+                    else type = type || 'application/octet-stream';
+                }
+                return Object.assign({}, item, { type: type });
+            }).filter(Boolean);
+        }
+
+        function isListingMediaImage(file) {
+            if (!file) return false;
+            const byType = file.type && (file.type.startsWith('image/') || file.type === 'image');
+            const byExt = /\.(jpg|jpeg|png|webp|gif)(\?|$)/i.test((file.name || '') + (file.url || ''));
+            return byType || byExt || (!file.type && file.url && /\.(jpg|jpeg|png|webp)/i.test(file.url));
+        }
+
+        function getListingPrimaryImageUrl(listing) {
+            const media = parseListingMedia(listing.media);
+            const img = media.find(isListingMediaImage);
+            return (img && img.url) || listing.image_url || listing.image || LISTING_PLACEHOLDER_IMAGE;
+        }
+
         function showListingModal(listing) {
+            const fresh = window.currentListings && window.currentListings.find(function (l) { return l.id === listing.id; });
+            if (fresh) listing = fresh;
+
+            const media = parseListingMedia(listing.media);
             document.getElementById('modalTitle').textContent = listing.title;
             document.getElementById('modalPrice').textContent = `$${listing.price.toLocaleString()}/mo`;
             document.getElementById('modalLocation').textContent = `${listing.street}, ${listing.city}, ${listing.postalCode}`;
@@ -2149,23 +2192,25 @@
             document.getElementById('modalDescription').textContent = listing.description || 'No description provided';
             
             const modalImage = document.getElementById('modalImage');
-            modalImage.src = listing.media && listing.media.length > 0 && listing.media[0].type.startsWith('image/')
-                ? listing.media[0].url
-                : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxOCIgZmlsbD0iIzY2NzI4MCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlPC90ZXh0Pjwvc3ZnPg==';
+            modalImage.src = getListingPrimaryImageUrl(listing);
+            modalImage.onerror = function () { this.src = LISTING_PLACEHOLDER_IMAGE; };
             
             const modalMedia = document.getElementById('modalMedia');
-            modalMedia.innerHTML = listing.media && listing.media.length > 0
-                ? listing.media.map(file => 
-                    file.type.startsWith('image/')
-                        ? `<img src="${file.url}" alt="${file.name}">`
-                        : `<video src="${file.url}" controls></video>`
-                ).join('')
+            modalMedia.innerHTML = media.length > 0
+                ? media.map(function (file) {
+                    if (isListingMediaImage(file)) {
+                        return `<img src="${file.url}" alt="${file.name || 'Photo'}" onerror="this.style.display='none'">`;
+                    }
+                    if (file.url) {
+                        return `<video src="${file.url}" controls></video>`;
+                    }
+                    return '';
+                }).join('')
                 : '';
 
             document.getElementById('modalViewDetails').href = `listing_details.html?id=${listing.id}`;
             
-            // modal.style.display = 'block';
-            modal.classList.add('active'); // Use class for animation
+            modal.classList.add('active');
             console.log('Modal shown for listing:', listing.title);
         }
 
@@ -3268,10 +3313,8 @@
             }
             
             currentListing = listing;
-            chatTitle.textContent = `Chat about ${listing.title}`;
-            console.log('📝 Chat title set:', listing.title);
 
-            // Check for existing conversations
+            // Check for existing conversations (either direction: tenant or landlord may have started)
             console.log('🔍 Checking for existing conversations...');
             let conversations, error;
             
@@ -3279,15 +3322,19 @@
                 const result = await supabase
                     .from('conversations')
                     .select('*')
-                    .eq('listing_id', listing.id)
-                    .eq('sender_email', currentUser.email)
-                    .eq('receiver_email', listing.user_email);
+                    .eq('listing_id', listing.id);
                     
-                conversations = result.data;
                 error = result.error;
+                const me = (currentUser.email || '').toLowerCase();
+                const owner = (listing.user_email || '').toLowerCase();
+                conversations = (result.data || []).filter(function (c) {
+                    const s = (c.sender_email || '').toLowerCase();
+                    const r = (c.receiver_email || '').toLowerCase();
+                    return (s === me && r === owner) || (s === owner && r === me);
+                });
                 
                 console.log('💬 Conversation query result:', { 
-                    found: conversations?.length || 0, 
+                    found: conversations.length, 
                     error: error?.message 
                 });
                 
@@ -3302,6 +3349,13 @@
                 alert('Failed to load conversation: ' + error.message);
                 return;
             }
+
+            const otherEmail = currentUser.email.toLowerCase() === listing.user_email.toLowerCase()
+                ? (conversations[0] && (conversations[0].sender_email.toLowerCase() === currentUser.email.toLowerCase()
+                    ? conversations[0].receiver_email : conversations[0].sender_email))
+                : listing.user_email;
+            const otherName = otherEmail ? otherEmail.split('@')[0] : 'User';
+            chatTitle.textContent = `Chat with ${otherName} about ${listing.title}`;
 
             let conversation;
             if (conversations && conversations.length > 0) {

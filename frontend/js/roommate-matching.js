@@ -73,12 +73,42 @@ class RoomPalApp {
         if (!this.currentUser || !this.api) return;
 
         try {
-            const profiles = await this.api.getSeekerProfiles({ limit: 100 });
-            this.userProfile = profiles.find(p => p.user_id === this.currentUser.id);
+            this.userProfile = await this.api.getMySeekerProfile();
             this.hasUserProfile = !!this.userProfile;
+            this.renderMyProfileView();
+            this.updateProfileCTA();
         } catch (error) {
             console.error('Error loading user profile:', error);
         }
+    }
+
+    renderMyProfileView() {
+        const view = document.getElementById('myProfileView');
+        const form = document.getElementById('quickProfileForm');
+        if (!view) return;
+
+        if (!this.userProfile) {
+            view.classList.add('hidden');
+            view.innerHTML = '';
+            if (form) form.classList.remove('hidden');
+            return;
+        }
+
+        const p = this.userProfile;
+        const avatar = p.avatar_url || this.uploadedPhoto || '';
+        const areas = Array.isArray(p.preferred_areas) ? p.preferred_areas.join(', ') : (p.preferred_areas || '');
+        view.innerHTML = `
+            <div class="flex items-start gap-4 p-4 bg-green-50 border border-green-200 rounded-xl mb-6">
+                ${avatar ? `<img src="${avatar}" alt="Your photo" class="w-20 h-20 rounded-full object-cover border-2 border-white shadow">` : `<div class="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xl">${(p.name || 'U').charAt(0)}</div>`}
+                <div class="flex-1 min-w-0">
+                    <h3 class="text-lg font-bold text-gray-900">${p.name || 'Your Profile'}</h3>
+                    <p class="text-sm text-gray-600 mt-1">$${p.budget_min || '?'} – $${p.budget_max || '?'}/mo · ${areas}</p>
+                    <p class="text-sm text-gray-700 mt-2">${p.bio || ''}</p>
+                    <p class="text-xs text-green-700 mt-2 font-medium">Profile active — browse seekers or update below</p>
+                </div>
+            </div>
+        `;
+        view.classList.remove('hidden');
     }
 
     updateProfileCTA() {
@@ -792,6 +822,11 @@ class RoomPalApp {
             roomPhotos.addEventListener('change', (e) => this.handlePhotoUpload(e, 'photoPreview'));
         }
 
+        const profilePhoto = document.getElementById('profilePhoto');
+        if (profilePhoto) {
+            profilePhoto.addEventListener('change', (e) => this.handlePhotoUpload(e, 'avatarPreview'));
+        }
+
         // Quick profile form submission
         const quickProfileForm = document.getElementById('quickProfileForm');
         if (quickProfileForm) {
@@ -1503,6 +1538,7 @@ class RoomPalApp {
             budget_max: parseInt(formData.get('budget_max')) || null,
             move_in_date: formData.get('move_in_date') || null,
             bio: formData.get('bio') || '',
+            avatar_url: this.uploadedPhoto || null,
             lifestyle: {
                 sleepSchedule: this.profileFormData.sleep,
                 smoking: this.profileFormData.smoking,
@@ -1531,14 +1567,14 @@ class RoomPalApp {
             }
 
             this.hasUserProfile = true;
+            await this.loadUserProfile();
             this.hideProfilePrompt();
             this.updateProfileCTA();
+            this.switchSeekingTab('createProfile');
             const listSection = document.getElementById('roommateListSection');
             if (listSection) listSection.classList.remove('hidden');
             this.showToast('Profile created! Finding your matches...', 'success');
 
-            // Navigate to matches page and load matches
-            this.showSection('selector');
             await this.loadRoommateMatches();
 
         } catch (error) {

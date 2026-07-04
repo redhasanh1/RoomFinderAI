@@ -18,6 +18,8 @@
 
     <!-- Unified CSS System - No Inline Styles -->
     <link rel="stylesheet" href="/modules/css/main.css"/>
+    <script src="/js/site-nav.js" defer></script>
+    <script src="/js/site-bootstrap.js" defer></script>
     
 </head>
 <body class="bg-gray-50">
@@ -186,7 +188,7 @@
                                 type="text" 
                                 id="universitySearch" 
                                 placeholder="Search for your university..." 
-                                class="w-full bg-white/20 border border-white/30 rounded-xl px-6 py-4 text-white placeholder-white/70 focus:outline-none focus:ring-2 focus:ring-yellow-300 text-lg"
+                                class="w-full bg-white text-gray-900 border border-gray-200 rounded-xl px-6 py-4 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-300 text-lg"
                                 oninput="searchUniversities(this.value)"
                                 autocomplete="off"
                             >
@@ -1499,6 +1501,7 @@
                                         <p class="text-gray-600">Searching for private housing options...</p>
                                     </div>
                                 </div>
+                                <div id="selectedListingPreview" class="hidden mt-6 p-5 bg-white rounded-xl border-2 border-blue-400 shadow-md"></div>
                             </div>
                         </div>
                     </div>
@@ -1582,6 +1585,8 @@
             return cityPatterns[domain] || null;
         }
         
+        window._housingListingsById = window._housingListingsById || {};
+
         // Fetch listings near selected university from RoomFinderAI API
         async function fetchPrivateHousingData(location) {
             try {
@@ -1610,15 +1615,19 @@
                     }];
                 }
 
-                return matched.map((item) => ({
+                return matched.map((item) => {
+                    window._housingListingsById[item.id] = item;
+                    return {
                     name: item.title || 'Rental listing',
                     description: item.description || `${item.bedrooms || '?'} bed · ${item.house_type || 'rental'}`,
                     priceRange: item.price ? `$${item.price}/month` : 'Price on request',
                     type: 'listing',
+                    listingId: item.id,
                     url: `listing_details.html?id=${item.id}`,
                     features: [item.city || item.location || 'RoomFinderAI'].filter(Boolean),
                     count: 1
-                }));
+                };
+                });
             } catch (err) {
                 console.error('Failed to load listings for student housing:', err);
                 return [{
@@ -1656,7 +1665,7 @@
                         `).join('')}
                     </div>
                     
-                    <button onclick="openHousingLink('${option.url}', '${option.name.replace(/'/g, "\\'")}')" 
+                    <button onclick="${option.type === 'listing' && option.listingId ? `selectHousingListing('${option.listingId}')` : `openHousingLink('${option.url}', '${option.name.replace(/'/g, "\\'")}')`}" 
                             class="w-full px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
                         ${option.type === 'listing' ? 'View listing' : option.type === 'info' ? 'Browse listings' : 'Open'}
                     </button>
@@ -1696,6 +1705,46 @@
             `;
         }
         
+        function getListingImageFromMedia(media) {
+            if (!media) return null;
+            let items = media;
+            if (typeof items === 'string') {
+                try { items = JSON.parse(items); } catch (_) { return items.startsWith('http') ? items : null; }
+            }
+            if (!Array.isArray(items)) return null;
+            const img = items.find(function (f) {
+                return f && f.url && (!f.type || f.type.startsWith('image/') || /\.(jpg|jpeg|png|webp)/i.test(f.url));
+            });
+            return img ? img.url : null;
+        }
+
+        function selectHousingListing(listingId) {
+            const listing = window._housingListingsById[listingId];
+            const panel = document.getElementById('selectedListingPreview');
+            if (!listing || !panel) {
+                openHousingLink(`listing_details.html?id=${listingId}`, 'Listing');
+                return;
+            }
+            const imgUrl = getListingImageFromMedia(listing.media) || listing.image_url || '';
+            panel.innerHTML = `
+                <h4 class="text-lg font-bold text-gray-900 mb-3">Selected listing</h4>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    ${imgUrl ? `<img src="${imgUrl}" alt="${listing.title}" class="w-full sm:w-40 h-32 object-cover rounded-lg">` : ''}
+                    <div class="flex-1">
+                        <div class="font-semibold text-gray-800">${listing.title || 'Rental listing'}</div>
+                        <div class="text-blue-600 font-bold mt-1">${listing.price ? '$' + listing.price + '/mo' : 'Price on request'}</div>
+                        <p class="text-sm text-gray-600 mt-2">${listing.description || ''}</p>
+                        <div class="flex gap-2 mt-4">
+                            <a href="listing_details.html?id=${listing.id}" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700">Full details</a>
+                            <button type="button" onclick="openHousingLink('listing_details.html?id=${listing.id}', 'Listing')" class="px-4 py-2 border border-blue-600 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-50">Open in new tab</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            panel.classList.remove('hidden');
+            panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
         // Open housing platform link
         function openHousingLink(url, platformName) {
             if (url === '#') {

@@ -162,6 +162,34 @@ class RoommateAPIService {
 
     // ==================== SEEKER PROFILES ====================
 
+    async getMySeekerProfile() {
+        try {
+            await this.ensureInitialized();
+            if (!this.supabase) return null;
+
+            const storedUser = localStorage.getItem('currentUser');
+            if (!storedUser) return null;
+            const user = JSON.parse(storedUser);
+            if (!user || !user.id) return null;
+
+            const { data, error } = await this.supabase
+                .from('roommate_profiles')
+                .select('*')
+                .eq('user_id', user.id)
+                .eq('user_type', 'seeking')
+                .maybeSingle();
+
+            if (error) {
+                console.error('Error fetching my seeker profile:', error);
+                return null;
+            }
+            return data;
+        } catch (error) {
+            console.error('Error in getMySeekerProfile:', error);
+            return null;
+        }
+    }
+
     async getSeekerProfiles(filters = {}) {
         try {
             await this.ensureInitialized();

@@ -17,10 +17,12 @@
 
     <!-- Unified CSS System - No Inline Styles -->
     <link rel="stylesheet" href="/modules/css/main.css"/>
+    <script src="/js/site-nav.js" defer></script>
+    <script src="/js/site-bootstrap.js" defer></script>
 </head>
 <body class="bg-gray-50">
     <!-- Header -->
-    <header class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
+    <header id="header" class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
         <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
             <!-- Mobile Layout -->
             <div class="flex items-center justify-between w-full md:w-auto">
@@ -903,21 +905,23 @@
             const chatInput = document.getElementById('chat-input');
             const quickActionBtns = document.querySelectorAll('.quick-action-btn');
             
-            toggleBtn.addEventListener('click', () => this.toggleChat());
-            minimizeBtn.addEventListener('click', () => this.closeChat());
-            sendBtn.addEventListener('click', () => this.sendMessage());
+            if (toggleBtn) toggleBtn.addEventListener('click', () => this.toggleChat());
+            if (minimizeBtn) minimizeBtn.addEventListener('click', () => this.closeChat());
+            if (sendBtn) sendBtn.addEventListener('click', () => this.sendMessage());
             
-            chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    this.sendMessage();
-                }
-            });
+            if (chatInput) {
+                chatInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        this.sendMessage();
+                    }
+                });
+            }
             
             quickActionBtns.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const question = btn.getAttribute('data-question');
-                    chatInput.value = question;
+                    if (chatInput) chatInput.value = question;
                     this.sendMessage();
                 });
             });
@@ -938,9 +942,9 @@
             const tooltip = document.getElementById('chatbot-tooltip');
             
             this.isOpen = true;
-            toggleBtn.classList.add('open');
-            chatWindow.classList.add('open');
-            badge.classList.add('hidden');
+            if (toggleBtn) toggleBtn.classList.add('open');
+            if (chatWindow) chatWindow.classList.add('open');
+            if (badge) badge.classList.add('hidden');
             
             // Hide tooltip when opening chat
             if (tooltip) {
@@ -948,12 +952,11 @@
                 tooltip.classList.add('opacity-0');
             }
             
-            // Stop bounce animation
-            toggleBtn.classList.remove('animate-bounce');
+            if (toggleBtn) toggleBtn.classList.remove('animate-bounce');
             
-            // Focus on input
             setTimeout(() => {
-                document.getElementById('chat-input').focus();
+                const input = document.getElementById('chat-input');
+                if (input) input.focus();
             }, 300);
         }
         
@@ -962,8 +965,8 @@
             const chatWindow = document.getElementById('chatbot-window');
             
             this.isOpen = false;
-            toggleBtn.classList.remove('open');
-            chatWindow.classList.remove('open');
+            if (toggleBtn) toggleBtn.classList.remove('open');
+            if (chatWindow) chatWindow.classList.remove('open');
         }
         
         showNotificationBadge() {
