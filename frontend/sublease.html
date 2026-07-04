@@ -11,19 +11,11 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/modules/css/main.css"/>
+    <script src="/js/site-nav.js" defer></script>
+    <script src="/js/site-bootstrap.js" defer></script>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <header class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
-        <nav class="w-[90%] max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <a href="index.html" class="text-xl font-bold gradient-text">RoomFinderAI</a>
-            <div class="hidden md:flex items-center gap-6 text-sm font-medium">
-                <a href="listings.html" class="text-gray-600 hover:text-indigo-600">Listings</a>
-                <a href="student-housing.html" class="text-gray-600 hover:text-indigo-600">Student Housing</a>
-                <a href="legal.html" class="text-gray-600 hover:text-indigo-600">Legal</a>
-                <a href="login.html" id="authLink" class="text-indigo-600">Login</a>
-            </div>
-        </nav>
-    </header>
+<body class="bg-white min-h-screen site-has-header">
+    <header id="header" class="fixed top-0 w-full premium-header z-50"></header>
 
     <main class="pt-24 pb-16">
         <section class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-14 px-4">
@@ -45,18 +37,18 @@
 
             <!-- Post (default) -->
             <section id="panel-post" class="tab-panel">
-                <form id="postForm" class="bg-white rounded-2xl shadow p-8 space-y-5 max-w-3xl">
+                <form id="postForm" class="glass-card p-8 space-y-5 max-w-3xl">
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
                             <label class="block text-sm font-medium mb-1">Request type *</label>
-                            <select id="postType" required class="w-full border rounded-lg px-3 py-2">
+                            <select id="postType" required class="form-input">
                                 <option value="transfer">I'm transferring my lease</option>
                                 <option value="seeking">I'm seeking a sublet</option>
                             </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium mb-1">Property type</label>
-                            <select id="postPropertyType" class="w-full border rounded-lg px-3 py-2">
+                            <select id="postPropertyType" class="form-input">
                                 <option value="apartment">Apartment</option>
                                 <option value="house">House</option>
                                 <option value="room">Room</option>
@@ -67,25 +59,25 @@
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Title *</label>
-                        <input id="postTitle" required class="w-full border rounded-lg px-3 py-2" placeholder="e.g. 1BR sublet near campus, May–Aug">
+                        <input id="postTitle" required class="form-input" placeholder="e.g. 1BR sublet near campus, May–Aug">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Description</label>
-                        <textarea id="postDescription" rows="4" class="w-full border rounded-lg px-3 py-2"></textarea>
+                        <textarea id="postDescription" rows="4" class="form-input"></textarea>
                     </div>
                     <div class="grid md:grid-cols-3 gap-4">
-                        <input id="postCity" placeholder="City *" required class="border rounded-lg px-3 py-2">
-                        <input id="postState" placeholder="State/Province" class="border rounded-lg px-3 py-2">
-                        <input id="postZip" placeholder="ZIP/Postal" class="border rounded-lg px-3 py-2">
+                        <input id="postCity" placeholder="City *" required class="form-input">
+                        <input id="postState" placeholder="State/Province" class="form-input">
+                        <input id="postZip" placeholder="ZIP/Postal" class="form-input">
                     </div>
                     <div class="grid md:grid-cols-3 gap-4">
-                        <input id="postRent" type="number" placeholder="Rent ($)" class="border rounded-lg px-3 py-2">
-                        <input id="postBedrooms" type="number" min="0" placeholder="Bedrooms" class="border rounded-lg px-3 py-2">
-                        <input id="postAvailableFrom" type="date" class="border rounded-lg px-3 py-2">
+                        <input id="postRent" type="number" placeholder="Rent ($)" class="form-input">
+                        <input id="postBedrooms" type="number" min="0" placeholder="Bedrooms" class="form-input">
+                        <input id="postAvailableFrom" type="date" class="form-input">
                     </div>
                     <div>
                         <label class="block text-sm font-medium mb-1">Photo (optional)</label>
-                        <input id="postPhoto" type="file" accept="image/*" class="w-full border rounded-lg px-3 py-2 text-sm">
+                        <input id="postPhoto" type="file" accept="image/*" class="form-input text-sm">
                     </div>
                     <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">Create Sublease Request</button>
                 </form>
@@ -93,14 +85,14 @@
 
             <!-- Browse -->
             <section id="panel-browse" class="tab-panel hidden">
-                <div class="bg-white rounded-2xl shadow p-6 mb-6 grid md:grid-cols-4 gap-4">
-                    <select id="filterType" class="border rounded-lg px-3 py-2">
+                <div class="glass-card p-6 mb-6 grid md:grid-cols-4 gap-4">
+                    <select id="filterType" class="form-input">
                         <option value="">All types</option>
                         <option value="transfer">Transferring lease</option>
                         <option value="seeking">Seeking sublet</option>
                     </select>
-                    <input id="filterCity" type="text" placeholder="City" class="border rounded-lg px-3 py-2">
-                    <input id="filterState" type="text" placeholder="State/Province" class="border rounded-lg px-3 py-2">
+                    <input id="filterCity" type="text" placeholder="City" class="form-input">
+                    <input id="filterState" type="text" placeholder="State/Province" class="form-input">
                     <button id="searchBtn" class="bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700">Search</button>
                 </div>
                 <div id="browseResults" class="grid md:grid-cols-2 gap-4"></div>

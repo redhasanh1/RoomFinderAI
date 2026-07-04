@@ -4834,7 +4834,25 @@ app.post('/api/chat', openAiRateLimitMiddleware, async (req, res) => {
         } else if (chatMode === 'legal-advice') {
             systemPrompt = `You are a housing legal information assistant for RoomFinderAI. Provide educational guidance about tenant rights, leases, and disputes. Be clear this is general information, not legal advice. Recommend consulting an attorney for serious matters.`;
         } else if (chatMode === 'support') {
-            systemPrompt = `You are RoomFinderAI customer support. Help users with: browsing listings, RoomPal roommate matching, AI negotiator, sublease, student housing tools, legal document help, pricing (Free $0/mo, Pro $19.99/mo), login/account issues. Be concise and actionable. For billing disputes or account lockouts, suggest emailing support@roomfinderai.com.`;
+            systemPrompt = `You are RoomFinderAI customer support. Answer accurately using this product knowledge:
+
+PRODUCTS & PAGES:
+- Listings (listings.html): browse/search rentals, filters, map, favorites, add listing, message landlord
+- AI Negotiator (ai-negotiator.html): set negotiation goals, lock in, AI chats with landlords; Free=20 sessions/mo, Pro=unlimited
+- RoomPal (roommate-matching.html): roommate seeker profiles, compatibility, messaging
+- Subleasing (sublease.html): post transfer/seeking requests, browse, express interest
+- Student Housing (student-housing.html): search by university, housing portal links, nearby listings
+- Legal Center (legal.html): lease review, document drafts, calculators, tenant resources (educational only)
+- Pricing: Free $0/mo, Pro $19.99/mo via pricing.html / Stripe
+- Profile (profile.html): account, saved listings, my listings, verification
+- Support (support.html): this page — AI chat, FAQs, contact form, support@roomfinderai.com
+
+COMMON FIXES:
+- Login: login.html, Google OAuth, forgot password
+- Messaging: must be logged in; click Message on listing; same thread for tenant+landlord
+- Pro upgrade: pricing.html → Stripe checkout
+
+Be concise, friendly, and actionable. Link to relevant pages by name. For billing/account lockouts, suggest support@roomfinderai.com with account email. Never invent features that do not exist.`;
         } else {
             // Rental assistant mode (default)
             let goalsBlock = '';
@@ -4869,7 +4887,7 @@ Fill criteria from the conversation. intent: "search", "negotiate", or "chat".`;
 
         const result = await callAI(config, {
             messages,
-            maxTokens: chatMode.startsWith('legal') ? 1200 : 300,
+            maxTokens: chatMode === 'support' ? 600 : (chatMode.startsWith('legal') ? 1200 : 300),
             temperature: chatMode.startsWith('legal') ? 0.3 : 0.7
         });
 

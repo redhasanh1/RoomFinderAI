@@ -11,30 +11,12 @@
 
     <!-- Unified CSS System - No Inline Styles -->
     <link rel="stylesheet" href="/modules/css/main.css"/>
+    <script src="/js/site-nav.js" defer></script>
+    <script src="/js/site-bootstrap.js" defer></script>
     
 </head>
-<body class="bg-gray-50">
-    <!-- Premium Header -->
-    <header class="fixed top-0 w-full premium-header z-50">
-        <nav class="w-[85%] max-w-7xl mx-auto px-6 lg:px-8 py-6 flex justify-between items-center">
-            <div class="flex items-center space-x-8">
-                <a href="index.html" class="text-2xl font-bold gradient-text font-display">RoomFinderAI</a>
-                <div class="hidden lg:flex items-center space-x-1">
-                    <a href="index.html" class="nav-link">Home</a>
-                    <a href="roommate-matching.html" class="nav-link">RoomPal</a>
-                    <a href="listings.html" class="nav-link">Listings</a>
-                    <a href="student-housing.html" class="nav-link">Student Housing</a>
-                    <a href="legal.html" class="nav-link">Legal Center</a>
-                    <a href="ai-negotiator.html" class="nav-link">AI Negotiator</a>
-                    <a href="pricing.html" class="nav-link">Pricing</a>
-                </div>
-            </div>
-            <div class="flex items-center space-x-4">
-                <a href="login.html" class="nav-link">Login</a>
-                <a href="profile.html" class="bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-2 rounded-full hover:shadow-lg transition-all duration-300">Profile</a>
-            </div>
-        </nav>
-    </header>
+<body class="bg-white site-has-header">
+    <header id="header" class="fixed top-0 w-full premium-header z-50"></header>
 
     <!-- Hero Section -->
     <section class="pt-32 pb-20 gradient-bg-legal text-white relative overflow-hidden">
@@ -70,7 +52,7 @@
     </section>
 
     <!-- Getting Started Section -->
-    <section class="py-16 bg-gradient-to-b from-blue-50 to-indigo-50">
+    <section class="py-16 bg-white">
         <div class="w-[90%] max-w-7xl mx-auto px-4">
             <div class="text-center mb-12">
                 <h2 class="text-4xl font-bold text-gray-900 mb-6 font-display">New to Legal Issues?</h2>
@@ -218,7 +200,7 @@
                         <div class="space-y-6">
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
-                                <select id="documentType" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <select id="documentType" class="form-input">
                                     <option value="">Select Document Type</option>
                                     <option value="lease">Lease Agreement</option>
                                     <option value="rental-application">Rental Application</option>
@@ -234,7 +216,7 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">State/Jurisdiction</label>
-                                <select id="jurisdictionSelect" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                <select id="jurisdictionSelect" class="form-input">
                                     <option value="">Select State</option>
                                     <option value="CA">California</option>
                                     <option value="NY">New York</option>
@@ -250,7 +232,7 @@
                             
                             <div>
                                 <label class="block text-sm font-medium text-gray-700 mb-2">Describe Your Situation</label>
-                                <textarea id="situationDescription" rows="4" placeholder="Provide details about your situation..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
+                                <textarea id="situationDescription" rows="4" placeholder="Provide details about your situation..." class="form-input"></textarea>
                             </div>
                             
                             <button onclick="generateDocument()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
@@ -288,7 +270,7 @@
                     <div class="grid lg:grid-cols-2 gap-8">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">Lease text *</label>
-                            <textarea id="leaseReviewText" rows="14" placeholder="Paste lease agreement text here..." class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 font-mono text-sm"></textarea>
+                            <textarea id="leaseReviewText" rows="14" placeholder="Paste lease agreement text here..." class="form-input font-mono text-sm"></textarea>
                             <button onclick="reviewLease()" id="leaseReviewBtn" class="mt-4 w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
                                 Analyze Lease
                             </button>
@@ -541,7 +523,7 @@
                             <div class="space-y-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Calculator Type</label>
-                                    <select id="calculatorType" onchange="switchCalculator()" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <select id="calculatorType" onchange="switchCalculator()" class="form-input">
                                         <option value="security-deposit">Security Deposit Calculator</option>
                                         <option value="prorated-rent">Prorated Rent Calculator</option>
                                         <option value="late-fees">Late Fee Calculator</option>
@@ -553,11 +535,11 @@
                                 <div id="securityDepositInputs" class="calculator-inputs">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
-                                        <input type="number" id="monthlyRent" placeholder="1500" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="monthlyRent" placeholder="1500" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">State</label>
-                                        <select id="depositState" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <select id="depositState" class="form-input">
                                             <option value="CA">California (2 months max)</option>
                                             <option value="NY">New York (1 month max)</option>
                                             <option value="TX">Texas (No limit)</option>
@@ -570,11 +552,11 @@
                                 <div id="proratedRentInputs" class="calculator-inputs hidden">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
-                                        <input type="number" id="proratedMonthlyRent" placeholder="1500" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="proratedMonthlyRent" placeholder="1500" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Move-in Day of Month</label>
-                                        <input type="number" id="moveInDay" min="1" max="31" placeholder="15" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="moveInDay" min="1" max="31" placeholder="15" class="form-input">
                                     </div>
                                 </div>
 
@@ -582,11 +564,11 @@
                                 <div id="lateFeeInputs" class="calculator-inputs hidden">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Monthly Rent</label>
-                                        <input type="number" id="lateFeeRent" placeholder="1500" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="lateFeeRent" placeholder="1500" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Days Late</label>
-                                        <input type="number" id="daysLate" min="1" placeholder="5" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="daysLate" min="1" placeholder="5" class="form-input">
                                     </div>
                                 </div>
 
@@ -594,11 +576,11 @@
                                 <div id="damagesInputs" class="calculator-inputs hidden">
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Security Deposit Held</label>
-                                        <input type="number" id="depositHeld" placeholder="1500" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="depositHeld" placeholder="1500" class="form-input">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-700 mb-2">Landlord Claimed Deductions</label>
-                                        <input type="number" id="claimedDeductions" placeholder="400" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                        <input type="number" id="claimedDeductions" placeholder="400" class="form-input">
                                     </div>
                                 </div>
                                 
@@ -630,12 +612,12 @@
                             <div class="space-y-6">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Your Location</label>
-                                    <input type="text" id="attorneyLocation" placeholder="City, State or ZIP" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <input type="text" id="attorneyLocation" placeholder="City, State or ZIP" class="form-input">
                                 </div>
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Legal Issue</label>
-                                    <select id="legalIssue" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <select id="legalIssue" class="form-input">
                                         <option value="">Select Issue Type</option>
                                         <option value="eviction">Eviction Defense</option>
                                         <option value="security-deposit">Security Deposit Dispute</option>
@@ -649,7 +631,7 @@
                                 
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-2">Budget Range</label>
-                                    <select id="budgetRange" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                                    <select id="budgetRange" class="form-input">
                                         <option value="pro-bono">Pro Bono/Free</option>
                                         <option value="low-cost">Low Cost ($100-300)</option>
                                         <option value="moderate">Moderate ($300-500)</option>

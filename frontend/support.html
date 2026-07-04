@@ -10,7 +10,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config-init.js"></script>
     <script src="universal-auth-manager.js"></script>
-    <script src="/supabase-auth-only.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
@@ -20,132 +19,11 @@
     <script src="/js/site-nav.js" defer></script>
     <script src="/js/site-bootstrap.js" defer></script>
 </head>
-<body class="bg-gray-50">
-    <!-- Header -->
-    <header id="header" class="fixed top-0 w-full premium-header z-50 bg-white shadow-md">
-        <nav class="w-[90%] mx-auto px-4 py-4 flex justify-between items-center">
-            <!-- Mobile Layout -->
-            <div class="flex items-center justify-between w-full md:w-auto">
-                <a href="index.html" class="text-xl md:text-2xl font-bold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none;">RoomFinderAI</a>
-                
-                <!-- Mobile Menu Button -->
-                <button class="mobile-menu-btn md:hidden" onclick="toggleMobileMenu()" aria-label="Toggle navigation menu">
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                    <span class="hamburger-line"></span>
-                </button>
-            </div>
-            
-            <!-- Desktop Navigation -->
-            <div class="desktop-nav hidden md:flex items-center space-x-8">
-                <!-- Home - Standalone -->
-                <a href="index.html" class="nav-item">Home</a>
-                
-                <!-- Browse Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
-                        Browse <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="browse-dropdown">
-                        <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <a href="sublease.html" class="dropdown-item">Sublease Property</a>
-                        <a href="listings.html#add-listing" class="dropdown-item">Add Listing</a>
-                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
-                    </div>
-                </div>
-                
-                <!-- Tools Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('tools')">
-                        Tools <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="tools-dropdown">
-                        <a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>
-                        <a href="pricing.html" class="dropdown-item">Pricing Plans</a>
-                        <a href="legal.html" class="dropdown-item">Legal Help</a>
-                    </div>
-                </div>
-                
-                <!-- About Dropdown -->
-                <div class="dropdown">
-                    <button class="nav-item dropdown-trigger" onclick="toggleDropdown('about')">
-                        About <span class="dropdown-arrow">▼</span>
-                    </button>
-                    <div class="dropdown-menu" id="about-dropdown">
-                        <a href="index.html#about" class="dropdown-item">About Us</a>
-                        <a href="index.html#contact" class="dropdown-item">Contact</a>
-                        <a href="support.html" class="dropdown-item">Support</a>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Desktop Auth -->
-            <div id="authSection" class="desktop-auth hidden md:block">
-                <!-- Default content before JS loads -->
-                <a href="login.html" class="auth-link bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors duration-200">
-                    Login/Register
-                </a>
-            </div>
-        </nav>
-        
-        <!-- Mobile Navigation Menu -->
-        <div class="mobile-menu" id="mobile-menu">
-            <div class="mobile-menu-overlay" onclick="closeMobileMenu()"></div>
-            <div class="mobile-menu-content">
-                <div class="mobile-menu-header">
-                    <a href="index.html" class="text-lg font-bold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-decoration: none;">RoomFinderAI</a>
-                    <button class="mobile-menu-close" onclick="closeMobileMenu()" aria-label="Close menu"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg></button>
-                </div>
-
-                <div class="mobile-menu-items">
-                    <a href="index.html" class="mobile-menu-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>Home</a>
-
-                    <!-- Browse Section -->
-                    <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('browse')">
-                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>Browse <span class="mobile-arrow" id="browse-arrow">▼</span>
-                        </button>
-                        <div class="mobile-section-content" id="browse-section">
-                            <a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Browse Listings</a>
-                            <a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Sublease Property</a>
-                            <a href="listings.html#add-listing" class="mobile-menu-item" onclick="closeMobileMenu()">Add Listing</a>
-                            <a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>
-                        </div>
-                    </div>
-
-                    <!-- Tools Section -->
-                    <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('tools')">
-                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Tools <span class="mobile-arrow" id="tools-arrow">▼</span>
-                        </button>
-                        <div class="mobile-section-content" id="tools-section">
-                            <a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>
-                            <a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing Plans</a>
-                            <a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>
-                        </div>
-                    </div>
-
-                    <!-- About Section -->
-                    <div class="mobile-section">
-                        <button class="mobile-section-header" onclick="toggleMobileSection('about')">
-                            <svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>About <span class="mobile-arrow" id="about-arrow">▼</span>
-                        </button>
-                        <div class="mobile-section-content" id="about-section">
-                            <a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>
-                            <a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>
-                            <a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>
-                        </div>
-                    </div>
-
-                    <!-- Mobile Auth -->
-                    <a href="login.html" class="mobile-menu-item auth-item" onclick="closeMobileMenu()"><svg class="w-5 h-5 inline-block mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>Login/Register</a>
-                </div>
-            </div>
-        </div>
-    </header>
+<body class="bg-white site-has-header">
+    <header id="header" class="fixed top-0 w-full premium-header z-50"></header>
 
     <!-- Main Content -->
-    <main class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+    <main class="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 mt-20">
         <!-- Enhanced Hero Section with AI Chatbot Callout -->
         <div class="text-center mb-12">
             <h1 class="text-5xl font-bold text-gray-900 mb-4">Support Center</h1>
@@ -310,15 +188,15 @@
         </div>
 
         <!-- Contact Form Panel -->
-        <div id="contact-form-panel" class="hidden bg-white rounded-xl shadow-sm p-6 mb-8 border border-gray-200">
+        <div id="contact-form-panel" class="hidden glass-card p-6 mb-8">
             <h2 class="text-xl font-semibold text-gray-900 mb-4">Send us a message</h2>
             <form id="supportContactForm" class="space-y-4 max-w-xl">
                 <div class="grid sm:grid-cols-2 gap-4">
-                    <input type="text" id="contactFirstName" required placeholder="First name" class="w-full p-3 border border-gray-300 rounded-lg">
-                    <input type="text" id="contactLastName" placeholder="Last name" class="w-full p-3 border border-gray-300 rounded-lg">
+                    <input type="text" id="contactFirstName" required placeholder="First name" class="form-input">
+                    <input type="text" id="contactLastName" placeholder="Last name" class="form-input">
                 </div>
-                <input type="email" id="contactEmail" required placeholder="Your email" class="w-full p-3 border border-gray-300 rounded-lg">
-                <textarea id="contactMessage" required rows="4" placeholder="How can we help?" class="w-full p-3 border border-gray-300 rounded-lg"></textarea>
+                <input type="email" id="contactEmail" required placeholder="Your email" class="form-input">
+                <textarea id="contactMessage" required rows="4" placeholder="How can we help?" class="form-input"></textarea>
                 <button type="submit" id="contactSubmitBtn" class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700">Send Message</button>
                 <p id="contactFormStatus" class="text-sm hidden"></p>
             </form>
@@ -415,11 +293,11 @@
         </div>
 
         <!-- Enhanced FAQ Search -->
-        <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+        <div class="glass-card p-6 mb-8">
             <h2 class="text-2xl font-semibold text-gray-900 mb-4 text-center">Search Knowledge Base</h2>
             <div class="relative max-w-2xl mx-auto">
                 <input type="text" id="faqSearch" placeholder="Search for help... (or try the AI assistant for instant answers!)" 
-                    class="w-full px-6 py-4 pr-12 text-lg border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                    class="form-input text-lg py-4">
                 <svg class="absolute right-4 top-1/2 transform -translate-y-1/2 w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
@@ -677,14 +555,7 @@
     </footer>
     
     <script>
-        // Initialize Universal Authentication Manager
-        if (typeof window.UniversalAuth !== 'undefined') {
-            window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
-        } else if (typeof window.UniversalAuthManager !== 'undefined') {
-            window.UniversalAuthManager.initializeAuth();
-        }
-
-        // FAQ Accordion functionality
+        // FAQ Accordion functionality (auth via site-bootstrap.js)
         document.addEventListener('DOMContentLoaded', function() {
             const faqQuestions = document.querySelectorAll('.faq-question');
             
@@ -839,19 +710,39 @@
                 "How do I cancel my subscription?"
             ];
             
-            // FAQ Knowledge Base - extracted from the page content
-            this.faqData = this.extractFAQData();
+            // FAQ Knowledge Base - page FAQs + built-in product knowledge
+            this.faqData = [];
             
             this.init();
         }
         
         init() {
+            this.faqData = this.extractFAQData();
             this.setupEventListeners();
             this.showNotificationBadge();
         }
         
+        getBuiltInKnowledge() {
+            return [
+                { question: 'What is RoomFinderAI?', answer: 'RoomFinderAI is an AI-powered rental platform. Browse listings, use the AI Negotiator to negotiate rent, find roommates with RoomPal, post subleases, search student housing by university, get legal document help, and message landlords directly.', keywords: ['what', 'roomfinderai', 'platform', 'about'] },
+                { question: 'How do I create an account?', answer: 'Click Login/Register in the top navigation, choose Sign Up, and enter your email and password. You can also sign in with Google. Verify your email if prompted.', keywords: ['create', 'account', 'sign', 'register', 'signup'] },
+                { question: 'How do I search for properties?', answer: 'Go to Listings (Browse → Listings). Use filters for city, price, bedrooms, and house type. Click View Details on a card or open the map view. Save favorites with the heart icon.', keywords: ['search', 'properties', 'listings', 'find', 'rentals'] },
+                { question: 'How does the AI Negotiator work?', answer: 'Open AI Negotiator from Tools. Set your negotiation goals (budget, move-in date, must-haves), lock them in, then chat. The AI contacts landlords on your behalf. Free plan includes 20 sessions/month; Pro is unlimited.', keywords: ['negotiator', 'negotiate', 'ai', 'rent', 'landlord'] },
+                { question: 'What is RoomPal?', answer: 'RoomPal (roommate-matching.html) helps you find compatible roommates. Create a seeker profile with budget and preferences, browse other seekers, and message matches.', keywords: ['roompal', 'roommate', 'roommates', 'seeker'] },
+                { question: 'How do subleases work?', answer: 'Visit Subleasing under Browse. Post a transfer or seeking request with location and rent, or browse public requests and express interest. Login is required to post.', keywords: ['sublease', 'sublet', 'transfer', 'lease'] },
+                { question: 'Student housing help', answer: 'Student Housing lets you search by university name, view official housing portal links, and browse nearby RoomFinderAI listings. It is free for students.', keywords: ['student', 'housing', 'university', 'campus', 'dorm'] },
+                { question: 'Legal Center features', answer: 'Legal Center offers AI lease review, document drafting, legal calculators (deposit, prorated rent, late fees), attorney finder guidance, and links to official tenant resources (HUD, LTB, etc.). Educational only — not legal advice.', keywords: ['legal', 'lease', 'law', 'tenant', 'rights', 'document'] },
+                { question: 'Pricing plans', answer: 'Free: $0/mo — unlimited listings browse, 20 AI Negotiator sessions/month, sublease and RoomPal tools, email support. Pro: $19.99/mo — unlimited AI sessions, Pro badge, priority support. Upgrade at pricing.html.', keywords: ['pricing', 'price', 'cost', 'pro', 'free', 'subscription', '19.99'] },
+                { question: 'How do I message a landlord?', answer: 'On any listing card click Message. You must be logged in. Opens a chat thread tied to that listing. Both tenant and landlord see the same conversation.', keywords: ['message', 'chat', 'landlord', 'contact', 'conversation'] },
+                { question: 'How do I add a listing?', answer: 'Go to Listings and use Add Listing (or listings.html add-listing section). Fill property details, upload photos, and submit. Manage your listings from Profile → My Listings.', keywords: ['add', 'listing', 'post', 'property', 'landlord'] },
+                { question: 'Login problems', answer: 'Try clearing cache, use Forgot Password on login.html, or sign in with Google. Ensure you are on the same email you registered with. Still stuck? Email support@roomfinderai.com.', keywords: ['login', 'password', 'cant', 'log', 'signin', 'account'] },
+                { question: 'Contact support', answer: 'Email support@roomfinderai.com (24h response), use the contact form on this page, or chat with this AI assistant. For billing issues include your account email.', keywords: ['contact', 'support', 'help', 'email', 'ticket'] },
+                { question: 'Cancel subscription', answer: 'Pro subscriptions are managed through Stripe. Email support@roomfinderai.com with your account email to cancel or manage billing. You keep Free tier access after canceling.', keywords: ['cancel', 'subscription', 'billing', 'refund', 'unsubscribe'] }
+            ];
+        }
+        
         extractFAQData() {
-            const faqs = [];
+            const faqs = this.getBuiltInKnowledge();
             
             // Extract all FAQ items from the page
             const faqItems = document.querySelectorAll('.faq-item');
@@ -867,25 +758,6 @@
                     });
                 }
             });
-            
-            // Add additional context-aware responses
-            faqs.push(
-                {
-                    question: "What is RoomFinderAI?",
-                    answer: "RoomFinderAI is a platform that helps you find rental properties using AI technology. We offer property listings, an AI negotiator, and various tools to help you find your perfect home.",
-                    keywords: ["what", "roomfinderai", "platform", "about", "service"]
-                },
-                {
-                    question: "How can I contact support?",
-                    answer: "You can contact our support team by emailing support@roomfinderai.com. We typically respond within 24 hours. You can also browse our documentation for quick answers.",
-                    keywords: ["contact", "support", "help", "email", "assistance"]
-                },
-                {
-                    question: "Where can I find pricing information?",
-                    answer: "Basic features like property search are free. Pro features start at $19.99/month. You can view detailed pricing on our pricing page or in your dashboard billing settings.",
-                    keywords: ["pricing", "cost", "price", "plans", "billing", "subscription"]
-                }
-            );
             
             return faqs;
         }
@@ -1017,13 +889,16 @@
             this.showTyping();
             
             try {
+                const stored = localStorage.getItem('currentUser');
+                const user = stored ? JSON.parse(stored) : null;
                 const response = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         mode: 'support',
                         message: message,
-                        conversationHistory: this.conversations.slice(-6)
+                        userEmail: user?.email || null,
+                        conversationHistory: this.conversations.slice(-8)
                     })
                 });
                 const data = await response.json();
@@ -1034,12 +909,17 @@
                     this.addMessage(data.response, 'bot');
                     return;
                 }
+                if (data.fallback || !response.ok) {
+                    throw new Error(data.error || 'AI unavailable');
+                }
             } catch (err) {
                 console.warn('AI support fallback:', err.message);
             }
             
             this.hideTyping();
             const response = this.processMessage(message);
+            this.conversations.push({ role: 'user', content: message });
+            this.conversations.push({ role: 'assistant', content: response });
             this.addMessage(response, 'bot');
         }
         
