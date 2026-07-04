@@ -203,6 +203,11 @@ function updateNavProfileLink(isLoggedIn) {
         profileLink.style.display = isLoggedIn ? '' : 'none';
     }
 }
+
+/**
+ * Update auth section UI (profile image / login button)
+ */
+async function updateAuthSection() {
     const authSection = document.getElementById('authSection');
     if (!authSection) {
         console.log('No authSection found on this page');
@@ -259,8 +264,9 @@ function updateNavProfileLink(isLoggedIn) {
                     currentUser.lastName = profileData.lastName || '';
                     console.log('✅ Updated names from backend in auth section:', profileData.firstName, profileData.lastName);
                 }
-                
-                // localStorage removed - using Supabase);
+
+                currentUser.isPro = profileData.isPro === true || profileData.plan === 'pro';
+                currentUser.plan = profileData.plan || (currentUser.isPro ? 'pro' : 'free');
             }
         } catch (error) {
             console.error('Error fetching profile data in auth section:', error);
@@ -292,10 +298,15 @@ function updateNavProfileLink(isLoggedIn) {
             // Profile images are now stored in Supabase Storage, no local persistence needed
         }
         
+        const proBadge = currentUser.isPro
+            ? '<span class="absolute -bottom-1 -right-1 bg-blue-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">PRO</span>'
+            : '';
+
         // User is logged in - show profile
         authSection.innerHTML = `
-            <a href="profile.html" class="profile-link">
+            <a href="profile.html" class="profile-link relative inline-block">
                 <img id="profileLogo" src="${profileImage}" alt="Profile" class="w-10 h-10 rounded-full profile-logo hover:ring-2 hover:ring-blue-500 transition-all duration-200" onerror="this.src='${DEFAULT_PROFILE_IMAGE}'">
+                ${proBadge}
             </a>
         `;
         syncCurrentUserToStorage(currentUser);

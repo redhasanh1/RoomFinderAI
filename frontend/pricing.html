@@ -175,7 +175,7 @@
                 <div class="mb-4">
                     <p class="text-sm text-gray-500">💰 Save 20% with annual billing</p>
                 </div>
-                <a href="/payment?plan=pro&price=19.99" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Pro</a>
+                <button type="button" id="chooseProBtn" onclick="startProCheckout()" class="inline-block w-full sm:w-auto bg-blue-600 text-white px-6 py-4 sm:py-3 rounded-lg hover:bg-blue-700 transition-all duration-300 font-semibold shadow-md hover:shadow-lg text-center min-h-[44px] flex items-center justify-center">Choose Pro</button>
             </div>
         </div>
 
@@ -367,7 +367,49 @@
             if (typeof window.UniversalAuth !== 'undefined') {
                 window.UniversalAuth.init({ allowAnonymous: true, requireSupabase: false });
             }
+
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('checkout') === 'success') {
+                alert('Welcome to Pro! Your subscription is active.');
+            }
         });
+
+        async function startProCheckout() {
+            const user = window.UniversalAuth?.getCurrentUser
+                ? await window.UniversalAuth.getCurrentUser()
+                : null;
+            const stored = localStorage.getItem('currentUser');
+            const parsed = stored ? JSON.parse(stored) : null;
+            const email = user?.email || parsed?.email;
+
+            if (!email) {
+                window.location.href = 'login.html?redirect=' + encodeURIComponent('pricing.html');
+                return;
+            }
+
+            const btn = document.getElementById('chooseProBtn');
+            if (btn) {
+                btn.disabled = true;
+                btn.textContent = 'Redirecting to checkout…';
+            }
+
+            try {
+                const res = await fetch('/api/create-checkout-session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, plan: 'pro' })
+                });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Checkout failed');
+                window.location.href = data.url;
+            } catch (err) {
+                alert(err.message || 'Could not start checkout. Try again or contact support.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.textContent = 'Choose Pro';
+                }
+            }
+        }
     </script>
 </body>
 </html>

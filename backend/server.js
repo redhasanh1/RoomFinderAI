@@ -77,6 +77,8 @@ try {
 config = {
     STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY?.trim() || config.STRIPE_SECRET_KEY,
     STRIPE_PUBLISHABLE_KEY: process.env.STRIPE_PUBLISHABLE_KEY?.trim() || config.STRIPE_PUBLISHABLE_KEY,
+    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET?.trim() || config.STRIPE_WEBHOOK_SECRET,
+    STRIPE_PRO_PRICE_ID: process.env.STRIPE_PRO_PRICE_ID?.trim() || config.STRIPE_PRO_PRICE_ID,
     GOOGLE_API_KEY: process.env.GOOGLE_API_KEY?.trim() || config.GOOGLE_API_KEY,
     SUPABASE_URL: process.env.SUPABASE_URL?.trim() || config.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
@@ -426,6 +428,64 @@ app.use(cors({
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization', 'user-email']
 }));
+// Stripe webhook must receive raw body (register before express.json)
+app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    if (!stripe) {
+        return res.status(503).json({ error: 'Stripe not configured' });
+    }
+    const sig = req.headers['stripe-signature'];
+    const webhookSecret = config.STRIPE_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+        console.error('STRIPE_WEBHOOK_SECRET not set');
+        return res.status(503).json({ error: 'Webhook secret not configured' });
+    }
+
+    let event;
+    try {
+        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
+    } catch (err) {
+        console.error('Stripe webhook signature verification failed:', err.message);
+        return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+        if (event.type === 'checkout.session.completed') {
+            const session = event.data.object;
+            const customerEmail = session.customer_email || session.metadata?.email;
+            const plan = session.metadata?.plan || 'pro';
+
+            if (customerEmail && supabase) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .eq('email', customerEmail)
+                    .maybeSingle();
+
+                await supabase.from('subscriptions').insert({
+                    email: customerEmail,
+                    profile_id: profile?.id || null,
+                    plan_type: plan,
+                    plan_price: 19.99,
+                    status: 'active',
+                    stripe_charge_id: session.subscription || session.id,
+                    payment_method: 'card',
+                    start_date: new Date().toISOString()
+                });
+
+                if (profile?.id) {
+                    await supabase.from('profiles').update({ is_pro: true, plan: 'pro' }).eq('id', profile.id);
+                } else {
+                    await supabase.from('profiles').update({ is_pro: true, plan: 'pro' }).eq('email', customerEmail);
+                }
+                console.log(`✅ Pro activated for ${customerEmail}`);
+            }
+        }
+        res.json({ received: true });
+    } catch (err) {
+        console.error('Stripe webhook handler error:', err);
+        res.status(500).json({ error: 'Webhook handler failed' });
+    }
+});
 // Increase payload limits for profile image uploads
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
@@ -912,10 +972,17 @@ app.get('/api/listings', async (req, res) => {
         }
 
         // Fetch listings from Supabase
-        const { data: dbListings, error } = await supabase
+        let query = supabase
             .from('listings')
             .select('*')
             .order('created_at', { ascending: false });
+
+        const cityFilter = (req.query.city || '').trim();
+        if (cityFilter) {
+            query = query.ilike('city', `%${cityFilter}%`);
+        }
+
+        const { data: dbListings, error } = await query;
 
         if (error) {
             console.error('Error fetching listings from Supabase:', error);
@@ -3164,8 +3231,9 @@ app.get('/api/user-profile/:email', async (req, res) => {
                                 hasCustomProfileImage: hasCustomProfileImage,
                                 emailVerified: data.email_verified || false,
                                 createdAt: data.created_at,
-                                plan: data.plan || 'free'
-                            });
+                        plan: data.plan || 'free',
+                        isPro: data.is_pro === true || data.plan === 'pro'
+                    });
                         }
                     }
                     
@@ -3178,7 +3246,8 @@ app.get('/api/user-profile/:email', async (req, res) => {
                         hasCustomProfileImage: hasCustomProfileImage,
                         emailVerified: data.email_verified || false,
                         createdAt: data.created_at,
-                        plan: data.plan || 'free'
+                        plan: data.plan || 'free',
+                        isPro: data.is_pro === true || data.plan === 'pro'
                     };
                     console.log('📤 API Response for', data.email, ':', JSON.stringify(response, null, 2));
                     return res.json(response);
@@ -5314,6 +5383,7 @@ async function callOpenAI({ messages, model = 'gpt-4', maxTokens = 300, temperat
 const openAiRateLimitStore = new Map();
 const OPENAI_HOURLY_LIMIT = 100;
 const OPENAI_DAILY_LIMIT = 500;
+const FREE_AI_MONTHLY_LIMIT = 20;
 
 function getHourKey() {
     const now = new Date();
@@ -5325,34 +5395,76 @@ function getDayKey() {
     return `${now.getFullYear()}-${now.getMonth()}-${now.getDate()}`;
 }
 
+async function isUserProByEmail(email) {
+    if (!email || !supabase) return false;
+    try {
+        const { data } = await supabase
+            .from('profiles')
+            .select('is_pro, plan')
+            .eq('email', email)
+            .maybeSingle();
+        return data?.is_pro === true || data?.plan === 'pro';
+    } catch (_) {
+        return false;
+    }
+}
+
 function openAiRateLimitMiddleware(req, res, next) {
-    const userId = getUserId(req);
-    const hourKey = `openai-hour-${userId}-${getHourKey()}`;
-    const dayKey = `openai-day-${userId}-${getDayKey()}`;
+    (async () => {
+        const userEmail = req.body?.userEmail || req.headers['user-email'];
+        const isPro = userEmail ? await isUserProByEmail(userEmail) : false;
 
-    const hourlyUsage = openAiRateLimitStore.get(hourKey) || 0;
-    const dailyUsage = openAiRateLimitStore.get(dayKey) || 0;
+        if (isPro) {
+            req.aiRateLimitInfo = { isPro: true, unlimited: true };
+            return next();
+        }
 
-    if (hourlyUsage >= OPENAI_HOURLY_LIMIT) {
-        return res.status(429).json({
-            error: 'Rate limit exceeded',
-            message: `Maximum ${OPENAI_HOURLY_LIMIT} AI requests per hour. Please wait before trying again.`,
-            retryAfter: 'next hour'
-        });
-    }
+        const userId = userEmail || getUserId(req);
+        const monthKey = getCurrentMonthKey();
+        const sessionKey = `ai-monthly-${userId}-${monthKey}`;
+        const monthlyUsage = openAiRateLimitStore.get(sessionKey) || 0;
 
-    if (dailyUsage >= OPENAI_DAILY_LIMIT) {
-        return res.status(429).json({
-            error: 'Daily rate limit exceeded',
-            message: `Maximum ${OPENAI_DAILY_LIMIT} AI requests per day. Limit resets at midnight.`,
-            retryAfter: 'tomorrow'
-        });
-    }
+        if (monthlyUsage >= FREE_AI_MONTHLY_LIMIT) {
+            return res.status(429).json({
+                error: 'Monthly AI session limit reached',
+                message: `Free plan includes ${FREE_AI_MONTHLY_LIMIT} AI sessions per month. Upgrade to Pro for unlimited access.`,
+                limit: FREE_AI_MONTHLY_LIMIT,
+                used: monthlyUsage,
+                upgradeUrl: '/pricing.html',
+                isPro: false
+            });
+        }
 
-    openAiRateLimitStore.set(hourKey, hourlyUsage + 1);
-    openAiRateLimitStore.set(dayKey, dailyUsage + 1);
+        const hourKey = `openai-hour-${userId}-${getHourKey()}`;
+        const dayKey = `openai-day-${userId}-${getDayKey()}`;
+        const hourlyUsage = openAiRateLimitStore.get(hourKey) || 0;
+        const dailyUsage = openAiRateLimitStore.get(dayKey) || 0;
 
-    next();
+        if (hourlyUsage >= OPENAI_HOURLY_LIMIT) {
+            return res.status(429).json({
+                error: 'Rate limit exceeded',
+                message: `Maximum ${OPENAI_HOURLY_LIMIT} AI requests per hour. Please wait before trying again.`,
+                retryAfter: 'next hour'
+            });
+        }
+
+        if (dailyUsage >= OPENAI_DAILY_LIMIT) {
+            return res.status(429).json({
+                error: 'Daily rate limit exceeded',
+                message: `Maximum ${OPENAI_DAILY_LIMIT} AI requests per day. Limit resets at midnight.`,
+                retryAfter: 'tomorrow'
+            });
+        }
+
+        openAiRateLimitStore.set(sessionKey, monthlyUsage + 1);
+        openAiRateLimitStore.set(hourKey, hourlyUsage + 1);
+        openAiRateLimitStore.set(dayKey, dailyUsage + 1);
+        req.aiRateLimitInfo = { isPro: false, used: monthlyUsage + 1, limit: FREE_AI_MONTHLY_LIMIT };
+        next();
+    })().catch((err) => {
+        console.error('AI rate limit error:', err);
+        next();
+    });
 }
 
 // ========================================
@@ -6392,6 +6504,47 @@ app.post('/api/predict/marketplace', async (req, res) => {
     } catch (error) {
         console.error('Error in /api/predict/marketplace:', error.message);
         res.status(500).json({ error: `Failed to generate Marketplace URL: ${error.message}` });
+    }
+});
+
+// Stripe Checkout — Pro subscription
+app.post('/api/create-checkout-session', async (req, res) => {
+    try {
+        if (!stripe) {
+            return res.status(503).json({ error: 'Payment service not available' });
+        }
+
+        const { email, plan = 'pro' } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const origin = req.headers.origin || `${req.protocol}://${req.get('host')}`;
+        const lineItems = config.STRIPE_PRO_PRICE_ID
+            ? [{ price: config.STRIPE_PRO_PRICE_ID, quantity: 1 }]
+            : [{
+                price_data: {
+                    currency: 'usd',
+                    product_data: { name: 'RoomFinderAI Pro' },
+                    unit_amount: 1999,
+                    recurring: { interval: 'month' }
+                },
+                quantity: 1
+            }];
+
+        const session = await stripe.checkout.sessions.create({
+            mode: 'subscription',
+            customer_email: email,
+            line_items: lineItems,
+            success_url: `${origin}/pricing.html?checkout=success`,
+            cancel_url: `${origin}/pricing.html?checkout=cancelled`,
+            metadata: { email, plan }
+        });
+
+        res.json({ url: session.url, sessionId: session.id });
+    } catch (error) {
+        console.error('Checkout session error:', error);
+        res.status(500).json({ error: 'Could not create checkout session', details: error.message });
     }
 });
 
@@ -9758,17 +9911,79 @@ app.get('/api/sublease/matches/:requestId', async (req, res) => {
     }
 });
 
-// Express interest in a match
+// Express interest in a match (accepts matchId or requestId from browse cards)
 app.post('/api/sublease/express-interest', async (req, res) => {
     try {
-        const { matchId, userEmail, requestType } = req.body;
-        
-        if (!userEmail || !matchId || !requestType) {
-            return res.status(400).json({ error: 'Missing required fields' });
+        let { matchId, userEmail, requestType, requestId } = req.body;
+
+        if (!userEmail) {
+            return res.status(400).json({ error: 'Missing userEmail' });
         }
 
-        // Set user context for RLS
         await setUserContext(userEmail);
+
+        // Browse flow: frontend sends { requestId, userEmail }
+        if (requestId && !matchId) {
+            const { data: viewedReq, error: reqErr } = await supabase
+                .from('sublease_requests')
+                .select('*')
+                .eq('id', requestId)
+                .single();
+            if (reqErr || !viewedReq) {
+                return res.status(404).json({ error: 'Sublease request not found' });
+            }
+            if (viewedReq.user_email === userEmail) {
+                return res.status(400).json({ error: 'Cannot express interest on your own request' });
+            }
+            const oppositeType = viewedReq.type === 'transfer' ? 'seeking' : 'transfer';
+            let { data: userReq } = await supabase
+                .from('sublease_requests')
+                .select('*')
+                .eq('user_email', userEmail)
+                .eq('type', oppositeType)
+                .eq('status', 'active')
+                .limit(1)
+                .maybeSingle();
+            if (!userReq) {
+                const { data: created, error: createErr } = await supabase
+                    .from('sublease_requests')
+                    .insert({
+                        user_email: userEmail,
+                        type: oppositeType,
+                        status: 'active',
+                        title: `Interest in: ${viewedReq.title}`,
+                        city: viewedReq.city,
+                        state: viewedReq.state,
+                        rent_amount: viewedReq.rent_amount,
+                        min_budget: viewedReq.min_budget,
+                        max_budget: viewedReq.max_budget
+                    })
+                    .select()
+                    .single();
+                if (createErr) {
+                    return res.status(500).json({ error: 'Could not create interest profile' });
+                }
+                userReq = created;
+            }
+            await findAndCreateMatches(viewedReq.id, viewedReq.type);
+            const transferId = viewedReq.type === 'transfer' ? viewedReq.id : userReq.id;
+            const seekingId = viewedReq.type === 'seeking' ? viewedReq.id : userReq.id;
+            const { data: matchRow } = await supabase
+                .from('sublease_matches')
+                .select('id')
+                .eq('transfer_request_id', transferId)
+                .eq('seeking_request_id', seekingId)
+                .maybeSingle();
+            if (!matchRow) {
+                return res.status(500).json({ error: 'Could not create match record' });
+            }
+            matchId = matchRow.id;
+            requestType = oppositeType;
+        }
+
+        if (!matchId || !requestType) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
 
         const updateField = requestType === 'transfer' ? 'transfer_user_interested' : 'seeking_user_interested';
         const viewedField = requestType === 'transfer' ? 'transfer_user_viewed_at' : 'seeking_user_viewed_at';
@@ -9997,7 +10212,23 @@ app.get('/api/sublease/search', async (req, res) => {
         } = req.query;
 
         if (!userEmail) {
-            return res.status(400).json({ error: 'User email is required' });
+            let query = supabase
+                .from('sublease_requests')
+                .select('*')
+                .eq('status', 'active');
+
+            if (type) query = query.eq('type', type);
+            if (city) query = query.ilike('city', `%${city}%`);
+            if (state) query = query.ilike('state', `%${state}%`);
+            if (propertyType) query = query.eq('property_type', propertyType);
+            if (bedrooms) query = query.eq('bedrooms', parseInt(bedrooms));
+
+            const offset = (parseInt(page, 10) - 1) * parseInt(limit, 10);
+            query = query.range(offset, offset + parseInt(limit, 10) - 1);
+
+            const { data: requests, error } = await query;
+            if (error) throw error;
+            return res.json({ requests: requests || [], page: parseInt(page, 10), public: true });
         }
 
         // Set user context for RLS
