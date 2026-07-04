@@ -210,7 +210,7 @@
         </div>
 
         <!-- Quick Help Options Grid -->
-        <div class="grid md:grid-cols-3 gap-6 mb-12">
+        <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
             <!-- AI Assistant - Instant -->
             <div class="bg-gradient-to-br from-blue-50 to-purple-50 rounded-xl p-6 border-2 transition-all duration-300 hover:shadow-lg relative overflow-hidden" style="border-color: rgba(102, 126, 234, 0.3); background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
                 <div class="relative z-10">
@@ -284,6 +284,25 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                     Search FAQs
+                </button>
+            </div>
+
+            <!-- Customer Care -->
+            <div class="bg-gradient-to-br from-emerald-50 to-teal-100 rounded-xl p-6 border-2 transition-all duration-300 hover:shadow-lg" style="border-color: rgba(16, 185, 129, 0.35);">
+                <div class="flex items-center mb-4">
+                    <div class="w-12 h-12 rounded-full flex items-center justify-center mr-3" style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-gray-900">Customer Care</h3>
+                        <span class="text-white text-xs px-2 py-1 rounded-full" style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);">HUMAN HELP</span>
+                    </div>
+                </div>
+                <p class="text-gray-700 mb-4">Need a real person? Submit a ticket and our care team will follow up within 24 hours.</p>
+                <button type="button" onclick="document.getElementById('contact-form-panel').classList.remove('hidden'); document.getElementById('contact-form-panel').scrollIntoView({behavior:'smooth'})" class="w-full text-white px-4 py-3 rounded-lg font-semibold transition-all" style="background: linear-gradient(135deg, #10b981 0%, #14b8a6 100%);">
+                    Open Support Ticket
                 </button>
             </div>
         </div>
@@ -476,7 +495,7 @@
                             </svg>
                         </button>
                         <div class="accordion-content">
-                            <p class="text-gray-600 text-sm mt-2 pr-8">Basic features including property search and viewing listings are free. Premium features like AI Negotiator, advanced filters, and priority support require a subscription starting at $9.99/month.</p>
+                            <p class="text-gray-600 text-sm mt-2 pr-8">Basic features including property search and viewing listings are free. Premium features like AI Negotiator, advanced filters, and priority support require a Pro subscription at $19.99/month.</p>
                         </div>
                     </div>
                     
@@ -861,7 +880,7 @@
                 },
                 {
                     question: "Where can I find pricing information?",
-                    answer: "Basic features like property search are free. Premium features start at $9.99/month. You can view detailed pricing on our pricing page or in your dashboard billing settings.",
+                    answer: "Basic features like property search are free. Pro features start at $19.99/month. You can view detailed pricing on our pricing page or in your dashboard billing settings.",
                     keywords: ["pricing", "cost", "price", "plans", "billing", "subscription"]
                 }
             );
@@ -1052,7 +1071,7 @@
             
             // Check for specific topics
             if (messageLower.includes('price') || messageLower.includes('cost') || messageLower.includes('subscription')) {
-                return "RoomFinderAI offers both free and premium features. Basic property search is free, while premium features like the AI Negotiator start at $9.99/month. You can view detailed pricing in your dashboard or on our pricing page.";
+                return "RoomFinderAI offers both free and premium features. Basic property search is free, while Pro features like the AI Negotiator are $19.99/month. You can view detailed pricing in your dashboard or on our pricing page.";
             }
             
             if (messageLower.includes('contact') || messageLower.includes('support') || messageLower.includes('help')) {
@@ -1263,7 +1282,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Failed to send');
-                status.textContent = 'Message sent! We will reply within 24 hours.';
+                status.textContent = 'Ticket received! Our customer care team will reply within 24 hours. Confirmation sent to your email.';
                 status.className = 'text-sm text-green-600';
                 e.target.reset();
             } catch (err) {
