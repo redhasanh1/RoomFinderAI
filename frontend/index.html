@@ -971,6 +971,27 @@
             mix-blend-mode: normal;
             object-fit: contain;
         }
+
+        .house-solutions-right {
+            position: absolute;
+            bottom: 8%;
+            right: 2%;
+            width: 360px;
+            height: auto;
+            opacity: 1;
+            z-index: 2;
+            border-radius: 0;
+            background: transparent;
+            padding: 0;
+            box-shadow: none;
+            transition: all 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+            filter: drop-shadow(0 16px 32px rgba(0, 0, 0, 0.12));
+            pointer-events: none;
+            transform: translateZ(0);
+            animation: foundation-float-3 16s ease-in-out infinite;
+            mix-blend-mode: normal;
+            object-fit: contain;
+        }
         
         .house-success-right { 
             position: absolute;
@@ -1162,6 +1183,7 @@
         /* Foundation-style hover effects */
         .house-hero-corner:hover,
         .house-features-left:hover,
+        .house-solutions-right:hover,
         .house-success-right:hover,
         .house-search-corner:hover,
         .house-footer-corner:hover {
@@ -1179,6 +1201,7 @@
         @media (max-width: 1024px) {
             .house-hero-corner { width: 280px; }
             .house-features-left { width: 320px; }
+            .house-solutions-right { width: 300px; }
             .house-success-right { width: 340px; }
             .house-search-corner { width: 290px; }
             .house-footer-corner { width: 260px; }
@@ -1187,6 +1210,7 @@
         @media (max-width: 768px) {
             .house-hero-corner,
             .house-features-left,
+            .house-solutions-right,
             .house-success-right,
             .house-search-corner,
             .house-footer-corner {
@@ -1195,6 +1219,7 @@
             }
             .house-hero-corner { display: none; }
             .house-features-left { display: none; }
+            .house-solutions-right { display: none; }
         }
 
         /* 3D Property Models showcase — full visibility */
@@ -1728,7 +1753,7 @@
     </section>
 
     <!-- Complete Housing Solutions Section -->
-    <section class="py-32 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
+    <section class="py-32 pb-48 bg-gradient-to-b from-white to-gray-50 relative overflow-hidden">
         <div class="absolute inset-0 bg-gradient-to-r from-purple-50/30 to-blue-50/30"></div>
         <div class="w-[90%] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             <div class="text-center mb-20 reveal">
@@ -1891,10 +1916,10 @@
             
         </div>
         
-        <!-- House Image for This Section -->
+        <!-- House Image for Complete Solutions Section -->
         <img src="3D%20House%20Models/WhatsApp_Image_2025-07-03_at_10.51.57-removebg-preview.png" 
              alt="Modern Housing Solutions" loading="lazy" onerror="this.style.display='none'"
-             class="absolute bottom-0 right-0 w-48 h-48 object-contain opacity-20 pointer-events-none">
+             class="house-solutions-right">
     </section>
 
 
