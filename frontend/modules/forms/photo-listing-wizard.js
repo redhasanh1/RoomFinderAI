@@ -1186,7 +1186,7 @@ class PhotoListingWizard {
             } else {
                 // Fallback: directly show the form section
                 console.log('📝 [APPLY] Fallback: showing form section directly...');
-                const formSection = document.getElementById('addListingSection');
+                const formSection = document.getElementById('add-listing');
                 if (formSection) {
                     formSection.classList.remove('hidden');
                     formSection.scrollIntoView({ behavior: 'smooth', block: 'start' });

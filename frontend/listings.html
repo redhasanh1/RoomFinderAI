@@ -2183,92 +2183,7 @@
             }
         });
 
-        // Handle form submission
-        document.getElementById('listingForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-            if (!currentUser) {
-                alert('Please log in to add a listing.');
-                window.location.href = 'login.html';
-                return;
-            }
-
-            try {
-                const media = uploadedFiles.length > 0 ? await uploadMedia(uploadedFiles) : [];
-
-                // Log original input values for debugging
-                const originalValues = {
-                    city: document.getElementById('city').value,
-                    country: document.getElementById('country').value,
-                    street: document.getElementById('street').value,
-                    postalCode: document.getElementById('postalCode').value
-                };
-                console.log('📝 Original address input:', originalValues);
-
-                const listing = {
-                    title: autocorrectInput(sanitizeInput(document.getElementById('title').value)),
-                    price: parseInt(document.getElementById('price').value),
-                    city: cleanAddressInput(document.getElementById('city').value),
-                    country: sanitizeInput(document.getElementById('country').value), // Added country
-                    street: cleanAddressInput(document.getElementById('street').value),
-                    postalCode: document.getElementById('postalCode').value.trim().toUpperCase().replace(/\s+/g, ' '),
-                    house_type: document.getElementById('houseType').value,
-                    bedrooms: parseInt(document.getElementById('bedrooms').value),
-                    utilities: document.getElementById('utilities').value,
-                    description: autocorrectInput(sanitizeInput(document.getElementById('description').value)),
-                    media: media,
-                    user_email: currentUser.email,
-                    created_at: new Date().toISOString()
-                };
-
-                console.log('✅ Processed address values:', {
-                    city: listing.city,
-                    street: listing.street,
-                    postalCode: listing.postalCode
-                });
-                console.log('📋 Submitting listing:', listing);
-
-                if (!listing.title || !listing.price || !listing.city || !listing.street || !listing.postalCode || !listing.house_type || !listing.bedrooms) {
-                    alert('Please fill in all required fields.');
-                    return;
-                }
-
-                const { data, error } = await supabase
-                    .from('listings')
-                    .insert([listing])
-                    .select();
-
-                if (error) {
-                    console.error('Error inserting listing:', error);
-                    alert('Failed to add listing: ' + error.message);
-                    return;
-                }
-
-                const newListing = {
-                    ...listing,
-                    id: data[0].id,
-                    media: media
-                };
-                currentUser.listings = currentUser.listings || [];
-                currentUser.listings.push(newListing);
-                let users = JSON.parse(localStorage.getItem('users')) || [];
-                users = users.map(u => u.email === currentUser.email ? currentUser : u);
-                localStorage.setItem('users', JSON.stringify(users));
-                localStorage.setItem('currentUser', JSON.stringify(currentUser));
-                console.log('Updated localStorage with new listing:', newListing);
-
-                e.target.reset();
-                cleanupUploadedFiles();
-
-                alert('Listing added successfully!');
-                console.log('🔄 Refreshing listings and map after new listing added');
-                await displayListings();
-            } catch (err) {
-                console.error('Submission failed:', err);
-                alert('Failed to add listing: ' + (err.message || err));
-            }
-        });
+        // Form submission handled by modules/forms/add-listing-form.js (avoids double-submit)
 
         // Chat Functionality
         let currentConversationId = null;
@@ -6236,6 +6151,7 @@
                                 applySearchFilters();
                             }
                         });
+                        searchLocation.addEventListener('input', debounceSearch);
                     }
 
                     // Initialize search with "show all" by default

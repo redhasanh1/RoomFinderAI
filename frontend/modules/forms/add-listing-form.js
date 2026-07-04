@@ -855,7 +855,7 @@ class AddListingForm {
      */
     showForm() {
         console.log('📝 [FORM] showForm() called');
-        const section = document.getElementById('addListingSection');
+        const section = document.getElementById('add-listing');
         if (section) {
             console.log('✅ [FORM] Form section found, showing form');
             section.classList.remove('hidden');
@@ -864,7 +864,7 @@ class AddListingForm {
             this.updateToggleButtons(true);
             console.log('✅ [FORM] Form is now visible');
         } else {
-            console.error('❌ [FORM] addListingSection element not found!');
+            console.error('❌ [FORM] add-listing section element not found!');
         }
     }
 
@@ -873,7 +873,7 @@ class AddListingForm {
      */
     hideForm() {
         console.log('📝 [FORM] hideForm() called');
-        const section = document.getElementById('addListingSection');
+        const section = document.getElementById('add-listing');
         if (section) {
             console.log('✅ [FORM] Form section found, hiding form');
             section.classList.add('hidden');
@@ -881,7 +881,7 @@ class AddListingForm {
             this.updateToggleButtons(false);
             console.log('✅ [FORM] Form is now hidden');
         } else {
-            console.error('❌ [FORM] addListingSection element not found!');
+            console.error('❌ [FORM] add-listing section element not found!');
         }
     }
 

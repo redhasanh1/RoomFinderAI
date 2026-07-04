@@ -63,8 +63,9 @@ const PHOTOS = {
 
 function buildCatalog(ownerEmail) {
     const base = (o) => ({
-        country: 'Canada',
-        utilities: 'Not included',
+        ...o,
+        country: o.country || 'Canada',
+        utilities: o.utilities || 'Not included',
         status: 'active',
         user_email: ownerEmail,
         description: `${o.description} ${CATALOG_TAG}`
@@ -209,6 +210,14 @@ async function pickOwnerEmail() {
 
     if (toDelete.length) {
         const ids = toDelete.map((d) => d.id);
+        // Remove dependent rows first (conversations FK -> listings)
+        const { data: convos } = await sb.from('conversations').select('id').in('listing_id', ids);
+        const convoIds = (convos || []).map((c) => c.id);
+        if (convoIds.length) {
+            await sb.from('messages').delete().in('conversation_id', convoIds);
+            await sb.from('conversations').delete().in('id', convoIds);
+        }
+        await sb.from('favorites').delete().in('listing_id', ids);
         const { error: delErr } = await sb.from('listings').delete().in('id', ids);
         if (delErr) { console.error('Delete failed:', delErr.message); process.exit(1); }
         console.log(`\nDeleted ${ids.length} listing(s).`);
