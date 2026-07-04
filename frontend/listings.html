@@ -67,7 +67,7 @@
                 }
 
                 // Reset message panel state
-                const messages = document.getElementById('messages');
+                const messages = document.getElementById('messagePanel');
                 if (messages && !messages.classList.contains('hidden')) {
                     // Panel was open, ensure it stays visible
                     messages.style.display = 'block';
@@ -803,7 +803,7 @@
         <div id="chatModal" class="chat-modal">
             <div class="chat-modal-content">
                 <div class="chat-header">
-                    <h2 id="chatTitle" class="text-xl font-bold text-gray-800">Chat</h2>
+                    <h2 id="chatTitle">Chat</h2>
                     <span class="close-button chat-close-button">×</span>
                 </div>
                 <div id="chatMessages" class="chat-messages"></div>
@@ -853,7 +853,7 @@
         </button>
 
         <!-- Message Panel -->
-        <div id="messages" class="hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-[calc(100vw-3rem)]">
+        <div id="messagePanel" class="site-message-panel hidden absolute bottom-20 right-0 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 max-w-[calc(100vw-3rem)]">
             <div class="p-4 border-b text-white rounded-t-2xl flex justify-between items-center" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
                 <h3 class="font-semibold text-sm tracking-wide">Messages</h3>
                 <button id="forceHideNotifications" class="text-xs text-blue-100 hover:text-white transition-colors" title="Mark all as read">Mark all read</button>
@@ -3760,7 +3760,7 @@
                 return;
             }
             const messageToggleBtn = document.getElementById('messageToggleBtn');
-            const messages = document.getElementById('messages');
+            const messages = document.getElementById('messagePanel');
             const profileNotificationBadge = document.getElementById('profileNotificationBadge');
             const messageNotificationBadge = document.getElementById('messageNotificationBadge');
 
@@ -4107,7 +4107,7 @@
         // Global function to open conversation in modal
         window.openConversationInModal = async function(conversationId, listingTitle, listingId, otherUserEmail) {
             // Close messaging panel
-            document.getElementById('messages').classList.add('hidden');
+            document.getElementById('messagePanel').classList.add('hidden');
             
             // INSTANTLY clear notifications - don't wait for database
             console.log('⚡ INSTANTLY clearing notifications for conversation:', conversationId);
@@ -4914,7 +4914,7 @@
         let messagesOpen = false;
         window.toggleMessagePanel = async function(event) {
             if (event) event.stopPropagation();
-            const messages = document.getElementById('messages');
+            const messages = document.getElementById('messagePanel');
             if (!messages) {
                 console.error('Message panel not found');
                 return;
@@ -4925,7 +4925,7 @@
 
             if (messagesOpen) {
                 messages.classList.remove('hidden');
-                messages.style.display = 'block';
+                messages.style.display = 'flex';
                 // Load conversations and AI notifications if user is logged in
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
                 if (currentUser) {
@@ -4955,7 +4955,7 @@
         // Close message panel when clicking outside
         document.addEventListener('click', (event) => {
             if (messagesOpen && !event.target.closest('#messagingPanel')) {
-                const messages = document.getElementById('messages');
+                const messages = document.getElementById('messagePanel');
                 if (messages) {
                     messages.classList.add('hidden');
                     messages.style.display = '';
@@ -5458,12 +5458,12 @@
         window.showAddListingForm = showAddListingForm;
         window.hideAddListingForm = hideAddListingForm;
 
-        // Deep links: listings.html#add-listing and #messages
+        // Deep links: listings.html#add-listing and #messagePanel (legacy #messages)
         (function handleListingsHash() {
             var hash = window.location.hash;
             if (hash === '#add-listing' && typeof showAddListingForm === 'function') {
                 showAddListingForm();
-            } else if (hash === '#messages' && typeof window.toggleMessagePanel === 'function') {
+            } else if ((hash === '#messages' || hash === '#messagePanel') && typeof window.toggleMessagePanel === 'function') {
                 setTimeout(function () { window.toggleMessagePanel(); }, 500);
             }
         })();

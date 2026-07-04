@@ -1722,7 +1722,9 @@ class RoomPalApp {
 
         // Hide conversations list, show chat view
         document.getElementById('conversationsList').classList.add('hidden');
-        document.getElementById('chatView').classList.remove('hidden');
+        const chatView = document.getElementById('chatView');
+        chatView.classList.remove('hidden');
+        chatView.classList.add('flex');
 
         // Set partner info
         document.getElementById('chatPartnerInfo').innerHTML = `
@@ -1754,12 +1756,11 @@ class RoomPalApp {
 
             container.innerHTML = messages.map(msg => {
                 const isMe = msg.sender_id === this.currentUser.id;
+                const side = isMe ? 'sent' : 'received';
                 return `
-                    <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
-                        <div class="${isMe ? 'bg-indigo-500 text-white' : 'bg-gray-100 text-gray-900'} rounded-2xl px-4 py-2 max-w-[75%]">
-                            <p>${msg.content}</p>
-                            <p class="text-xs ${isMe ? 'text-indigo-200' : 'text-gray-400'} mt-1">${this.formatMessageTime(msg.created_at)}</p>
-                        </div>
+                    <div class="message ${side}">
+                        <div>${msg.content}</div>
+                        <div class="message-timestamp">${this.formatMessageTime(msg.created_at)}</div>
                     </div>
                 `;
             }).join('');
@@ -1804,7 +1805,9 @@ class RoomPalApp {
     }
 
     closeChatView() {
-        document.getElementById('chatView').classList.add('hidden');
+        const chatView = document.getElementById('chatView');
+        chatView.classList.add('hidden');
+        chatView.classList.remove('flex');
         document.getElementById('conversationsList').classList.remove('hidden');
         this.currentConversationId = null;
         this.currentChatPartner = null;

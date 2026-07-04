@@ -216,6 +216,26 @@
     margin: 0;
 }
 
+/* Tailwind utilities on chat headers must not override white title text */
+.chat-header h2.text-gray-800,
+.chat-header #chatTitle.text-gray-800 {
+    color: white !important;
+}
+
+.chat-header .close-button,
+.chat-header .chat-close-button {
+    color: rgba(255, 255, 255, 0.9);
+    position: static;
+    float: none;
+    background: transparent;
+}
+
+.chat-header .close-button:hover,
+.chat-header .chat-close-button:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.15);
+}
+
 /* Inside the docked chat: messages flex-grow within the fixed container, no extra
    margin (the parent's overflow:hidden gives clean edges). */
 .chat-modal-content .chat-messages {
@@ -402,6 +422,24 @@
 
 /* ==================== MESSAGE PANEL ==================== */
 
+/* Docked inbox panel (listings page toggle bubble) */
+#messagingPanel #messagePanel,
+#messagingPanel .site-message-panel {
+    position: absolute;
+    bottom: 5rem;
+    right: 0;
+    z-index: 100000;
+    max-height: min(70vh, 520px);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+#messagingPanel #messagePanel:not(.hidden),
+#messagingPanel .site-message-panel:not(.hidden) {
+    display: flex;
+}
+
 #messagePanel {
     position: fixed;
     bottom: 6rem;
@@ -527,6 +565,66 @@
         height: 70vh;
         min-height: 320px;
     }
+}
+
+/* ==================== ROOMPAL INLINE CHAT ==================== */
+
+.roompal-chat-view {
+    background: white;
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--color-gray-200);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 420px;
+    max-height: 70vh;
+}
+
+.roompal-chat-header {
+    border-radius: 0;
+}
+
+.roompal-chat-messages {
+    flex: 1;
+    min-height: 280px;
+    max-height: none;
+    margin-bottom: 0;
+    border-radius: 0;
+}
+
+.roompal-chat-view .chat-input-container {
+    padding: 0.75rem;
+    border-top: 1px solid var(--color-gray-200);
+    background: white;
+}
+
+.roompal-chat-view .chat-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 2px solid var(--color-gray-200);
+    border-radius: var(--border-radius-sm);
+    outline: none;
+}
+
+/* Full-screen contact / compose overlays (RoomPal, etc.) */
+.site-overlay-modal {
+    display: none;
+}
+
+.site-overlay-modal.flex {
+    display: flex;
+}
+
+.site-contact-modal {
+    height: auto;
+    max-height: 90vh;
+    min-height: 0;
+    width: 100%;
+}
+
+.site-contact-modal .chat-header .close-button {
+    color: rgba(255, 255, 255, 0.95);
 }
 
 /* Profile page header layout */
