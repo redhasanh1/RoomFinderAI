@@ -310,37 +310,6 @@
                     </div>
                 </div>
             </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Quick Presets -->
-                    <div class="bg-gray-50 rounded-xl p-6">
-                        <h4 class="font-semibold mb-4 text-gray-800">Quick Student Profiles</h4>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <button onclick="setProfile('minimal')" class="text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border">
-                                <div class="font-medium text-sm">Minimal</div>
-                                <div class="text-xs text-gray-500">Basic needs only</div>
-                            </button>
-                            <button onclick="setProfile('comfortable')" class="text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border">
-                                <div class="font-medium text-sm">Comfortable</div>
-                                <div class="text-xs text-gray-500">Balanced lifestyle</div>
-                            </button>
-                            <button onclick="setProfile('premium')" class="text-left p-3 bg-white rounded-lg hover:bg-blue-50 transition-colors border">
-                                <div class="font-medium text-sm">Premium</div>
-                                <div class="text-xs text-gray-500">All the extras</div>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Real-time Results -->
-                <div class="space-y-6">
-                            </div>
-                        </div>
-                        
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -482,6 +451,30 @@
             const element = document.getElementById(sectionId);
             if (element) {
                 element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }
+
+        let simpleBudgetAmount = 0;
+
+        function setBudget(amount) {
+            const input = document.getElementById('housing-budget');
+            if (input) {
+                input.value = amount;
+            }
+            updateSimpleBudget(amount);
+        }
+
+        function updateSimpleBudget(value) {
+            const amount = parseFloat(value) || 0;
+            simpleBudgetAmount = amount;
+            const result = document.getElementById('budget-result');
+            const display = document.getElementById('budget-display');
+            if (!result || !display) return;
+            if (amount > 0) {
+                display.textContent = '$' + amount.toLocaleString();
+                result.classList.remove('hidden');
+            } else {
+                result.classList.add('hidden');
             }
         }
         
@@ -999,125 +992,12 @@
                         </div>
                     </div>
 
-                    <!-- Roommate Finder Tab -->
+                    <!-- Roommate Finder Tab — use RoomPal -->
                     <div id="roommates-portal" class="portal-content">
-                        <h3 class="text-2xl font-bold mb-6 text-gray-800">Find Your Perfect Roommate</h3>
-                        
-                        <!-- Compatibility Quiz -->
-                        <div class="bg-gradient-to-r from-purple-100 to-blue-100 p-6 rounded-2xl mb-8">
-                            <h4 class="text-xl font-bold mb-4">Take Our Compatibility Quiz</h4>
-                            <p class="text-gray-700 mb-4">Answer a few questions to get matched with compatible roommates based on lifestyle, habits, and preferences.</p>
-                            <button class="bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-all font-semibold">
-                                🧠 Start Quiz (2 minutes)
-                            </button>
-                        </div>
-
-                        <!-- Roommate Matches -->
-                        <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <!-- Roommate Profile 1 -->
-                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-green-300 transition-all hover:shadow-lg">
-                                <div class="text-center mb-4">
-                                    <img src="https://randomuser.me/api/portraits/women/32.jpg" alt="Sarah" class="w-20 h-20 rounded-full mx-auto mb-3">
-                                    <h4 class="text-lg font-bold">Sarah M.</h4>
-                                    <p class="text-gray-600">Junior, Psychology Major</p>
-                                    <div class="inline-flex items-center bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
-                                        <span class="text-green-600 mr-1">●</span>
-                                        95% Match
-                                    </div>
-                                </div>
-                                <div class="space-y-3 mb-4">
-                                    <div class="flex items-center gap-2">
-                                        <span>⌂</span>
-                                        <span class="text-sm">Early sleeper (10 PM)</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>♪</span>
-                                        <span class="text-sm">Quiet study environment</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>🧹</span>
-                                        <span class="text-sm">Very organized</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>🚭</span>
-                                        <span class="text-sm">Non-smoker</span>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button class="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-all">Connect</button>
-                                    <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">View Profile</button>
-                                </div>
-                            </div>
-
-                            <!-- Roommate Profile 2 -->
-                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-blue-300 transition-all hover:shadow-lg">
-                                <div class="text-center mb-4">
-                                    <img src="https://randomuser.me/api/portraits/men/24.jpg" alt="Alex" class="w-20 h-20 rounded-full mx-auto mb-3">
-                                    <h4 class="text-lg font-bold">Alex K.</h4>
-                                    <p class="text-gray-600">Sophomore, Engineering</p>
-                                    <div class="inline-flex items-center bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
-                                        <span class="text-blue-600 mr-1">●</span>
-                                        87% Match
-                                    </div>
-                                </div>
-                                <div class="space-y-3 mb-4">
-                                    <div class="flex items-center gap-2">
-                                        <span>🎮</span>
-                                        <span class="text-sm">Gamer (with headphones)</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>🍕</span>
-                                        <span class="text-sm">Loves to cook</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>📚</span>
-                                        <span class="text-sm">Study groups welcome</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>✓</span>
-                                        <span class="text-sm">Active lifestyle</span>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-all">Connect</button>
-                                    <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">View Profile</button>
-                                </div>
-                            </div>
-
-                            <!-- Roommate Profile 3 -->
-                            <div class="bg-white border-2 border-gray-200 rounded-2xl p-6 hover:border-purple-300 transition-all hover:shadow-lg">
-                                <div class="text-center mb-4">
-                                    <img src="https://randomuser.me/api/portraits/women/45.jpg" alt="Emma" class="w-20 h-20 rounded-full mx-auto mb-3">
-                                    <h4 class="text-lg font-bold">Emma R.</h4>
-                                    <p class="text-gray-600">Senior, Art Major</p>
-                                    <div class="inline-flex items-center bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium mt-2">
-                                        <span class="text-purple-600 mr-1">●</span>
-                                        82% Match
-                                    </div>
-                                </div>
-                                <div class="space-y-3 mb-4">
-                                    <div class="flex items-center gap-2">
-                                        <span>🎨</span>
-                                        <span class="text-sm">Creative projects</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>☕</span>
-                                        <span class="text-sm">Coffee enthusiast</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>🌱</span>
-                                        <span class="text-sm">Plant lover</span>
-                                    </div>
-                                    <div class="flex items-center gap-2">
-                                        <span>🎧</span>
-                                        <span class="text-sm">Music lover</span>
-                                    </div>
-                                </div>
-                                <div class="flex gap-2">
-                                    <button class="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-all">Connect</button>
-                                    <button class="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-all">View Profile</button>
-                                </div>
-                            </div>
+                        <div class="text-center py-12 px-6 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl">
+                            <h3 class="text-2xl font-bold mb-4 text-gray-800">Find roommates on RoomPal</h3>
+                            <p class="text-gray-600 mb-6 max-w-lg mx-auto">Create your roommate profile, get compatibility scores, and message matches — all on our dedicated RoomPal page.</p>
+                            <a href="roommate-matching.html" class="inline-block bg-purple-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-purple-700 transition-all">Open RoomPal</a>
                         </div>
                     </div>
 
@@ -1635,17 +1515,21 @@
         
         // Get university housing URL
         function getUniversityHousingUrl() {
-            if (!selectedUniversityData || !selectedUniversityData.web_pages) {
-                return '#';
+            if (!selectedUniversityData || !selectedUniversityData.web_pages?.length) {
+                return 'https://www.google.com/search?q=university+student+housing';
             }
-            
-            const baseUrl = selectedUniversityData.web_pages[0];
-            
-            // Try common housing page paths
-            const housingPaths = ['/housing', '/residence', '/dorms', '/student-life/housing', '/campus-life/housing'];
-            
-            // For now, return the base URL - in production, you'd check which path exists
-            return baseUrl;
+
+            const baseUrl = selectedUniversityData.web_pages[0].replace(/\/$/, '');
+            const uniName = encodeURIComponent((selectedUniversityData.name || 'university') + ' student housing');
+            const housingPaths = ['/housing', '/residence', '/residential-services', '/campus-life/housing', '/student-life/housing'];
+
+            // Prefer a direct housing path on the university domain
+            try {
+                const origin = new URL(baseUrl).origin;
+                return origin + housingPaths[0];
+            } catch (_) {
+                return `https://www.google.com/search?q=${uniName}`;
+            }
         }
         
         // Load private housing options
@@ -1701,14 +1585,17 @@
         // Fetch listings near selected university from RoomFinderAI API
         async function fetchPrivateHousingData(location) {
             try {
-                const res = await fetch('/api/listings');
+                const cityHint = (location?.city || extractCityFromDomain(selectedUniversityData?.domains?.[0]) || location?.state || '').trim();
+                const params = cityHint ? `?city=${encodeURIComponent(cityHint)}` : '';
+                const res = await fetch(`/api/listings${params}`);
                 const payload = await res.json();
                 const listings = payload.data || payload.listings || [];
-                const cityHint = (location?.city || location?.['state-province'] || location?.name || '').toLowerCase();
+                const cityLower = cityHint.toLowerCase();
 
                 const matched = listings.filter((item) => {
+                    if (!cityLower) return true;
                     const hay = `${item.city || ''} ${item.location || ''} ${item.address || ''}`.toLowerCase();
-                    return !cityHint || hay.includes(cityHint.split(',')[0].trim());
+                    return hay.includes(cityLower.split(',')[0].trim());
                 }).slice(0, 12);
 
                 if (!matched.length) {

@@ -38,28 +38,13 @@
             <div id="statusBanner" class="hidden mb-6 p-4 rounded-xl text-sm"></div>
 
             <div class="flex flex-wrap gap-2 mb-8 border-b border-gray-200 pb-4">
-                <button data-tab="browse" class="tab-btn active px-5 py-2 rounded-lg font-medium bg-indigo-600 text-white">Browse</button>
-                <button data-tab="post" class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-100 text-gray-700">Post Request</button>
+                <button data-tab="post" class="tab-btn active px-5 py-2 rounded-lg font-medium bg-indigo-600 text-white">Post Request</button>
+                <button data-tab="browse" class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-100 text-gray-700">Browse</button>
                 <button data-tab="mine" class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-100 text-gray-700">My Requests</button>
             </div>
 
-            <!-- Browse -->
-            <section id="panel-browse" class="tab-panel">
-                <div class="bg-white rounded-2xl shadow p-6 mb-6 grid md:grid-cols-4 gap-4">
-                    <select id="filterType" class="border rounded-lg px-3 py-2">
-                        <option value="">All types</option>
-                        <option value="transfer">Transferring lease</option>
-                        <option value="seeking">Seeking sublet</option>
-                    </select>
-                    <input id="filterCity" type="text" placeholder="City" class="border rounded-lg px-3 py-2">
-                    <input id="filterState" type="text" placeholder="State/Province" class="border rounded-lg px-3 py-2">
-                    <button id="searchBtn" class="bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700">Search</button>
-                </div>
-                <div id="browseResults" class="grid md:grid-cols-2 gap-4"></div>
-            </section>
-
-            <!-- Post -->
-            <section id="panel-post" class="tab-panel hidden">
+            <!-- Post (default) -->
+            <section id="panel-post" class="tab-panel">
                 <form id="postForm" class="bg-white rounded-2xl shadow p-8 space-y-5 max-w-3xl">
                     <div class="grid md:grid-cols-2 gap-4">
                         <div>
@@ -98,8 +83,27 @@
                         <input id="postBedrooms" type="number" min="0" placeholder="Bedrooms" class="border rounded-lg px-3 py-2">
                         <input id="postAvailableFrom" type="date" class="border rounded-lg px-3 py-2">
                     </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">Photo (optional)</label>
+                        <input id="postPhoto" type="file" accept="image/*" class="w-full border rounded-lg px-3 py-2 text-sm">
+                    </div>
                     <button type="submit" class="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">Create Sublease Request</button>
                 </form>
+            </section>
+
+            <!-- Browse -->
+            <section id="panel-browse" class="tab-panel hidden">
+                <div class="bg-white rounded-2xl shadow p-6 mb-6 grid md:grid-cols-4 gap-4">
+                    <select id="filterType" class="border rounded-lg px-3 py-2">
+                        <option value="">All types</option>
+                        <option value="transfer">Transferring lease</option>
+                        <option value="seeking">Seeking sublet</option>
+                    </select>
+                    <input id="filterCity" type="text" placeholder="City" class="border rounded-lg px-3 py-2">
+                    <input id="filterState" type="text" placeholder="State/Province" class="border rounded-lg px-3 py-2">
+                    <button id="searchBtn" class="bg-indigo-600 text-white rounded-lg py-2 font-medium hover:bg-indigo-700">Search</button>
+                </div>
+                <div id="browseResults" class="grid md:grid-cols-2 gap-4"></div>
             </section>
 
             <!-- My requests -->
@@ -163,8 +167,8 @@
 
         async function searchSubleases() {
             try {
-                const email = requireEmail();
-                const params = new URLSearchParams({ userEmail: email });
+                const params = new URLSearchParams();
+                if (userEmail) params.set('userEmail', userEmail);
                 const type = document.getElementById('filterType').value;
                 const city = document.getElementById('filterCity').value.trim();
                 const state = document.getElementById('filterState').value.trim();
@@ -229,6 +233,17 @@
             e.preventDefault();
             try {
                 const email = requireEmail();
+                const photoInput = document.getElementById('postPhoto');
+                let photos = [];
+                if (photoInput?.files?.[0]) {
+                    const file = photoInput.files[0];
+                    photos = [await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = () => resolve(reader.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    })];
+                }
                 const body = {
                     userEmail: email,
                     type: document.getElementById('postType').value,
@@ -240,7 +255,8 @@
                     propertyType: document.getElementById('postPropertyType').value,
                     rentAmount: document.getElementById('postRent').value ? Number(document.getElementById('postRent').value) : null,
                     bedrooms: document.getElementById('postBedrooms').value ? Number(document.getElementById('postBedrooms').value) : null,
-                    availableFrom: document.getElementById('postAvailableFrom').value || null
+                    availableFrom: document.getElementById('postAvailableFrom').value || null,
+                    photos
                 };
                 const res = await fetch('/api/sublease/request', {
                     method: 'POST',
