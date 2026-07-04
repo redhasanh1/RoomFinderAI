@@ -52,17 +52,19 @@ class RoomPalApp {
         // Setup event listeners
         this.setupEventListeners();
 
-        // Load user's profile if logged in
+        // Profile-first: only load matches after user has a roommate profile
         await this.loadUserProfile();
-
-        // Show/hide create profile CTA
         this.updateProfileCTA();
 
-        // Show landing section by default
-        this.currentSection = 'landing';
-
-        // Load roommate profiles on landing page immediately
-        await this.loadLandingProfiles();
+        const listSection = document.getElementById('roommateListSection');
+        if (!this.currentUser || !this.hasUserProfile) {
+            if (listSection) listSection.classList.add('hidden');
+            const loading = document.getElementById('landingLoadingState');
+            if (loading) loading.classList.add('hidden');
+        } else {
+            if (listSection) listSection.classList.remove('hidden');
+            await this.loadLandingProfiles();
+        }
 
         console.log('RoomPal Smart Matching initialized');
     }
@@ -482,9 +484,10 @@ class RoomPalApp {
                         ? `<span class="inline-block w-full text-center py-2.5 text-gray-500 bg-gray-100 rounded-xl text-sm font-medium">Your Profile</span>`
                         : person.is_demo
                         ? `<span class="inline-block w-full text-center py-2.5 text-amber-600 bg-amber-50 rounded-xl text-sm font-medium">Demo Profile</span>`
-                        : `<button onclick="roomPalApp.openPersonContact('${person.user_id}', '${name.replace(/'/g, "\\'")}')" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">
-                            Connect
-                        </button>`
+                        : `<div class="flex gap-2">
+                            <button type="button" onclick="roomPalApp.showRoommateDetail('${person.user_id || person.id}')" class="flex-1 border border-indigo-300 text-indigo-700 py-2.5 rounded-xl font-semibold hover:bg-indigo-50 transition-all">View</button>
+                            <button type="button" onclick="roomPalApp.openPersonContact('${person.user_id || person.id}', '${name.replace(/'/g, "\\'")}')" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">Connect</button>
+                           </div>`
                     }
                 </div>
             </div>
@@ -712,27 +715,62 @@ class RoomPalApp {
     }
 
     updateHeader() {
-        const desktopAuth = document.getElementById('desktopAuthSection');
-        const mobileAuth = document.getElementById('mobileAuthLink');
-
-        if (this.currentUser) {
-            const userName = this.currentUser.firstName || this.currentUser.name || 'User';
-
-            if (desktopAuth) {
-                desktopAuth.innerHTML = `
-                    <div class="flex items-center gap-4">
-                        <span class="text-gray-700 font-medium">Hi, ${userName}</span>
-                        <a href="profile.html" class="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700 transition-colors">My Profile</a>
-                    </div>
-                `;
-            }
-
-            if (mobileAuth) {
-                mobileAuth.textContent = `Hi, ${userName} - Profile`;
-                mobileAuth.href = 'profile.html';
-                mobileAuth.className = 'block py-3 px-4 bg-indigo-600 text-white rounded-lg font-medium text-center hover:bg-indigo-700 transition-colors';
-            }
+        if (typeof window.UniversalAuth !== 'undefined') {
+            window.UniversalAuth.refresh();
         }
+    }
+
+    openAddListingFlow() {
+        if (!this.currentUser) {
+            window.location.href = 'login.html?redirect=roommate-matching.html';
+            return;
+        }
+        window.location.href = 'listings.html#add-listing';
+    }
+
+    switchSeekingTab(tabName) {
+        document.querySelectorAll('#seekingSection .tab-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tabName);
+        });
+        const tabs = { createProfile: 'createProfileTab', browsePeople: 'browsePeopleTab', myGroup: 'myGroupTab' };
+        Object.keys(tabs).forEach(key => {
+            const el = document.getElementById(tabs[key]);
+            if (el) el.classList.toggle('hidden', key !== tabName);
+        });
+        if (tabName === 'browsePeople' && this.hasUserProfile) {
+            this.loadRoommateMatches();
+        }
+    }
+
+    showRoommateDetail(personId) {
+        const person = [...(this.allPeople || []), ...(this.landingProfiles || [])]
+            .find(p => p.user_id === personId || p.id === personId);
+        if (!person) return;
+        const modal = document.getElementById('roommateDetailModal');
+        const body = document.getElementById('roommateDetailBody');
+        if (!modal || !body) return;
+        const name = person.name || 'Anonymous';
+        body.innerHTML = `
+            <div class="text-center mb-4">
+                <img src="${person.avatar_url || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name)}" class="w-24 h-24 rounded-full mx-auto object-cover" alt="">
+                <h3 class="text-xl font-bold mt-3">${name}</h3>
+                <p class="text-indigo-600 font-semibold">${person.matchScore || 0}% Match</p>
+            </div>
+            <p class="text-gray-700 mb-4">${person.bio || 'No bio provided.'}</p>
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li><strong>Budget:</strong> up to $${person.budget_max || '—'}/mo</li>
+                <li><strong>Areas:</strong> ${(person.preferred_areas || []).join(', ') || 'Flexible'}</li>
+                <li><strong>Move-in:</strong> ${person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible'}</li>
+            </ul>
+            <button type="button" class="btn-primary w-full mt-6" onclick="roomPalApp.openPersonContact('${person.user_id || person.id}', '${name.replace(/'/g, "\\'")}'); roomPalApp.closeRoommateDetail();">Message</button>
+        `;
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    closeRoommateDetail() {
+        const modal = document.getElementById('roommateDetailModal');
+        if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
     }
 
     setupEventListeners() {
@@ -761,6 +799,10 @@ class RoomPalApp {
         }
 
         // Compatibility form submission
+        document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+            btn.addEventListener('click', () => this.switchSeekingTab(btn.dataset.tab));
+        });
+
         const compatibilityForm = document.getElementById('compatibilityForm');
         if (compatibilityForm) {
             compatibilityForm.addEventListener('submit', (e) => this.handleCompatibilitySubmit(e));
@@ -1171,20 +1213,15 @@ class RoomPalApp {
         this.contactHostName = personName;
 
         // Update modal title
-        const modalTitle = document.getElementById('contactModalTitle');
+        const modalTitle = document.querySelector('#messageModal h2');
         if (modalTitle) {
             modalTitle.textContent = `Connect with ${personName}`;
         }
 
-        // Update placeholder
-        const messageInput = document.querySelector('#messageForm textarea[name="message"]');
-        if (messageInput) {
-            messageInput.placeholder = `Hi ${personName}! I have a room available that might interest you...`;
-        }
-
         const recipientEl = document.getElementById('messageRecipient');
         if (recipientEl) {
-            const person = this.allPeople.find(p => p.id === personId);
+            const person = this.allPeople.find(p => p.user_id === personId || p.id === personId)
+                || (this.landingProfiles || []).find(p => p.user_id === personId || p.id === personId);
             const avatarUrl = person?.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(personName)}&background=6366f1&color=fff&size=80`;
 
             recipientEl.innerHTML = `
@@ -1495,6 +1532,9 @@ class RoomPalApp {
 
             this.hasUserProfile = true;
             this.hideProfilePrompt();
+            this.updateProfileCTA();
+            const listSection = document.getElementById('roommateListSection');
+            if (listSection) listSection.classList.remove('hidden');
             this.showToast('Profile created! Finding your matches...', 'success');
 
             // Navigate to matches page and load matches
