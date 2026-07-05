@@ -407,7 +407,14 @@
             // Save to localStorage
             localStorage.setItem('users', JSON.stringify(users));
             localStorage.setItem('currentUser', JSON.stringify(finalUser));
-            
+
+            // Establish a real Supabase session so direct browser-to-Supabase
+            // calls (roommate profiles, messaging, listings) carry this user's
+            // identity for RLS instead of running fully anonymous.
+            if (window.UniversalAuth && UniversalAuth.applySupabaseSession && result.refresh_token) {
+              await UniversalAuth.applySupabaseSession({ access_token: result.access_token, refresh_token: result.refresh_token });
+            }
+
             if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
               UniversalAuth.redirectAfterLogin('index.html');
             } else {
@@ -506,6 +513,11 @@
           
           localStorage.setItem('users', JSON.stringify(users));
           localStorage.setItem('currentUser', JSON.stringify(user));
+
+          if (window.UniversalAuth && UniversalAuth.applySupabaseSession && result.refresh_token) {
+            await UniversalAuth.applySupabaseSession({ access_token: result.access_token, refresh_token: result.refresh_token });
+          }
+
           alert('Email verified successfully! Welcome to RoomFinder AI.');
           if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
             UniversalAuth.redirectAfterLogin('index.html');

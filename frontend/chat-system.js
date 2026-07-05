@@ -100,6 +100,14 @@ class ChatSystem {
             ...options
         };
 
+        // 'listing' (default) talks to conversations/messages, keyed by email,
+        // scoped to a listing. 'roommate' talks to roommate_conversations/
+        // roommate_messages, keyed by user id, with no listing/file-attach
+        // concept. One instance is locked to a single mode for its lifetime --
+        // listings.html and roommate-matching.html each create their own
+        // instance instead of sharing one across both contexts.
+        this.mode = options.mode === 'roommate' ? 'roommate' : 'listing';
+
         try {
             await this.setupChat();
             this.initializeConnectionMonitoring();
@@ -321,8 +329,9 @@ class ChatSystem {
                 chatInput.value = '';
             }
 
-            // Send files if any are selected and user is landlord
-            if (this.selectedFiles && this.selectedFiles.length > 0 && this.isCurrentUserLandlord) {
+            // Send files if any are selected and user is landlord (listing mode only --
+            // roommate chat has no file-attach concept)
+            if (this.mode === 'listing' && this.selectedFiles && this.selectedFiles.length > 0 && this.isCurrentUserLandlord) {
                 for (const file of this.selectedFiles) {
                     await this.sendFileMessage(file, currentUser, timestamp);
                 }
@@ -356,17 +365,27 @@ class ChatSystem {
         `;
         chatMessagesContainer.appendChild(messageElement);
         chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
-        
-        // Send to database
-        const { error } = await this.supabase
-            .from('messages')
-            .insert({
-                conversation_id: this.currentConversationId,
-                sender_email: currentUser.email,
-                content: messageContent,
-                message_type: 'text',
-                created_at: timestamp
-            });
+
+        // Send to database (table/columns depend on mode -- see constructor)
+        const { error } = this.mode === 'roommate'
+            ? await this.supabase
+                .from('roommate_messages')
+                .insert({
+                    conversation_id: this.currentConversationId,
+                    sender_id: currentUser.id,
+                    content: messageContent,
+                    message_type: 'text',
+                    created_at: timestamp
+                })
+            : await this.supabase
+                .from('messages')
+                .insert({
+                    conversation_id: this.currentConversationId,
+                    sender_email: currentUser.email,
+                    content: messageContent,
+                    message_type: 'text',
+                    created_at: timestamp
+                });
 
         if (error) {
             messageElement.remove();
@@ -487,11 +506,17 @@ class ChatSystem {
         
         try {
             // Select only needed columns to reduce egress costs
-            const { data: messages, error } = await this.supabase
-                .from('messages')
-                .select('id, conversation_id, sender_email, content, message_type, file_url, file_name, file_size, file_type, created_at')
-                .eq('conversation_id', conversationId)
-                .order('created_at', { ascending: true });
+            const { data: messages, error } = this.mode === 'roommate'
+                ? await this.supabase
+                    .from('roommate_messages')
+                    .select('id, conversation_id, sender_id, content, message_type, created_at')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true })
+                : await this.supabase
+                    .from('messages')
+                    .select('id, conversation_id, sender_email, content, message_type, file_url, file_name, file_size, file_type, created_at')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true });
 
             if (error) {
                 console.error('❌ Error loading messages:', error);
@@ -503,13 +528,16 @@ class ChatSystem {
                 console.error('❌ Chat messages container not found!');
                 return;
             }
-            
+
             chatMessagesContainer.innerHTML = '';
             const currentUser = JSON.parse(localStorage.getItem('currentUser'));
 
             messages.forEach((message) => {
+                const isMine = this.mode === 'roommate'
+                    ? message.sender_id === currentUser.id
+                    : message.sender_email === currentUser.email;
                 const messageElement = document.createElement('div');
-                messageElement.className = `message ${message.sender_email === currentUser.email ? 'sent' : 'received'}`;
+                messageElement.className = `message ${isMine ? 'sent' : 'received'}`;
                 
                 // Handle different message types
                 let messageContent;
@@ -698,6 +726,69 @@ class ChatSystem {
     }
 
     /**
+     * Start (or resume) a roommate-to-roommate conversation. Mirrors
+     * startConversation() above but for mode: 'roommate' instances --
+     * roommate_conversations/roommate_messages, keyed by user id, no listing
+     * or file-attach concept.
+     */
+    async startRoommateConversation(otherUserId, otherUserName) {
+        try {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (!currentUser || !currentUser.id) {
+                this.showConnectionNotification('Please log in to start a chat.', 'warning');
+                return;
+            }
+            if (!otherUserId) {
+                console.error('❌ startRoommateConversation missing otherUserId');
+                return;
+            }
+
+            const conversation = await this.findOrCreateRoommateConversation(currentUser.id, otherUserId);
+            this.currentConversationId = conversation.id;
+
+            const chatTitle = document.getElementById('chatTitle');
+            if (chatTitle) {
+                chatTitle.textContent = `Chat with ${otherUserName || 'Roommate'}`;
+            }
+
+            // Roommate chat has no file-attach concept -- always hidden.
+            const fileUploadBtn = document.getElementById('fileUploadBtn');
+            if (fileUploadBtn) fileUploadBtn.classList.add('hidden');
+
+            await this.loadMessages(conversation.id);
+            await this.markConversationAsRead(conversation.id);
+
+            const chatModal = document.getElementById('chatModal');
+            if (chatModal) chatModal.classList.add('active');
+        } catch (error) {
+            console.error('❌ Error starting roommate conversation:', error);
+            this.showConnectionNotification('Failed to start chat: ' + error.message, 'error');
+        }
+    }
+
+    /**
+     * Find existing roommate_conversations row between two users, or create one.
+     */
+    async findOrCreateRoommateConversation(currentUserId, otherUserId) {
+        const { data: existing, error } = await this.supabase
+            .from('roommate_conversations')
+            .select('id, user1_id, user2_id, created_at')
+            .or(`and(user1_id.eq.${currentUserId},user2_id.eq.${otherUserId}),and(user1_id.eq.${otherUserId},user2_id.eq.${currentUserId})`);
+
+        if (error) throw error;
+        if (existing && existing.length > 0) return existing[0];
+
+        const { data, error: insertError } = await this.supabase
+            .from('roommate_conversations')
+            .insert({ user1_id: currentUserId, user2_id: otherUserId, created_at: new Date().toISOString() })
+            .select()
+            .single();
+
+        if (insertError) throw insertError;
+        return data;
+    }
+
+    /**
      * Setup real-time subscription for messages
      */
     setupRealtimeSubscription() {
@@ -713,12 +804,13 @@ class ChatSystem {
         }
 
         try {
+            const messagesTable = this.mode === 'roommate' ? 'roommate_messages' : 'messages';
             this.messageChannel = this.supabase
                 .channel('messages_realtime_' + Math.random())
                 .on('postgres_changes', {
                     event: 'INSERT',
                     schema: 'public',
-                    table: 'messages'
+                    table: messagesTable
                 }, (payload) => {
                     console.log('🔔 REALTIME EVENT RECEIVED:', payload);
 
@@ -790,42 +882,9 @@ class ChatSystem {
         if (!currentUser) return;
 
         try {
-            const { data: conversations, error } = await this.supabase
-                .from('conversations')
-                .select(`
-                    *,
-                    listings (title, id)
-                `)
-                .or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`)
-                .order('created_at', { ascending: false });
-
-            if (error) {
-                console.error('Error loading conversations:', error);
-                return;
-            }
-
-            // Get unread counts for each conversation
-            const conversationsWithUnread = [];
-            for (const conv of conversations || []) {
-                const { data: readData } = await this.supabase
-                    .from('conversation_reads')
-                    .select('last_read_at')
-                    .eq('conversation_id', conv.id)
-                    .eq('user_email', currentUser.email)
-                    .maybeSingle();
-
-                const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
-
-                const { count: unreadCount } = await this.supabase
-                    .from('messages')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('conversation_id', conv.id)
-                    .neq('sender_email', currentUser.email)
-                    .gt('created_at', lastReadAt);
-
-                conv.unread_count = unreadCount || 0;
-                conversationsWithUnread.push(conv);
-            }
+            const conversationsWithUnread = this.mode === 'roommate'
+                ? await this.loadRoommateConversationsWithUnread(currentUser)
+                : await this.loadListingConversationsWithUnread(currentUser);
 
             this.globalUserConversations = conversationsWithUnread;
             this.displayConversations();
@@ -836,6 +895,82 @@ class ChatSystem {
         }
     }
 
+    async loadListingConversationsWithUnread(currentUser) {
+        const { data: conversations, error } = await this.supabase
+            .from('conversations')
+            .select(`*, listings (title, id)`)
+            .or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading conversations:', error);
+            return [];
+        }
+
+        const result = [];
+        for (const conv of conversations || []) {
+            const { data: readData } = await this.supabase
+                .from('conversation_reads')
+                .select('last_read_at')
+                .eq('conversation_id', conv.id)
+                .eq('user_email', currentUser.email)
+                .maybeSingle();
+
+            const lastReadAt = readData?.last_read_at || '1970-01-01T00:00:00Z';
+
+            const { count: unreadCount } = await this.supabase
+                .from('messages')
+                .select('*', { count: 'exact', head: true })
+                .eq('conversation_id', conv.id)
+                .neq('sender_email', currentUser.email)
+                .gt('created_at', lastReadAt);
+
+            conv.unread_count = unreadCount || 0;
+            conv.other_user_label = conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email;
+            conv.subtitle = conv.listings ? conv.listings.title : 'Unknown Listing';
+            result.push(conv);
+        }
+        return result;
+    }
+
+    async loadRoommateConversationsWithUnread(currentUser) {
+        const { data: conversations, error } = await this.supabase
+            .from('roommate_conversations')
+            .select('*')
+            .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error loading roommate conversations:', error);
+            return [];
+        }
+
+        const result = [];
+        for (const conv of conversations || []) {
+            const otherUserId = conv.user1_id === currentUser.id ? conv.user2_id : conv.user1_id;
+
+            const { data: otherProfile } = await this.supabase
+                .from('roommate_profiles')
+                .select('name, avatar_url')
+                .eq('user_id', otherUserId)
+                .maybeSingle();
+
+            const { count: unreadCount } = await this.supabase
+                .from('roommate_messages')
+                .select('*', { count: 'exact', head: true })
+                .eq('conversation_id', conv.id)
+                .neq('sender_id', currentUser.id)
+                .eq('is_read', false);
+
+            conv.unread_count = unreadCount || 0;
+            conv.other_user_id = otherUserId;
+            conv.other_user_label = otherProfile?.name || 'Roommate';
+            conv.subtitle = 'RoomPal';
+            result.push(conv);
+        }
+        return result;
+    }
+
     /**
      * Display conversations in the messaging panel
      */
@@ -843,30 +978,29 @@ class ChatSystem {
         const conversationTabs = document.getElementById('conversationTabs');
         if (!conversationTabs) return;
 
-        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-        
         if (this.globalUserConversations.length === 0) {
             conversationTabs.innerHTML = '<div class="p-4 text-gray-500 text-center">No conversations yet</div>';
             return;
         }
 
         conversationTabs.innerHTML = this.globalUserConversations.map(conv => {
-            const otherUserEmail = conv.sender_email === currentUser.email ? conv.receiver_email : conv.sender_email;
-            const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
-            const otherUserName = otherUserEmail.split('@')[0];
+            const otherUserLabel = conv.other_user_label || 'User';
             const hasUnread = conv.unread_count > 0;
             const unreadBadge = hasUnread ? `<span class="bg-red-500 text-white rounded-full w-5 h-5 text-xs flex items-center justify-center ml-2">${conv.unread_count}</span>` : '';
-            
+            const openArgs = this.mode === 'roommate'
+                ? `'${conv.id}', '${conv.other_user_id}', '${otherUserLabel.replace(/'/g, "\\'")}'`
+                : `'${conv.id}', '${conv.subtitle.replace(/'/g, "\\'")}', '${conv.listing_id}', '${otherUserLabel}'`;
+
             return `
-                <div class="border-b hover:bg-gray-50 cursor-pointer ${hasUnread ? 'bg-blue-50' : ''}" onclick="chatSystem.openConversationInModal('${conv.id}', '${listingTitle}', '${conv.listing_id}', '${otherUserEmail}')">
+                <div class="border-b hover:bg-gray-50 cursor-pointer ${hasUnread ? 'bg-blue-50' : ''}" onclick="chatSystem.openConversationInModal(${openArgs})">
                     <div class="p-3">
                         <div class="flex justify-between items-start">
                             <div class="flex-1">
                                 <div class="font-medium text-sm text-gray-900 flex items-center">
-                                    ${otherUserName}
+                                    ${this.mode === 'roommate' ? otherUserLabel : otherUserLabel.split('@')[0]}
                                     ${unreadBadge}
                                 </div>
-                                <div class="text-xs text-gray-600">${listingTitle}</div>
+                                <div class="text-xs text-gray-600">${conv.subtitle}</div>
                                 <div class="text-xs text-gray-400 mt-1">
                                     ${new Date(conv.created_at).toLocaleDateString()}
                                 </div>
@@ -879,41 +1013,44 @@ class ChatSystem {
     }
 
     /**
-     * Open conversation in modal
+     * Open conversation in modal. Listing mode: (conversationId, listingTitle,
+     * listingId, otherUserEmail). Roommate mode: (conversationId, otherUserId, otherUserName).
      */
-    async openConversationInModal(conversationId, listingTitle, listingId, otherUserEmail) {
+    async openConversationInModal(conversationId, arg2, arg3, arg4) {
         // Close messaging panel
         const messagePanel = document.getElementById('messagePanel');
         if (messagePanel) {
             messagePanel.classList.add('hidden');
         }
-        
+
         // Mark as read
         this.locallyReadConversations.add(conversationId);
-        
+
         // Update conversation in local array
         const convIndex = this.globalUserConversations.findIndex(c => c.id === conversationId);
         if (convIndex !== -1) {
             this.globalUserConversations[convIndex].unread_count = 0;
         }
-        
+
         this.updateUnreadCount();
-        
+
         // Set up chat modal
         this.currentConversationId = conversationId;
-        const otherUserName = otherUserEmail ? otherUserEmail.split('@')[0] : 'User';
         const chatTitle = document.getElementById('chatTitle');
-        if (chatTitle) {
-            chatTitle.textContent = `Chat with ${otherUserName} about ${listingTitle}`;
+        if (this.mode === 'roommate') {
+            if (chatTitle) chatTitle.textContent = `Chat with ${arg3 || 'Roommate'}`;
+        } else {
+            const otherUserName = arg4 ? arg4.split('@')[0] : 'User';
+            if (chatTitle) chatTitle.textContent = `Chat with ${otherUserName} about ${arg2}`;
         }
-        
+
         await this.loadMessages(conversationId);
-        
+
         const chatModal = document.getElementById('chatModal');
         if (chatModal) {
             chatModal.classList.add('active');
         }
-        
+
         // Update database in background
         this.markConversationAsRead(conversationId);
     }
@@ -926,15 +1063,24 @@ class ChatSystem {
         if (!currentUser) return;
 
         try {
-            await this.supabase
-                .from('conversation_reads')
-                .upsert({
-                    conversation_id: conversationId,
-                    user_email: currentUser.email,
-                    last_read_at: new Date().toISOString()
-                }, {
-                    onConflict: 'conversation_id,user_email'
-                });
+            if (this.mode === 'roommate') {
+                await this.supabase
+                    .from('roommate_messages')
+                    .update({ is_read: true, read_at: new Date().toISOString() })
+                    .eq('conversation_id', conversationId)
+                    .neq('sender_id', currentUser.id)
+                    .eq('is_read', false);
+            } else {
+                await this.supabase
+                    .from('conversation_reads')
+                    .upsert({
+                        conversation_id: conversationId,
+                        user_email: currentUser.email,
+                        last_read_at: new Date().toISOString()
+                    }, {
+                        onConflict: 'conversation_id,user_email'
+                    });
+            }
         } catch (error) {
             console.error('Error marking conversation as read:', error);
         }
@@ -976,17 +1122,21 @@ class ChatSystem {
      * Setup real-time updates for messaging panel
      */
     setupMessagingPanelRealtime() {
+        const messagesTable = this.mode === 'roommate' ? 'roommate_messages' : 'messages';
         const panelChannel = this.supabase
             .channel('panel_realtime_' + Math.random())
-            .on('postgres_changes', { 
-                event: 'INSERT', 
-                schema: 'public', 
-                table: 'messages' 
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: messagesTable
             }, (payload) => {
                 console.log('🔔 PANEL: New message event:', payload);
                 const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                
-                if (payload.new.sender_email !== currentUser.email) {
+                const isFromOther = this.mode === 'roommate'
+                    ? payload.new.sender_id !== currentUser.id
+                    : payload.new.sender_email !== currentUser.email;
+
+                if (isFromOther) {
                     const convIndex = this.globalUserConversations.findIndex(c => c.id === payload.new.conversation_id);
                     if (convIndex !== -1 && !this.locallyReadConversations.has(payload.new.conversation_id)) {
                         this.globalUserConversations[convIndex].unread_count = 

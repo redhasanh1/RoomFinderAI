@@ -301,6 +301,42 @@ class RoommateAPIService {
 
     // ==================== MESSAGING ====================
 
+    /**
+     * Find the existing roommate_conversations row between the current user
+     * and recipientId, or create one. Shared by sendMessage() and by the
+     * "Connect"/"Message" entry points that need a conversation to open
+     * before any message has been sent yet.
+     */
+    async getOrCreateConversation(recipientId) {
+        await this.ensureInitialized();
+        if (!this.supabase) return null;
+
+        const storedUser = localStorage.getItem('currentUser');
+        if (!storedUser) return null;
+        const user = JSON.parse(storedUser);
+        if (!user || !user.id) return null;
+
+        let { data: conversation } = await this.supabase
+            .from('roommate_conversations')
+            .select('id, user1_id, user2_id, created_at')
+            .or(`and(user1_id.eq.${user.id},user2_id.eq.${recipientId}),and(user1_id.eq.${recipientId},user2_id.eq.${user.id})`)
+            .maybeSingle();
+
+        if (conversation) return conversation;
+
+        const { data: newConv, error: convError } = await this.supabase
+            .from('roommate_conversations')
+            .insert({ user1_id: user.id, user2_id: recipientId })
+            .select()
+            .single();
+
+        if (convError) {
+            console.error('Error creating conversation:', convError);
+            return null;
+        }
+        return newConv;
+    }
+
     async sendMessage(recipientId, content) {
         try {
             await this.ensureInitialized();
@@ -325,28 +361,9 @@ class RoommateAPIService {
                 return { success: false, error: 'You cannot message yourself.' };
             }
 
-            // Find or create conversation
-            let { data: conversation } = await this.supabase
-                .from('roommate_conversations')
-                .select('id')
-                .or(`and(user1_id.eq.${user.id},user2_id.eq.${recipientId}),and(user1_id.eq.${recipientId},user2_id.eq.${user.id})`)
-                .single();
-
+            const conversation = await this.getOrCreateConversation(recipientId);
             if (!conversation) {
-                const { data: newConv, error: convError } = await this.supabase
-                    .from('roommate_conversations')
-                    .insert({
-                        user1_id: user.id,
-                        user2_id: recipientId
-                    })
-                    .select()
-                    .single();
-
-                if (convError) {
-                    console.error('Error creating conversation:', convError);
-                    return { success: false, error: 'Failed to start conversation. Please try again.' };
-                }
-                conversation = newConv;
+                return { success: false, error: 'Failed to start conversation. Please try again.' };
             }
 
             // Send message

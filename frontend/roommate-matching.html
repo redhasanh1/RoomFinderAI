@@ -726,54 +726,6 @@
             </div>
         </div>
 
-        <!-- Messages Section -->
-        <div id="messagesSection" class="section-view">
-            <div class="flex items-center justify-between mb-6">
-                <button onclick="showSection('landing')" class="text-gray-600 hover:text-gray-900 flex items-center gap-2">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                    </svg>
-                    Back
-                </button>
-                <h1 class="text-2xl font-bold text-gray-900">Messages</h1>
-                <div class="w-16"></div>
-            </div>
-
-            <!-- Conversations List -->
-            <div id="conversationsList" class="space-y-3">
-                <div class="text-center py-12 text-gray-500">
-                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
-                    </svg>
-                    <p>No conversations yet</p>
-                    <p class="text-sm mt-2">Start by messaging someone from the listings!</p>
-                </div>
-            </div>
-
-            <!-- Chat View (hidden by default) -->
-            <div id="chatView" class="roompal-chat-view hidden">
-                <div class="chat-header roompal-chat-header">
-                    <button type="button" onclick="closeChatView()" class="text-white/90 hover:text-white mr-2" aria-label="Back">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-                        </svg>
-                    </button>
-                    <div id="chatPartnerInfo" class="flex items-center gap-3 flex-1 min-w-0">
-                        <!-- Partner info loaded by JS -->
-                    </div>
-                </div>
-
-                <div id="messagesContainer" class="chat-messages roompal-chat-messages">
-                    <!-- Messages loaded by JS -->
-                </div>
-
-                <form id="chatReplyForm" class="chat-input-container">
-                    <input type="text" name="reply" class="chat-input form-input flex-1" placeholder="Type a message..." required>
-                    <button type="submit" class="chat-send-btn">Send</button>
-                </form>
-            </div>
-        </div>
-
     </main>
 
     <!-- Compatibility Questions Modal -->
@@ -839,27 +791,6 @@
         </div>
     </div>
 
-    <!-- Message Modal -->
-    <div id="messageModal" class="site-overlay-modal fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
-        <div class="chat-modal-content site-contact-modal max-w-lg w-full mx-auto">
-            <div class="chat-header">
-                <h2 class="text-base font-semibold m-0">Send Message</h2>
-                <button type="button" onclick="closeMessageModal()" class="close-button chat-close-button" aria-label="Close">×</button>
-            </div>
-            <div class="p-6">
-
-            <div id="messageRecipient" class="flex items-center gap-3 mb-6 p-3 bg-gray-50 rounded-lg">
-                <!-- Recipient info loaded by JS -->
-            </div>
-
-            <form id="messageForm">
-                <textarea name="message" class="form-input mb-4" rows="4" placeholder="Write your message..." required></textarea>
-                <button type="submit" class="btn-primary w-full">Send Message</button>
-            </form>
-            </div>
-        </div>
-    </div>
-
     <!-- Roommate Detail Modal -->
     <div id="roommateDetailModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full p-6 relative">
@@ -870,6 +801,7 @@
 
     <!-- JavaScript -->
     <script src="js/roommate-api.js"></script>
+    <script src="js/roommate-profile-card.js"></script>
     <script src="js/roommate-matching.js"></script>
     <script>
         // Dropdown Toggle Functions (matching listings page)
@@ -1120,6 +1052,33 @@
             currentConvId = null;
             currentPartnerId = null;
         }
+
+        // Single entry point for every "Connect" / "Message" button on this
+        // page -- opens the floating messenger directly on the conversation
+        // with that person, creating it if it doesn't exist yet. Replaces the
+        // old one-shot #messageModal (which had no way to see replies).
+        window.startFloatingChatWith = async function(otherUserId, otherUserName) {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            if (!currentUser) {
+                alert('Please log in to connect with people.');
+                window.location.href = 'login.html';
+                return;
+            }
+            if (!window.roommateAPI || !window.roommateAPI.initialized) {
+                alert('Messaging is not available right now. Please try again in a moment.');
+                return;
+            }
+
+            messengerOpen = true;
+            document.getElementById('messengerPanel').classList.remove('hidden');
+
+            const conversation = await window.roommateAPI.getOrCreateConversation(otherUserId);
+            if (!conversation) {
+                alert('Could not start conversation. Please try again.');
+                return;
+            }
+            await openFloatingChat(conversation.id, otherUserId, otherUserName || 'Roommate');
+        };
 
         async function sendQuickReply(e) {
             e.preventDefault();

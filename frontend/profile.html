@@ -18,8 +18,8 @@
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
-    
-    
+    <script src="js/roommate-api.js"></script>
+    <script src="js/roommate-profile-card.js"></script>
 
     <!-- Unified CSS System - No Inline Styles -->
     <link rel="stylesheet" href="/modules/css/main.css"/>
@@ -91,6 +91,12 @@
             </div>
 
         </div>
+
+        <!-- Roommate Profile (shared with RoomPal - roommate-matching.html) -->
+        <section id="roommateProfileSection" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12 hidden">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6">Roommate Profile</h2>
+            <div id="roommateProfileCard"></div>
+        </section>
 
         <!-- AI Chat History -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
@@ -590,18 +596,60 @@
             const finalEmail = user.email || 'Email not available';
             document.getElementById('userEmail').textContent = finalEmail;
 
-            // Update verification badge
-            if (user.verified) {
-                const badge = document.getElementById('verificationBadge');
-                badge.className = 'verified-badge';
-                badge.innerHTML = `
-                    <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                    </svg>
-                    Verified
-                `;
+            // Update verification badge from the real server-side verification
+            // status (users.is_verified) -- the client never sets this itself.
+            try {
+                const verifyResp = await fetch(`/api/verify/status/${encodeURIComponent(finalEmail)}`);
+                if (verifyResp.ok) {
+                    const verifyData = await verifyResp.json();
+                    const badge = document.getElementById('verificationBadge');
+                    const verifyBtn = document.querySelector('button[onclick="openVerificationModal()"]');
+                    if (verifyData.isVerified && badge) {
+                        badge.className = 'verified-badge';
+                        badge.innerHTML = `
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                            </svg>
+                            Verified
+                        `;
+                        if (verifyBtn) verifyBtn.style.display = 'none';
+                    }
+                }
+            } catch (verifyError) {
+                console.log('Could not load verification status:', verifyError.message);
             }
 
+            await loadRoommateProfileCard();
+        }
+
+        // Renders the same roommate profile card used on roommate-matching.html
+        // (RoomPal) so the two pages stay in sync instead of duplicating it.
+        async function loadRoommateProfileCard() {
+            const section = document.getElementById('roommateProfileSection');
+            const container = document.getElementById('roommateProfileCard');
+            if (!section || !container || typeof RoommateAPIService === 'undefined') return;
+
+            try {
+                const api = new RoommateAPIService();
+                const profile = await api.getMySeekerProfile();
+                if (profile) {
+                    container.innerHTML = renderRoommateProfileCard(profile, {
+                        editLabel: 'Edit on RoomPal',
+                        onEdit: 'roommate-matching.html'
+                    });
+                    section.classList.remove('hidden');
+                } else {
+                    container.innerHTML = `
+                        <div class="text-center py-6 text-gray-500">
+                            <p class="mb-3">You haven't created a roommate profile yet.</p>
+                            <a href="roommate-matching.html" class="btn-secondary">Create Roommate Profile</a>
+                        </div>
+                    `;
+                    section.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.log('Could not load roommate profile:', error.message);
+            }
         }
 
         async function loadUserListings(user) {

@@ -9,6 +9,22 @@
 
 ---
 
+## Progress Log (in-progress remediation pass)
+
+A live Supabase schema introspection (read-only) was run to ground this pass in what's actually deployed, since the local `database/migrations/` history is self-contradictory in several places (see commits for detail). Migration files below are **not yet applied** — they need to be run manually in the Supabase SQL editor before their fixes take effect live.
+
+**Done:**
+- **Critical security (not in original doc, found during Phase 1 work):** `user_verifications` RLS allowed any client to self-mark their own ID/face verification as `verified` (`FOR ALL WITH CHECK (true)`, no ownership check). `subscriptions` RLS allowed any client to read/alter any user's plan (`USING (true)`). `sublease_requests`/`matches`/`transfers` RLS allowed any authenticated user to read/edit any other user's sublease data (ownership checks were stripped in an earlier migration). `roommate_conversations`/`roommate_messages` had RLS enabled with zero policies (deny-all). Fixed in `database/migrations/fix_critical_rls_security.sql` (needs to be run).
+- **Deeper root cause found:** the frontend never used the real Supabase session token the backend already obtained on login (`data.session.access_token` was fetched but discarded), so every direct browser-to-Supabase call ran fully anonymous — meaning the RLS fixes above would have silently locked out the app. Fixed by wiring `backend/server.js` (login + email-verification responses now include `refresh_token`) and `frontend/universal-auth-manager.js` (new `applySupabaseSession()`) + `frontend/login.html`. **Known gap:** Google/Apple OAuth login still doesn't create a real Supabase session — those users remain anonymous to RLS until that's separately addressed.
+- **§3 "I Need a Roommate" (🔴 reported bug):** Fixed — the creation form no longer shows blank alongside the existing profile; it's hidden until "Edit Profile" is clicked, and now pre-fills every field (previously editing would have silently wiped the photo/bio/budget on save). Added the missing unique constraint on `roommate_profiles (user_id, user_type)` in `database/migrations/fix_roommate_profiles_constraint.sql` (needs to be run).
+- **§16 Profile/Verification:** Verification badge was wired to `user.verified`, a field that was never populated anywhere (always undefined) — now reads the real `users.is_verified` via a fixed `/api/verify/status/:email`. Added a shared `renderRoommateProfileCard()` (`frontend/js/roommate-profile-card.js`) used by both `roommate-matching.html` and a new Roommate Profile section on `profile.html`, so it's one component instead of two.
+- **§2 "I Have a Space" scope correction:** confirmed via live schema that this is *not* a duplicate of the `listings` table — both "I Have a Space" and "I Need a Roommate" are rows in the same `roommate_profiles` table (`user_type: 'has_spot' | 'seeking'`). No fix needed there.
+- **§4/§5e/§6 messaging (in progress):** `chat-system.js`'s `ChatSystem` class now supports a `mode: 'roommate'` in addition to the original `'listing'` mode (same shared component, two data sources — `conversations`/`messages` vs `roommate_conversations`/`roommate_messages` — confirmed via live schema that these are already fully separate tables, so no cross-bleed risk existed at the DB layer). Consolidated `roommate-matching.html`'s three separate hand-rolled messaging UIs (`#messagesSection`/`#chatView`, `#messageModal`, `#floatingMessenger`) down to one (the floating messenger, extended with a `startFloatingChatWith()` entry point); the other two were removed along with their now-dead JS. Still open: wiring `listings.html` itself to instantiate `ChatSystem` in `'listing'` mode (it currently has its own separate inline implementation), the duplicate `id="chatMessages"` bug on `ai-negotiator.html`, and retiring the orphaned `chat-system.css`.
+
+**Not started yet:** §5a–5d (listings/photos/map), §7 (AI notifications), §8 (student housing), §9 (sublease reverse interest), §10 (AI negotiator state machine), §11/§14 (Legal Help / AI Assessment), §12 (Stripe), §13 (Support Center), §15 (nav bar consolidation).
+
+---
+
 ## 0. How to Use This Document
 
 For every module below:
@@ -50,16 +66,16 @@ Priority key: 🔴 Blocking/broken · 🟠 Functional but inconsistent · 🟡 P
 - This same profile card/edit pattern must also appear inside the **Profile section** (§16) — one profile, two entry points, always in sync.
 
 **Frontend**
-- [ ] 🔴 Build/restore the "view mode" component (profile summary card) that renders when a profile record exists.
-- [ ] 🔴 Gate the full form behind an explicit Edit action; form must be pre-populated from existing record, not reset.
-- [ ] 🟠 Reuse the exact same profile component in Profile section (§16) rather than a second parallel implementation.
+- [x] 🔴 Build/restore the "view mode" component (profile summary card) that renders when a profile record exists.
+- [x] 🔴 Gate the full form behind an explicit Edit action; form must be pre-populated from existing record, not reset.
+- [x] 🟠 Reuse the exact same profile component in Profile section (§16) rather than a second parallel implementation.
 
 **Backend/API**
-- [ ] 🔴 Add/confirm a `GET /roommate-profile?user_id=` (or equivalent) check that runs before deciding which view to render.
-- [ ] 🟠 Ensure update endpoint does a partial `UPDATE`, not a destructive upsert that wipes unfilled fields.
+- [x] 🔴 Add/confirm a `GET /roommate-profile?user_id=` (or equivalent) check that runs before deciding which view to render. *(done client-side via `getMySeekerProfile()` before render, not a dedicated REST route)*
+- [ ] 🟠 Ensure update endpoint does a partial `UPDATE`, not a destructive upsert that wipes unfilled fields. *(still an upsert; no longer destructive in practice since the form is now always pre-filled with full current values before resubmission, but a true partial UPDATE wasn't built)*
 
 **Supabase**
-- [ ] 🔴 Confirm one `roommate_profiles` row per user (unique constraint on `user_id`), not multiple rows accumulating on every save.
+- [x] 🔴 Confirm one `roommate_profiles` row per user (unique constraint on `user_id`), not multiple rows accumulating on every save. *(constraint is on `(user_id, user_type)` since one user legitimately has both a "seeking" and a "has_spot" row — see `fix_roommate_profiles_constraint.sql`, not yet run)*
 - [ ] 🟠 Confirm RLS: user can read/update only their own row; other users can read limited public fields only (for matching).
 
 ---
@@ -113,7 +129,7 @@ Multiple issues reported here — treat as one broken flow.
 **Bug reported:** unclear whose messages are shown.
 
 - [ ] 🔴 **Frontend:** Confirm inbox lists show the counterparty's name/photo (the other user), not the current user's own identity.
-- [ ] 🔴 **Backend:** Confirm the query joins on the *other* participant of the thread relative to `auth.uid()`, not a hardcoded or first-participant assumption.
+- [x] 🔴 **Backend:** Confirm the query joins on the *other* participant of the thread relative to `auth.uid()`, not a hardcoded or first-participant assumption. *(confirmed already correct in both `chat-system.js` and `roommate-api.js`)*
 - [ ] 🟠 **Supabase:** Confirm `threads`/`participants` table structure supports this join cleanly (many-to-many participants table, not a single sender/receiver pair, if group threads exist).
 
 ---
@@ -252,16 +268,16 @@ This is the most complex module — treat it as its own mini state machine.
 **Requirement:** Verification should work; profile should stay consistent with (and connected to) every other page that touches profile data (Roommate profile §3, Billing §12, etc.)
 
 **Frontend**
-- [ ] 🔴 Confirm the profile page renders the Roommate Profile card (see §3) using the same shared component — one profile, viewable/editable from two places, always in sync.
+- [x] 🔴 Confirm the profile page renders the Roommate Profile card (see §3) using the same shared component — one profile, viewable/editable from two places, always in sync.
 - [ ] 🔴 Confirm the Billing section (§12) renders here as specified.
-- [ ] 🟠 Add a clear verification status indicator (e.g. "Verified" badge / "Verify your account" CTA) if not already present.
+- [x] 🟠 Add a clear verification status indicator (e.g. "Verified" badge / "Verify your account" CTA) if not already present. *(badge markup already existed but was wired to a field that was never set; now reads real `users.is_verified`)*
 
 **Backend/API**
 - [ ] 🔴 Confirm the account verification flow (email verification, ID verification, or whatever method is used) actually updates a `verified` flag on the user record on completion, and that flag is checked wherever verification gates access (e.g. maybe listing creation or messaging requires verification — confirm that gate is actually enforced).
 
 **Supabase**
 - [ ] 🔴 Confirm a single `profiles` table (1 row per user) is the join point for roommate profile data, verification status, and billing reference — audit for duplicate/fragmented user data tables that have crept in across features.
-- [ ] 🟠 RLS: user can update their own profile; verification status field should only be writable by a trusted backend function/service role, never directly by the client (prevents users self-marking as verified).
+- [x] 🟠 RLS: user can update their own profile; verification status field should only be writable by a trusted backend function/service role, never directly by the client (prevents users self-marking as verified). *(fixed in `fix_critical_rls_security.sql` — needs to be run; previously `FOR ALL WITH CHECK (true)` allowed self-verification)*
 
 ---
 
@@ -297,8 +313,8 @@ Run this against the WHOLE app after individual modules are fixed:
 |---|---|---|---|---|---|
 | Home | ☐ | ☐ | ☐ | ☐ | |
 | I Have a Space | ☐ | ☐ | ☐ | ☐ | |
-| I Need a Roommate | ☐ | ☐ | ☐ | ☐ | |
-| Messaging Split | ☐ | ☐ | ☐ | ☐ | |
+| I Need a Roommate | ☑ | ☑ | ☑ (migration not yet run) | ☐ | |
+| Messaging Split | ☑ (roommate-matching.html only) | ☑ | ☑ (migration not yet run) | ☐ | |
 | Listing/Add Property | ☐ | ☐ | ☐ | ☐ | |
 | Photo Upload | ☐ | ☐ | ☐ | ☐ | |
 | View Details Popup | ☐ | ☐ | ☐ | ☐ | |
@@ -313,5 +329,5 @@ Run this against the WHOLE app after individual modules are fixed:
 | Support Center | ☐ | ☐ | ☐ | ☐ | |
 | AI Assessment | ☐ | ☐ | ☐ | ☐ | |
 | Nav Bar | ☐ | ☐ | ☐ | ☐ | |
-| Profile/Verification | ☐ | ☐ | ☐ | ☐ | |
+| Profile/Verification | ☑ | ☑ | ☑ (migration not yet run) | ☐ | |
 

@@ -2344,7 +2344,8 @@ app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
 
         // Code is valid, create the user account
         const { firstName, lastName, password } = verificationData.userData;
-        
+        let newAuthSession = null;
+
         // Create Supabase Auth account first
         if (supabase) {
             try {
@@ -2360,7 +2361,8 @@ app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
                 }
                 
                 console.log('✅ Supabase Auth account created:', authData.user?.id);
-                
+                newAuthSession = authData.session || null;
+
                 // Create or update profile in profiles table
                 const { error: profileError } = await supabase
                     .from('profiles')
@@ -2413,8 +2415,14 @@ app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
         // Clean up verification code
         emailVerificationCodes.delete(email);
 
-        res.status(201).json({ 
+        res.status(201).json({
             message: 'Email verified and account created successfully',
+            // Present only when Supabase didn't require a separate email-confirmation
+            // step, so the client can immediately establish a real Supabase session
+            // (see universal-auth-manager.js applySupabaseSession) instead of running
+            // fully anonymous until the next login.
+            access_token: newAuthSession?.access_token,
+            refresh_token: newAuthSession?.refresh_token,
             user: {
                 id: createdUser.id,
                 firstName: createdUser.firstName,
@@ -2589,6 +2597,7 @@ app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
                     return res.json({
                         message: 'Login successful',
                         access_token: data.session.access_token,
+                        refresh_token: data.session.refresh_token,
                         userId: data.user.id,
                         user: userData
                     });
@@ -7627,6 +7636,15 @@ app.get('/api/verify/status/:email', async (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch verification status' });
         }
 
+        // is_verified on `users` is the actual gate the rest of the app should
+        // check (e.g. listing creation, messaging) -- user_verifications only
+        // tracks the underlying per-check (ID/face/phone) progress.
+        const { data: userRow } = await supabase
+            .from('users')
+            .select('is_verified, verification_badge_earned_at')
+            .eq('email', email)
+            .maybeSingle();
+
         // Manual review system - no Azure needed
         res.json({
             verification: verification || {
@@ -7634,6 +7652,8 @@ app.get('/api/verify/status/:email', async (req, res) => {
                 id_verification_status: 'not_submitted',
                 face_verification_status: 'not_submitted'
             },
+            isVerified: !!userRow?.is_verified,
+            verifiedAt: userRow?.verification_badge_earned_at || null,
             // Manual review mode - no external services needed
             verificationMode: 'manual_review'
         });

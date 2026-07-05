@@ -442,11 +442,86 @@ async function initUniversalAuth(options = {}) {
 }
 
 /**
+ * Establish a real Supabase Auth session in the browser's Supabase client using
+ * the tokens the backend already obtains from supabase.auth.signInWithPassword /
+ * signUp (/api/login, /api/verify-email). Without this, every direct browser
+ * call to Supabase (roommate profiles, messaging, listings, etc.) runs as the
+ * fully anonymous `anon` role, so RLS policies scoped to auth.uid()/auth.email()
+ * never match anything. supabase-js persists and auto-refreshes the session
+ * once set, so this only needs to be called right after login/verification.
+ */
+async function resolveSupabaseClientForSession() {
+    // Prefer whichever client this page already initialized, in the order the
+    // various init scripts across the app are known to set them.
+    if (window.supabaseConfigReady) {
+        const client = await window.supabaseConfigReady;
+        if (client) return client;
+    }
+    if (window.supabaseClient && window.supabaseClient.auth) return window.supabaseClient;
+    if (window.AppConfig && window.AppConfig.supabase && window.AppConfig.supabase.auth) return window.AppConfig.supabase;
+    if (window.supabase && typeof window.supabase.auth === 'object' && typeof window.supabase.createClient !== 'function') {
+        // window.supabase has already been overwritten with a client instance elsewhere.
+        return window.supabase;
+    }
+
+    // Last resort: this page never initialized a client (e.g. login.html loads
+    // only the raw supabase-js UMD library) -- build one the same way
+    // js/supabase-config-init.js does.
+    const supabaseLib = window.supabaseLib
+        || (window.supabase && typeof window.supabase.createClient === 'function' ? window.supabase : null);
+    if (!supabaseLib) return null;
+
+    try {
+        const response = await fetch('/api/config', { headers: { 'Cache-Control': 'no-cache' } });
+        if (!response.ok) return null;
+        const config = await response.json();
+        if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) return null;
+        const client = supabaseLib.createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY);
+        window.supabaseClient = client;
+        return client;
+    } catch (error) {
+        console.warn('resolveSupabaseClientForSession: could not build client:', error.message);
+        return null;
+    }
+}
+
+async function applySupabaseSession(tokens) {
+    if (!tokens || !tokens.access_token || !tokens.refresh_token) {
+        return false;
+    }
+    try {
+        const client = await resolveSupabaseClientForSession();
+        if (!client || !client.auth) return false;
+        const { error } = await client.auth.setSession({
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token
+        });
+        if (error) {
+            console.warn('applySupabaseSession: setSession failed:', error.message);
+            return false;
+        }
+        return true;
+    } catch (error) {
+        console.warn('applySupabaseSession error:', error.message);
+        return false;
+    }
+}
+
+/**
  * Handle logout (works with universal-auth-protection.js)
  */
 function handleLogout() {
     console.log('🔄 Logout requested...');
-    
+
+    try {
+        const client = window.supabaseClient || (window.AppConfig && window.AppConfig.supabase);
+        if (client && client.auth) {
+            client.auth.signOut().catch(() => {});
+        }
+    } catch (error) {
+        console.log('Supabase signOut skipped:', error.message);
+    }
+
     // The universal-auth-protection.js will block this, but try anyway
     // This provides a consistent logout interface
     try {
@@ -504,6 +579,7 @@ window.UniversalAuth = {
     getStoredProfileImage: getStoredProfileImage,
     redirectAfterLogin: redirectAfterLogin,
     isSecurityCheckPassed: isSecurityCheckPassed,
+    applySupabaseSession: applySupabaseSession,
     DEFAULT_PROFILE_IMAGE: DEFAULT_PROFILE_IMAGE
 };
 
