@@ -98,6 +98,17 @@
             <div id="roommateProfileCard"></div>
         </section>
 
+        <!-- Billing & Subscription -->
+        <section id="billingSection" class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-2xl font-bold text-gray-800">Billing & Plan</h2>
+                <button id="manageBillingBtn" onclick="openBillingPortal()" class="btn-secondary text-sm hidden">Manage Billing</button>
+            </div>
+            <div id="billingContent" class="space-y-4">
+                <div class="text-gray-500 text-center py-6">Loading billing information...</div>
+            </div>
+        </section>
+
         <!-- AI Chat History -->
         <section class="bg-white rounded-xl shadow-xl p-6 sm:p-8 mb-12">
             <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">AI Chat History</h2>
@@ -620,6 +631,7 @@
             }
 
             await loadRoommateProfileCard();
+            await loadBillingInfo(finalEmail, user);
         }
 
         // Renders the same roommate profile card used on roommate-matching.html
@@ -651,6 +663,80 @@
                 console.log('Could not load roommate profile:', error.message);
             }
         }
+
+        async function loadBillingInfo(email, user) {
+            const container = document.getElementById('billingContent');
+            const portalBtn = document.getElementById('manageBillingBtn');
+            if (!container || !email) return;
+
+            try {
+                const [subRes, pmRes] = await Promise.all([
+                    fetch(`/api/subscription/${encodeURIComponent(email)}`),
+                    user?.id ? fetch(`/api/payment-methods/${encodeURIComponent(user.id)}`) : Promise.resolve(null)
+                ]);
+
+                const subData = subRes.ok ? await subRes.json() : { subscription: null };
+                const pmData = pmRes && pmRes.ok ? await pmRes.json() : { paymentMethods: [] };
+                const sub = subData.subscription;
+                const defaultCard = (pmData.paymentMethods || []).find(p => p.is_default) || (pmData.paymentMethods || [])[0];
+
+                if (!sub) {
+                    container.innerHTML = `
+                        <div class="text-center py-6">
+                            <p class="text-gray-600 mb-4">You're on the <strong>Free</strong> plan.</p>
+                            <a href="pricing.html" class="btn-primary inline-block">Upgrade to Pro</a>
+                        </div>
+                    `;
+                    if (portalBtn) portalBtn.classList.add('hidden');
+                    return;
+                }
+
+                const planLabel = (sub.plan_type || 'free').charAt(0).toUpperCase() + (sub.plan_type || 'free').slice(1);
+                const renewal = sub.current_period_end || sub.end_date;
+                const cardInfo = defaultCard
+                    ? `${defaultCard.card_brand || 'Card'} •••• ${defaultCard.card_last4 || '****'}`
+                    : 'No payment method on file';
+
+                container.innerHTML = `
+                    <div class="grid md:grid-cols-2 gap-4">
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-sm text-gray-500">Current plan</p>
+                            <p class="text-xl font-bold text-gray-900">${planLabel}</p>
+                            <p class="text-sm mt-1 capitalize">Status: ${sub.status || 'unknown'}</p>
+                        </div>
+                        <div class="p-4 bg-gray-50 rounded-xl">
+                            <p class="text-sm text-gray-500">${renewal ? 'Renewal / end date' : 'Billing'}</p>
+                            <p class="text-lg font-semibold text-gray-900">${renewal ? new Date(renewal).toLocaleDateString() : '—'}</p>
+                            <p class="text-sm mt-1">${cardInfo}</p>
+                        </div>
+                    </div>
+                `;
+
+                if (portalBtn && sub.stripe_customer_id) {
+                    portalBtn.classList.remove('hidden');
+                }
+            } catch (err) {
+                container.innerHTML = `<p class="text-red-600 text-center py-4">Could not load billing info.</p>`;
+            }
+        }
+
+        async function openBillingPortal() {
+            const user = JSON.parse(localStorage.getItem('currentUser') || '{}');
+            if (!user.email) return;
+            try {
+                const res = await fetch('/api/stripe/customer-portal', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: user.email, returnUrl: window.location.href })
+                });
+                const data = await res.json();
+                if (data.url) window.location.href = data.url;
+                else alert(data.error || 'Billing portal unavailable');
+            } catch (err) {
+                alert('Could not open billing portal');
+            }
+        }
+        window.openBillingPortal = openBillingPortal;
 
         async function loadUserListings(user) {
             try {
