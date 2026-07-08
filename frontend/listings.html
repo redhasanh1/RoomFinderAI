@@ -409,7 +409,7 @@
                     </button>
                     <div class="dropdown-menu" id="browse-dropdown">
                         <a href="listings.html" class="dropdown-item">Browse Listings</a>
-                        <a href="#add-listing" class="dropdown-item" onclick="document.querySelector('#listingForm').scrollIntoView()">Add Listing</a>
+                        <a href="#add-listing" class="dropdown-item" onclick="event.preventDefault(); toggleAddListingForm();">Add Listing</a>
                         <a href="student-housing.html" class="dropdown-item">Student Housing</a>
                         <a href="sublease.html" class="dropdown-item">Sublease</a>
                     </div>
@@ -807,20 +807,16 @@
                     <span class="close-button chat-close-button">×</span>
                 </div>
                 <div id="chatMessages" class="chat-messages"></div>
-                <div class="chat-input-container">
-                    <div class="flex items-end space-x-2">
-                        <div class="flex-1">
-                            <textarea id="chatInput" class="chat-input" rows="2" placeholder="Type your message..."></textarea>
-                        </div>
-                        <div class="flex flex-col space-y-1">
-                            <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
-                            <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm hidden" onclick="document.getElementById('fileInput').click()">
-                                📎 Files
-                            </button>
-                            <button id="chatSendBtn" class="chat-send-btn">Send</button>
-                        </div>
+                <div class="chat-input-container flex-col gap-2">
+                    <div class="flex items-end gap-2 w-full">
+                        <textarea id="chatInput" class="chat-input flex-1 min-w-0" rows="2" placeholder="Type your message..."></textarea>
+                        <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
+                        <button type="button" id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm flex-shrink-0 hidden" onclick="document.getElementById('fileInput').click()" title="Attach file">
+                            📎
+                        </button>
+                        <button type="button" id="chatSendBtn" class="chat-send-btn flex-shrink-0">Send</button>
                     </div>
-                    <div id="selectedFiles" class="mt-2 space-y-1 hidden"></div>
+                    <div id="selectedFiles" class="w-full space-y-1 hidden"></div>
                 </div>
             </div>
         </div>
@@ -1660,6 +1656,15 @@
             const uploadedMedia = [];
             const storageApiUrl = `${SUPABASE_URL}/storage/v1/object/listing-media/Photos`;
 
+            let authToken = SUPABASE_ANON_KEY;
+            try {
+                const client = window.supabaseClient || supabase;
+                if (client && client.auth) {
+                    const { data: { session } } = await client.auth.getSession();
+                    if (session?.access_token) authToken = session.access_token;
+                }
+            } catch (_) { /* anon fallback */ }
+
             for (const fileObj of files) {
                 const file = fileObj.file;
                 const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
@@ -1706,7 +1711,7 @@
                     const response = await fetch(`${storageApiUrl}/${filePath}`, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Authorization': `Bearer ${authToken}`,
                             'apikey': SUPABASE_ANON_KEY
                         },
                         body: formData
@@ -1727,7 +1732,7 @@
                         await fetch(`${storageApiUrl}/${filePath}`, {
                             method: 'DELETE',
                             headers: {
-                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'Authorization': `Bearer ${authToken}`,
                             'apikey': SUPABASE_ANON_KEY
                             }
                         });
@@ -1741,7 +1746,7 @@
                         const reUploadResponse = await fetch(`${storageApiUrl}/${filePath}`, {
                             method: 'POST',
                             headers: {
-                                'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                                'Authorization': `Bearer ${authToken}`,
                                 'apikey': SUPABASE_ANON_KEY
                             },
                             body: reUploadFormData
@@ -3876,6 +3881,29 @@
                 }
 
                 globalUserConversations = filteredConversations;
+
+                // Resolve counterparty display names from profiles (not raw email prefixes)
+                const otherEmails = [...new Set(filteredConversations.map(conv => {
+                    const senderLower = conv.sender_email?.toLowerCase();
+                    return senderLower === userEmailLower ? conv.receiver_email : conv.sender_email;
+                }).filter(Boolean))];
+
+                if (otherEmails.length > 0) {
+                    const { data: profiles } = await supabase
+                        .from('profiles')
+                        .select('email, first_name, last_name, profile_image_url')
+                        .in('email', otherEmails);
+                    const profileByEmail = {};
+                    (profiles || []).forEach(p => {
+                        if (p.email) profileByEmail[p.email.toLowerCase()] = p;
+                    });
+                    filteredConversations.forEach(conv => {
+                        const senderLower = conv.sender_email?.toLowerCase();
+                        const otherEmail = senderLower === userEmailLower ? conv.receiver_email : conv.sender_email;
+                        conv.other_profile = otherEmail ? profileByEmail[otherEmail.toLowerCase()] || null : null;
+                    });
+                }
+
                 window.globalUserConversations = globalUserConversations; // Keep global reference updated
                 displayConversations();
                 await window.updateUnreadCount();
@@ -3901,9 +3929,13 @@
                     const userEmailLower = currentUser.email?.toLowerCase();
                     const otherUserEmail = conv.sender_email?.toLowerCase() === userEmailLower ? conv.receiver_email : conv.sender_email;
                     const listingTitle = conv.listings ? conv.listings.title : 'Unknown Listing';
-                    
-                    // Extract username from email (part before @)
-                    const otherUserName = otherUserEmail.split('@')[0];
+
+                    const profile = conv.other_profile;
+                    const otherUserName = profile
+                        ? [profile.first_name, profile.last_name].filter(Boolean).join(' ') || otherUserEmail.split('@')[0]
+                        : otherUserEmail.split('@')[0];
+                    const otherAvatar = profile?.profile_image_url
+                        || `https://ui-avatars.com/api/?name=${encodeURIComponent(otherUserName)}&background=6366f1&color=fff&size=40`;
                     
                     // Check if conversation has unread messages
                     const hasUnread = conv.unread_count > 0;
@@ -3912,8 +3944,9 @@
                     return `
                         <div class="border-b hover:bg-gray-50 cursor-pointer ${hasUnread ? 'bg-blue-50' : ''}" onclick="openConversationInModal('${conv.id}', '${listingTitle}', '${conv.listing_id}', '${otherUserEmail}')">
                             <div class="p-3">
-                                <div class="flex justify-between items-start">
-                                    <div class="flex-1">
+                                <div class="flex justify-between items-start gap-2">
+                                    <img src="${otherAvatar}" alt="${otherUserName}" class="w-9 h-9 rounded-full object-cover flex-shrink-0" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(otherUserName)}&background=6366f1&color=fff&size=40'">
+                                    <div class="flex-1 min-w-0">
                                         <div class="font-medium text-sm text-gray-900 flex items-center">
                                             ${otherUserName}
                                             ${unreadBadge}

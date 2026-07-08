@@ -820,10 +820,21 @@ class AddListingForm {
         formData.append('cacheControl', '3600');
         formData.append('upsert', 'false');
 
+        // Prefer the authenticated user's JWT so storage RLS allows the upload;
+        // fall back to anon key only when no session exists yet.
+        let authToken = config.SUPABASE_ANON_KEY;
+        try {
+            const client = window.supabaseClient || (window.AppConfig && window.AppConfig.supabase);
+            if (client && client.auth) {
+                const { data: { session } } = await client.auth.getSession();
+                if (session?.access_token) authToken = session.access_token;
+            }
+        } catch (_) { /* use anon fallback */ }
+
         const response = await fetch(`${storageApiUrl}/${filePath}`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${config.SUPABASE_ANON_KEY}`,
+                'Authorization': `Bearer ${authToken}`,
                 'apikey': config.SUPABASE_ANON_KEY
             },
             body: formData
