@@ -93,7 +93,7 @@
             '<a href="index.html#contact" class="dropdown-item">Contact</a>' +
             '<a href="support.html" class="dropdown-item">Support</a>' +
             '</div></div>' +
-            '<a href="profile.html" id="navProfileLink" class="nav-item site-nav-profile-link" style="display:none">Profile</a>' +
+            <a href="profile.html" id="navProfileLink" class="nav-item site-nav-profile-link hidden" style="display:none !important" aria-hidden="true">Profile</a>
             '</div>' +
             '<div class="desktop-auth site-show-desktop">' +
             '<div id="notificationBell" class="site-nav-notification relative cursor-pointer hidden p-2 hover:bg-gray-100 rounded-lg transition" onclick="typeof toggleNotificationPanel===\'function\'&&toggleNotificationPanel()" aria-label="Notifications">' +
