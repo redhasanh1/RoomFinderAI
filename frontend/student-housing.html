@@ -1252,6 +1252,9 @@
                     ctaButton.classList.add('animate-pulse');
                     setTimeout(() => ctaButton.classList.remove('animate-pulse'), 2000);
                 }
+
+                // Cascade university selection to all downstream sections
+                refreshUniversitySections();
                 
             } catch (error) {
                 console.error('Error selecting university:', error);
@@ -1268,6 +1271,41 @@
             const ctaButton = document.querySelector('button[onclick="startHousingSearch()"]');
             if (ctaButton) {
                 ctaButton.textContent = 'Find Housing Options';
+            }
+
+            const budgetHeading = document.querySelector('#budget-step h2');
+            if (budgetHeading) budgetHeading.textContent = "What's your housing budget?";
+            const agreementUni = document.getElementById('agreementUniversity');
+            if (agreementUni) agreementUni.value = '';
+            const existingResults = document.getElementById('housingResults');
+            if (existingResults) existingResults.remove();
+        }
+
+        // Refresh all university-dependent sections when selection changes
+        function refreshUniversitySections() {
+            if (!selectedUniversityData) return;
+
+            const uniName = selectedUniversityData.name;
+            const location = `${selectedUniversityData.country}${selectedUniversityData['state-province'] ? ', ' + selectedUniversityData['state-province'] : ''}`;
+
+            const budgetHeading = document.querySelector('#budget-step h2');
+            if (budgetHeading) {
+                budgetHeading.textContent = `Housing budget near ${uniName}`;
+            }
+
+            const agreementUni = document.getElementById('agreementUniversity');
+            if (agreementUni) {
+                agreementUni.value = `${uniName}${location ? ', ' + location : ''}`;
+            }
+
+            const agreementHeading = document.querySelector('#roommate-agreement-section h2');
+            if (agreementHeading) {
+                agreementHeading.textContent = `Roommate Agreement — ${uniName}`;
+            }
+
+            // Rebuild housing results if user already ran a search
+            if (document.getElementById('housingResults')) {
+                createHousingResultsSection();
             }
         }
         
