@@ -656,7 +656,7 @@
                     
                     <!-- Chat Messages -->
                     <div id="chatContainer" class="flex-1 p-6 overflow-y-auto chat-container">
-                        <div id="chatMessages">
+                        <div id="negotiatorChatMessages">
                         </div>
                         
                         <!-- Typing indicator (hidden by default) -->
@@ -977,7 +977,7 @@
                 if (!currentUser) {
                     console.log('ERROR: No logged-in user detected');
                     // Show login requirement message
-                    document.getElementById('chatMessages').innerHTML = `
+                    document.getElementById('negotiatorChatMessages').innerHTML = `
                         <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 16px; color: white; margin: 1rem 0;">
                             <h3 style="font-size: 1.5rem; margin-bottom: 1rem;">🔐 Login Required</h3>
                             <p style="margin-bottom: 1.5rem;">Please login to use the AI Negotiation Assistant and contact landlords.</p>
@@ -1057,7 +1057,7 @@
                 
             } catch (error) {
                 console.error('Failed to initialize AI Negotiator:', error);
-                document.getElementById('chatMessages').innerHTML = `
+                document.getElementById('negotiatorChatMessages').innerHTML = `
                     <div style="color: red; padding: 1rem; border: 2px solid red; border-radius: 8px; margin: 1rem 0;">
                         <h3>Initialization Failed</h3>
                         <p><strong>Error:</strong> ${error.message}</p>
@@ -1120,7 +1120,7 @@
                 clearChatBtn.addEventListener('click', () => {
                     if (aiNegotiator) {
                         aiNegotiator.clearConversationHistory();
-                        document.getElementById('chatMessages').innerHTML = `
+                        document.getElementById('negotiatorChatMessages').innerHTML = `
                             <div class="chat-bubble ai">
                                 <p>Hi! I can help you find your next home. Describe what you're looking for, or pick a quick start below:</p>
                             </div>
@@ -1266,7 +1266,7 @@
                         <div class="font-semibold text-sm text-gray-500 mb-1">System</div>
                         <p class="text-sm text-blue-600">🚀 Auto-starting conversation with your search: "${searchQuery}"</p>
                     `;
-                    document.getElementById('chatMessages').appendChild(autoStartNotice);
+                    document.getElementById('negotiatorChatMessages').appendChild(autoStartNotice);
                     
                     // Auto-send the message with better reliability
                     const autoSend = () => {
@@ -1562,7 +1562,7 @@
             console.log('🔔 Reply context set:', window.replyContext);
 
             // Get the main chat messages container
-            const chatMessages = document.getElementById('chatMessages');
+            const chatMessages = document.getElementById('negotiatorChatMessages');
             const chatContainer = document.getElementById('chatContainer');
 
             if (!chatMessages) {
@@ -1654,7 +1654,7 @@
             }
 
             // Restore default chat content
-            const chatMessages = document.getElementById('chatMessages');
+            const chatMessages = document.getElementById('negotiatorChatMessages');
             if (chatMessages) {
                 chatMessages.innerHTML = `
                     <div class="chat-bubble ai">
@@ -1700,7 +1700,7 @@
                 console.log('🔔 Conversation ID:', conversationId);
 
                 // Show sending indicator in chat
-                const chatMessages = document.getElementById('chatMessages');
+                const chatMessages = document.getElementById('negotiatorChatMessages');
                 const sendingDiv = document.createElement('div');
                 sendingDiv.id = 'sendingIndicator';
                 sendingDiv.className = 'chat-bubble user text-right';
@@ -1837,21 +1837,16 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
                 </svg>
             </button>
-            <div class="chat-input-container">
-                <div class="flex items-end space-x-2">
-                    <div class="flex-1">
-                        <textarea id="chatInput" class="chat-input" rows="2" placeholder="Type your message..."></textarea>
-                    </div>
-                    <div class="flex flex-col space-y-1">
-                        <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
-                        <button id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm flex items-center gap-1 hidden" onclick="document.getElementById('fileInput').click()">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
-                            Attach
-                        </button>
-                        <button id="chatSendBtn" class="chat-send-btn">Send</button>
-                    </div>
+            <div class="chat-input-container flex-col gap-2">
+                <div class="flex items-end gap-2 w-full">
+                    <textarea id="chatInput" class="chat-input flex-1 min-w-0" rows="2" placeholder="Type your message..."></textarea>
+                    <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
+                    <button id="fileUploadBtn" type="button" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm flex-shrink-0 hidden" onclick="document.getElementById('fileInput').click()" title="Attach file">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"></path></svg>
+                    </button>
+                    <button id="chatSendBtn" type="button" class="chat-send-btn flex-shrink-0">Send</button>
                 </div>
-                <div id="selectedFiles" class="mt-2 space-y-1 hidden"></div>
+                <div id="selectedFiles" class="w-full space-y-1 hidden"></div>
             </div>
         </div>
     </div>
