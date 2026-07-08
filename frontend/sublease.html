@@ -33,6 +33,7 @@
                 <button data-tab="post" class="tab-btn active px-5 py-2 rounded-lg font-medium bg-indigo-600 text-white">Post Request</button>
                 <button data-tab="browse" class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-100 text-gray-700">Browse</button>
                 <button data-tab="mine" class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-100 text-gray-700">My Requests</button>
+                <button data-tab="interests" class="tab-btn px-5 py-2 rounded-lg font-medium bg-gray-100 text-gray-700">Interest Received</button>
             </div>
 
             <!-- Post (default) -->
@@ -102,6 +103,12 @@
             <section id="panel-mine" class="tab-panel hidden">
                 <div id="myRequests" class="space-y-4"></div>
             </section>
+
+            <!-- Interest received on my listings -->
+            <section id="panel-interests" class="tab-panel hidden">
+                <p class="text-sm text-gray-600 mb-4">Users who expressed interest in your sublease requests.</p>
+                <div id="interestsReceived" class="space-y-4"></div>
+            </section>
         </div>
     </main>
 
@@ -131,6 +138,7 @@
             });
             if (name === 'mine') loadMyRequests();
             if (name === 'browse') searchSubleases();
+            if (name === 'interests') loadInterestsReceived();
         }
 
         function renderCards(requests, containerId, showActions = false) {
@@ -195,6 +203,46 @@
             }
         }
 
+        async function loadInterestsReceived() {
+            const container = document.getElementById('interestsReceived');
+            try {
+                const email = requireEmail();
+                container.innerHTML = '<p class="text-gray-500 text-center py-8">Loading...</p>';
+                const res = await fetch(`/api/sublease/interests?userEmail=${encodeURIComponent(email)}`);
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Failed to load interests');
+
+                const interests = data.interests || [];
+                if (!interests.length) {
+                    container.innerHTML = '<p class="text-gray-500 text-center py-12">No one has expressed interest in your subleases yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = interests.map((item) => `
+                    <article class="bg-white rounded-xl shadow p-5 border border-gray-100">
+                        <div class="flex justify-between items-start gap-2 mb-2">
+                            <h3 class="font-semibold text-gray-900">${item.listing_title || 'Your sublease'}</h3>
+                            <span class="text-xs px-2 py-1 rounded-full bg-purple-100 text-purple-800">${item.match_status || 'interested'}</span>
+                        </div>
+                        <div class="flex items-center gap-3 mt-3">
+                            <div class="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-semibold">
+                                ${(item.interested_user_email || '?').charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">${item.interested_user_name || item.interested_user_email}</p>
+                                <p class="text-xs text-gray-500">${item.interested_user_email}</p>
+                            </div>
+                        </div>
+                        ${item.interested_listing_title ? `<p class="text-sm text-gray-600 mt-3">Their listing: ${item.interested_listing_title}</p>` : ''}
+                        <p class="text-xs text-gray-400 mt-2">${item.expressed_at ? new Date(item.expressed_at).toLocaleString() : ''}</p>
+                    </article>
+                `).join('');
+            } catch (err) {
+                if (err.message === 'Not logged in') return;
+                container.innerHTML = `<p class="text-red-600 text-center py-8">${err.message}</p>`;
+            }
+        }
+
         async function deleteRequest(id) {
             if (!confirm('Cancel this sublease request?')) return;
             const email = requireEmail();
@@ -215,7 +263,7 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Failed');
-                showBanner('success', 'Interest sent! The poster will be notified when matching is enabled.');
+                showBanner('success', 'Interest sent! The poster has been notified.');
             } catch (err) {
                 if (err.message !== 'Not logged in') showBanner('error', err.message);
             }

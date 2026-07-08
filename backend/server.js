@@ -468,6 +468,8 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
                     plan_price: 19.99,
                     status: 'active',
                     stripe_charge_id: session.subscription || session.id,
+                    stripe_customer_id: session.customer || null,
+                    stripe_subscription_id: session.subscription || null,
                     payment_method: 'card',
                     start_date: new Date().toISOString()
                 });
@@ -478,6 +480,49 @@ app.post('/api/stripe-webhook', express.raw({ type: 'application/json' }), async
                     await supabase.from('profiles').update({ is_pro: true, plan: 'pro' }).eq('email', customerEmail);
                 }
                 console.log(`✅ Pro activated for ${customerEmail}`);
+            }
+        } else if (event.type === 'customer.subscription.updated' || event.type === 'invoice.paid') {
+            const obj = event.data.object;
+            const subId = obj.subscription || obj.id;
+            const customerId = obj.customer;
+            let customerEmail = obj.customer_email;
+
+            if (!customerEmail && customerId && stripe) {
+                const customer = await stripe.customers.retrieve(customerId);
+                customerEmail = customer.email;
+            }
+
+            if (customerEmail && supabase) {
+                const status = obj.status === 'active' || event.type === 'invoice.paid' ? 'active' : obj.status;
+                const periodEnd = obj.current_period_end
+                    ? new Date(obj.current_period_end * 1000).toISOString()
+                    : null;
+
+                await supabase.from('subscriptions')
+                    .update({
+                        status,
+                        current_period_end: periodEnd,
+                        stripe_subscription_id: subId,
+                        stripe_customer_id: customerId || undefined
+                    })
+                    .eq('email', customerEmail);
+
+                if (status === 'active') {
+                    await supabase.from('profiles').update({ is_pro: true, plan: 'pro' }).eq('email', customerEmail);
+                }
+            }
+        } else if (event.type === 'customer.subscription.deleted') {
+            const sub = event.data.object;
+            let customerEmail = sub.customer_email;
+            if (!customerEmail && sub.customer && stripe) {
+                const customer = await stripe.customers.retrieve(sub.customer);
+                customerEmail = customer.email;
+            }
+            if (customerEmail && supabase) {
+                await supabase.from('subscriptions')
+                    .update({ status: 'canceled', end_date: new Date().toISOString() })
+                    .eq('email', customerEmail);
+                await supabase.from('profiles').update({ is_pro: false, plan: 'free' }).eq('email', customerEmail);
             }
         }
         res.json({ received: true });
@@ -6759,6 +6804,47 @@ app.get('/api/subscription/:email', async (req, res) => {
     }
 });
 
+// API: Create Stripe Customer Portal session for billing management
+app.post('/api/stripe/customer-portal', async (req, res) => {
+    try {
+        if (!stripe) {
+            return res.status(503).json({ error: 'Stripe not configured' });
+        }
+        const { email, returnUrl } = req.body;
+        if (!email) {
+            return res.status(400).json({ error: 'Email is required' });
+        }
+
+        const { data: sub } = await supabase
+            .from('subscriptions')
+            .select('stripe_customer_id')
+            .eq('email', email)
+            .not('stripe_customer_id', 'is', null)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        let customerId = sub?.stripe_customer_id;
+        if (!customerId) {
+            const customers = await stripe.customers.list({ email, limit: 1 });
+            customerId = customers.data[0]?.id;
+        }
+        if (!customerId) {
+            return res.status(404).json({ error: 'No Stripe customer found for this account' });
+        }
+
+        const session = await stripe.billingPortal.sessions.create({
+            customer: customerId,
+            return_url: returnUrl || `${req.headers.origin || 'https://roomfinderai.com'}/profile.html`
+        });
+
+        res.json({ url: session.url });
+    } catch (error) {
+        console.error('Customer portal error:', error);
+        res.status(500).json({ error: 'Failed to create billing portal session' });
+    }
+});
+
 // API: Cancel user subscription
 app.post('/api/subscription/cancel', async (req, res) => {
     try {
@@ -9949,6 +10035,84 @@ app.get('/api/sublease/matches/:requestId', async (req, res) => {
     }
 });
 
+// Get users who expressed interest in the current user's sublease requests
+app.get('/api/sublease/interests', async (req, res) => {
+    try {
+        const userEmail = req.query.userEmail;
+        if (!userEmail) {
+            return res.status(400).json({ error: 'User email is required' });
+        }
+
+        await setUserContext(userEmail);
+
+        const { data: myRequests, error: reqErr } = await supabase
+            .from('sublease_requests')
+            .select('id, title, type, user_email')
+            .eq('user_email', userEmail)
+            .eq('status', 'active');
+
+        if (reqErr) {
+            return res.status(500).json({ error: 'Failed to fetch your sublease requests' });
+        }
+
+        if (!myRequests || myRequests.length === 0) {
+            return res.json({ success: true, interests: [] });
+        }
+
+        const interests = [];
+
+        for (const myReq of myRequests) {
+            const { data: matches, error: matchErr } = await supabase
+                .from('sublease_matches')
+                .select(`
+                    id, match_status, transfer_user_interested, seeking_user_interested,
+                    last_interaction_at, created_at,
+                    transfer_request:transfer_request_id(id, user_email, title),
+                    seeking_request:seeking_request_id(id, user_email, title)
+                `)
+                .or(`transfer_request_id.eq.${myReq.id},seeking_request_id.eq.${myReq.id}`);
+
+            if (matchErr) continue;
+
+            for (const match of matches || []) {
+                const transferReq = match.transfer_request;
+                const seekingReq = match.seeking_request;
+                const isOwnerTransfer = transferReq?.user_email === userEmail;
+                const isOwnerSeeking = seekingReq?.user_email === userEmail;
+
+                const otherInterested = isOwnerTransfer
+                    ? match.seeking_user_interested
+                    : isOwnerSeeking
+                        ? match.transfer_user_interested
+                        : false;
+
+                if (!otherInterested) continue;
+
+                const interestedEmail = isOwnerTransfer ? seekingReq?.user_email : transferReq?.user_email;
+                const interestedTitle = isOwnerTransfer ? seekingReq?.title : transferReq?.title;
+
+                interests.push({
+                    match_id: match.id,
+                    listing_title: myReq.title,
+                    listing_id: myReq.id,
+                    interested_user_email: interestedEmail,
+                    interested_user_name: interestedEmail ? interestedEmail.split('@')[0] : 'Unknown',
+                    interested_listing_title: interestedTitle,
+                    match_status: match.match_status || 'interested',
+                    expressed_at: match.last_interaction_at || match.created_at
+                });
+            }
+        }
+
+        interests.sort((a, b) => new Date(b.expressed_at || 0) - new Date(a.expressed_at || 0));
+        res.json({ success: true, interests });
+
+    } catch (error) {
+        console.error('Sublease interests error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // Express interest in a match (accepts matchId or requestId from browse cards)
 app.post('/api/sublease/express-interest', async (req, res) => {
     try {
@@ -10060,6 +10224,36 @@ app.post('/api/sublease/express-interest', async (req, res) => {
         if (error) {
             console.error('Interest expression error:', error);
             return res.status(500).json({ error: 'Failed to express interest' });
+        }
+
+        // Notify the listing owner that someone expressed interest
+        try {
+            const { data: matchDetails } = await supabase
+                .from('sublease_matches')
+                .select(`
+                    transfer_request:transfer_request_id(user_email, title),
+                    seeking_request:seeking_request_id(user_email, title)
+                `)
+                .eq('id', matchId)
+                .single();
+
+            const transferReq = matchDetails?.transfer_request;
+            const seekingReq = matchDetails?.seeking_request;
+            const ownerEmail = requestType === 'transfer' ? seekingReq?.user_email : transferReq?.user_email;
+            const interestedTitle = requestType === 'transfer' ? transferReq?.title : seekingReq?.title;
+
+            if (ownerEmail && ownerEmail !== userEmail) {
+                await supabase.from('ai_chats').insert({
+                    user_email: ownerEmail,
+                    title: 'Sublease Interest',
+                    conversation_data: JSON.stringify([{
+                        role: 'assistant',
+                        content: `${userEmail} expressed interest in your sublease "${interestedTitle || 'listing'}". Check the Interest Received tab on the Sublease page.`
+                    }])
+                });
+            }
+        } catch (notifyErr) {
+            console.warn('Sublease interest notification failed:', notifyErr.message);
         }
 
         res.json({ 
