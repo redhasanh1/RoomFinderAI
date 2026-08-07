@@ -236,9 +236,38 @@ class AINegotiator {
     // catches model violations (trailing questions in CLOSING, emojis when
     // landlord is hostile, agreeing to a day outside the tenant's availability)
     // and either trims or hard-replaces with a sane fallback.
-    validateAndRepair(rawResponse, { phase, tone, facts, tenantGoals, messageHistory }) {
+    validateAndRepair(rawResponse, { phase, tone, facts, tenantGoals, messageHistory, listing, userBudget }) {
         if (!rawResponse) return rawResponse;
         let out = String(rawResponse).trim();
+
+        // HARD PRICE CEILING — outranks every other rule below.
+        //
+        // Real failure this fixes: on a $3,675 listing the landlord said
+        // "we can do tommroow for 5000" and the AI answered "Yes, that works.
+        // See you then." — committing the tenant to 36% ABOVE asking. Nothing
+        // in the pipeline compared the landlord's number to the listing price,
+        // so any figure, however absurd, sailed through.
+        //
+        // Ceiling is the lower of asking price and the tenant's budget: we are
+        // negotiating DOWN, so agreeing at or above asking is never a valid
+        // outcome. Acceptance language is replaced with a counter anchored on
+        // the real numbers.
+        const askingPrice = Number(listing?.price) || null;
+        const budget = Number(userBudget) || null;
+        const ceiling = Math.min(askingPrice || Infinity, budget || Infinity);
+        const landlordPrice = Number(facts?.landlord_last_named_price) || null;
+
+        if (landlordPrice && Number.isFinite(ceiling) && landlordPrice > ceiling) {
+            const acceptsPrice = /\b(yes|yeah|yep|sure|ok(ay)?|deal|agreed|sold|that works|works for me|sounds good|i.?ll take it|we.?ll take it|see you|let.?s do it|perfect|great)\b/i.test(out);
+            const restatesHigher = new RegExp(`\\$?\\s*${landlordPrice}\\b`).test(out.replace(/,/g, ''));
+            if (acceptsPrice || restatesHigher) {
+                const target = Math.round(ceiling);
+                console.warn(`🛡️ Validator: BLOCKED acceptance of $${landlordPrice} — above ceiling $${target} (asking ${askingPrice}, budget ${budget}). Countering instead.`);
+                return askingPrice && landlordPrice > askingPrice
+                    ? `Hold on — the listing is posted at $${askingPrice}, so $${landlordPrice} is above asking. I'm working with $${target}. Can we do $${target}?`
+                    : `That's over my budget, unfortunately. I can do $${target} — does that work on your end?`;
+            }
+        }
 
         // Phase-agnostic check: never agree to a meeting day until price has
         // been raised at least once. Skipping price negotiation is the single
@@ -289,6 +318,22 @@ class AINegotiator {
         if (phase === 'CLOSING') {
             const hasQuestion = /\?/.test(out);
             if (hasQuestion) {
+                // The old fallback was an unconditional "Yes, that works. See
+                // you then." — it fired on ANY closing-phase question, so the
+                // AI accepted whatever the landlord's last message contained.
+                // In one real transcript it "agreed" twice in a row, the second
+                // time in reply to the landlord writing "fuck off". Only emit
+                // an acceptance when there is an actual agreed price at or
+                // under the ceiling; otherwise keep negotiating.
+                const agreed = Number(facts?.agreed_price) || null;
+                const priceSettled = agreed && (!Number.isFinite(ceiling) || agreed <= ceiling);
+                if (!priceSettled) {
+                    console.warn('🛡️ Validator: CLOSING question with no settled price — holding on price instead of accepting.');
+                    const target = Number.isFinite(ceiling) ? Math.round(ceiling) : null;
+                    return target
+                        ? `Before we lock anything in — can we agree on $${target}?`
+                        : `Before we lock anything in — can we settle the rent first?`;
+                }
                 console.warn('🛡️ Validator: AI emitted question(s) in CLOSING. Replacing with fallback.');
                 return facts?.proposed_meet_date
                     ? `Yes, that works. See you ${facts.proposed_meet_date}.`
@@ -965,7 +1010,9 @@ Write 2-3 sentences negotiating naturally.`
                 tone: conversationState.tone,
                 facts: conversationState.facts,
                 tenantGoals: tenantGoalsForValidator,
-                messageHistory: conversationState.messageHistory
+                messageHistory: conversationState.messageHistory,
+                listing: conversationState.listing,
+                userBudget: conversationState.userBudget
             });
 
             // Once we've actually shipped a phase response (especially in
