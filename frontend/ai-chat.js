@@ -65,7 +65,7 @@ class AIChatHandler {
 
     // Show welcome message with quick start chips
     showWelcomeWithChips() {
-        const chatMessages = document.getElementById('chatMessages');
+        const chatMessages = this.getChatContainer();
         if (!chatMessages) return;
 
         chatMessages.innerHTML = `
@@ -1906,17 +1906,32 @@ class AIChatHandler {
         }
 
         // Clear UI
-        const messages = document.getElementById('chatMessages');
+        const messages = this.getChatContainer();
         if (messages) {
             messages.innerHTML = '';
         }
     }
 
+    // Resolve the chat container to render into.
+    //
+    // ai-negotiator.html has TWO containers: the always-visible in-page panel
+    // (#negotiatorChatMessages) and the floating widget's #chatMessages, which
+    // sits inside #chatModal — styled opacity:0 / pointer-events:none until
+    // .active. Rendering unconditionally into #chatMessages meant the whole
+    // negotiation (intro generated, message sent to the landlord, replies)
+    // was written into an invisible element, so the page looked dead even
+    // though every step had succeeded. Prefer the visible panel when it
+    // exists; other pages still fall back to #chatMessages.
+    getChatContainer() {
+        return document.getElementById('negotiatorChatMessages')
+            || document.getElementById('chatMessages');
+    }
+
     // Display message to chat (without saving to history)
     displayMessage(sender, message, align, isTypingIndicator = false) {
-        const messages = document.getElementById('chatMessages');
+        const messages = this.getChatContainer();
         if (!messages) {
-            console.error('Error: #chatMessages element not found');
+            console.error('Error: no chat container element found');
             return;
         }
 
@@ -1965,7 +1980,7 @@ class AIChatHandler {
 
     // Append HTML message to chat (for cards, buttons, etc.) - doesn't save to history
     appendMessageHTML(sender, htmlContent, align) {
-        const messages = document.getElementById('chatMessages');
+        const messages = this.getChatContainer();
         if (!messages) {
             console.error('Error: #chatMessages element not found');
             return;
@@ -2028,7 +2043,7 @@ class AIChatHandler {
 
     // Celebrate negotiation success with visual effects
     celebrateSuccess() {
-        const messages = document.getElementById('chatMessages');
+        const messages = this.getChatContainer();
         if (!messages) return;
 
         // Add celebration animation
