@@ -1030,11 +1030,26 @@ Write 2-3 sentences negotiating naturally.`
             // validateAndRepair, we lock CLOSING *before* the next inbound
             // message arrives — its handler then renders a calm confirmation
             // instead of restarting discovery.
-            if (this.CLOSING_SIGNALS_RE.test(responseMessage) && conversationState.currentPhase !== 'CLOSING') {
+            // Guard the self-lock: CLOSING_SIGNALS_RE is tuned for landlord
+            // messages, where "that works" means agreement. In our OWN output
+            // the same words appear inside ordinary questions — a real
+            // transcript locked CLOSING off "the move-in timeframe that works
+            // for you", which skipped PRICE_INTRODUCTION and
+            // ACTIVE_NEGOTIATION entirely, so rent was never negotiated at
+            // all. Only self-lock on an unambiguous commitment: no trailing
+            // question, and either a settled price or explicit deal language.
+            const selfSignalsClosing = this.CLOSING_SIGNALS_RE.test(responseMessage);
+            const asksSomething = /\?/.test(responseMessage);
+            const explicitCommit = /\b(deal|i.?ll take it|we.?ll take it|sold|agreed|see you|let.?s do it)\b/i.test(responseMessage);
+            const priceOnTable = !!(conversationState.facts.agreed_price || conversationState.facts.landlord_last_named_price);
+            if (selfSignalsClosing && !asksSomething && (explicitCommit || priceOnTable)
+                && conversationState.currentPhase !== 'CLOSING') {
                 console.log('🔒 AI itself signaled acceptance — locking phase to CLOSING.');
                 conversationState.currentPhase = 'CLOSING';
                 conversationState.phaseHistory.push('CLOSING');
                 conversationState.facts.landlord_said_yes_to_meet = true;
+            } else if (selfSignalsClosing && conversationState.currentPhase !== 'CLOSING') {
+                console.log('↩️ Ignoring soft closing phrase in our own question — staying in', conversationState.currentPhase);
             }
 
             // Record our response
