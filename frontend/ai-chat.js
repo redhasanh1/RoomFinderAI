@@ -1805,7 +1805,8 @@ class AIChatHandler {
                     this.currentUser.email,
                     listing.user_email,
                     listing.title,
-                    landlordMessage.id
+                    landlordMessage.id,
+                    false // reply — disclosure already made at first contact
                 );
 
                 if (sent) {

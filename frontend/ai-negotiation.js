@@ -3019,7 +3019,9 @@ Generate ONLY the message. No greetings, no signatures.
                         response,
                         negotiation.userEmail,
                         negotiation.landlordEmail,
-                        negotiation.listingTitle
+                        negotiation.listingTitle,
+                        null,
+                        false // reply — disclosure already made at first contact
                     );
                     
                     if (sentSuccessfully) {
@@ -3146,7 +3148,9 @@ Generate ONLY the message. No greetings, no signatures.
                         marketResponse,
                         negotiation.userEmail,
                         negotiation.landlordEmail,
-                        negotiation.listingTitle
+                        negotiation.listingTitle,
+                        null,
+                        false // reply — disclosure already made at first contact
                     );
                     
                     negotiation.messages.push({
@@ -3892,7 +3896,12 @@ Generate ONLY the message. No greetings, no signatures.
         return `${hex.substring(0,8)}-${hex.substring(8,12)}-${hex.substring(12,16)}-${hex.substring(16,20)}-${hex.substring(20,32)}`;
     }
 
-    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null, respondsToMessageId = null) {
+    // includeDisclosure: the AI-disclosure footer is attached to FIRST CONTACT
+    // only. Repeating it on every reply made each message read like an ad and
+    // leaked the tenant's email address into every single send. First contact
+    // is the moment that matters for disclosure — the landlord is told, once,
+    // before they invest in the conversation.
+    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null, respondsToMessageId = null, includeDisclosure = true) {
         try {
             // Ensure AI user exists first
             await this.ensureAIUserExists();
@@ -3908,7 +3917,9 @@ Generate ONLY the message. No greetings, no signatures.
             // divider line ("———") on its own row, with blank lines above and
             // below, makes the footer read as a distinct signature block
             // rather than a trailing sentence on the message body.
-            const fullContent = `${message}\n\n———\n\nSent via RoomFinder AI on behalf of ${userEmail}`;
+            const fullContent = includeDisclosure
+                ? `${message}\n\n———\n\nSent via RoomFinder AI on behalf of ${userEmail}`
+                : message;
             const createdAt = new Date().toISOString();
             let finalSenderEmail = senderEmail;
             let finalContent = fullContent;
@@ -3949,7 +3960,7 @@ Generate ONLY the message. No greetings, no signatures.
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
                 finalSenderEmail = userEmail;
-                finalContent = `${message}\n\n———\n\nSent via RoomFinder AI`;
+                finalContent = includeDisclosure ? `${message}\n\n———\n\nSent via RoomFinder AI` : message;
                 const { error: retryError } = await this.supabase
                     .from('messages')
                     .insert({
@@ -4216,7 +4227,8 @@ Generate ONLY the message. No greetings, no signatures.
                                         conversation.sender_email,
                                         listing.user_email,
                                         listing.title,
-                                        newMessage.id
+                                        newMessage.id,
+                                        false // reply — disclosure already made at first contact
                                     );
                                     console.log(`✅ [PHASED v2] Sent ${response.phase} response`);
                                 } else {
