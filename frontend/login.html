@@ -13,9 +13,10 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <title>RoomFinder AI - Login</title>
 
-  <!-- Google AdSense -->
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5195773691165769"
-       crossorigin="anonymous"></script>
+  <!-- AdSense is deliberately NOT loaded here. This page already pulls ~1MB of
+       third-party JS (Tailwind runtime, Supabase, Google GSI, Apple JS); adding
+       ad iframes on top pushed low-memory devices into tab crashes, and a login
+       page has no ad inventory worth the cost. -->
 
   <!-- UI & SDKs -->
   <script src="https://cdn.tailwindcss.com"></script>
