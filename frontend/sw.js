@@ -1,5 +1,7 @@
 // Service Worker for Push Notifications
-const CACHE_NAME = 'roomfinder-v2';
+// v3: cache-first for pages made users see months-old HTML after deploys —
+// pages are now network-first, and the version bump purges every v2 cache.
+const CACHE_NAME = 'roomfinder-v3';
 const urlsToCache = [
     '/',
     '/listings',
@@ -67,18 +69,32 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Pages: network-first so deploys reach users immediately; cache is the
+    // offline fallback only.
+    if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+        event.respondWith(
+            fetch(event.request)
+                .then((response) => {
+                    const copy = response.clone();
+                    caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+                    return response;
+                })
+                .catch(() =>
+                    caches.match(event.request)
+                        .then((cached) => cached || caches.match('/'))
+                        // respondWith must always get a Response — undefined here
+                        // throws "Failed to convert value to 'Response'"
+                        .then((cached) => cached || Response.error())
+                )
+        );
+        return;
+    }
+
+    // Static assets: cache-first is fine (they're content-hashed or versioned)
     event.respondWith(
         caches.match(event.request)
-            .then((response) => {
-                // Return cached version or fetch from network
-                return response || fetch(event.request);
-            })
-            .catch(() => {
-                // Return offline page for HTML requests
-                if (event.request.destination === 'document') {
-                    return caches.match('/offline.html');
-                }
-            })
+            .then((response) => response || fetch(event.request))
+            .catch(() => Response.error())
     );
 });
 

@@ -1448,6 +1448,43 @@ class AIChatHandler {
     }
 
     // Start negotiation for a specific listing - HUMAN-LIKE PHASED APPROACH
+    // When Contact is clicked for a listing that already has a conversation,
+    // the intro guards skip generation — but the user still needs to SEE the
+    // negotiation. Replay the recent messages into the chat instead of
+    // returning silently. Uses displayMessage (not appendMessage) so the
+    // replayed thread isn't re-saved into ai_chat_history.
+    async showExistingConversation(conversationId, listing) {
+        this.appendMessage('AI', `You already have a conversation going with this landlord for "${listing.title}" — here's where it stands:`, 'left');
+        try {
+            const { data: recent, error } = await this.supabase
+                .from('messages')
+                .select('sender_email, content, created_at')
+                .eq('conversation_id', conversationId)
+                .order('created_at', { ascending: false })
+                .limit(10);
+            if (error || !recent || recent.length === 0) {
+                if (error) console.warn('⚠️ Could not load existing conversation messages:', error.message);
+                this.appendMessage('AI', 'Open your Messages inbox to view the full conversation.', 'left');
+                return;
+            }
+            this._replaying = true;
+            for (const msg of recent.reverse()) {
+                if (typeof msg.content !== 'string') continue;
+                const isMe = msg.sender_email === this.currentUser?.email;
+                const sender = isMe ? 'You'
+                             : msg.sender_email === 'ai-negotiator@roomfinder.com' ? 'AI Negotiator'
+                             : 'Landlord';
+                this.displayMessage(sender, msg.content, isMe ? 'right' : 'left');
+            }
+            this._replaying = false;
+            this.appendMessage('AI', "I'm still monitoring this negotiation — any landlord reply will appear here automatically.", 'left');
+        } catch (e) {
+            this._replaying = false;
+            console.warn('⚠️ showExistingConversation failed:', e?.message || e);
+            this.appendMessage('AI', 'Open your Messages inbox to view the full conversation.', 'left');
+        }
+    }
+
     async startNegotiationForListing(listing) {
         // DEBUG: log the call stack so we can pin down WHICH caller is firing
         // the duplicate intro path. Three intros ~60s apart were still
@@ -1548,6 +1585,7 @@ class AIChatHandler {
                 this.activeConversationId = conversationId;
                 this.activeListing = listing;
                 this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                await this.showExistingConversation(conversationId, listing);
                 return;
             }
             try {
@@ -1571,6 +1609,7 @@ class AIChatHandler {
                     this.activeConversationId = conversationId;
                     this.activeListing = listing;
                     this.setupConversationAutoReply(conversationId, this.activeNegotiationId, listing);
+                    await this.showExistingConversation(conversationId, listing);
                     return;
                 }
             } catch (historyCheckErr) {
