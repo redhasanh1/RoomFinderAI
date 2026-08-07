@@ -1021,19 +1021,28 @@
                 aiNegotiator = new AIChatHandler(supabaseClient, configData);
                 await aiNegotiator.init(currentUser);
 
-                // CRITICAL: Initialize negotiation engine and connect it
-                console.log('Creating AINegotiator engine...');
-                const negotiationEngine = new AINegotiator(supabaseClient, configData);
-                aiNegotiator.setNegotiationEngine(negotiationEngine);
-
-                // CRITICAL: Call init() to setup global message listener for landlord replies
-                await negotiationEngine.init();
-                console.log('✅ Negotiation engine initialized with message listener');
-
-                window.aiNegotiator = negotiationEngine; // Make globally accessible
-
-                // Make aiChat globally accessible for sidebar button clicks
+                // Expose aiChat BEFORE engine setup — the Contact buttons call
+                // window.aiChat?.contactLandlord(), and the optional chaining
+                // meant an engine-init crash left the buttons silently dead.
                 window.aiChat = aiNegotiator;
+
+                // CRITICAL: Initialize negotiation engine and connect it. A
+                // failure here must not take out the whole chat UI — surface
+                // it in the chat instead.
+                try {
+                    console.log('Creating AINegotiator engine...');
+                    const negotiationEngine = new AINegotiator(supabaseClient, configData);
+                    aiNegotiator.setNegotiationEngine(negotiationEngine);
+
+                    // CRITICAL: Call init() to setup global message listener for landlord replies
+                    await negotiationEngine.init();
+                    console.log('✅ Negotiation engine initialized with message listener');
+
+                    window.aiNegotiator = negotiationEngine; // Make globally accessible
+                } catch (engineErr) {
+                    console.error('❌ Negotiation engine failed to initialize:', engineErr);
+                    aiNegotiator.appendMessage('AI', '⚠️ The negotiation engine failed to load — landlord contact is unavailable. Please refresh the page; if this keeps happening, contact support.', 'left');
+                }
 
                 // Initialize notification service
                 if (currentUser?.email && window.NotificationService) {
