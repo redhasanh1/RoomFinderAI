@@ -6558,7 +6558,13 @@ Write your next message.`;
         // time the landlord had already given. Prompt rules are advisory; this
         // is not.
         const asks = /\?/.test(String(out.message || ''));
-        if (asks && priceSettled && /\b(rent|price|monthly|per month|\$\s?\d)\b/i.test(out.message)) {
+        // Only fire when the reply is genuinely RE-ASKING about the rent. The
+        // first version matched any message containing a dollar figure, so a
+        // perfectly good "pets are fine, and $3330 still works, what's next?"
+        // was rewritten to the canned line — every turn, making the AI look
+        // frozen while the landlord talked about pets and utilities.
+        const reopensRent = /(what.{0,15}(rent|price)|how much|confirm the (rent|price)|settle the (rent|price)|discuss the (rent|price)|finali[sz]e the (rent|price)|(rent|price) (going to be|be\?))/i.test(String(out.message || ''));
+        if (asks && priceSettled && reopensRent) {
             console.warn(`🛡️ Blocked re-opening settled rent ($${settledPrice}).`);
             out.message = viewingSettled
                 ? `Sounds good, all set at $${settledPrice}. See you ${viewingWhen}.`
