@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/notifications.js?v=20260129b"></script>
     <script src="/js/notification-manager.js?v=20260519a"></script>
-    <script src="/ai-chat.js?v=20260807-reset-button"></script>
+    <script src="/ai-chat.js?v=20260808-single-call-negotiator"></script>
     <script src="/ai-negotiation.js?v=20260807-disclosure-first-contact"></script>
     <script type="module" src="/chat-system.js?v=20260129b"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -637,6 +637,11 @@
                                 </div>
                                 <div>
                                     <h3 class="font-semibold text-gray-900">Negotiator</h3>
+                                    <!-- Live health pill: green only once /api/negotiate/reply answers. -->
+                                    <div id="negotiatorStatus" class="flex items-center gap-1.5 mt-0.5" title="Checking the negotiator service…">
+                                        <span id="negotiatorStatusDot" style="width:7px;height:7px;border-radius:50%;background:#9CA3AF;flex:none;"></span>
+                                        <span id="negotiatorStatusText" style="font-size:11px;font-weight:600;color:#6B7280;">Checking…</span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="flex items-center space-x-1">
@@ -1064,6 +1069,7 @@
 
                 // Setup message input handling
                 setupMessageHandling();
+                checkNegotiatorHealth();
 
                 console.log('AI Negotiator initialized successfully with database integration!');
                 
@@ -1083,6 +1089,41 @@
         }
 
         // Setup message input handling
+        // Ping the negotiator API once on load so the header shows whether the
+        // service is actually reachable — a dead OpenAI key or a failed deploy
+        // used to surface only as the AI silently never replying.
+        async function checkNegotiatorHealth() {
+            const dot = document.getElementById('negotiatorStatusDot');
+            const text = document.getElementById('negotiatorStatusText');
+            const wrap = document.getElementById('negotiatorStatus');
+            if (!dot || !text) return;
+            const set = (colour, label, title) => {
+                dot.style.background = colour;
+                text.style.color = colour;
+                text.textContent = label;
+                if (wrap) wrap.title = title;
+            };
+            try {
+                const res = await fetch('/api/negotiate/reply', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        listing: { price: 2000 },
+                        tenantParams: { monthly_budget: 1800 },
+                        messageHistory: [],
+                        lastLandlordMessage: 'ping'
+                    })
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (!data.message) throw new Error('no message returned');
+                set('#16A34A', '✓ AI Negotiator is good here', 'Negotiator API responded normally — price ceiling active.');
+            } catch (err) {
+                console.error('Negotiator health check failed:', err);
+                set('#DC2626', '✗ Negotiator unavailable', 'The negotiator API did not respond: ' + err.message);
+            }
+        }
+
         function setupMessageHandling() {
             const messageInput = document.getElementById('messageInput');
             const sendButton = document.getElementById('sendButton');

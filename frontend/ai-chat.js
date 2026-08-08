@@ -1453,6 +1453,62 @@ class AIChatHandler {
     // negotiation. Replay the recent messages into the chat instead of
     // returning silently. Uses displayMessage (not appendMessage) so the
     // replayed thread isn't re-saved into ai_chat_history.
+    // Single entry point for everything the AI says to a landlord.
+    //
+    // Sends the listing, the tenant's goal-panel parameters and the full thread
+    // to /api/negotiate/reply. The model decides the wording and the tactic;
+    // the backend refuses any commitment above min(asking price, budget) and
+    // marks settled terms so they are never renegotiated.
+    //
+    // `landlordMessage` is null for first contact.
+    async generateNegotiationReply(landlordMessage, listing) {
+        const goals = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+
+        // Thread for this landlord, oldest first, in the shape the API expects.
+        let messageHistory = [];
+        try {
+            if (this.activeConversationId) {
+                const { data } = await this.supabase
+                    .from('messages')
+                    .select('sender_email, content, created_at')
+                    .eq('conversation_id', this.activeConversationId)
+                    .order('created_at', { ascending: true })
+                    .limit(30);
+                messageHistory = (data || []).map(m => ({
+                    sender: m.sender_email === this.currentUser?.email
+                        || m.sender_email === 'ai-negotiator@roomfinder.com' ? 'ai' : 'landlord',
+                    content: String(m.content || '').split('\n\n———\n\n')[0]
+                }));
+            }
+        } catch (e) {
+            console.warn('Could not load thread for reply generation:', e?.message || e);
+        }
+
+        const res = await fetch('/api/negotiate/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                listing: { price: listing?.price, title: listing?.title, city: listing?.city },
+                tenantParams: goals,
+                messageHistory,
+                lastLandlordMessage: landlordMessage || '',
+                userEmail: this.currentUser?.email
+            })
+        });
+        if (!res.ok) throw new Error(`Negotiator API returned ${res.status}`);
+        const data = await res.json();
+
+        if (data.guard?.overridden) {
+            console.warn('🛡️ Price ceiling enforced:', data.guard.reason);
+        }
+        console.log(`💬 Reply (${data.tactic || 'no tactic'}):`, data.message);
+
+        // delay: keep the human-like pause the caller already expects.
+        return { message: data.message, delay: 1500 + Math.floor(Math.random() * 2500), guard: data.guard };
+    }
+
     async showExistingConversation(conversationId, listing) {
         this.appendMessage('AI', `You already have a conversation going with this landlord for "${listing.title}" — here's where it stands:`, 'left');
         try {
@@ -1773,17 +1829,14 @@ class AIChatHandler {
         try {
             console.log('🤖 Auto-replying to landlord message...');
 
-            if (!this.negotiationEngine) {
-                console.error('No negotiation engine available');
-                return;
-            }
-
-            // Get phased response from negotiation engine
-            const response = await this.negotiationEngine.handleLandlordReplyWithPhases(
-                landlordMessage.content,
-                negotiationId,
-                listing
-            );
+            // Reply generation now goes through /api/negotiate/reply: one call
+            // where the model reads the whole transcript and decides what to
+            // say, with the backend enforcing the price ceiling from the
+            // tenant's own parameters. The old phase machine
+            // (handleLandlordReplyWithPhases) inferred "what is happening" from
+            // keyword regexes, which is what accepted $5,000 on a $3,675 flat
+            // and re-opened settled rent three times in one conversation.
+            const response = await this.generateNegotiationReply(landlordMessage.content, listing);
 
             if (response && response.message) {
                 // Apply human-like delay before responding
