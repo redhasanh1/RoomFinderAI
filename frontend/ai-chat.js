@@ -985,7 +985,10 @@ class AIChatHandler {
         
         listings.slice(0, 5).forEach((listing) => {
             const titleText = listing.title || 'Untitled Property';
-            const cityText = listing.city || 'City not specified';
+            // /api/listings ships the city under `location` (transformListingForAndroid
+            // maps city -> location), so reading only .city showed
+            // "City not specified" for every listing that came from the API.
+            const cityText = listing.city || listing.location || 'City not specified';
             const streetText = listing.street ? ` - ${listing.street}` : '';
             const priceText = listing.price ? `$${listing.price}` : 'Price not listed';
             const typeText = listing.house_type || 'Type not specified';
@@ -1024,7 +1027,8 @@ class AIChatHandler {
             return;
         }
 
-        this.appendMessage('AI', `📧 Initiating contact with landlord for listing ${listingId}...`, 'left');
+        // Was: "Initiating contact with landlord for listing <uuid>" — an internal
+        // id the tenant has no use for. The next line already says what's happening.
 
         // Use the proper method to start negotiation
         this.startNegotiationForListing(listing);
@@ -1115,7 +1119,10 @@ class AIChatHandler {
         for (let i = 0; i < listingsToShow.length; i++) {
             const listing = listingsToShow[i];
             const titleText = listing.title || 'Untitled Property';
-            const cityText = listing.city || 'City not specified';
+            // /api/listings ships the city under `location` (transformListingForAndroid
+            // maps city -> location), so reading only .city showed
+            // "City not specified" for every listing that came from the API.
+            const cityText = listing.city || listing.location || 'City not specified';
             const priceText = listing.price ? `$${listing.price}/month` : 'Price not listed';
             const bedroomText = listing.bedrooms ? `${listing.bedrooms}BR` : '';
             const typeText = listing.house_type || '';
@@ -1225,7 +1232,10 @@ class AIChatHandler {
             let shownCount = 0;
             for (const listing of similarListings.slice(0, 5)) {
                 const titleText = listing.title || 'Untitled Property';
-                const cityText = listing.city || 'City not specified';
+                // /api/listings ships the city under `location` (transformListingForAndroid
+            // maps city -> location), so reading only .city showed
+            // "City not specified" for every listing that came from the API.
+            const cityText = listing.city || listing.location || 'City not specified';
                 const streetText = listing.street ? ` - ${listing.street}` : '';
                 const priceText = listing.price ? ` - $${listing.price}` : '';
                 const typeText = listing.house_type ? ` (${listing.house_type})` : '';
@@ -1548,7 +1558,7 @@ class AIChatHandler {
         // the leaking caller in production. Remove once root cause is fixed.
         console.log('📍 startNegotiationForListing called for listing', listing?.id, '— stack:\n', new Error().stack);
         try {
-            this.appendMessage('AI', `Starting conversation with landlord for "${listing.title}"...`, 'left');
+            this.appendMessage('AI', `Messaging the landlord about "${listing.title}"…`, 'left');
 
             if (!this.currentUser?.email) {
                 this.appendMessage('AI', 'You need to be logged in to contact landlords.', 'left');
@@ -1725,9 +1735,10 @@ class AIChatHandler {
                         // races with this branch sees the flag immediately.
                         this.sentIntroConversations.add(conversationId);
 
-                        this.appendMessage('AI', `Reached out to the landlord for "${listing.title}"`, 'left');
-                        this.appendMessage('AI', `Sent: "${conversationData.message}"`, 'left');
-                        this.appendMessage('AI', `I'll continue the conversation naturally when they reply - building rapport before discussing price.`, 'left');
+
+                        // The message itself renders below as an AI Negotiator bubble,
+                        // so echoing it here duplicated every outgoing line.
+                        this.appendMessage('AI', `I'll handle the conversation from here and let you know when they reply.`, 'left');
 
                         // Set up auto-reply listener for this conversation
                         this.setupConversationAutoReply(conversationId, conversationData.negotiationId, listing);
@@ -2055,6 +2066,20 @@ class AIChatHandler {
             || document.getElementById('chatMessages');
     }
 
+    // Scroll the pane that actually scrolls. #negotiatorChatMessages is a plain
+    // flex column with no overflow of its own — the scrollbar belongs to its
+    // parent (#chatContainer), so setting scrollTop on the message list did
+    // nothing and new messages stayed below the fold. Walk up to the first
+    // scrollable ancestor and pin it to the bottom.
+    scrollToLatest(fromEl) {
+        let el = fromEl;
+        while (el && el.scrollHeight <= el.clientHeight) el = el.parentElement;
+        const pane = el || fromEl;
+        requestAnimationFrame(() => {
+            pane.scrollTop = pane.scrollHeight;
+        });
+    }
+
     // Display message to chat (without saving to history)
     displayMessage(sender, message, align, isTypingIndicator = false) {
         const messages = this.getChatContainer();
@@ -2084,7 +2109,7 @@ class AIChatHandler {
         `;
 
         messages.appendChild(messageDiv);
-        messages.scrollTop = messages.scrollHeight;
+        this.scrollToLatest(messages);
     }
 
     // Append message to chat and save to history
@@ -2131,7 +2156,7 @@ class AIChatHandler {
         `;
 
         messages.appendChild(messageDiv);
-        messages.scrollTop = messages.scrollHeight;
+        this.scrollToLatest(messages);
     }
 
     // Remove typing indicator

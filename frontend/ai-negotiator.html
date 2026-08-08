@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/notifications.js?v=20260129b"></script>
     <script src="/js/notification-manager.js?v=20260519a"></script>
-    <script src="/ai-chat.js?v=20260808-single-call-negotiator"></script>
+    <script src="/ai-chat.js?v=20260808-chat-polish"></script>
     <script src="/ai-negotiation.js?v=20260807-disclosure-first-contact"></script>
     <script type="module" src="/chat-system.js?v=20260129b"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -254,10 +254,18 @@
             gap: 0.6rem;
         }
         #negotiatorChatMessages .message {
-            max-width: 78%;
+            max-width: 74%;
             animation: msgIn 0.25s ease-out;
             word-wrap: break-word;
             overflow-wrap: break-word;
+            font-size: 13.5px;
+            line-height: 1.5;
+        }
+        #negotiatorChatMessages .message .font-semibold {
+            font-size: 10px;
+            letter-spacing: .04em;
+            opacity: .65;
+            margin-bottom: 2px;
         }
         @keyframes msgIn {
             from { opacity: 0; transform: translateY(8px); }
@@ -266,26 +274,23 @@
         /* Ours — right, filled */
         #negotiatorChatMessages .message.sent { align-self: flex-end; }
         #negotiatorChatMessages .message.sent p {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #6366F1;
             color: #fff;
-            padding: 0.7rem 0.95rem;
-            border-radius: 1rem 1rem 0.25rem 1rem;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.9rem 0.9rem 0.2rem 0.9rem;
             margin: 0;
             white-space: pre-wrap;
-            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
         }
         #negotiatorChatMessages .message.sent .font-semibold { text-align: right; }
         /* Theirs / the AI — left, outlined */
         #negotiatorChatMessages .message.received { align-self: flex-start; }
         #negotiatorChatMessages .message.received p {
-            background: #fff;
-            color: #374151;
-            padding: 0.7rem 0.95rem;
-            border-radius: 1rem 1rem 1rem 0.25rem;
+            background: #F1F2F6;
+            color: #363B45;
+            padding: 0.5rem 0.8rem;
+            border-radius: 0.9rem 0.9rem 0.9rem 0.2rem;
             margin: 0;
             white-space: pre-wrap;
-            border: 1px solid #e5e7eb;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
         }
         @media (max-width: 640px) {
             #negotiatorChatMessages .message { max-width: 90%; }
