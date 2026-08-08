@@ -5669,6 +5669,17 @@ function buildPhaseLockedSystemPrompt({ phase, tone, facts, alreadyAsked, alread
     // the AI doesn't accidentally agree to a meeting day the tenant flagged
     // unavailable, or to a price above the tenant's stated target.
     const goalRules = [];
+    // Vague self-reference ban. This prompt builder feeds the opening message,
+    // which kept going out as "Is the place still available for my move-in
+    // timeframe?" — naming no timeframe at all. When the landlord then asked
+    // "what is the timeframe", the AI had nothing and bounced the question back
+    // at them, forever. Either state a real date or say you're flexible.
+    goalRules.push(
+        tenantGoals && tenantGoals.movein_date
+            ? `- Your move-in date is ${sanitizeForPrompt(tenantGoals.movein_date, 30)}. State it plainly when timing comes up.`
+            : `- You have NO fixed move-in date. Say you're flexible and can move in as soon as it's available. NEVER write "my move-in timeframe", "my timeframe" or "my timeline" — those name nothing.`
+    );
+    goalRules.push('- Questions about YOUR plans (move-in, budget, job, lease) are yours to answer. NEVER ask the landlord to tell you your own timeframe, budget or plans — bouncing the question back reads as a bot.');
     if (tenantGoals && Array.isArray(tenantGoals.available_days) && tenantGoals.available_days.length) {
         goalRules.push(`- If the landlord proposes a meeting day NOT in [${tenantGoals.available_days.join(', ')}], politely counter-propose one that is — do not agree.`);
     }

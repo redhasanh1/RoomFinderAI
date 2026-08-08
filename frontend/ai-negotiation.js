@@ -859,6 +859,51 @@ Write 2-3 sentences negotiating naturally.`
     }
 
     // Handle landlord reply and generate next phase response
+    // Generate a landlord reply through /api/negotiate/reply — the same single
+    // call ai-chat.js uses. The model decides the wording from the whole
+    // thread; the backend enforces the price ceiling from the tenant's own
+    // goal-panel parameters and refuses to reopen settled terms.
+    async generateReplyViaApi(landlordMessage, conversationId, listing, tenantEmail) {
+        const goals = (typeof window !== 'undefined' && typeof window.getTenantGoals === 'function')
+            ? window.getTenantGoals()
+            : {};
+
+        let messageHistory = [];
+        try {
+            const { data } = await this.supabase
+                .from('messages')
+                .select('sender_email, content, created_at')
+                .eq('conversation_id', conversationId)
+                .order('created_at', { ascending: true })
+                .limit(30);
+            messageHistory = (data || []).map(m => ({
+                sender: (m.sender_email === tenantEmail || m.sender_email === 'ai-negotiator@roomfinder.com')
+                    ? 'ai' : 'landlord',
+                // Strip the disclosure footer so it isn't fed back as conversation.
+                content: String(m.content || '').split('\n\n———\n\n')[0]
+            }));
+        } catch (e) {
+            console.warn('generateReplyViaApi: could not load thread:', e?.message || e);
+        }
+
+        const res = await fetch('/api/negotiate/reply', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                listing: { price: listing?.price, title: listing?.title, city: listing?.city },
+                tenantParams: goals,
+                messageHistory,
+                lastLandlordMessage: landlordMessage || '',
+                userEmail: tenantEmail
+            })
+        });
+        if (!res.ok) throw new Error(`Negotiator API returned ${res.status}`);
+        const data = await res.json();
+        if (data.guard?.overridden) console.warn('🛡️ Price ceiling enforced:', data.guard.reason);
+        console.log(`💬 Reply (${data.tactic || 'no tactic'}):`, data.message);
+        return { message: data.message, delay: 1500 + Math.floor(Math.random() * 2500) };
+    }
+
     async handleLandlordReplyWithPhases(landlordMessage, negotiationId, listing) {
         try {
             console.log('💬 Processing landlord reply for phased conversation');
@@ -4205,11 +4250,18 @@ Generate ONLY the message. No greetings, no signatures.
                                     }
                                 }
 
-                                // Use the NEW phased reply handler
-                                const response = await this.handleLandlordReplyWithPhases(
+                                // This global listener is the OTHER reply path — it fires
+                                // whenever a landlord message lands, independently of the
+                                // per-conversation listener in ai-chat.js. It was still
+                                // running the old phase engine, so conversations answered
+                                // here kept the bugs that were fixed elsewhere (asking the
+                                // landlord what OUR move-in timeframe is, re-opening
+                                // settled rent). Route it through the same single endpoint.
+                                const response = await this.generateReplyViaApi(
                                     newMessage.content,
-                                    negotiationId,
-                                    listing
+                                    conversation.id,
+                                    listing,
+                                    conversation.sender_email
                                 );
 
                                 if (response && response.message) {
