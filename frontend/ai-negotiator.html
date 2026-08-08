@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/notifications.js?v=20260129b"></script>
     <script src="/js/notification-manager.js?v=20260519a"></script>
-    <script src="/ai-chat.js?v=20260808-labels"></script>
+    <script src="/ai-chat.js?v=20260808-wider"></script>
     <script src="/ai-negotiation.js?v=20260808-no-footer"></script>
     <script type="module" src="/chat-system.js?v=20260129b"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -415,7 +415,7 @@
 
     <!-- Main Content -->
     <main class="pt-24 pb-16">
-        <div class="w-[95%] max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="w-[95%] max-w-[83rem] mx-auto px-4 sm:px-6 lg:px-8">
             <!-- Page Header -->
             <div class="mb-8 mt-6 text-center">
                 <h1 class="text-3xl md:text-4xl font-bold mb-3 font-display">
@@ -693,7 +693,7 @@
 
             <!-- Chat Interface - Main Negotiator -->
             <div class="w-full">
-                <div class="glass-card flex flex-col" style="height: 600px;">
+                <div class="glass-card flex flex-col" style="height: 600px; position: relative;">
                     <!-- Chat Header -->
                     <div class="px-5 py-4 border-b border-gray-200 bg-white">
                         <div class="flex items-center justify-between">
@@ -731,7 +731,13 @@
                     </div>
                     
                     <!-- Chat Messages -->
-                    <div id="chatContainer" class="flex-1 p-6 overflow-y-auto chat-container">
+                    <button type="button" id="jumpToLatest" aria-label="Jump to latest message"
+                            style="display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:88px;z-index:20;
+                                   background:#4F46E5;color:#fff;border:0;border-radius:999px;padding:7px 14px;
+                                   font-size:12px;font-weight:600;cursor:pointer;box-shadow:0 4px 14px rgba(79,70,229,.35);">
+                        ↓ New messages
+                    </button>
+                    <div id="chatContainer" class="flex-1 p-6 overflow-y-auto chat-container" style="position:relative;">
                         <div id="negotiatorChatMessages">
                         </div>
                         
@@ -1137,6 +1143,7 @@
 
                 // Setup message input handling
                 setupMessageHandling();
+                setupJumpToLatest();
                 checkNegotiatorHealth();
 
                 console.log('AI Negotiator initialized successfully with database integration!');
@@ -1190,6 +1197,28 @@
                 console.error('Negotiator health check failed:', err);
                 set('#DC2626', '✗ Negotiator unavailable', 'The negotiator API did not respond: ' + err.message);
             }
+        }
+
+        // "New messages" pill. Auto-scroll is right when you're already at the
+        // bottom, but yanking the view down while someone is reading older
+        // messages is worse than not scrolling at all — so when scrolled up we
+        // surface this instead and let the reader choose.
+        function setupJumpToLatest() {
+            const pane = document.getElementById('chatContainer');
+            const btn = document.getElementById('jumpToLatest');
+            if (!pane || !btn) return;
+
+            const atBottom = () => pane.scrollHeight - pane.scrollTop - pane.clientHeight < 60;
+            const sync = () => { btn.style.display = atBottom() ? 'none' : 'block'; };
+
+            pane.addEventListener('scroll', sync, { passive: true });
+            btn.addEventListener('click', () => {
+                pane.scrollTo({ top: pane.scrollHeight, behavior: 'smooth' });
+                btn.style.display = 'none';
+            });
+            // New content arriving while scrolled up should reveal the pill.
+            new MutationObserver(sync).observe(pane, { childList: true, subtree: true });
+            sync();
         }
 
         function setupMessageHandling() {
