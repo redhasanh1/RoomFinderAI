@@ -6326,10 +6326,46 @@ app.post('/api/negotiate/reply', openAiRateLimitMiddleware, async (req, res) => 
                 : null
         ].filter(Boolean).join('\n');
 
-        const transcript = (Array.isArray(messageHistory) ? messageHistory : [])
+        const history = Array.isArray(messageHistory) ? messageHistory : [];
+        const transcript = history
             .slice(-16)
             .map(m => `${(m?.sender === 'ai' || m?.sender === 'assistant') ? 'YOU' : 'LANDLORD'}: ${sanitizeForPrompt(String(m?.content || ''), 400)}`)
             .join('\n') || '(you have not messaged them yet)';
+
+        // Anti-repetition. The model kept re-sending the same sentence — three
+        // consecutive turns of "I can only pay $X, can we agree?" — because
+        // nothing told it what it had already tried. Feed our own past lines
+        // back as an explicit do-not-repeat list, and count how many times we
+        // have already pushed the same budget number so the prompt can demand
+        // a change of tactic instead of another restatement.
+        const ourLines = history
+            .filter(m => m?.sender === 'ai' || m?.sender === 'assistant')
+            .map(m => String(m.content || '').trim())
+            .filter(Boolean);
+        const budgetAsks = budget
+            ? ourLines.filter(l => l.includes(String(budget)) || l.includes(String(Math.round(budget)))).length
+            : 0;
+        const alreadySaid = ourLines.slice(-6).map(l => `- "${sanitizeForPrompt(l, 220)}"`).join('\n');
+
+        // Escalation ladder: repeating the same ask is the weakest move
+        // available. Each rung must introduce something the landlord has not
+        // heard yet, or close.
+        let escalation = '';
+        if (budgetAsks >= 1) {
+            const rungs = [
+                `You have ALREADY named $${Math.round(ceiling)} ${budgetAsks} time(s). Do NOT state that number again as a bare request. Change tactic.`,
+                'Pick ONE tactic you have not used yet:',
+                '  a) Justify it once with something concrete about you (reliable payer, long lease, move in quickly, references ready).',
+                p.ask_utilities_included || p.ask_lower_deposit || p.ask_first_month_free
+                    ? '  b) Keep their rent number but ask for a concession instead (the ones listed above) — say plainly you could live with their price if X were included.'
+                    : '  b) Offer a trade: a longer lease, earlier move-in, or a bigger deposit in exchange for the lower rent.',
+                asking && hasCeiling && asking > ceiling
+                    ? `  c) Split the difference ONCE with a specific new number between $${Math.round(ceiling)} and $${asking} — but never above $${Math.round(ceiling)}.`
+                    : '  c) Ask what number WOULD work for them, so they name it.',
+                '  d) If they have refused three or more times, state your final position in one line and leave the door open. Do not beg.'
+            ];
+            escalation = '\n\nYOU ARE REPEATING YOURSELF — ESCALATE:\n' + rungs.join('\n');
+        }
 
         const system = `You are a real person renting a flat, texting a landlord. You are NOT an AI and must never hint otherwise.
 
@@ -6342,6 +6378,10 @@ ${hasCeiling ? `1. NEVER agree to, accept, or propose any rent above $${Math.rou
 3. Questions about YOU (move-in, budget, job, lease) are yours to answer from the facts above. NEVER ask the landlord to tell you your own plans. If a detail isn't listed above, say you're flexible — do not invent specifics.
 4. Never repeat a question they already answered.
 5. If they turn hostile, stay calm, apologise once, keep it to one short line.
+6. NEVER send a message that repeats a point you have already made. Every message must add something new — a new reason, a new offer, a new question, or a close. Restating the same request in different words is the worst thing you can do.${alreadySaid ? `
+
+YOU HAVE ALREADY SENT THESE — do not paraphrase or repeat any of them:
+${alreadySaid}` : ''}${escalation}
 
 HOW YOU WRITE: like a text message. 1-3 short sentences. Contractions. No bullet points, no greetings like "Dear", no sign-off, no emoji.
 
