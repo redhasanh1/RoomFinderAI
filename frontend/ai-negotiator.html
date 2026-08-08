@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/notifications.js?v=20260129b"></script>
     <script src="/js/notification-manager.js?v=20260519a"></script>
-    <script src="/ai-chat.js?v=20260808-chime"></script>
+    <script src="/ai-chat.js?v=20260808-single-bubble"></script>
     <script src="/ai-negotiation.js?v=20260808-no-footer"></script>
     <script type="module" src="/chat-system.js?v=20260129b"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -261,7 +261,7 @@
             font-size: 13.5px;
             line-height: 1.5;
         }
-        #negotiatorChatMessages .message .font-semibold {
+        #negotiatorChatMessages .message > .font-semibold {
             font-size: 10px;
             letter-spacing: .04em;
             opacity: .65;
@@ -273,7 +273,7 @@
         }
         /* Ours — right, filled */
         #negotiatorChatMessages .message.sent { align-self: flex-end; }
-        #negotiatorChatMessages .message.sent p {
+        #negotiatorChatMessages .message.sent > p {
             background: #6366F1;
             color: #fff;
             padding: 0.5rem 0.8rem;
@@ -281,10 +281,10 @@
             margin: 0;
             white-space: pre-wrap;
         }
-        #negotiatorChatMessages .message.sent .font-semibold { text-align: right; }
+        #negotiatorChatMessages .message.sent > .font-semibold { text-align: right; }
         /* Theirs / the AI — left, outlined */
         #negotiatorChatMessages .message.received { align-self: flex-start; }
-        #negotiatorChatMessages .message.received p {
+        #negotiatorChatMessages .message.received > p {
             background: #F1F2F6;
             color: #363B45;
             padding: 0.5rem 0.8rem;
@@ -292,6 +292,11 @@
             margin: 0;
             white-space: pre-wrap;
         }
+        /* Listing cards and other rich blocks arrive as raw HTML inside the
+           .message wrapper and already have their own surface. Only the plain
+           top-level <p> written by displayMessage becomes a bubble — hence the
+           child combinators above — and rich messages get more room. */
+        #negotiatorChatMessages .message:not(:has(> p)) { max-width: 100%; }
         @media (max-width: 640px) {
             #negotiatorChatMessages .message { max-width: 90%; }
         }
