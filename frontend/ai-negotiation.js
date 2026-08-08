@@ -3941,12 +3941,10 @@ Generate ONLY the message. No greetings, no signatures.
         return `${hex.substring(0,8)}-${hex.substring(8,12)}-${hex.substring(12,16)}-${hex.substring(16,20)}-${hex.substring(20,32)}`;
     }
 
-    // includeDisclosure: the AI-disclosure footer is attached to FIRST CONTACT
-    // only. Repeating it on every reply made each message read like an ad and
-    // leaked the tenant's email address into every single send. First contact
-    // is the moment that matters for disclosure — the landlord is told, once,
-    // before they invest in the conversation.
-    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null, respondsToMessageId = null, includeDisclosure = true) {
+    // No disclosure footer is appended to outgoing messages. The trailing
+    // includeDisclosure parameter is kept so existing call sites that still pass
+    // `false` remain valid; it is ignored.
+    async sendNegotiationMessage(conversationId, message, userEmail, landlordEmail = null, listingTitle = null, respondsToMessageId = null, includeDisclosure = false) {
         try {
             // Ensure AI user exists first
             await this.ensureAIUserExists();
@@ -3962,9 +3960,10 @@ Generate ONLY the message. No greetings, no signatures.
             // divider line ("———") on its own row, with blank lines above and
             // below, makes the footer read as a distinct signature block
             // rather than a trailing sentence on the message body.
-            const fullContent = includeDisclosure
-                ? `${message}\n\n———\n\nSent via RoomFinder AI on behalf of ${userEmail}`
-                : message;
+            // Disclosure footer removed at the product owner's instruction — no
+            // "Sent via RoomFinder AI" line is appended to any message, including
+            // first contact. Messages go out as written.
+            const fullContent = message;
             const createdAt = new Date().toISOString();
             let finalSenderEmail = senderEmail;
             let finalContent = fullContent;
@@ -4005,7 +4004,7 @@ Generate ONLY the message. No greetings, no signatures.
                 // Fallback: try using the user's email instead
                 console.log('Retrying with user email...');
                 finalSenderEmail = userEmail;
-                finalContent = includeDisclosure ? `${message}\n\n———\n\nSent via RoomFinder AI` : message;
+                finalContent = message;
                 const { error: retryError } = await this.supabase
                     .from('messages')
                     .insert({
