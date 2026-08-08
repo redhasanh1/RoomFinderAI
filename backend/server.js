@@ -6462,7 +6462,7 @@ ${settledRules}` : ''}${alreadySaid ? `
 YOU HAVE ALREADY SENT THESE — do not paraphrase or repeat any of them:
 ${alreadySaid}` : ''}${escalation}
 
-HOW YOU WRITE: like a text message. 1-3 short sentences. Contractions. No bullet points, no greetings like "Dear", no sign-off, no emoji.
+HOW YOU WRITE: like a text message. Never use em dashes (—) or en dashes (–); use commas, full stops or brackets instead. 1-3 short sentences. Contractions. No bullet points, no greetings like "Dear", no sign-off, no emoji.
 
 Reply with ONLY this JSON:
 {"message": "<what you send them>", "agreeing_to_price": <the rent number you are committing to in this message, or null>, "note": "<3-6 words on your tactic>"}`;
@@ -6524,7 +6524,7 @@ Write your next message.`;
             const anchorPrice = budget ? Math.round(budget) : (asking ? Math.round(asking * 0.9) : null);
             if (anchorPrice) {
                 console.warn(`🛡️ ${unansweredAsks} unanswered price asks — anchoring at $${anchorPrice} instead of asking again.`);
-                out.message = `I'd be able to do $${anchorPrice}/month — would that work for you?`;
+                out.message = `I'd be able to do $${anchorPrice}/month. Would that work for you?`;
                 out.agreeing_to_price = null;
             }
         }
@@ -6546,7 +6546,7 @@ Write your next message.`;
                 .find(n => n > bestOffer);
             if (newOffer && !priceSettled) {
                 console.warn(`🛡️ Blocked self-bidding: $${newOffer} is above our own earlier $${bestOffer}.`);
-                out.message = `I'd still be looking at $${bestOffer} — can you make that work?`;
+                out.message = `I'd still be looking at $${bestOffer}. Can you make that work?`;
                 out.agreeing_to_price = null;
             }
         }
@@ -6561,12 +6561,12 @@ Write your next message.`;
         if (asks && priceSettled && /\b(rent|price|monthly|per month|\$\s?\d)\b/i.test(out.message)) {
             console.warn(`🛡️ Blocked re-opening settled rent ($${settledPrice}).`);
             out.message = viewingSettled
-                ? `Sounds good — all set at $${settledPrice}. See you ${viewingWhen}.`
+                ? `Sounds good, all set at $${settledPrice}. See you ${viewingWhen}.`
                 : `Great, $${settledPrice} works. What's the next step?`;
             out.agreeing_to_price = settledPrice;
         } else if (asks && viewingSettled && /\b(what time|which day|when (can|could|should|works)|time works|day works)\b/i.test(out.message)) {
             console.warn(`🛡️ Blocked re-asking a booked viewing (${viewingWhen}).`);
-            out.message = `See you ${viewingWhen} — anything I should bring?`;
+            out.message = `See you ${viewingWhen}. Anything I should bring?`;
         }
 
         if (hasCeiling && (committing > ceiling || textOffer)) {
@@ -6574,10 +6574,21 @@ Write your next message.`;
             guard.overridden = true;
             guard.reason = `Model tried to offer $${bad}, above the $${Math.round(ceiling)} ceiling.`;
             out.message = asking && bad > asking
-                ? `Hold on — the listing says $${asking}, so $${bad} is above asking. I can do $${Math.round(ceiling)}. Does that work?`
-                : `That's over what I can manage. I can do $${Math.round(ceiling)} — would that work?`;
+                ? `Hold on, the listing says $${asking}, so $${bad} is above asking. I can do $${Math.round(ceiling)}. Does that work?`
+                : `That's over what I can manage. I can do $${Math.round(ceiling)}. Would that work?`;
             out.agreeing_to_price = null;
         }
+
+        // Final scrub on everything we send. Em/en dashes read as machine-written
+        // to a lot of people, and they can arrive from the model OR from any of
+        // the rewrite templates above, so stripping them at the single exit
+        // point is the only way to be sure none slip through.
+        out.message = String(out.message || '')
+            .replace(/\s*[—–]\s*/g, ', ')   // "yes — see you" -> "yes, see you"
+            .replace(/,\s*,/g, ',')          // collapse any doubled commas
+            .replace(/,\s*([.!?])/g, '$1')   // ", ." -> "."
+            .replace(/\s{2,}/g, ' ')
+            .trim();
 
         res.json({
             message: out.message,
