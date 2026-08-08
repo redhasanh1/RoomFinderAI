@@ -6418,5 +6418,30 @@
     <script src="modules/forms/photo-listing-wizard.js"></script>
 
     <!-- Android Navigation Fix -->
+<script>
+    // Enter sends, Shift+Enter makes a new line.
+    //
+    // The chat modal already binds this, but that binding happens inside
+    // setupChat(), which has retry-and-return paths — so whether it ever
+    // attached depended on element timing, and pressing Enter often did
+    // nothing at all. This delegated listener is bound to the document during
+    // the capture phase, so it works no matter when the textarea appears or is
+    // re-rendered. stopImmediatePropagation prevents the inner binding from
+    // also firing and sending the message twice, and clicking the real send
+    // button reuses the existing send path (attachments included) rather than
+    // duplicating it.
+    document.addEventListener('keydown', function (e) {
+        if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;   // IME composition must not send
+        const input = e.target;
+        if (!input || input.id !== 'chatInput') return;
+
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        if (!input.value.trim()) return;                                 // nothing to send
+        const btn = document.getElementById('chatSendBtn');
+        if (btn) btn.click();
+    }, true);
+</script>
 </body>
 </html>
