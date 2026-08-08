@@ -6503,6 +6503,65 @@ Write your next message.`;
     }
 });
 
+// POST /api/negotiate/reset - delete a tenant's negotiation threads.
+//
+// This MUST run server-side. Row-level security forbids the browser key from
+// deleting rows in `conversations` / `messages`, and PostgREST reports that
+// refusal as HTTP 200 with an empty array — indistinguishable from a real
+// delete. The old client-side reset therefore reported success while removing
+// nothing, so "Reset" appeared to do nothing at all no matter how many times
+// it was pressed. Here we use the service-role client and report actual counts.
+app.post('/api/negotiate/reset', async (req, res) => {
+    try {
+        const { userEmail, listingId } = req.body || {};
+        if (!userEmail) return res.status(400).json({ error: 'userEmail is required' });
+        if (!supabase) return res.status(503).json({ error: 'Database unavailable' });
+
+        // Only ever threads this tenant is part of — never anyone else's.
+        let q = supabase
+            .from('conversations')
+            .select('id')
+            .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`);
+        if (listingId) q = q.eq('listing_id', listingId);
+
+        const { data: convos, error: findErr } = await q;
+        if (findErr) throw findErr;
+
+        const ids = (convos || []).map(c => c.id);
+        if (!ids.length) {
+            return res.json({ conversationsDeleted: 0, messagesDeleted: 0, note: 'No threads found.' });
+        }
+
+        // Count first so we can report honestly, then delete messages before
+        // the parent rows.
+        const { count: msgCount } = await supabase
+            .from('messages')
+            .select('id', { count: 'exact', head: true })
+            .in('conversation_id', ids);
+
+        const { error: msgErr } = await supabase.from('messages').delete().in('conversation_id', ids);
+        if (msgErr) throw msgErr;
+
+        const { error: convErr } = await supabase.from('conversations').delete().in('id', ids);
+        if (convErr) throw convErr;
+
+        // Verify rather than assume — the whole point of this endpoint.
+        const { data: leftover } = await supabase.from('conversations').select('id').in('id', ids);
+        const remaining = (leftover || []).length;
+
+        console.log(`♻️ Reset for ${userEmail}: ${ids.length - remaining}/${ids.length} threads deleted`);
+        res.json({
+            conversationsDeleted: ids.length - remaining,
+            messagesDeleted: msgCount || 0,
+            remaining,
+            note: remaining ? `${remaining} thread(s) could not be deleted.` : null
+        });
+    } catch (error) {
+        console.error('Error in /api/negotiate/reset:', error.message);
+        res.status(500).json({ error: 'Reset failed', detail: error.message });
+    }
+});
+
 // POST /api/negotiate/market-estimate - Get AI market data estimate (GPT-3.5)
 app.post('/api/negotiate/market-estimate', openAiRateLimitMiddleware, async (req, res) => {
     try {

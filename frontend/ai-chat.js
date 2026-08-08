@@ -2002,33 +2002,29 @@ class AIChatHandler {
             this.autoReplyChannels.clear();
         }
 
-        // 2. Find the threads to remove. Conversations are bidirectional, so
-        //    match this tenant on either side.
+        // 2. Delete the threads. Scoped to the open listing when there is one,
+        //    otherwise every thread this tenant is part of.
         const listingId = scope === 'active' ? this.activeListing?.id : null;
-        let query = this.supabase
-            .from('conversations')
-            .select('id')
-            .or(`sender_email.eq.${email},receiver_email.eq.${email}`);
-        if (listingId) query = query.eq('listing_id', listingId);
 
-        const { data: convos, error: findErr } = await query;
-        if (findErr) {
-            console.error('Reset: could not list conversations:', findErr.message);
-            return `Could not reach the database: ${findErr.message}`;
-        }
-
-        const ids = (convos || []).map(c => c.id);
+        // Delete server-side. RLS blocks DELETE from the browser key and
+        // PostgREST returns 200 with zero rows removed, so the old client-side
+        // delete silently did nothing while reporting success.
         let removed = 0;
-        if (ids.length) {
-            // Messages first — the conversation row may be the FK parent.
-            const { error: msgErr } = await this.supabase.from('messages').delete().in('conversation_id', ids);
-            if (msgErr) console.warn('Reset: message delete failed:', msgErr.message);
-            const { error: convErr } = await this.supabase.from('conversations').delete().in('id', ids);
-            if (convErr) {
-                console.warn('Reset: conversation delete failed:', convErr.message);
-            } else {
-                removed = ids.length;
-            }
+        let resetNote = null;
+        try {
+            const resp = await fetch('/api/negotiate/reset', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userEmail: email, listingId })
+            });
+            if (!resp.ok) throw new Error(`reset API returned ${resp.status}`);
+            const result = await resp.json();
+            removed = result.conversationsDeleted || 0;
+            resetNote = result.note;
+            if (result.remaining) console.warn('Reset: some threads survived:', result.remaining);
+        } catch (e) {
+            console.error('Reset failed:', e);
+            return `Reset failed: ${e.message}. Nothing was deleted.`;
         }
 
         // 3. Clear in-memory negotiation state on both objects.
@@ -2049,7 +2045,7 @@ class AIChatHandler {
         console.log(`♻️ Reset complete — ${removed} thread(s) deleted ${scopeLabel}, ${listenersClosed} listener(s) closed.`);
         return removed
             ? `Reset done — deleted ${removed} negotiation thread${removed === 1 ? '' : 's'} ${scopeLabel} and stopped ${listenersClosed} live listener${listenersClosed === 1 ? '' : 's'}.`
-            : `Reset done — no saved threads found. Stopped ${listenersClosed} live listener${listenersClosed === 1 ? '' : 's'}.`;
+            : `Reset done — ${resetNote || 'no saved threads found'}. Stopped ${listenersClosed} live listener${listenersClosed === 1 ? '' : 's'}.`;
     }
 
     async clearConversationHistory() {
