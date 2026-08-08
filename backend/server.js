@@ -6347,6 +6347,38 @@ app.post('/api/negotiate/reply', openAiRateLimitMiddleware, async (req, res) => 
             : 0;
         const alreadySaid = ourLines.slice(-6).map(l => `- "${sanitizeForPrompt(l, 220)}"`).join('\n');
 
+        // What is already SETTLED. Without this the model has no concept of a
+        // finished sub-negotiation: in a real transcript the landlord agreed to
+        // $3200, and the AI then re-opened the rent three more times ("let's
+        // finalize the rent price", "what's the rent looking like") until the
+        // landlord snapped "we mentioned it 3 times?". Anything settled here is
+        // declared closed in the prompt and must not be renegotiated.
+        const landlordLines = history
+            .filter(m => m && m.sender !== 'ai' && m.sender !== 'assistant')
+            .map(m => String(m.content || '').toLowerCase());
+        const allText = history.map(m => String(m?.content || '')).join(' ');
+        const ourNumbers = ourLines.join(' ').match(/\$?\s?(\d{3,5})/g) || [];
+        const landlordAgreed = landlordLines.some(l =>
+            /\b(ok|okay|fine|deal|agreed|sure|yes|done|works|sounds good)\b/.test(l)
+        );
+        const priceSettled = !!(budget && landlordAgreed &&
+            (allText.includes(String(budget)) || ourNumbers.length > 0) &&
+            ourLines.some(l => l.includes(String(budget))));
+        const viewingSettled = /\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday)\b/i.test(allText) &&
+            /\b(\d{1,2})\s?(am|pm)\b/i.test(allText);
+
+        const settledRules = [
+            priceSettled
+                ? `RENT IS SETTLED at $${Math.round(ceiling)}/month. It is agreed. NEVER ask about rent, price, budget or "finalizing the price" again. Do not re-confirm it. Treat it as done.`
+                : null,
+            viewingSettled
+                ? 'THE VIEWING IS BOOKED (day and time are agreed above). Do not re-confirm the day or time, and do not ask them to confirm it again.'
+                : null,
+            (priceSettled && viewingSettled)
+                ? 'Everything important is agreed. Say something brief and human to close the conversation. Do NOT ask any further questions — if there is nothing left to say, a short friendly sign-off is the correct reply.'
+                : null
+        ].filter(Boolean).join('\n');
+
         // Escalation ladder: repeating the same ask is the weakest move
         // available. Each rung must introduce something the landlord has not
         // heard yet, or close.
@@ -6378,7 +6410,12 @@ ${hasCeiling ? `1. NEVER agree to, accept, or propose any rent above $${Math.rou
 3. Questions about YOU (move-in, budget, job, lease) are yours to answer from the facts above. NEVER ask the landlord to tell you your own plans. If a detail isn't listed above, say you're flexible — do not invent specifics.
 4. Never repeat a question they already answered.
 5. If they turn hostile, stay calm, apologise once, keep it to one short line.
-6. NEVER send a message that repeats a point you have already made. Every message must add something new — a new reason, a new offer, a new question, or a close. Restating the same request in different words is the worst thing you can do.${alreadySaid ? `
+6. NEVER send a message that repeats a point you have already made. Every message must add something new — a new reason, a new offer, a new question, or a close. Restating the same request in different words is the worst thing you can do.
+7. You do NOT know today's date or the day of the week. Never state or guess it. If asked, say you're not sure and ask them to name the day.
+8. Raise anything you need (parking, laundry, pets, utilities) BEFORE agreeing a price, never after.${settledRules ? `
+
+ALREADY SETTLED — DO NOT REOPEN:
+${settledRules}` : ''}${alreadySaid ? `
 
 YOU HAVE ALREADY SENT THESE — do not paraphrase or repeat any of them:
 ${alreadySaid}` : ''}${escalation}
@@ -6415,11 +6452,29 @@ Write your next message.`;
         const committing = Number(out.agreeing_to_price) || null;
         const guard = { ceiling: hasCeiling ? Math.round(ceiling) : null, overridden: false, reason: null };
 
-        if (hasCeiling && committing && committing > ceiling) {
+        // The declared field is not enough. In a real run the model wrote "I can
+        // do $3250, that's as low as I can go" while reporting
+        // agreeing_to_price: null — so the over-ceiling offer went straight to
+        // the landlord unchallenged. Scan the message text for any figure we
+        // are offering above the ceiling, not just the number it admits to.
+        let textOffer = null;
+        if (hasCeiling) {
+            const figures = (String(out.message || '').match(/\$\s?\d{3,5}(?:\.\d{2})?/g) || [])
+                .map(s => Number(s.replace(/[^\d.]/g, '')))
+                .filter(n => n >= 300 && n > ceiling);
+            // Quoting THEIR asking price back at them is fine ("the listing says
+            // $3675") — only flag it when we appear to be offering it ourselves.
+            const offering = /\b(i can (do|pay|go|manage|stretch)|how about|could we do|i.?ll take|let.?s say|happy with|agree to|works for me at)\b/i
+                .test(String(out.message || ''));
+            if (figures.length && offering) textOffer = Math.max.apply(null, figures);
+        }
+
+        if (hasCeiling && (committing > ceiling || textOffer)) {
+            const bad = committing > ceiling ? committing : textOffer;
             guard.overridden = true;
-            guard.reason = `Model tried to commit at $${committing}, above the $${Math.round(ceiling)} ceiling.`;
-            out.message = asking && committing > asking
-                ? `Hold on — the listing says $${asking}, so $${committing} is above asking. I can do $${Math.round(ceiling)}. Does that work?`
+            guard.reason = `Model tried to offer $${bad}, above the $${Math.round(ceiling)} ceiling.`;
+            out.message = asking && bad > asking
+                ? `Hold on — the listing says $${asking}, so $${bad} is above asking. I can do $${Math.round(ceiling)}. Does that work?`
                 : `That's over what I can manage. I can do $${Math.round(ceiling)} — would that work?`;
             out.agreeing_to_price = null;
         }
