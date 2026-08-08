@@ -6511,6 +6511,24 @@ Write your next message.`;
             if (figures.length && offering) textOffer = Math.max.apply(null, figures);
         }
 
+        // Deterministic settled-topic guard. The prompt already forbids
+        // reopening an agreed rent or a booked viewing, but gpt-3.5 drifts back
+        // to them under pressure — in a real transcript it asked "so what's the
+        // rent going to be?" one message after agreeing, and re-asked a viewing
+        // time the landlord had already given. Prompt rules are advisory; this
+        // is not.
+        const asks = /\?/.test(String(out.message || ''));
+        if (asks && priceSettled && /\b(rent|price|monthly|per month|\$\s?\d)\b/i.test(out.message)) {
+            console.warn(`🛡️ Blocked re-opening settled rent ($${settledPrice}).`);
+            out.message = viewingSettled
+                ? `Sounds good — all set at $${settledPrice}. See you ${viewingWhen}.`
+                : `Great, $${settledPrice} works. What's the next step?`;
+            out.agreeing_to_price = settledPrice;
+        } else if (asks && viewingSettled && /\b(what time|which day|when (can|could|should|works)|time works|day works)\b/i.test(out.message)) {
+            console.warn(`🛡️ Blocked re-asking a booked viewing (${viewingWhen}).`);
+            out.message = `See you ${viewingWhen} — anything I should bring?`;
+        }
+
         if (hasCeiling && (committing > ceiling || textOffer)) {
             const bad = committing > ceiling ? committing : textOffer;
             guard.overridden = true;
