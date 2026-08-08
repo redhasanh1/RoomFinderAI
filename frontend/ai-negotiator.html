@@ -240,6 +240,56 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
+
+        /* Chat bubbles.
+           displayMessage() writes <div class="message sent|received">, but the
+           rules for those classes live in chat-system.css, which this page never
+           loads — so every message rendered as an identical full-width block on
+           the left, ours and theirs indistinguishable. Defined here so the page
+           is self-contained. The container is a flex column so align-self does
+           the positioning reliably regardless of bubble width. */
+        #negotiatorChatMessages {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        #negotiatorChatMessages .message {
+            max-width: 78%;
+            animation: msgIn 0.25s ease-out;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        /* Ours — right, filled */
+        #negotiatorChatMessages .message.sent { align-self: flex-end; }
+        #negotiatorChatMessages .message.sent p {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            padding: 0.7rem 0.95rem;
+            border-radius: 1rem 1rem 0.25rem 1rem;
+            margin: 0;
+            white-space: pre-wrap;
+            box-shadow: 0 2px 6px rgba(102, 126, 234, 0.25);
+        }
+        #negotiatorChatMessages .message.sent .font-semibold { text-align: right; }
+        /* Theirs / the AI — left, outlined */
+        #negotiatorChatMessages .message.received { align-self: flex-start; }
+        #negotiatorChatMessages .message.received p {
+            background: #fff;
+            color: #374151;
+            padding: 0.7rem 0.95rem;
+            border-radius: 1rem 1rem 1rem 0.25rem;
+            margin: 0;
+            white-space: pre-wrap;
+            border: 1px solid #e5e7eb;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        }
+        @media (max-width: 640px) {
+            #negotiatorChatMessages .message { max-width: 90%; }
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
