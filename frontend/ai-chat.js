@@ -1208,7 +1208,8 @@ class AIChatHandler {
             this.appendMessage('AI', `📌 Note: ${ct} of your own listing${ct > 1 ? 's' : ''} also matched and ${ct > 1 ? 'were' : 'was'} hidden (you can't negotiate with yourself).`, 'left');
         }
 
-        this.appendMessage('AI', 'Click "View Details" on any listing to see more information.', 'left');
+        // The cards carry a visible "View Details" button — a separate line
+        // telling people to click it is one more message for no new information.
         this.listingSelectionMode = true;
         this.pendingUserResponse = 'listing_selection';
         this.negotiationState = 'awaiting_selection';
@@ -1375,7 +1376,7 @@ class AIChatHandler {
             // Check affirmative OR explicit message intent OR likes it + has listing
             if ((isAffirmative || wantsToMessage || likesIt) && this.currentViewedListing) {
                 console.log('✅ User wants to contact landlord (affirmative/keyword match)');
-                this.appendMessage('AI', `Great! I'll reach out to the landlord for "${this.currentViewedListing.title}"...`, 'left');
+                // Superseded by the "Negotiating for you" card below.
                 this.pendingUserResponse = null;
                 setTimeout(() => this.startNegotiationForListing(this.currentViewedListing), 1000);
                 return true;
@@ -1655,7 +1656,22 @@ class AIChatHandler {
         // the leaking caller in production. Remove once root cause is fixed.
         console.log('📍 startNegotiationForListing called for listing', listing?.id, '— stack:\n', new Error().stack);
         try {
-            this.appendMessage('AI', `Messaging the landlord about "${listing.title}"…`, 'left');
+            // One structured card instead of three consecutive status lines
+            // ("I'll reach out…", "Messaging the landlord…", "I'll handle the
+            // conversation…"). Same information, a quarter of the noise.
+            this.appendMessageHTML('AI', `
+                <div style="background:#F5F6FA;border:1px solid #E4E7EF;border-left:3px solid #6366F1;border-radius:10px;padding:11px 13px;">
+                    <div style="font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;color:#6366F1;margin-bottom:5px;">
+                        Negotiating for you
+                    </div>
+                    <div style="font-size:13.5px;font-weight:600;color:#1F2937;line-height:1.35;">${listing.title}</div>
+                    <div style="font-size:12px;color:#6B7280;margin-top:3px;">
+                        ${listing.price ? 'Asking $' + listing.price + '/mo' : ''}${listing.city || listing.location ? ' · ' + (listing.city || listing.location) : ''}
+                    </div>
+                    <div style="font-size:12px;color:#4B5563;margin-top:8px;padding-top:8px;border-top:1px solid #E4E7EF;">
+                        I'll message them, handle the back and forth, and tell you when it's agreed.
+                    </div>
+                </div>`, 'left');
 
             if (!this.currentUser?.email) {
                 this.appendMessage('AI', 'You need to be logged in to contact landlords.', 'left');
@@ -1835,7 +1851,7 @@ class AIChatHandler {
 
                         // The message itself renders below as an AI Negotiator bubble,
                         // so echoing it here duplicated every outgoing line.
-                        this.appendMessage('AI', `I'll handle the conversation from here and let you know when they reply.`, 'left');
+                        // The card already says this.
 
                         // Set up auto-reply listener for this conversation
                         this.setupConversationAutoReply(conversationId, conversationData.negotiationId, listing);
