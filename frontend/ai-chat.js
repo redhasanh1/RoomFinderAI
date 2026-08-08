@@ -799,7 +799,7 @@ class AIChatHandler {
         };
     }
 
-    filterListingsByNeeds(listings, needs, { excludeOwnEmail = true, relaxPricePct = 0 } = {}) {
+    filterListingsByNeeds(listings, needs, { excludeOwnEmail = true, relaxPricePct = 0, ignoreType = false } = {}) {
         let results = listings || [];
         const ownEmail = (excludeOwnEmail && this.currentUser?.email || '').toLowerCase();
         if (ownEmail) {
@@ -812,9 +812,24 @@ class AIChatHandler {
                 return hay.includes(loc);
             });
         }
-        if (needs?.houseType) {
-            const type = needs.houseType.toLowerCase();
-            results = results.filter(l => (l.house_type || '').toLowerCase() === type);
+        if (needs?.houseType && !ignoreType) {
+            // Exact equality was too brutal: asking for a "room" matched nothing
+            // because every listing is typed Apartment/Condo/House, so a real
+            // Los Angeles listing was reported as "no matching listings in the
+            // database". Match either direction, and treat the room-ish words as
+            // satisfied by any self-contained home too — you can rent a room in
+            // an apartment.
+            const type = needs.houseType.toLowerCase().trim();
+            const roomish = ['room', 'shared', 'studio', 'bedroom'];
+            const wantsRoom = roomish.some(r => type.includes(r));
+            results = results.filter(l => {
+                const have = (l.house_type || '').toLowerCase().trim();
+                if (!have) return true;                       // untyped listing: don't exclude
+                if (have === type) return true;
+                if (have.includes(type) || type.includes(have)) return true;
+                if (wantsRoom) return true;                   // a room can exist in any home
+                return false;
+            });
         }
         if (needs?.maxPrice) {
             const maxP = relaxPricePct > 0
@@ -1210,11 +1225,14 @@ class AIChatHandler {
             return;
         }
 
-        // No own-listing match either. Try similar listings via API with relaxed price.
+        // No own-listing match either. Try similar listings via API with relaxed
+        // price AND no property-type filter — this is the "close enough" pass,
+        // and keeping the type filter here is what made a real Los Angeles
+        // listing invisible when the search was typed as "room".
         let similarListings = [];
         try {
             const allListings = await this.fetchListingsFromApi();
-            similarListings = this.filterListingsByNeeds(allListings, this.userNeeds, { relaxPricePct: 0.2 })
+            similarListings = this.filterListingsByNeeds(allListings, this.userNeeds, { relaxPricePct: 0.2, ignoreType: true })
                 .sort((a, b) => new Date(b.updated_at || b.created_at || 0) - new Date(a.updated_at || a.created_at || 0))
                 .slice(0, 10);
         } catch (e) {
