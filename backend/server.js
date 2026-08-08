@@ -6511,6 +6511,23 @@ Write your next message.`;
             if (figures.length && offering) textOffer = Math.max.apply(null, figures);
         }
 
+        // Stop asking, start offering. When the landlord never answers with a
+        // number ("yep", "yeah", "im free this weekend"), the model kept
+        // rewording the same question — four rent asks in a row in a real
+        // replay, which is precisely what makes a landlord stop replying. After
+        // two unanswered asks, put a concrete number on the table instead.
+        const priceAskRe = /\b(rent|price)\b[^.?!]*\?|how much|what.{0,12}(rent|price)|discuss the (rent|price)|lock in the (rent|price)/i;
+        const unansweredAsks = ourLines.filter(l => priceAskRe.test(l)).length;
+        const landlordNamedAny = /\$?\s?\b\d{3,5}\b/.test(landlordLines.join(' '));
+        if (!priceSettled && !landlordNamedAny && unansweredAsks >= 2 && priceAskRe.test(String(out.message || ''))) {
+            const anchorPrice = budget ? Math.round(budget) : (asking ? Math.round(asking * 0.9) : null);
+            if (anchorPrice) {
+                console.warn(`🛡️ ${unansweredAsks} unanswered price asks — anchoring at $${anchorPrice} instead of asking again.`);
+                out.message = `I'd be able to do $${anchorPrice}/month — would that work for you?`;
+                out.agreeing_to_price = null;
+            }
+        }
+
         // Never bid against yourself. In a replay of a real conversation the AI
         // offered $3550, got no answer, then offered $3600 one turn later —
         // raising its own price unprompted, which hands the landlord money for
