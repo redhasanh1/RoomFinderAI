@@ -6372,18 +6372,47 @@ app.post('/api/negotiate/reply', openAiRateLimitMiddleware, async (req, res) => 
         const landlordAgreed = landlordLines.some(l =>
             /\b(ok|okay|fine|deal|agreed|sure|yes|done|works|sounds good)\b/.test(l)
         );
-        const priceSettled = !!(budget && landlordAgreed &&
-            (allText.includes(String(budget)) || ourNumbers.length > 0) &&
-            ourLines.some(l => l.includes(String(budget))));
-        const viewingSettled = /\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday)\b/i.test(allText) &&
-            /\b(\d{1,2})\s?(am|pm)\b/i.test(allText);
+        // Price is settled when a figure has been named and the landlord agreed —
+        // this must NOT depend on a budget being configured. It used to require
+        // `budget`, so on any surface without the goals panel (the listings-page
+        // chat has none) it was permanently false and the AI re-asked "so what's
+        // the rent going to be?" after the number was already agreed.
+        const namedFigures = (allText.match(/\$?\s?\b(\d{3,5})\b/g) || [])
+            .map(x => Number(String(x).replace(/[^\d]/g, '')))
+            .filter(n => n >= 300 && n <= 20000);
+        const settledPrice = namedFigures.length ? namedFigures[namedFigures.length - 1] : null;
+        const priceSettled = !!(settledPrice && landlordAgreed);
+
+        // A viewing is settled once a day AND a time are both on the table.
+        const dayMatch = allText.match(/\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday|tomorrow|tonight)\b/i);
+        const timeMatch = allText.match(/\b(\d{1,2})(:\d{2})?\s?(am|pm)\b/i);
+        const viewingSettled = !!(dayMatch && timeMatch);
+        const viewingWhen = viewingSettled ? `${dayMatch[0]} at ${timeMatch[0]}` : null;
+
+        // Anything the landlord has already told us. Re-asking these is what made
+        // the AI look broken: it asked about laundry, was told there is none, then
+        // asked about laundry again two messages later.
+        const landlordText = landlordLines.join(' ');
+        const answered = [
+            /laundry|washer|dryer/.test(landlordText) ? 'laundry' : null,
+            /parking|garage|driveway/.test(landlordText) ? 'parking' : null,
+            /utilit|hydro|water|heat|electric/.test(landlordText) ? 'utilities' : null,
+            /pet|dog|cat/.test(landlordText) ? 'pets' : null,
+            /deposit/.test(landlordText) ? 'the deposit' : null,
+            /furnish/.test(landlordText) ? 'furnishing' : null,
+            /availab|move.?in|immediate/.test(landlordText) ? 'availability' : null,
+            /address|street|road|ave|blvd/.test(landlordText) ? 'the address' : null
+        ].filter(Boolean);
 
         const settledRules = [
             priceSettled
-                ? `RENT IS SETTLED at $${Math.round(ceiling)}/month. It is agreed. NEVER ask about rent, price, budget or "finalizing the price" again. Do not re-confirm it. Treat it as done.`
+                ? `RENT IS SETTLED at $${settledPrice}/month — agreed by both sides. NEVER ask about rent, price, budget, "what's the rent going to be" or "finalizing the price" again. Do not re-confirm the number.`
                 : null,
             viewingSettled
-                ? 'THE VIEWING IS BOOKED (day and time are agreed above). Do not re-confirm the day or time, and do not ask them to confirm it again.'
+                ? `THE VIEWING IS BOOKED for ${viewingWhen}. Never ask what day or what time again — you already know. If you need to refer to it, state it: "see you ${viewingWhen}".`
+                : null,
+            answered.length
+                ? `THE LANDLORD HAS ALREADY ANSWERED: ${answered.join(', ')}. Asking about any of these again makes you look like a bot that isn't reading. Do not.`
                 : null,
             (priceSettled && viewingSettled)
                 ? 'Everything important is agreed — rent AND viewing. The negotiation is OVER. Your reply must be a short friendly sign-off of under 12 words, mentioning NO price, NO numbers and NO questions. Something like "Great, see you then — thanks!" is exactly right. Do not sell yourself, do not restate terms, do not add conditions.'
@@ -6416,7 +6445,8 @@ WHAT YOU KNOW ABOUT YOURSELF:
 ${known}
 
 HARD RULES — breaking these ruins the deal:
-${hasCeiling ? `1. NEVER agree to, accept, or propose any rent above $${Math.round(ceiling)}/month. If they ask more, counter at or below $${Math.round(ceiling)}. Walk the price down, never up.` : '1. Do not agree to any rent figure until you know the tenant budget.'}
+${hasCeiling ? `1. NEVER agree to, accept, or propose any rent above $${Math.round(ceiling)}/month. If they ask more, counter at or below $${Math.round(ceiling)}. Walk the price down, never up.` : '1. Do not agree to any rent figure yet.'}
+1b. ${asking && (!budget || budget >= asking) ? `You have NOT been given a target price. Your job is still to get the rent DOWN from $${asking}. NEVER open by confirming or accepting the asking price — always ask for a reduction at least once before agreeing to anything.` : 'Push for the best rent you can get.'}
 2. Never agree to a viewing, deposit or signing until the rent number has actually been settled. Sort money first.
 3. Questions about YOU (move-in, budget, job, lease) are yours to answer from the facts above. NEVER ask the landlord to tell you your own plans. If a detail isn't listed above, say you're flexible — do not invent specifics.
 4. Never repeat a question they already answered.
