@@ -6299,7 +6299,31 @@ app.post('/api/negotiate/reply', openAiRateLimitMiddleware, async (req, res) => 
                 ? `Things you need: ${p.must_haves.map(m => String(m).replace(/_/g, ' ')).join(', ')}`
                 : null,
             p.employment ? `Your job: ${sanitizeForPrompt(p.employment, 60)}` : 'Your job: stable full-time work, good references',
-            p.assertiveness ? `Negotiating style: ${sanitizeForPrompt(p.assertiveness, 30)}` : null
+            p.assertiveness ? `Negotiating style: ${sanitizeForPrompt(p.assertiveness, 30)}` : null,
+            // --- the rest of the goals panel ---
+            p.target_reduction ? `You want to get about $${Number(p.target_reduction)}/month off the asking price` : null,
+            p.movein_flexibility ? `Move-in flexibility: ${sanitizeForPrompt(p.movein_flexibility, 30)}` : null,
+            Array.isArray(p.available_time) && p.available_time.length
+                ? `Times of day you can view: ${p.available_time.join(', ')}` : null,
+            p.meeting_format ? `You prefer to view by: ${sanitizeForPrompt(p.meeting_format, 30)}` : null,
+            p.income_confidence ? `Your income situation: ${sanitizeForPrompt(p.income_confidence, 40)}` : null,
+            p.pets && p.pets !== 'none' ? `You have pets: ${sanitizeForPrompt(p.pets, 20)} — raise this before signing` : null,
+            p.pets === 'none' ? 'You have no pets' : null,
+            p.occupants ? `People moving in: ${Number(p.occupants)}` : null,
+            p.non_smoker ? 'You are a non-smoker' : null,
+            p.tone ? `Your tone: ${sanitizeForPrompt(p.tone, 30)}` : null,
+            // Concessions to chase when the landlord will not move on rent.
+            [
+                p.ask_utilities_included ? 'utilities included' : null,
+                p.ask_lower_deposit ? 'a lower deposit' : null,
+                p.ask_first_month_free ? 'first month free or a move-in incentive' : null
+            ].filter(Boolean).length
+                ? `If they will not drop the rent, try to win instead: ${[
+                    p.ask_utilities_included ? 'utilities included' : null,
+                    p.ask_lower_deposit ? 'a lower deposit' : null,
+                    p.ask_first_month_free ? 'first month free or a move-in incentive' : null
+                ].filter(Boolean).join(', ')}`
+                : null
         ].filter(Boolean).join('\n');
 
         const transcript = (Array.isArray(messageHistory) ? messageHistory : [])

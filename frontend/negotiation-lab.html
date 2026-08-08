@@ -27,6 +27,18 @@
   input,select{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
     border-radius:7px;padding:9px 11px;font-size:14px;font-family:inherit}
   input:focus,select:focus{outline:2px solid var(--accent);outline-offset:1px;border-color:transparent}
+  .grp{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent);margin:26px 0 2px;padding-top:14px;border-top:1px solid var(--line)}
+  .check{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink2);
+    margin:8px 0 0;text-transform:none;letter-spacing:0;font-family:inherit}
+  .check input{width:auto;margin:0}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chips button{width:auto;margin:0;padding:5px 10px;font-size:11.5px;font-weight:600;
+    font-family:var(--mono);background:var(--panel2);color:var(--ink3);
+    border:1px solid var(--line);border-radius:6px}
+  .chips button.on{background:var(--accent-dim);color:var(--accent);border-color:var(--accent)}
+  .chips button:hover{filter:none;color:var(--ink)}
+  .chips button.on:hover{color:var(--accent)}
   .ceil{margin-top:20px;padding:12px 14px;background:var(--accent-dim);border:1px solid var(--accent);
     border-radius:8px;font-family:var(--mono);font-size:12px;color:var(--accent);line-height:1.5}
   button{width:100%;margin-top:18px;background:var(--accent);color:#06231D;border:0;border-radius:8px;
@@ -64,22 +76,109 @@
   <label for="price">Listing asking price</label>
   <input id="price" type="number" value="3675">
 
-  <label for="budget">Your maximum rent</label>
+  <p class="grp">Price goals</p>
+  <label for="budget">Max rent you can pay</label>
   <input id="budget" type="number" value="3200">
+  <label for="reduction">Target reduction ($/mo)</label>
+  <input id="reduction" type="number" value="" placeholder="e.g. 200">
+  <label class="check"><input type="checkbox" id="ask_utilities_included"> Ask for utilities included</label>
+  <label class="check"><input type="checkbox" id="ask_lower_deposit"> Ask for lower deposit</label>
+  <label class="check"><input type="checkbox" id="ask_first_month_free"> Ask for first month free</label>
 
+  <p class="grp">Move-in &amp; lease</p>
   <label for="movein">Move-in date</label>
   <input id="movein" type="text" value="Sept 1" placeholder="blank = flexible">
-
-  <label for="days">Days you can view</label>
-  <input id="days" type="text" value="saturday, sunday" placeholder="blank = any day">
-
-  <label for="style">Style</label>
-  <select id="style">
-    <option value="">Default</option>
-    <option value="firm">Firm</option>
-    <option value="friendly">Friendly</option>
-    <option value="aggressive">Aggressive</option>
+  <label for="flex">Flexibility</label>
+  <select id="flex">
+    <option value="">— skip —</option>
+    <option value="exact">Exact date</option>
+    <option value="1week">± 1 week</option>
+    <option value="2weeks">± 2 weeks</option>
+    <option value="flexible">Flexible</option>
   </select>
+  <label>Lease length</label>
+  <div class="chips" data-single="1" id="lease_length">
+    <button type="button" data-v="6 months">6 months</button>
+    <button type="button" data-v="12 months">12 months</button>
+    <button type="button" data-v="month-to-month">Month-to-month</button>
+    <button type="button" data-v="flexible">Flexible</button>
+  </div>
+
+  <p class="grp">Availability</p>
+  <label>Days you can view</label>
+  <div class="chips" id="available_days">
+    <button type="button" data-v="monday">Mon</button>
+    <button type="button" data-v="tuesday">Tue</button>
+    <button type="button" data-v="wednesday">Wed</button>
+    <button type="button" data-v="thursday">Thu</button>
+    <button type="button" data-v="friday">Fri</button>
+    <button type="button" data-v="saturday" class="on">Sat</button>
+    <button type="button" data-v="sunday" class="on">Sun</button>
+  </div>
+  <label>Time of day</label>
+  <div class="chips" id="available_time">
+    <button type="button" data-v="morning">Morning</button>
+    <button type="button" data-v="afternoon">Afternoon</button>
+    <button type="button" data-v="evening">Evening</button>
+  </div>
+  <label>Meeting format</label>
+  <div class="chips" data-single="1" id="meeting_format">
+    <button type="button" data-v="in-person tour">In-person</button>
+    <button type="button" data-v="video call">Video call</button>
+    <button type="button" data-v="phone">Phone</button>
+  </div>
+
+  <p class="grp">About you</p>
+  <label for="employment">Employment</label>
+  <select id="employment">
+    <option value="">— skip —</option>
+    <option value="employed">Employed full-time</option>
+    <option value="student">Student</option>
+    <option value="self_employed">Self-employed</option>
+    <option value="other">Other</option>
+  </select>
+  <label for="income_confidence">Income</label>
+  <select id="income_confidence">
+    <option value="">— skip —</option>
+    <option value="strong">Strong / well above rent</option>
+    <option value="average">Comfortably covers rent</option>
+    <option value="building">Building credit / co-signer</option>
+  </select>
+  <label for="pets">Pets</label>
+  <select id="pets">
+    <option value="">— skip —</option>
+    <option value="none">No pets</option>
+    <option value="cat">Cat(s)</option>
+    <option value="dog">Dog(s)</option>
+    <option value="other">Other</option>
+  </select>
+  <label for="occupants">Occupants</label>
+  <input id="occupants" type="number" min="1" max="10" value="" placeholder="1">
+  <label class="check"><input type="checkbox" id="non_smoker"> Non-smoker</label>
+
+  <p class="grp">Must haves</p>
+  <div class="chips" id="must_haves">
+    <button type="button" data-v="parking">Parking</button>
+    <button type="button" data-v="in-unit laundry">In-unit laundry</button>
+    <button type="button" data-v="pet-friendly">Pet-friendly</button>
+    <button type="button" data-v="furnished">Furnished</button>
+    <button type="button" data-v="dishwasher">Dishwasher</button>
+    <button type="button" data-v="accessible">Accessible</button>
+  </div>
+
+  <p class="grp">Style</p>
+  <label>Tone</label>
+  <div class="chips" data-single="1" id="tone">
+    <button type="button" data-v="friendly">Friendly</button>
+    <button type="button" data-v="professional">Professional</button>
+    <button type="button" data-v="firm">Firm</button>
+  </div>
+  <label>Assertiveness</label>
+  <div class="chips" data-single="1" id="assertiveness">
+    <button type="button" data-v="low">Low</button>
+    <button type="button" data-v="medium">Medium</button>
+    <button type="button" data-v="high">High</button>
+  </div>
 
   <div class="ceil" id="ceil"></div>
   <button id="reset" type="button">Start over</button>
@@ -113,14 +212,53 @@
 
   var num = function (id) { return Number(document.getElementById(id).value) || null; };
 
+  // Chip groups behave like the site's goals panel: multi-select by default,
+  // single-select where data-single is set.
+  document.querySelectorAll('.chips').forEach(function (group) {
+    group.addEventListener('click', function (ev) {
+      var btn = ev.target.closest('button');
+      if (!btn) return;
+      if (group.dataset.single) {
+        var wasOn = btn.classList.contains('on');
+        group.querySelectorAll('button').forEach(function (b) { b.classList.remove('on'); });
+        if (!wasOn) btn.classList.add('on');
+      } else {
+        btn.classList.toggle('on');
+      }
+    });
+  });
+
+  var chips = function (id) {
+    return Array.prototype.map.call(
+      document.querySelectorAll('#' + id + ' button.on'),
+      function (b) { return b.dataset.v; }
+    );
+  };
+  var one = function (id) { return chips(id)[0] || null; };
+  var val = function (id) { return document.getElementById(id).value.trim() || null; };
+  var checked = function (id) { return document.getElementById(id).checked; };
+
   function params() {
-    var days = document.getElementById('days').value.split(',')
-      .map(function (d) { return d.trim().toLowerCase(); }).filter(Boolean);
     return {
       monthly_budget: num('budget'),
-      movein_date: document.getElementById('movein').value.trim() || null,
-      available_days: days,
-      assertiveness: document.getElementById('style').value || null
+      target_reduction: num('reduction'),
+      ask_utilities_included: checked('ask_utilities_included'),
+      ask_lower_deposit: checked('ask_lower_deposit'),
+      ask_first_month_free: checked('ask_first_month_free'),
+      movein_date: val('movein'),
+      movein_flexibility: val('flex'),
+      lease_length: one('lease_length'),
+      available_days: chips('available_days'),
+      available_time: chips('available_time'),
+      meeting_format: one('meeting_format'),
+      employment: val('employment'),
+      income_confidence: val('income_confidence'),
+      pets: val('pets'),
+      occupants: num('occupants'),
+      non_smoker: checked('non_smoker'),
+      must_haves: chips('must_haves'),
+      tone: one('tone'),
+      assertiveness: one('assertiveness')
     };
   }
 
