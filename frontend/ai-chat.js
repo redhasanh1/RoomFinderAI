@@ -217,15 +217,19 @@ class AIChatHandler {
     // Display incoming message from messages table
     displayIncomingMessage(message, conversation) {
         try {
-            // Determine the sender label
-            let senderLabel = 'Tenant';
-            if (message.sender_email.includes('ai-negotiator')) {
-                senderLabel = 'AI Negotiator';
-            } else if (message.sender_email === conversation.receiver_email) {
-                senderLabel = 'Tenant';
-            } else if (message.sender_email === conversation.sender_email) {
-                senderLabel = 'Tenant';
-            }
+            // Who actually sent this?
+            //
+            // The previous version compared against conversation.sender_email
+            // and conversation.receiver_email but assigned 'Tenant' in EVERY
+            // branch, so the landlord's own messages were captioned "Tenant".
+            // The only thing that decides sides is whether the sender is us:
+            // our own address, or the AI acting on our behalf.
+            const from = String(message.sender_email || '').toLowerCase();
+            const me = String(this.currentUser?.email || '').toLowerCase();
+            const isAi = from.includes('ai-negotiator');
+            const isMine = isAi || (me && from === me);
+
+            let senderLabel = isAi ? 'AI Negotiator' : (isMine ? 'You' : 'Landlord');
 
             // Check if this is an AI message on behalf of tenant.
             // Detect both the new footer format ("— Sent via RoomFinder AI")
@@ -238,7 +242,9 @@ class AIChatHandler {
                 senderLabel = 'AI Negotiator';
             }
 
-            this.appendMessage(senderLabel, message.content || 'New message received', 'left');
+            // Our side sits right, the landlord left — it was hardcoded to 'left',
+            // so our own outgoing messages appeared on the landlord's side.
+            this.appendMessage(senderLabel, message.content || 'New message received', isMine ? 'right' : 'left');
 
             // Play notification sound if available
             this.playNotificationSound();
@@ -1925,7 +1931,8 @@ class AIChatHandler {
                     console.log(`✅ Sent ${response.phase} response:`, response.message);
 
                     // Notify user about the exchange
-                    this.appendMessage('AI', `Landlord replied: "${landlordMessage.content}"`, 'left');
+                    // The landlord's message already renders as its own bubble via
+                    // displayIncomingMessage — echoing it here printed everything twice.
                     this.appendMessage('AI', `I responded (${response.phase.replace(/_/g, ' ').toLowerCase()}): "${response.message}"`, 'left');
                 } else {
                     console.error('Failed to send auto-reply');
