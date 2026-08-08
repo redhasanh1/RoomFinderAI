@@ -820,16 +820,24 @@ class AIChatHandler {
             // satisfied by any self-contained home too — you can rent a room in
             // an apartment.
             const type = needs.houseType.toLowerCase().trim();
-            const roomish = ['room', 'shared', 'studio', 'bedroom'];
-            const wantsRoom = roomish.some(r => type.includes(r));
-            results = results.filter(l => {
-                const have = (l.house_type || '').toLowerCase().trim();
-                if (!have) return true;                       // untyped listing: don't exclude
-                if (have === type) return true;
-                if (have.includes(type) || type.includes(have)) return true;
-                if (wantsRoom) return true;                   // a room can exist in any home
-                return false;
-            });
+            const stocked = new Set(
+                listings.map(l => (l.house_type || '').toLowerCase().trim()).filter(Boolean)
+            );
+            // Only filter by type when we actually stock that type. Listings are
+            // only ever typed Apartment / House / Condo / Townhouse, so words
+            // people genuinely use — "room", "flat", "place", "unit", "studio",
+            // "basement" — matched nothing and zeroed the results. A type we
+            // don't stock is a vocabulary mismatch, not a real constraint.
+            const isStockedType = [...stocked].some(s => s === type || s.includes(type) || type.includes(s));
+            if (isStockedType) {
+                results = results.filter(l => {
+                    const have = (l.house_type || '').toLowerCase().trim();
+                    if (!have) return true;                   // untyped listing: don't exclude
+                    return have === type || have.includes(type) || type.includes(have);
+                });
+            } else {
+                console.log(`ℹ️ Ignoring property type "${type}" — no listings use it, so it would exclude everything.`);
+            }
         }
         if (needs?.maxPrice) {
             const maxP = relaxPricePct > 0
