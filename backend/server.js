@@ -6511,6 +6511,28 @@ Write your next message.`;
             if (figures.length && offering) textOffer = Math.max.apply(null, figures);
         }
 
+        // Never bid against yourself. In a replay of a real conversation the AI
+        // offered $3550, got no answer, then offered $3600 one turn later —
+        // raising its own price unprompted, which hands the landlord money for
+        // nothing. Any new offer must be at or below the best (lowest) offer we
+        // have already made.
+        const ourPastOffers = ourLines
+            .flatMap(l => (l.match(/\$\s?\d{3,5}/g) || []))
+            .map(x => Number(x.replace(/[^\d]/g, '')))
+            .filter(n => n >= 300 && n <= 20000);
+        const bestOffer = ourPastOffers.length ? Math.min(...ourPastOffers) : null;
+        if (bestOffer) {
+            const newOffer = (String(out.message || '').match(/\$\s?\d{3,5}/g) || [])
+                .map(x => Number(x.replace(/[^\d]/g, '')))
+                .filter(n => n >= 300 && n <= 20000)
+                .find(n => n > bestOffer);
+            if (newOffer && !priceSettled) {
+                console.warn(`🛡️ Blocked self-bidding: $${newOffer} is above our own earlier $${bestOffer}.`);
+                out.message = `I'd still be looking at $${bestOffer} — can you make that work?`;
+                out.agreeing_to_price = null;
+            }
+        }
+
         // Deterministic settled-topic guard. The prompt already forbids
         // reopening an agreed rent or a booked viewing, but gpt-3.5 drifts back
         // to them under pressure — in a real transcript it asked "so what's the
