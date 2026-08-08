@@ -6261,6 +6261,117 @@ RULES:
     }
 });
 
+// POST /api/negotiate/reply - ONE call: the model runs the whole conversation.
+//
+// This replaces the phase state machine + keyword regexes + canned fallbacks.
+// Those tried to encode "what is happening" in code, and code cannot read
+// intent: our own question containing "that works" was mistaken for a closed
+// deal, which skipped price negotiation and accepted $5,000 on a $3,675 flat.
+//
+// The split now is:
+//   MODEL  — decides what to say, when to push on price, when to close, how to
+//            answer whatever the landlord just asked. All of the judgement.
+//   CODE   — owns the tenant's parameters and the arithmetic. It sets the
+//            ceiling and refuses any reply that commits above it. The model is
+//            never trusted with the number, only with the words.
+app.post('/api/negotiate/reply', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { listing, tenantParams, messageHistory, lastLandlordMessage } = req.body || {};
+
+        const asking = Number(listing?.price) || null;
+        const budget = Number(tenantParams?.monthly_budget) || null;
+        // Negotiating DOWN: agreeing at or above asking is never a win, so the
+        // ceiling is the lower of the two. Infinity only if we know neither.
+        const ceiling = Math.min(asking || Infinity, budget || Infinity);
+        const hasCeiling = Number.isFinite(ceiling);
+
+        const p = tenantParams || {};
+        const known = [
+            asking ? `Listing asking price: $${asking}/month` : null,
+            listing?.title ? `Listing: ${sanitizeForPrompt(listing.title, 120)}` : null,
+            budget ? `YOUR MAXIMUM you can pay: $${budget}/month — this is a hard limit` : null,
+            p.movein_date ? `Your move-in date: ${sanitizeForPrompt(p.movein_date, 30)}` : 'Your move-in date: flexible, as soon as it is available',
+            p.lease_length ? `Lease you want: ${sanitizeForPrompt(p.lease_length, 30)}` : null,
+            Array.isArray(p.available_days) && p.available_days.length
+                ? `You can ONLY view the place on: ${p.available_days.join(', ')} — never agree to any other day`
+                : null,
+            Array.isArray(p.must_haves) && p.must_haves.length
+                ? `Things you need: ${p.must_haves.map(m => String(m).replace(/_/g, ' ')).join(', ')}`
+                : null,
+            p.employment ? `Your job: ${sanitizeForPrompt(p.employment, 60)}` : 'Your job: stable full-time work, good references',
+            p.assertiveness ? `Negotiating style: ${sanitizeForPrompt(p.assertiveness, 30)}` : null
+        ].filter(Boolean).join('\n');
+
+        const transcript = (Array.isArray(messageHistory) ? messageHistory : [])
+            .slice(-16)
+            .map(m => `${(m?.sender === 'ai' || m?.sender === 'assistant') ? 'YOU' : 'LANDLORD'}: ${sanitizeForPrompt(String(m?.content || ''), 400)}`)
+            .join('\n') || '(you have not messaged them yet)';
+
+        const system = `You are a real person renting a flat, texting a landlord. You are NOT an AI and must never hint otherwise.
+
+WHAT YOU KNOW ABOUT YOURSELF:
+${known}
+
+HARD RULES — breaking these ruins the deal:
+${hasCeiling ? `1. NEVER agree to, accept, or propose any rent above $${Math.round(ceiling)}/month. If they ask more, counter at or below $${Math.round(ceiling)}. Walk the price down, never up.` : '1. Do not agree to any rent figure until you know the tenant budget.'}
+2. Never agree to a viewing, deposit or signing until the rent number has actually been settled. Sort money first.
+3. Questions about YOU (move-in, budget, job, lease) are yours to answer from the facts above. NEVER ask the landlord to tell you your own plans. If a detail isn't listed above, say you're flexible — do not invent specifics.
+4. Never repeat a question they already answered.
+5. If they turn hostile, stay calm, apologise once, keep it to one short line.
+
+HOW YOU WRITE: like a text message. 1-3 short sentences. Contractions. No bullet points, no greetings like "Dear", no sign-off, no emoji.
+
+Reply with ONLY this JSON:
+{"message": "<what you send them>", "agreeing_to_price": <the rent number you are committing to in this message, or null>, "note": "<3-6 words on your tactic>"}`;
+
+        const user = `CONVERSATION SO FAR:
+${transcript}
+
+LANDLORD JUST SAID: "${sanitizeForPrompt(String(lastLandlordMessage || ''), 500)}"
+
+Write your next message.`;
+
+        const raw = await callOpenAI({
+            messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+            model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+            maxTokens: 260,
+            temperature: 0.75
+        });
+
+        let out;
+        try {
+            const t = String(raw?.content || '').replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+            out = JSON.parse(t.slice(t.indexOf('{'), t.lastIndexOf('}') + 1));
+        } catch (e) {
+            // Keep the words if the JSON wrapper failed; treat as committing to nothing.
+            out = { message: String(raw?.content || '').trim(), agreeing_to_price: null, note: 'unparsed' };
+        }
+
+        // ---- The only thing code decides: the money. ----
+        const committing = Number(out.agreeing_to_price) || null;
+        const guard = { ceiling: hasCeiling ? Math.round(ceiling) : null, overridden: false, reason: null };
+
+        if (hasCeiling && committing && committing > ceiling) {
+            guard.overridden = true;
+            guard.reason = `Model tried to commit at $${committing}, above the $${Math.round(ceiling)} ceiling.`;
+            out.message = asking && committing > asking
+                ? `Hold on — the listing says $${asking}, so $${committing} is above asking. I can do $${Math.round(ceiling)}. Does that work?`
+                : `That's over what I can manage. I can do $${Math.round(ceiling)} — would that work?`;
+            out.agreeing_to_price = null;
+        }
+
+        res.json({
+            message: out.message,
+            committing_to: out.agreeing_to_price ?? null,
+            tactic: out.note || null,
+            guard
+        });
+    } catch (error) {
+        console.error('Error in /api/negotiate/reply:', error.message);
+        res.status(500).json({ error: 'Reply generation failed', detail: error.message });
+    }
+});
+
 // POST /api/negotiate/market-estimate - Get AI market data estimate (GPT-3.5)
 app.post('/api/negotiate/market-estimate', openAiRateLimitMiddleware, async (req, res) => {
     try {
