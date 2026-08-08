@@ -6208,7 +6208,10 @@ RULES:
                 maxTokens: 320,
                 temperature: 0
             });
-            const jsonText = String(raw || '').replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+            // callAI resolves to { content, tokensUsed, model, provider } — the
+            // text lives on .content, not on the result itself.
+            const jsonText = String(raw?.content || '').replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+            if (!jsonText) throw new Error('Empty completion from provider');
             verdict = JSON.parse(jsonText.slice(jsonText.indexOf('{'), jsonText.lastIndexOf('}') + 1));
         } catch (parseErr) {
             console.warn('⚖️ Judge unavailable or unparseable — falling back to conservative verdict:', parseErr.message);
