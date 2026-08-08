@@ -2559,6 +2559,40 @@
             syncActiveBadge();
         })();
     </script>
+<!-- Centre-screen deal modal. Shown alongside the corner banner: the modal is
+     the moment of arrival, the banner is what remains after it is dismissed. -->
+<div id="dealModal" role="dialog" aria-modal="true" aria-labelledby="dealModalTitle" style="display:none;position:fixed;inset:0;z-index:10000;
+     background:rgba(6,32,25,.55);backdrop-filter:blur(4px);align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:22px;max-width:460px;width:100%;overflow:hidden;
+              box-shadow:0 30px 80px rgba(0,0,0,.35);text-align:center;">
+    <div style="background:linear-gradient(135deg,#059669,#34D399);padding:30px 26px 26px;color:#fff;">
+      <div style="font-size:52px;line-height:1;margin-bottom:8px;">🎉</div>
+      <h2 id="dealModalTitle" style="margin:0;font-size:25px;font-weight:800;letter-spacing:-.02em;">Deal agreed</h2>
+      <p style="margin:6px 0 0;font-size:13.5px;opacity:.93;">Your negotiator settled it for you</p>
+    </div>
+    <div style="padding:26px;">
+      <div style="font-size:46px;font-weight:800;color:#065F46;letter-spacing:-.035em;line-height:1;">
+        <span id="dealModalPrice"></span>
+        <span style="font-size:15px;font-weight:600;color:#6B7280;letter-spacing:0;">/mo</span>
+      </div>
+      <div id="dealModalSaved" style="margin-top:8px;font-size:13.5px;font-weight:700;color:#059669;"></div>
+      <div id="dealModalWhen" style="margin-top:16px;background:#ECFDF5;border-radius:11px;padding:12px 14px;
+           font-size:13.5px;color:#065F46;font-weight:600;"></div>
+      <div style="margin-top:18px;text-align:left;">
+        <div style="font-size:10px;font-weight:800;letter-spacing:.12em;text-transform:uppercase;color:#9CA3AF;margin-bottom:8px;">
+          What you need to do
+        </div>
+        <ol id="dealModalSteps" style="margin:0;padding-left:18px;font-size:13.5px;color:#374151;line-height:1.7;"></ol>
+      </div>
+      <button type="button" id="dealModalClose"
+              style="margin-top:22px;width:100%;background:#059669;color:#fff;border:0;border-radius:11px;
+                     padding:13px;font-size:14.5px;font-weight:700;cursor:pointer;">
+        Got it
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- Deal completion banner. Injected once a negotiation closes. -->
 <div id="dealBanner" role="alert" aria-live="assertive" style="display:none;position:fixed;top:18px;right:18px;z-index:9999;
      width:min(380px,calc(100vw - 36px));background:#fff;border:1px solid #D1FAE5;border-left:5px solid #059669;
@@ -2608,6 +2642,20 @@
             'Sign only when you are happy with it'
         ].map(t => `<li>${t}</li>`).join('');
 
+        // Centre modal first: it is the moment of arrival. The banner stays
+        // behind it as the persistent record.
+        const modal = document.getElementById('dealModal');
+        if (modal) {
+            document.getElementById('dealModalPrice').textContent = data.agreedPrice ? ('$' + data.agreedPrice) : 'Agreed';
+            document.getElementById('dealModalSaved').textContent = saved.textContent;
+            document.getElementById('dealModalWhen').textContent = data.viewingWhen
+                ? `📅 Viewing booked for ${data.viewingWhen}`
+                : '📅 Viewing to be confirmed';
+            document.getElementById('dealModalSteps').innerHTML = document.getElementById('dealSteps').innerHTML;
+            modal.style.display = 'flex';
+            modal.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 220, easing: 'ease-out' });
+        }
+
         el.style.display = 'block';
         el.animate(
             [{ opacity: 0, transform: 'translateY(-12px)' }, { opacity: 1, transform: 'translateY(0)' }],
@@ -2636,6 +2684,10 @@
     document.addEventListener('click', function (e) {
         if (e.target && e.target.id === 'dealBannerClose') {
             document.getElementById('dealBanner').style.display = 'none';
+        }
+        // Close on the button or by clicking the backdrop itself.
+        if (e.target && (e.target.id === 'dealModalClose' || e.target.id === 'dealModal')) {
+            document.getElementById('dealModal').style.display = 'none';
         }
     });
 </script>
