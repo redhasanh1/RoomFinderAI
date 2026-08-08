@@ -1592,6 +1592,13 @@ class AIChatHandler {
             ? ` You saved $${data.savedVsAsking}/month off the asking price, about $${data.savedVsAsking * 12} a year.`
             : '';
 
+        // Big top-right banner with the numbers and the next steps. Defined on
+        // the negotiator page; the chat still prints a summary line for anyone
+        // scrolling back later.
+        if (typeof window !== 'undefined' && typeof window.showDealBanner === 'function') {
+            window.showDealBanner(data);
+        }
+
         this.appendMessage('AI', `🎉 Deal agreed at ${price}.${when}${saved}`, 'left');
         this.appendMessage('AI', `Nothing else for me to do here. Turn up, look the place over, and sign if you're happy.`, 'left');
 
