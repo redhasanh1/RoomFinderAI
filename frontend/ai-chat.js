@@ -227,7 +227,7 @@ class AIChatHandler {
             const from = String(message.sender_email || '').toLowerCase();
             const me = String(this.currentUser?.email || '').toLowerCase();
             const isAi = from.includes('ai-negotiator');
-            const isMine = isAi || (me && from === me);
+            const isMine = !!(me && from === me);
 
             let senderLabel = isAi ? 'AI Negotiator' : (isMine ? 'You' : 'Landlord');
 
@@ -242,8 +242,10 @@ class AIChatHandler {
                 senderLabel = 'AI Negotiator';
             }
 
-            // Our side sits right, the landlord left — it was hardcoded to 'left',
-            // so our own outgoing messages appeared on the landlord's side.
+            // Only what the tenant typed themselves sits on the right. The AI
+            // Negotiator is an assistant speaking on their behalf, not the
+            // tenant, so its messages belong on the left with the landlord's —
+            // rendering them right made the AI's words look like the user's own.
             this.appendMessage(senderLabel, message.content || 'New message received', isMine ? 'right' : 'left');
 
             // Play notification sound if available
@@ -1255,7 +1257,7 @@ class AIChatHandler {
             const ownPrice = own.price ? ` ($${own.price}/mo)` : '';
             const otherN = ct - 1;
             const others = otherN > 0 ? ` (and ${otherN} other${otherN > 1 ? 's' : ''})` : '';
-            this.appendMessage('AI', `📌 Your own listing **"${ownTitle}"**${ownPrice}${others} matches your search — but it's hidden here because you can't negotiate with yourself.`, 'left');
+            this.appendMessage('AI', `📌 Your own listing **"${ownTitle}"**${ownPrice}${others} matches your search, but it's hidden here because you can't negotiate with yourself.`, 'left');
             this.appendMessage('AI', `💡 To work with it, search from a different account, or open it directly from your dashboard / My Listings.`, 'left');
             this.negotiationState = 'idle';
             return;
@@ -1305,7 +1307,7 @@ class AIChatHandler {
                 this.appendMessage('AI', `💡 Suggestions: ${suggestions.join(' or ')}.`, 'left');
             }
         } else {
-            this.appendMessage('AI', 'No matching listings in the database — try a different city, a higher budget, or a different property type.', 'left');
+            this.appendMessage('AI', 'No matching listings in the database, try a different city, a higher budget, or a different property type.', 'left');
         }
 
         this.negotiationState = 'idle';
@@ -1608,7 +1610,7 @@ class AIChatHandler {
     }
 
     async showExistingConversation(conversationId, listing) {
-        this.appendMessage('AI', `You already have a conversation going with this landlord for "${listing.title}" — here's where it stands:`, 'left');
+        this.appendMessage('AI', `You already have a conversation going with this landlord for "${listing.title}", here's where it stands:`, 'left');
         try {
             const { data: recent, error } = await this.supabase
                 .from('messages')
@@ -1631,7 +1633,7 @@ class AIChatHandler {
                 this.displayMessage(sender, msg.content, isMe ? 'right' : 'left');
             }
             this._replaying = false;
-            this.appendMessage('AI', "I'm still monitoring this negotiation — any landlord reply will appear here automatically.", 'left');
+            this.appendMessage('AI', "I'm still monitoring this negotiation, any landlord reply will appear here automatically.", 'left');
         } catch (e) {
             this._replaying = false;
             console.warn('⚠️ showExistingConversation failed:', e?.message || e);
