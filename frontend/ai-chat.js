@@ -2218,7 +2218,11 @@ class AIChatHandler {
         const messageDiv = document.createElement('div');
         // Use align parameter: 'right' = sent (user), 'left' = received (other)
         const alignClass = align === 'right' ? 'sent' : 'received';
-        messageDiv.className = `message ${alignClass}`;
+        // Tag AI-authored messages so they can be tinted apart from the
+        // landlord's — both sit on the left and were otherwise identical.
+        const who = String(sender || '').toLowerCase();
+        const aiClass = (who === 'ai negotiator' || who === 'ai') ? ' from-ai' : '';
+        messageDiv.className = `message ${alignClass}${aiClass}`;
 
         // Determine display name
         let displayName = sender;

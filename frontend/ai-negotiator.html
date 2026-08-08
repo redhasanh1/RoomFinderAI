@@ -11,7 +11,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/notifications.js?v=20260129b"></script>
     <script src="/js/notification-manager.js?v=20260519a"></script>
-    <script src="/ai-chat.js?v=20260808-less-noise"></script>
+    <script src="/ai-chat.js?v=20260808-who-said-it"></script>
     <script src="/ai-negotiation.js?v=20260808-no-footer"></script>
     <script type="module" src="/chat-system.js?v=20260129b"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -265,17 +265,28 @@
            the "You" / "AI Assistant" caption above every bubble just read as a
            second box stacked on the first. Kept in the DOM (not removed from the
            markup) so screen readers still announce who is speaking. */
-        #negotiatorChatMessages .message > .font-semibold {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
-            overflow: hidden;
-            clip: rect(0 0 0 0);
-            white-space: nowrap;
-            border: 0;
+        /* Your own messages need no caption: they're on the right, in your
+           colour. Everything on the LEFT does — the landlord and the AI
+           negotiator both sit there, and without a label "hi" from the landlord
+           reads as though the negotiator said it. */
+        #negotiatorChatMessages .message.sent > .font-semibold {
+            position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+            overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
         }
+        #negotiatorChatMessages .message.received > .font-semibold {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: .05em;
+            color: #7C8899;
+            margin: 0 0 3px 3px;
+        }
+        /* The AI speaking for you is not the same voice as the landlord, so it
+           gets its own tint rather than sharing the landlord's grey. */
+        #negotiatorChatMessages .message.received.from-ai > p {
+            background: #EEF0FE;
+            color: #33386B;
+        }
+        #negotiatorChatMessages .message.received.from-ai > .font-semibold { color: #6366F1; }
         @keyframes msgIn {
             from { opacity: 0; transform: translateY(8px); }
             to   { opacity: 1; transform: translateY(0); }
