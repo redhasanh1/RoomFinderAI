@@ -1569,8 +1569,42 @@ class AIChatHandler {
         }
         console.log(`💬 Reply (${data.tactic || 'no tactic'}):`, data.message);
 
+        // Deal done: rent agreed AND viewing booked. Announce it once — the
+        // tenant previously had to reverse-engineer this from the transcript.
+        if (data.dealClosed && !this._dealAnnounced) {
+            this._dealAnnounced = true;
+            this.announceDealClosed(data);
+        }
+
         // delay: keep the human-like pause the caller already expects.
         return { message: data.message, delay: 1500 + Math.floor(Math.random() * 2500), guard: data.guard };
+    }
+
+    // Congratulate the tenant when the negotiation completes, and fire a
+    // browser notification so it lands even if the tab isn't focused — the
+    // whole point of an auto-negotiator is that you walk away from it.
+    announceDealClosed(data) {
+        const price = data.agreedPrice ? `$${data.agreedPrice}/month` : 'the agreed rent';
+        const when = data.viewingWhen ? ` Viewing is booked for ${data.viewingWhen}.` : '';
+        const saved = data.savedVsAsking > 0
+            ? ` You saved $${data.savedVsAsking}/month off the asking price, about $${data.savedVsAsking * 12} a year.`
+            : '';
+
+        this.appendMessage('AI', `🎉 Deal agreed at ${price}.${when}${saved}`, 'left');
+        this.appendMessage('AI', `Nothing else for me to do here. Turn up, look the place over, and sign if you're happy.`, 'left');
+
+        try { this.playNotificationSound(); } catch (e) { /* audio optional */ }
+
+        if (typeof Notification !== 'undefined') {
+            const show = () => new Notification('Deal agreed 🎉', {
+                body: `${price}.${when}`.trim(),
+                icon: '/icons/icon-192x192.png'
+            });
+            if (Notification.permission === 'granted') show();
+            else if (Notification.permission !== 'denied') {
+                Notification.requestPermission().then(p => { if (p === 'granted') show(); });
+            }
+        }
     }
 
     async showExistingConversation(conversationId, listing) {

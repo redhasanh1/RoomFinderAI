@@ -6590,7 +6590,17 @@ Write your next message.`;
             .replace(/\s{2,}/g, ' ')
             .trim();
 
+        // Tell the caller when the negotiation is actually finished, so the UI can
+        // celebrate instead of the tenant having to read the thread and work it
+        // out for themselves. Both halves must be true: a price agreed AND a
+        // viewing booked.
+        const dealClosed = !!(priceSettled && viewingSettled);
+
         res.json({
+            dealClosed,
+            agreedPrice: priceSettled ? settledPrice : null,
+            viewingWhen: viewingSettled ? viewingWhen : null,
+            savedVsAsking: (priceSettled && asking && settledPrice < asking) ? asking - settledPrice : 0,
             message: out.message,
             committing_to: out.agreeing_to_price ?? null,
             tactic: out.note || null,
