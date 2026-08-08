@@ -2159,12 +2159,29 @@ class AIChatHandler {
     // nothing and new messages stayed below the fold. Walk up to the first
     // scrollable ancestor and pin it to the bottom.
     scrollToLatest(fromEl) {
-        let el = fromEl;
-        while (el && el.scrollHeight <= el.clientHeight) el = el.parentElement;
-        const pane = el || fromEl;
-        requestAnimationFrame(() => {
-            pane.scrollTop = pane.scrollHeight;
-        });
+        // Find the ancestor that genuinely scrolls, by checking its computed
+        // overflow — not by comparing scrollHeight to clientHeight. The message
+        // list is a flex column with no overflow of its own, but it GROWS with
+        // content, so scrollHeight exceeds clientHeight and the old height test
+        // stopped there and set scrollTop on an element that cannot scroll.
+        const scrollable = (el) => {
+            if (!el || el === document.body) return null;
+            const oy = getComputedStyle(el).overflowY;
+            return (oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight ? el : null;
+        };
+        let pane = null;
+        for (let el = fromEl; el && el !== document.body; el = el.parentElement) {
+            pane = scrollable(el);
+            if (pane) break;
+        }
+        pane = pane || document.getElementById('chatContainer');
+        if (!pane) return;
+
+        // Two frames: one for layout to settle after the node is inserted, one
+        // for images/cards that change height on the following tick.
+        const pin = () => { pane.scrollTop = pane.scrollHeight; };
+        requestAnimationFrame(() => { pin(); requestAnimationFrame(pin); });
+        setTimeout(pin, 120);
     }
 
     // Display message to chat (without saving to history)
