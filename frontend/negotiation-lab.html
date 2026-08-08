@@ -290,7 +290,9 @@
     return d;
   }
 
-  function chips(data) {
+  // Named renderMeta, not chips: the parameter reader below is also called
+  // chips() and the later `var` assignment was clobbering this declaration.
+  function renderMeta(data) {
     var bits = [];
     if (data.tactic) bits.push('<span class="chip">' + data.tactic + '</span>');
     if (data.committing_to) bits.push('<span class="chip commit">committing $' + data.committing_to + '</span>');
@@ -323,7 +325,7 @@
       thinking.lastChild.nodeValue = data.message;
       history.push({ sender: 'landlord', content: text });
       history.push({ sender: 'ai', content: data.message });
-      chips(data);
+      renderMeta(data);
     } catch (err) {
       thinking.remove();
       var e = document.createElement('div');
