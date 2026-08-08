@@ -6515,11 +6515,12 @@ Write your next message.`;
         // number ("yep", "yeah", "im free this weekend"), the model kept
         // rewording the same question — four rent asks in a row in a real
         // replay, which is precisely what makes a landlord stop replying. After
-        // two unanswered asks, put a concrete number on the table instead.
+        // ONE unanswered ask, put a concrete number on the table instead —
+        // asking twice is already the pattern landlords react badly to.
         const priceAskRe = /\b(rent|price)\b[^.?!]*\?|how much|what.{0,12}(rent|price)|discuss the (rent|price)|lock in the (rent|price)/i;
         const unansweredAsks = ourLines.filter(l => priceAskRe.test(l)).length;
         const landlordNamedAny = /\$?\s?\b\d{3,5}\b/.test(landlordLines.join(' '));
-        if (!priceSettled && !landlordNamedAny && unansweredAsks >= 2 && priceAskRe.test(String(out.message || ''))) {
+        if (!priceSettled && !landlordNamedAny && unansweredAsks >= 1 && priceAskRe.test(String(out.message || ''))) {
             const anchorPrice = budget ? Math.round(budget) : (asking ? Math.round(asking * 0.9) : null);
             if (anchorPrice) {
                 console.warn(`🛡️ ${unansweredAsks} unanswered price asks — anchoring at $${anchorPrice} instead of asking again.`);
