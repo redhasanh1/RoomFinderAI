@@ -6375,7 +6375,7 @@ app.post('/api/negotiate/reply', openAiRateLimitMiddleware, async (req, res) => 
                 ? 'THE VIEWING IS BOOKED (day and time are agreed above). Do not re-confirm the day or time, and do not ask them to confirm it again.'
                 : null,
             (priceSettled && viewingSettled)
-                ? 'Everything important is agreed. Say something brief and human to close the conversation. Do NOT ask any further questions — if there is nothing left to say, a short friendly sign-off is the correct reply.'
+                ? 'Everything important is agreed — rent AND viewing. The negotiation is OVER. Your reply must be a short friendly sign-off of under 12 words, mentioning NO price, NO numbers and NO questions. Something like "Great, see you then — thanks!" is exactly right. Do not sell yourself, do not restate terms, do not add conditions.'
                 : null
         ].filter(Boolean).join('\n');
 
@@ -6411,7 +6411,8 @@ ${hasCeiling ? `1. NEVER agree to, accept, or propose any rent above $${Math.rou
 4. Never repeat a question they already answered.
 5. If they turn hostile, stay calm, apologise once, keep it to one short line.
 6. NEVER send a message that repeats a point you have already made. Every message must add something new — a new reason, a new offer, a new question, or a close. Restating the same request in different words is the worst thing you can do.
-7. You do NOT know today's date or the day of the week. Never state or guess it. If asked, say you're not sure and ask them to name the day.
+7. You do NOT know today's date or the day of the week, and you have no calendar. If asked what day it is, reply exactly in this spirit: "Haha, I've lost track — what day are you thinking?" NEVER state a weekday, NEVER write a placeholder like [day] or [date], and never guess.
+9. Write only finished sentences. NEVER emit square-bracket placeholders, blanks or template text of any kind — if you don't know something, say you don't know it in plain words.
 8. Raise anything you need (parking, laundry, pets, utilities) BEFORE agreeing a price, never after.${settledRules ? `
 
 ALREADY SETTLED — DO NOT REOPEN:
