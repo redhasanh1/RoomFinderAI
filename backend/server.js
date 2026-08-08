@@ -6132,6 +6132,132 @@ app.post('/api/negotiate/counter-offer', openAiRateLimitMiddleware, async (req, 
     }
 });
 
+// POST /api/negotiate/judge - LLM situation assessment for the negotiator.
+//
+// WHY THIS EXISTS: phase detection used to be keyword regexes, and regexes
+// cannot read intent. The live failure: our own outgoing question contained
+// "…the timeframe that works for you", CLOSING_SIGNALS_RE matched "that works",
+// and the engine jumped to the terminal CLOSING phase — skipping both
+// negotiating phases and later "agreeing" to $5,000 on a $3,675 listing.
+//
+// DIVISION OF LABOUR (deliberate):
+//   - The MODEL judges the fuzzy stuff: what did the landlord mean, did they
+//     make an offer, are they hostile, did they actually agree, what did they
+//     ask that we still owe an answer to.
+//   - The CALLER enforces policy with the tenant's own numbers: budget
+//     ceiling, asking price, available days. The model is never asked whether
+//     a price is acceptable — that is arithmetic, not judgement, and letting
+//     the model decide it is how you end up above asking.
+//
+// Returns strict JSON. On any model/parse failure it returns a conservative
+// assessment (no agreement, no price, keep negotiating) rather than throwing,
+// because "unsure" must never read as "deal closed".
+app.post('/api/negotiate/judge', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { messageHistory, lastLandlordMessage, listing, tenantParams } = req.body || {};
+
+        const askingPrice = Number(listing?.price) || null;
+        const budget = Number(tenantParams?.monthly_budget) || null;
+
+        const transcript = (Array.isArray(messageHistory) ? messageHistory : [])
+            .slice(-14)
+            .map(m => {
+                const who = (m?.sender === 'ai' || m?.sender === 'assistant') ? 'TENANT(us)' : 'LANDLORD';
+                return `${who}: ${sanitizeForPrompt(String(m?.content || ''), 400)}`;
+            })
+            .join('\n') || '(no messages yet)';
+
+        const judgePrompt = `You are analysing a rental negotiation between a TENANT (our side, AI-assisted) and a LANDLORD. Report ONLY what is actually true in the transcript. Do not infer agreement from politeness.
+
+LISTING ASKING PRICE: ${askingPrice ? `$${askingPrice}/month` : 'unknown'}
+
+TRANSCRIPT (oldest to newest):
+${transcript}
+
+LANDLORD'S NEWEST MESSAGE: "${sanitizeForPrompt(String(lastLandlordMessage || ''), 500)}"
+
+Return ONLY a JSON object, no prose, with exactly these keys:
+{
+  "landlord_intent": one of ["smalltalk","answering_question","asking_question","making_offer","accepting_our_offer","rejecting","scheduling_viewing","hostile","unclear"],
+  "landlord_named_price": number or null,   // a rent figure THE LANDLORD stated in their newest message; null if none
+  "landlord_asked": string or null,          // the question the landlord wants answered, in plain words; null if none
+  "agreement_reached": boolean,              // true ONLY if both sides explicitly settled on the same rent figure
+  "agreed_price": number or null,            // that figure, else null
+  "price_discussed": boolean,                // has ANY rent figure been raised by either side anywhere in the transcript
+  "tone": one of ["neutral","warm","impatient","hostile"],
+  "ready_to_close": boolean,                 // landlord is trying to finalise (sign/deposit/meet to sign)
+  "recommended_phase": one of ["INTRODUCTION","RAPPORT_BUILDING","QUALIFICATION","PRICE_INTRODUCTION","AVAILABILITY_DISCUSSION","ACTIVE_NEGOTIATION","CLOSING"],
+  "reason": string                           // one short sentence justifying recommended_phase
+}
+
+RULES:
+- "agreement_reached" is true ONLY when a specific number was proposed by one side and clearly accepted by the other. Vague warmth ("sounds good", "that works for you?") is NOT agreement.
+- A price the landlord names is an OFFER, never an acceptance, unless it matches a figure the tenant already proposed.
+- If the landlord is hostile or swearing, set tone "hostile" and never set agreement_reached true.
+- Never recommend CLOSING while price_discussed is false.
+- Judge only the LANDLORD's meaning. Questions the TENANT asked are not landlord intent.`;
+
+        let verdict;
+        try {
+            const raw = await callOpenAI({
+                messages: [
+                    { role: 'system', content: 'You output strict JSON only. No markdown fences, no commentary.' },
+                    { role: 'user', content: judgePrompt }
+                ],
+                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                maxTokens: 320,
+                temperature: 0
+            });
+            const jsonText = String(raw || '').replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+            verdict = JSON.parse(jsonText.slice(jsonText.indexOf('{'), jsonText.lastIndexOf('}') + 1));
+        } catch (parseErr) {
+            console.warn('⚖️ Judge unavailable or unparseable — falling back to conservative verdict:', parseErr.message);
+            verdict = {
+                landlord_intent: 'unclear', landlord_named_price: null, landlord_asked: null,
+                agreement_reached: false, agreed_price: null, price_discussed: false,
+                tone: 'neutral', ready_to_close: false,
+                recommended_phase: 'ACTIVE_NEGOTIATION',
+                reason: 'Judge unavailable; staying in negotiation rather than assuming a close.'
+            };
+        }
+
+        // ---- Deterministic policy layer. The tenant's numbers, not the model's opinion. ----
+        const ceiling = Math.min(askingPrice || Infinity, budget || Infinity);
+        const namedPrice = Number(verdict.landlord_named_price) || null;
+        const policy = {
+            ceiling: Number.isFinite(ceiling) ? ceiling : null,
+            landlord_price_above_ceiling: !!(namedPrice && Number.isFinite(ceiling) && namedPrice > ceiling),
+            may_accept: false,
+            must_counter_at: null,
+            blocked_reason: null
+        };
+
+        if (verdict.agreement_reached && verdict.agreed_price) {
+            const agreed = Number(verdict.agreed_price);
+            if (Number.isFinite(ceiling) && agreed > ceiling) {
+                policy.blocked_reason = `Model reported agreement at $${agreed}, above the $${Math.round(ceiling)} ceiling. Acceptance refused.`;
+                policy.must_counter_at = Math.round(ceiling);
+            } else {
+                policy.may_accept = true;
+            }
+        } else if (policy.landlord_price_above_ceiling) {
+            policy.blocked_reason = `Landlord asked $${namedPrice}, above the $${Math.round(ceiling)} ceiling.`;
+            policy.must_counter_at = Math.round(ceiling);
+        }
+
+        // A close is only permitted once money has actually been discussed.
+        if (verdict.recommended_phase === 'CLOSING' && !verdict.price_discussed) {
+            verdict.recommended_phase = 'PRICE_INTRODUCTION';
+            verdict.reason = 'Overridden: cannot close before rent has been discussed.';
+        }
+
+        res.json({ verdict, policy });
+    } catch (error) {
+        console.error('Error in /api/negotiate/judge:', error.message);
+        res.status(500).json({ error: 'Judge failed', detail: error.message });
+    }
+});
+
 // POST /api/negotiate/market-estimate - Get AI market data estimate (GPT-3.5)
 app.post('/api/negotiate/market-estimate', openAiRateLimitMiddleware, async (req, res) => {
     try {
