@@ -1888,6 +1888,80 @@ class AIChatHandler {
     }
 
     // Clear conversation history
+    // Full stop-and-reset for the negotiator.
+    //
+    // clearConversationHistory() only wipes the assistant transcript. The
+    // landlord negotiation itself lives in `conversations` / `messages`, and
+    // the intro guards treat an existing thread as "already introduced" — so
+    // after a test run the AI would silently refuse to start over. This tears
+    // down the live listeners, deletes the tenant's threads for the active
+    // listing (or all of them when no listing is active), and clears every
+    // in-memory flag so the next Contact click is a genuine first contact.
+    //
+    // Returns a short human-readable summary of what was removed.
+    async resetNegotiation({ scope = 'active' } = {}) {
+        const email = this.currentUser?.email;
+        if (!email || !this.supabase) return 'Not signed in — nothing to reset.';
+
+        // 1. Stop live work: drop every realtime subscription we own.
+        let listenersClosed = 0;
+        if (this.autoReplyChannels) {
+            for (const channel of this.autoReplyChannels.values()) {
+                try { this.supabase.removeChannel(channel); listenersClosed++; } catch (e) { /* already gone */ }
+            }
+            this.autoReplyChannels.clear();
+        }
+
+        // 2. Find the threads to remove. Conversations are bidirectional, so
+        //    match this tenant on either side.
+        const listingId = scope === 'active' ? this.activeListing?.id : null;
+        let query = this.supabase
+            .from('conversations')
+            .select('id')
+            .or(`sender_email.eq.${email},receiver_email.eq.${email}`);
+        if (listingId) query = query.eq('listing_id', listingId);
+
+        const { data: convos, error: findErr } = await query;
+        if (findErr) {
+            console.error('Reset: could not list conversations:', findErr.message);
+            return `Could not reach the database: ${findErr.message}`;
+        }
+
+        const ids = (convos || []).map(c => c.id);
+        let removed = 0;
+        if (ids.length) {
+            // Messages first — the conversation row may be the FK parent.
+            const { error: msgErr } = await this.supabase.from('messages').delete().in('conversation_id', ids);
+            if (msgErr) console.warn('Reset: message delete failed:', msgErr.message);
+            const { error: convErr } = await this.supabase.from('conversations').delete().in('id', ids);
+            if (convErr) {
+                console.warn('Reset: conversation delete failed:', convErr.message);
+            } else {
+                removed = ids.length;
+            }
+        }
+
+        // 3. Clear in-memory negotiation state on both objects.
+        this.sentIntroConversations?.clear?.();
+        this.activeConversationId = null;
+        this.activeNegotiationId = null;
+        this.activeListing = null;
+        this.activeNegotiations?.clear?.();
+        if (this.negotiationEngine) {
+            this.negotiationEngine.conversationStates?.clear?.();
+            this.negotiationEngine.activeNegotiations?.clear?.();
+        }
+
+        // 4. Wipe the assistant transcript too, so the panel starts empty.
+        await this.clearConversationHistory();
+
+        const scopeLabel = listingId ? 'for this listing' : 'across all listings';
+        console.log(`♻️ Reset complete — ${removed} thread(s) deleted ${scopeLabel}, ${listenersClosed} listener(s) closed.`);
+        return removed
+            ? `Reset done — deleted ${removed} negotiation thread${removed === 1 ? '' : 's'} ${scopeLabel} and stopped ${listenersClosed} live listener${listenersClosed === 1 ? '' : 's'}.`
+            : `Reset done — no saved threads found. Stopped ${listenersClosed} live listener${listenersClosed === 1 ? '' : 's'}.`;
+    }
+
     async clearConversationHistory() {
         this.conversationHistory = [];
 
