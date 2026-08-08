@@ -249,25 +249,47 @@ class AIChatHandler {
         }
     }
 
-    // Play notification sound
+    // Play notification sound — a soft two-note chime.
+    //
+    // The old version was a bare 800Hz sine switched on and off after 100ms.
+    // With no fade at either end the waveform is cut mid-cycle, and that
+    // discontinuity is heard as a click, which is what made it sound cheap.
+    // Two things fix it: an envelope (quick fade in, gentle exponential decay)
+    // and a second note a musical fourth above the first, so it reads as a
+    // chime rather than an alarm.
+    //
+    // The context is created once and reused. Browsers cap the number of live
+    // AudioContexts (~6); the old code built a new one per notification, so
+    // after a handful of messages the sound stopped working entirely.
     playNotificationSound() {
         try {
-            // Create a simple notification sound
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioContext.createOscillator();
-            const gainNode = audioContext.createGain();
+            const Ctx = window.AudioContext || window.webkitAudioContext;
+            if (!Ctx) return;
+            if (!this._audioCtx) this._audioCtx = new Ctx();
+            const ctx = this._audioCtx;
+            // Autoplay policy can leave the context suspended until a gesture.
+            if (ctx.state === 'suspended') ctx.resume().catch(() => {});
 
-            oscillator.connect(gainNode);
-            gainNode.connect(audioContext.destination);
+            const now = ctx.currentTime;
+            // G5 then C6 — a rising fourth, warm rather than urgent.
+            [{ hz: 784.0, at: 0 }, { hz: 1046.5, at: 0.085 }].forEach(({ hz, at }) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'triangle';           // softer harmonics than a sine's bare tone
+                osc.frequency.setValueAtTime(hz, now + at);
 
-            oscillator.frequency.value = 800;
-            oscillator.type = 'sine';
-            gainNode.gain.value = 0.1;
+                const start = now + at;
+                gain.gain.setValueAtTime(0.0001, start);
+                gain.gain.exponentialRampToValueAtTime(0.09, start + 0.012);   // fast attack
+                gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.38);  // long tail
 
-            oscillator.start();
-            oscillator.stop(audioContext.currentTime + 0.1);
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.start(start);
+                osc.stop(start + 0.4);
+            });
         } catch (error) {
-            // Audio not supported, ignore
+            // Audio unavailable — never let a sound break message handling.
         }
     }
 
