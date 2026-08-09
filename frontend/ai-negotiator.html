@@ -2483,9 +2483,12 @@
                     const dt = new Date(goals._lockedAt);
                     const hh = String(dt.getHours()).padStart(2, '0');
                     const mm = String(dt.getMinutes()).padStart(2, '0');
-                    masterText = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>Locked in — AI will use these (${hh}:${mm})`;
+                    // Plain text only: sum() assigns via textContent, so any markup
+                    // here is printed literally — an SVG string rendered as a wall
+                    // of angle brackets in the panel header.
+                    masterText = `Locked in, AI will use these (${hh}:${mm})`;
                 } else if (anySet) {
-                    masterText = 'Goals set — click to edit, then Lock in';
+                    masterText = 'Goals set. Click to edit, then Lock in';
                 } else {
                     masterText = 'Click to set preferences';
                 }
