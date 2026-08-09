@@ -693,7 +693,7 @@
                         <div style="display:flex; justify-content:space-between; align-items:center; padding-top:10px; border-top:1px solid #e5e7eb; margin-top:6px; gap:12px;">
                             <button type="button" id="ngResetAll" style="background:none; border:none; color:#6b7280; font-size:12px; cursor:pointer; text-decoration:underline;">Reset all</button>
                             <button type="button" id="ngLockIn" style="background:linear-gradient(135deg,#7c3aed,#4f46e5); color:#fff; border:none; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; box-shadow:0 1px 2px rgba(0,0,0,0.05);">
-                                🔒 Lock in negotiation goals
+                                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>Lock in negotiation goals
                             </button>
                         </div>
                         <p id="ngLockInConfirm" style="font-size:12px; color:#059669; margin:6px 0 0; text-align:right; min-height:16px;"></p>
@@ -1317,13 +1317,13 @@
                             </div>
                             <div class="flex flex-wrap gap-2 mt-3 mb-4">
                                 <button onclick="window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
-                                    📉 Under $2,000 / mo
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><path d="M4 7.5 10 13l3.5-3.5L20 16"/><path d="M20 11.5V16h-4.5"/></svg>Under $2,000 / mo
                                 </button>
                                 <button onclick="window.aiChat.sendQuickMessage('Find me a 1 bedroom apartment in Toronto')" class="quick-chip">
-                                    🏢 1-Bed in Toronto
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="5" y="4" width="14" height="16.5" rx="1.5"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10.5 20.5v-4h3v4"/></svg>1-Bed in Toronto
                                 </button>
                                 <button onclick="window.aiChat.sendQuickMessage('Show me pet-friendly rentals')" class="quick-chip">
-                                    🐶 Pet-Friendly Only
+                                    <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><circle cx="8" cy="8.5" r="1.9"/><circle cx="12" cy="6.5" r="1.9"/><circle cx="16" cy="8.5" r="1.9"/><path d="M12 11c2.6 0 4.5 2 4.5 4.2 0 1.9-1.6 3.3-4.5 3.3S7.5 17.1 7.5 15.2C7.5 13 9.4 11 12 11z"/></svg>Pet-Friendly Only
                                 </button>
                             </div>
                         `;
@@ -1668,8 +1668,8 @@
             }
 
             list.innerHTML = notifications.map((notification, index) => {
-                const typeIcon = notification.type === 'negotiation_success' ? '🎉' :
-                                notification.type === 'landlord_reply' ? '💬' : '📬';
+                const typeIcon = notification.type === 'negotiation_success' ? '' :
+                                notification.type === 'landlord_reply' ? '' : '';
                 const timeAgo = formatTimeAgo(new Date(notification.timestamp));
 
                 return `
@@ -1853,13 +1853,13 @@
                     </div>
                     <div class="flex flex-wrap gap-2 mt-3 mb-4">
                         <button onclick="window.aiChat && window.aiChat.sendQuickMessage('Show me rentals under $2,000 per month')" class="quick-chip">
-                            📉 Under $2,000 / mo
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><path d="M4 7.5 10 13l3.5-3.5L20 16"/><path d="M20 11.5V16h-4.5"/></svg>Under $2,000 / mo
                         </button>
                         <button onclick="window.aiChat && window.aiChat.sendQuickMessage('Find me a 1 bedroom apartment in Toronto')" class="quick-chip">
-                            🏢 1-Bed in Toronto
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="5" y="4" width="14" height="16.5" rx="1.5"/><path d="M9 8h2M13 8h2M9 12h2M13 12h2M10.5 20.5v-4h3v4"/></svg>1-Bed in Toronto
                         </button>
                         <button onclick="window.aiChat && window.aiChat.sendQuickMessage('Show me pet-friendly rentals')" class="quick-chip">
-                            🐶 Pet-Friendly Only
+                            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><circle cx="8" cy="8.5" r="1.9"/><circle cx="12" cy="6.5" r="1.9"/><circle cx="16" cy="8.5" r="1.9"/><path d="M12 11c2.6 0 4.5 2 4.5 4.2 0 1.9-1.6 3.3-4.5 3.3S7.5 17.1 7.5 15.2C7.5 13 9.4 11 12 11z"/></svg>Pet-Friendly Only
                         </button>
                     </div>
                 `;
@@ -2443,7 +2443,7 @@
                     const dt = new Date(goals._lockedAt);
                     const hh = String(dt.getHours()).padStart(2, '0');
                     const mm = String(dt.getMinutes()).padStart(2, '0');
-                    masterText = `🔒 Locked in — AI will use these (${hh}:${mm})`;
+                    masterText = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>Locked in — AI will use these (${hh}:${mm})`;
                 } else if (anySet) {
                     masterText = 'Goals set — click to edit, then Lock in';
                 } else {
@@ -2455,7 +2455,7 @@
             // ----- Public API for ai-negotiation.js -----
             window.getTenantGoals = function () {
                 // Hard gate: goals are not "active" until the user clicks the
-                // 🔒 Lock in negotiation goals button. The chat-footer badge
+                // <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>Lock in negotiation goals button. The chat-footer badge
                 // already tracks _lockedAt; this makes the backend payload
                 // match the badge so the promise is truthful (no badge → no
                 // goals sent).
@@ -2659,8 +2659,8 @@
         if (modal) {
             document.getElementById('dealModalPrice').textContent = data.agreedPrice ? ('$' + data.agreedPrice) : 'Agreed';
             document.getElementById('dealModalSaved').textContent = saved.textContent;
-            document.getElementById('dealModalWhen').textContent = data.viewingWhen
-                ? `📅 Viewing booked for ${data.viewingWhen}`
+            document.getElementById('dealModalWhen').innerHTML = data.viewingWhen
+                ? `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:-2px;margin-right:6px;" aria-hidden="true"><rect x="4" y="5.5" width="16" height="15" rx="2"/><path d="M8 3.5v4M16 3.5v4M4 10.5h16"/></svg>Viewing booked for ${data.viewingWhen}`
                 : '📅 Viewing to be confirmed';
             document.getElementById('dealModalSteps').innerHTML = document.getElementById('dealSteps').innerHTML;
             modal.style.display = 'flex';
