@@ -75,11 +75,13 @@
             // More. AI Negotiator and Listings are never nested — they were
             // buried in dropdowns before and effectively undiscoverable.
             // Student Housing is deliberately absent: the page is broken.
+            // Ordered by how much people actually use them: Sublease is the
+            // weakest of the four, so it sits last, just before the More menu.
             '<a href="index.html" class="nav-item">Home</a>' +
             '<a href="listings.html" class="nav-item">Listings</a>' +
-            '<a href="sublease.html" class="nav-item">Sublease</a>' +
             '<a href="ai-negotiator.html" class="nav-item">AI Negotiator</a>' +
             '<a href="roommate-matching.html" class="nav-item">RoomPal</a>' +
+            '<a href="sublease.html" class="nav-item">Sublease</a>' +
             '<div class="dropdown">' +
             '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'about\')">More <span class="dropdown-arrow">▼</span></button>' +
             '<div class="dropdown-menu" id="about-dropdown">' +
