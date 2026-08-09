@@ -166,6 +166,19 @@
             document.body.insertAdjacentHTML('afterbegin', html);
         }
 
+        // Force the auth cluster into a row from JS, not CSS.
+        // Verified in the browser: the element carried inline `display:flex`
+        // AND an `!important` rule, yet still computed to `block` — a
+        // cross-origin stylesheet was winning the cascade. An inline property
+        // set with priority "important" is the only thing that reliably beats
+        // it, so the bell stops stacking on top of the profile link.
+        var authRow = document.querySelector('.desktop-auth');
+        if (authRow) {
+            authRow.style.setProperty('display', 'flex', 'important');
+            authRow.style.setProperty('align-items', 'center', 'important');
+            authRow.style.setProperty('gap', '14px', 'important');
+        }
+
         document.body.classList.add('site-has-header');
         document.documentElement.setAttribute(NAV_RENDERED, '1');
         initHeaderScroll();
