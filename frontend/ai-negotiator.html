@@ -236,6 +236,16 @@
             align-items: center;
             gap: 6px;
         }
+        /* The header's auth cluster relies on Tailwind's `md:flex`, which does
+           not apply here, so the bell fell back to block layout and sat ON TOP
+           of the profile link. State the row explicitly. */
+        .desktop-auth {
+            display: flex !important;
+            align-items: center;
+            gap: 14px;
+        }
+        .desktop-auth #notificationBell { flex: none; }
+
         .listing-view-btn:hover {
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
