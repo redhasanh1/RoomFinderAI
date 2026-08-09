@@ -138,7 +138,6 @@
             '<div class="mobile-section-content" id="about-section">' +
             '<a href="index.html#about" class="mobile-menu-item" onclick="closeMobileMenu()">About Us</a>' +
             '<a href="pricing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Pricing</a>' +
-            '<a href="index.html#contact" class="mobile-menu-item" onclick="closeMobileMenu()">Contact</a>' +
             '<a href="support.html" class="mobile-menu-item" onclick="closeMobileMenu()">Support</a>' +
             '</div></div>' +
             '<div id="mobileAuthSection">' +
