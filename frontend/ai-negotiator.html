@@ -749,7 +749,7 @@
                                     <!-- Live health pill: green only once /api/negotiate/reply answers. -->
                                     <div id="negotiatorStatus" class="flex items-center gap-1.5 mt-0.5" title="Checking the negotiator service…">
                                         <span id="negotiatorStatusDot" style="width:7px;height:7px;border-radius:50%;background:#9CA3AF;flex:none;"></span>
-                                        <span id="negotiatorStatusText" style="font-size:11px;font-weight:600;color:#6B7280;">Checking…</span>
+                                        <span id="negotiatorStatusText" style="font-size:11px;font-weight:600;color:#6B7280;">Checking</span>
                                     </div>
                                 </div>
                             </div>
@@ -1233,10 +1233,10 @@
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 const data = await res.json();
                 if (!data.message) throw new Error('no message returned');
-                set('#16A34A', '✓ AI Negotiator is good here', 'Negotiator API responded normally — price ceiling active.');
+                set('#16A34A', 'Online', 'Negotiator API responded normally. Price ceiling active.');
             } catch (err) {
                 console.error('Negotiator health check failed:', err);
-                set('#DC2626', '✗ Negotiator unavailable', 'The negotiator API did not respond: ' + err.message);
+                set('#DC2626', 'Offline', 'The negotiator API did not respond: ' + err.message);
             }
         }
 
