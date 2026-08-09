@@ -89,7 +89,6 @@
             '<a href="pricing.html" class="dropdown-item">Pricing</a>' +
             '<a href="support.html" class="dropdown-item">Support</a>' +
             '<a href="index.html#about" class="dropdown-item">About Us</a>' +
-            '<a href="index.html#contact" class="dropdown-item">Contact</a>' +
             '</div></div>' +
             // This line was raw HTML dropped into a string concatenation without
             // quotes, so site-nav.js threw a SyntaxError on load and never
