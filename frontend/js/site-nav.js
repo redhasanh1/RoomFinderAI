@@ -95,7 +95,10 @@
             // their own hand-written nav, and why they drifted apart.
             '<a href="profile.html" id="navProfileLink" class="nav-item site-nav-profile-link hidden" style="display:none !important" aria-hidden="true">Profile</a>' +
             '</div>' +
-            '<div class="desktop-auth site-show-desktop">' +
+            // Inline flex rather than relying on each page's CSS: on
+            // ai-negotiator.html .desktop-auth had no layout rules, so the bell
+            // stacked ABOVE the profile link instead of sitting beside it.
+            '<div class="desktop-auth site-show-desktop" style="display:flex;align-items:center;gap:10px;">' +
             '<div id="notificationBell" class="site-nav-notification relative cursor-pointer hidden p-2 hover:bg-gray-100 rounded-lg transition" onclick="typeof toggleNotificationPanel===\'function\'&&toggleNotificationPanel()" aria-label="Notifications">' +
             '<svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>' +
             '<span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">0</span>' +
