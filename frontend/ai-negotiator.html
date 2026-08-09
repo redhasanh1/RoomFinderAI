@@ -445,7 +445,7 @@
                             <div id="ngStep1Marker" class="flex-shrink-0 w-7 h-7 rounded-full bg-purple-600 text-white flex items-center justify-center text-sm font-semibold">1</div>
                             <div>
                                 <p id="ngStep1Title" class="font-semibold text-gray-900 text-sm">Set your negotiation goals below</p>
-                                <p id="ngStep1Sub" class="text-xs text-gray-600 mt-0.5">Set your budget and when you are free. Everything else is optional.</p>
+                                <p id="ngStep1Sub" class="text-xs text-gray-600 mt-0.5">Fill in whatever is relevant. Blank fields are simply ignored.</p>
                             </div>
                         </div>
                         <div class="hidden sm:block w-px bg-purple-200 self-stretch"></div>
@@ -483,8 +483,30 @@
                         .ng-section-summary { font-size:12px; color:#6b7280; margin-left:8px; flex:1; text-align:right; padding-right:8px; }
                         .ng-arrow { transition: transform .2s; color:#9ca3af; font-size:11px; }
                         .ng-section.open .ng-arrow { transform: rotate(90deg); }
-                        .ng-section-body { display:none; padding:4px 0 14px; }
-                        .ng-section.open .ng-section-body { display:block; }
+                        /* No accordion. Everything is visible at once — collapsing
+                           sections turned a short form into a memory game about
+                           what you had already opened. Density does the work
+                           instead: tighter rows, smaller labels, two columns
+                           where the fields are narrow. */
+                        .ng-section-body { display:block; padding:2px 0 10px; }
+                        .ng-section-header { padding:9px 0 5px; cursor:default; }
+                        .ng-arrow { display:none; }
+                        .ng-section-header h4 { font-size:11px; font-weight:700; letter-spacing:.09em;
+                                                text-transform:uppercase; color:#8b93a3; }
+                        .ng-section:not(.open) .ng-section-header::after { content:none; }
+                        .ng-section { border-top:1px solid #eef0f4; }
+
+                        /* Two-up rows for the short fields; long ones opt out. */
+                        .ng-section-body { display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; align-items:start; }
+                        .ng-section-body > .ng-field:only-child,
+                        .ng-section-body > .ng-field.ng-wide,
+                        .ng-section-body > .ng-field:has(.ng-wide) { grid-column:1 / -1; }
+                        .ng-field { margin:0; }
+                        .ng-field-label { font-size:11px; color:#6b7280; margin-bottom:3px; display:block; }
+                        .ng-input, .ng-select { padding:6px 9px; font-size:13px; }
+                        .ng-chip { padding:3px 9px; font-size:11.5px; }
+                        .ng-checkrow { font-size:12px; grid-column:1 / -1; margin:1px 0; }
+                        @media (max-width: 520px) { .ng-section-body { grid-template-columns:1fr; } }
                         .ng-field { margin-bottom:10px; }
                         .ng-field-label { font-size:12px; font-weight:500; color:#4b5563; margin-bottom:4px; display:block; }
                         .ng-input, .ng-select { width:100%; max-width:240px; padding:6px 10px; border:1px solid #d1d5db; border-radius:8px; font-size:13px; background:#fff; }
@@ -516,7 +538,7 @@
                             <div class="ng-section-body">
                                 <div class="ng-field">
                                     <label class="ng-field-label">Available days</label>
-                                    <div data-ng-chips="available_days">
+                                    <div class="ng-wide" data-ng-chips="available_days">
                                         <span class="ng-chip" data-value="mon">Mon</span>
                                         <span class="ng-chip" data-value="tue">Tue</span>
                                         <span class="ng-chip" data-value="wed">Wed</span>
@@ -528,7 +550,7 @@
                                 </div>
                                 <div class="ng-field">
                                     <label class="ng-field-label">Time of day</label>
-                                    <div data-ng-chips="available_time">
+                                    <div class="ng-wide" data-ng-chips="available_time">
                                         <span class="ng-chip" data-value="morning">Morning</span>
                                         <span class="ng-chip" data-value="afternoon">Afternoon</span>
                                         <span class="ng-chip" data-value="evening">Evening</span>
@@ -536,7 +558,7 @@
                                 </div>
                                 <div class="ng-field">
                                     <label class="ng-field-label">Meeting format</label>
-                                    <div data-ng-chips="meeting_format">
+                                    <div class="ng-wide" data-ng-chips="meeting_format">
                                         <span class="ng-chip" data-value="in_person">In-person tour</span>
                                         <span class="ng-chip" data-value="video">Video call</span>
                                         <span class="ng-chip" data-value="phone">Phone</span>
@@ -571,7 +593,7 @@
                                 </div>
                                 <div class="ng-field">
                                     <label class="ng-field-label">Lease length</label>
-                                    <div data-ng-chips="lease_length" data-ng-single="1">
+                                    <div class="ng-wide" data-ng-chips="lease_length" data-ng-single="1">
                                         <span class="ng-chip" data-value="6mo">6 months</span>
                                         <span class="ng-chip" data-value="12mo">12 months</span>
                                         <span class="ng-chip" data-value="m2m">Month-to-month</span>
@@ -660,7 +682,7 @@
                                 <span class="ng-arrow">▶</span>
                             </button>
                             <div class="ng-section-body">
-                                <div data-ng-chips="must_haves">
+                                <div class="ng-wide" data-ng-chips="must_haves">
                                     <span class="ng-chip" data-value="parking">Parking</span>
                                     <span class="ng-chip" data-value="in_unit_laundry">In-unit laundry</span>
                                     <span class="ng-chip" data-value="pet_friendly">Pet-friendly</span>
@@ -681,7 +703,7 @@
                             <div class="ng-section-body">
                                 <div class="ng-field">
                                     <label class="ng-field-label">Tone</label>
-                                    <div data-ng-chips="tone" data-ng-single="1">
+                                    <div class="ng-wide" data-ng-chips="tone" data-ng-single="1">
                                         <span class="ng-chip" data-value="friendly">Friendly</span>
                                         <span class="ng-chip" data-value="professional">Professional</span>
                                         <span class="ng-chip" data-value="firm">Firm</span>
@@ -689,7 +711,7 @@
                                 </div>
                                 <div class="ng-field">
                                     <label class="ng-field-label">Assertiveness</label>
-                                    <div data-ng-chips="assertiveness" data-ng-single="1">
+                                    <div class="ng-wide" data-ng-chips="assertiveness" data-ng-single="1">
                                         <span class="ng-chip" data-value="low">Low</span>
                                         <span class="ng-chip" data-value="medium">Medium</span>
                                         <span class="ng-chip" data-value="high">High</span>
@@ -2523,7 +2545,7 @@
                     step1Marker.classList.remove('bg-green-600');
                     step1Marker.classList.add('bg-purple-600');
                     if (step1Title) step1Title.textContent = 'Set your negotiation goals below';
-                    if (step1Sub)   step1Sub.innerHTML     = 'Set your budget and when you are free. Everything else is optional.';
+                    if (step1Sub)   step1Sub.innerHTML     = 'Fill in whatever is relevant. Blank fields are simply ignored.';
                     step2Box.classList.add('opacity-50');
                 }
             }
