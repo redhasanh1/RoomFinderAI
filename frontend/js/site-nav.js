@@ -70,30 +70,30 @@
             '<span class="hamburger-line"></span><span class="hamburger-line"></span><span class="hamburger-line"></span>' +
             '</button></div>' +
             '<div class="desktop-nav site-show-desktop">' +
+            // Top level = the four things people come here to do. Anything that
+            // is a page you visit once (pricing, support, policy) lives under
+            // More. AI Negotiator and Listings are never nested — they were
+            // buried in dropdowns before and effectively undiscoverable.
+            // Student Housing is deliberately absent: the page is broken.
             '<a href="index.html" class="nav-item">Home</a>' +
+            '<a href="listings.html" class="nav-item">Listings</a>' +
+            '<a href="sublease.html" class="nav-item">Sublease</a>' +
+            '<a href="ai-negotiator.html" class="nav-item">AI Negotiator</a>' +
             '<a href="roommate-matching.html" class="nav-item">RoomPal</a>' +
-            '<div class="dropdown">' +
-            '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'browse\')">Browse <span class="dropdown-arrow">▼</span></button>' +
-            '<div class="dropdown-menu" id="browse-dropdown">' +
-            '<a href="listings.html" class="dropdown-item">Listings</a>' +
-            '<a href="student-housing.html" class="dropdown-item">Student Housing</a>' +
-            '<a href="sublease.html" class="dropdown-item">Subleasing</a>' +
-            '</div></div>' +
-            '<div class="dropdown">' +
-            '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'tools\')">Tools <span class="dropdown-arrow">▼</span></button>' +
-            '<div class="dropdown-menu" id="tools-dropdown">' +
-            '<a href="ai-negotiator.html" class="dropdown-item">AI Negotiator</a>' +
-            '<a href="legal.html" class="dropdown-item">Legal Help</a>' +
-            '</div></div>' +
             '<div class="dropdown">' +
             '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'about\')">More <span class="dropdown-arrow">▼</span></button>' +
             '<div class="dropdown-menu" id="about-dropdown">' +
-            '<a href="index.html#about" class="dropdown-item">About Us</a>' +
+            '<a href="legal.html" class="dropdown-item">Legal Help</a>' +
             '<a href="pricing.html" class="dropdown-item">Pricing</a>' +
-            '<a href="index.html#contact" class="dropdown-item">Contact</a>' +
             '<a href="support.html" class="dropdown-item">Support</a>' +
+            '<a href="index.html#about" class="dropdown-item">About Us</a>' +
+            '<a href="index.html#contact" class="dropdown-item">Contact</a>' +
             '</div></div>' +
-            <a href="profile.html" id="navProfileLink" class="nav-item site-nav-profile-link hidden" style="display:none !important" aria-hidden="true">Profile</a>
+            // This line was raw HTML dropped into a string concatenation without
+            // quotes, so site-nav.js threw a SyntaxError on load and never
+            // rendered anything — which is why all 27 pages ended up carrying
+            // their own hand-written nav, and why they drifted apart.
+            '<a href="profile.html" id="navProfileLink" class="nav-item site-nav-profile-link hidden" style="display:none !important" aria-hidden="true">Profile</a>' +
             '</div>' +
             '<div class="desktop-auth site-show-desktop">' +
             '<div id="notificationBell" class="site-nav-notification relative cursor-pointer hidden p-2 hover:bg-gray-100 rounded-lg transition" onclick="typeof toggleNotificationPanel===\'function\'&&toggleNotificationPanel()" aria-label="Notifications">' +
@@ -123,7 +123,7 @@
             '<button type="button" class="mobile-section-header" onclick="toggleMobileSection(\'browse\')">Browse <span class="mobile-arrow" id="browse-arrow">▼</span></button>' +
             '<div class="mobile-section-content" id="browse-section">' +
             '<a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Listings</a>' +
-            '<a href="student-housing.html" class="mobile-menu-item" onclick="closeMobileMenu()">Student Housing</a>' +
+            
             '<a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Subleasing</a>' +
             '</div></div>' +
             '<div class="mobile-section">' +
@@ -155,7 +155,10 @@
         }
 
         var html = buildCanonicalNavHtml();
-        var existing = document.getElementById('header') || document.querySelector('header.premium-header, header.modern-header, .premium-header');
+        // ai-negotiator.html and a few others use <nav class="nav-header"> rather
+        // than a <header>; without matching it the canonical nav was prepended
+        // ALONGSIDE the old one, giving two stacked menus.
+        var existing = document.getElementById('header') || document.querySelector('header.premium-header, header.modern-header, .premium-header, nav.nav-header, .nav-header');
         if (existing && existing.tagName) {
             existing.outerHTML = html;
         } else {
