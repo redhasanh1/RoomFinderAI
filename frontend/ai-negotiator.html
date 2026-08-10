@@ -504,7 +504,18 @@
                         .ng-section-header h4 { font-size:11px; font-weight:700; letter-spacing:.09em;
                                                 text-transform:uppercase; color:#8b93a3; }
                         .ng-section:not(.open) .ng-section-header::after { content:none; }
-                        .ng-section { border-top:1px solid #eef0f4; }
+                                                .ng-section { border-top:1px solid #eef0f4; }
+                        /* Budget first: it sets the ceiling the AI will not cross,
+                           and it was buried third. Availability next, because
+                           agreeing to a day you cannot make is the other costly
+                           mistake. Everything after that is flavour. */
+                        #ngMasterBody { display:flex; flex-direction:column; }
+                        [data-ng-section="price"]    { order:1; }
+                        [data-ng-section="meeting"]  { order:2; }
+                        [data-ng-section="movein"]   { order:3; }
+                        [data-ng-section="musthave"] { order:4; }
+                        [data-ng-section="about"]    { order:5; }
+                        [data-ng-section="style"]    { order:6; }
 
                         /* Two-up rows for the short fields; long ones opt out. */
                         .ng-section-body { display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; align-items:start; }
@@ -541,7 +552,7 @@
                         <!-- 1. Meeting & viewing -->
                         <div class="ng-section open" data-ng-section="meeting">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('meeting')">
-                                <h4>Meeting & viewing</h4>
+                                <h4>When you can view</h4>
                                 <span class="ng-section-summary" id="ngSummary-meeting"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
@@ -580,7 +591,7 @@
                         <!-- 2. Move-in & lease -->
                         <div class="ng-section" data-ng-section="movein">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('movein')">
-                                <h4>Move-in & lease</h4>
+                                <h4>Move-in date</h4>
                                 <span class="ng-section-summary" id="ngSummary-movein"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
@@ -616,7 +627,7 @@
                         <!-- 3. Price goals -->
                         <div class="ng-section open" data-ng-section="price">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('price')">
-                                <h4>Price goals</h4>
+                                <h4>Your budget</h4>
                                 <span class="ng-section-summary" id="ngSummary-price"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
@@ -638,7 +649,7 @@
                         <!-- 4. About me -->
                         <div class="ng-section" data-ng-section="about">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('about')">
-                                <h4>About me (AI may mention these)</h4>
+                                <h4>About you</h4>
                                 <span class="ng-section-summary" id="ngSummary-about"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
@@ -687,7 +698,7 @@
                         <!-- 5. Must-haves -->
                         <div class="ng-section" data-ng-section="musthave">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('musthave')">
-                                <h4>Must-haves (optional)</h4>
+                                <h4>Must-haves</h4>
                                 <span class="ng-section-summary" id="ngSummary-musthave"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
@@ -706,7 +717,7 @@
                         <!-- 6. Style -->
                         <div class="ng-section" data-ng-section="style">
                             <button type="button" class="ng-section-header" onclick="ngToggleSection('style')">
-                                <h4>Negotiation style</h4>
+                                <h4>How the AI should sound</h4>
                                 <span class="ng-section-summary" id="ngSummary-style"></span>
                                 <span class="ng-arrow">▶</span>
                             </button>
