@@ -110,7 +110,27 @@
                 <div id="interestsReceived" class="space-y-4"></div>
             </section>
         </div>
-    </main>
+            <div id="chatModal" class="chat-modal">
+            <div class="chat-modal-content">
+                <div class="chat-header">
+                    <h2 id="chatTitle">Chat</h2>
+                    <span class="close-button chat-close-button">×</span>
+                </div>
+                <div id="chatMessages" class="chat-messages"></div>
+                <div class="chat-input-container flex-col gap-2">
+                    <div class="flex items-end gap-2 w-full">
+                        <textarea id="chatInput" class="chat-input flex-1 min-w-0" rows="2" placeholder="Type your message..."></textarea>
+                        <input type="file" id="fileInput" class="hidden" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.txt" multiple>
+                        <button type="button" id="fileUploadBtn" class="bg-gray-500 text-white px-3 py-2 rounded hover:bg-gray-600 transition text-sm flex-shrink-0 hidden" onclick="document.getElementById('fileInput').click()" title="Attach file">
+                            📎
+                        </button>
+                        <button type="button" id="chatSendBtn" class="chat-send-btn flex-shrink-0">Send</button>
+                    </div>
+                    <div id="selectedFiles" class="w-full space-y-1 hidden"></div>
+                </div>
+            </div>
+
+</main>
 
     <script>
         let userEmail = null;
@@ -141,8 +161,13 @@
             if (name === 'interests') loadInterestsReceived();
         }
 
+        // Keeps the owner email and title for each rendered card, so expressing
+        // interest can open a chat without another round trip.
+        const subleaseCache = {};
+
         function renderCards(requests, containerId, showActions = false) {
             const el = document.getElementById(containerId);
+            requests.forEach((r) => { subleaseCache[r.id] = r; });
             if (!requests.length) {
                 el.innerHTML = '<p class="text-gray-500 text-center py-12">No sublease requests found.</p>';
                 return;
@@ -263,7 +288,19 @@
                 });
                 const data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Failed');
-                showBanner('success', 'Interest sent! The poster has been notified.');
+                showBanner('success', 'Interest sent. Opening a chat with them...');
+
+                // Interest alone is a dead end — open the conversation so the
+                // user can actually say something while they have momentum.
+                const card = subleaseCache[requestId];
+                if (window.subleaseChat && card) {
+                    await window.subleaseChat.startConversation({
+                        id: requestId,
+                        user_email: data.ownerEmail || card.user_email,
+                        title: data.title || card.title,
+                        context: 'sublease'
+                    });
+                }
             } catch (err) {
                 if (err.message !== 'Not logged in') showBanner('error', err.message);
             }
@@ -345,6 +382,23 @@
                 + '<a href="login.html?redirect=sublease.html" class="inline-block bg-indigo-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-indigo-700">Log in</a>'
                 + '</div>';
         });
+    </script>
+    <script type="module" src="/chat-system.js?v=20260813-sublease"></script>
+    <script>
+        // Reuse the shared chat rather than duplicating the ~1500 inline lines
+        // listings.html carries. supabase-config-init.js already exposes an
+        // awaitable client, so no polling loop is needed here.
+        (async function () {
+            try {
+                const client = await (window.supabaseConfigReady || Promise.resolve(window.supabaseClient));
+                if (!client || !window.ChatSystem) return;
+                window.subleaseChat = new window.ChatSystem();
+                await window.subleaseChat.initialize(client);
+                console.log('Sublease chat ready');
+            } catch (e) {
+                console.warn('Sublease chat unavailable:', e.message);
+            }
+        })();
     </script>
 </body>
 </html>

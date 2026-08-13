@@ -691,12 +691,23 @@ class ChatSystem {
      */
     async findOrCreateConversation(currentUser, listing) {
         // Select only needed columns to reduce egress costs
-        const { data: conversations, error } = await this.supabase
+        // Match either direction. Filtering on sender AND receiver missed the
+        // thread whenever the other party wrote first, so both sides ended up
+        // with their own conversation for the same listing and neither saw the
+        // other's messages. Fetch by listing and pair them off client-side,
+        // as listings.html does.
+        const { data: allForListing, error } = await this.supabase
             .from('conversations')
             .select('id, listing_id, sender_email, receiver_email, created_at')
-            .eq('listing_id', listing.id)
-            .eq('sender_email', currentUser.email)
-            .eq('receiver_email', listing.user_email);
+            .eq('listing_id', listing.id);
+
+        const me = (currentUser.email || '').toLowerCase();
+        const other = (listing.user_email || '').toLowerCase();
+        const conversations = (allForListing || []).filter(c => {
+            const a = (c.sender_email || '').toLowerCase();
+            const b = (c.receiver_email || '').toLowerCase();
+            return (a === me && b === other) || (a === other && b === me);
+        });
 
         if (error) {
             throw error;
@@ -713,6 +724,9 @@ class ChatSystem {
                 listing_id: listing.id,
                 sender_email: currentUser.email,
                 receiver_email: listing.user_email,
+                // Tags the thread so a shared inbox can separate sublease
+                // conversations from listing ones. Callers pass listing.context.
+                context: listing.context || 'listing',
                 created_at: new Date().toISOString()
             })
             .select()
