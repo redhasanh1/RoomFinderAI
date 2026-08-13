@@ -227,18 +227,21 @@
             <!-- Quick Filters -->
             <div class="bg-white rounded-2xl shadow-sm border p-4 md:p-6 mb-8">
                 <div class="flex flex-wrap gap-3 md:gap-4 items-end">
-                    <!-- City Filter -->
+                    <!-- Who they are. Everyone is shown by default; this narrows it. -->
+                    <div class="w-full flex gap-2 mb-1">
+                        <button type="button" class="rp-type-btn active px-3 py-1.5 rounded-full text-xs font-semibold border" data-type="" onclick="setRoommateType(this)">Everyone</button>
+                        <button type="button" class="rp-type-btn px-3 py-1.5 rounded-full text-xs font-semibold border" data-type="seeking" onclick="setRoommateType(this)">Looking for a room</button>
+                        <button type="button" class="rp-type-btn px-3 py-1.5 rounded-full text-xs font-semibold border" data-type="has_spot" onclick="setRoommateType(this)">Has a room</button>
+                    </div>
+
+                    <!-- City: free text, because people type their own areas
+                         ("Downtown Toronto", "Waterloo") and a fixed list of six
+                         cities could not express them. -->
                     <div class="flex-1 min-w-[140px]">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">City</label>
-                        <select id="landingCityFilter" class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" onchange="applyLandingFilters()">
-                            <option value="">All Cities</option>
-                            <option value="toronto">Toronto</option>
-                            <option value="vancouver">Vancouver</option>
-                            <option value="montreal">Montreal</option>
-                            <option value="calgary">Calgary</option>
-                            <option value="ottawa">Ottawa</option>
-                            <option value="edmonton">Edmonton</option>
-                        </select>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">City or area</label>
+                        <input id="landingCityFilter" type="text" placeholder="e.g. Toronto"
+                               class="w-full border rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                               oninput="applyLandingFilters()">
                     </div>
 
                     <!-- Budget Range -->
@@ -1107,5 +1110,17 @@
         });
     </script>
     <script src="/js/site-nav.js?v=20260809e"></script>
+    <style>
+        .rp-type-btn { background:#fff; border-color:#e5e7eb; color:#6b7280; }
+        .rp-type-btn:hover { border-color:#c7cbd3; color:#374151; }
+        .rp-type-btn.active { background:#4f46e5; border-color:#4f46e5; color:#fff; }
+    </style>
+    <script>
+        function setRoommateType(btn) {
+            document.querySelectorAll('.rp-type-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            if (typeof applyLandingFilters === 'function') applyLandingFilters();
+        }
+    </script>
 </body>
 </html>

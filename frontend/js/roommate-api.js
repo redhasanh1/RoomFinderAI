@@ -201,9 +201,15 @@ class RoommateAPIService {
             let query = this.supabase
                 .from('roommate_profiles')
                 .select('*')
-                .eq('user_type', 'seeking')
                 .eq('is_active', true)
                 .order('created_at', { ascending: false });
+
+            // user_type was pinned to 'seeking', so people advertising a room
+            // ('has_spot') were fetched by nothing on the page and could never
+            // appear in the marketplace. Now it filters only when a caller asks.
+            if (filters.userType) {
+                query = query.eq('user_type', filters.userType);
+            }
 
             if (filters.maxBudget) {
                 query = query.lte('budget_max', filters.maxBudget);
@@ -212,7 +218,9 @@ class RoommateAPIService {
                 query = query.gte('budget_min', filters.minBudget);
             }
 
-            const limit = filters.limit || 50;
+            // Was 50 with no pagination anywhere — a silent ceiling on the whole
+            // marketplace.
+            const limit = filters.limit || 200;
             const { data, error } = await query.limit(limit);
 
             if (error) {

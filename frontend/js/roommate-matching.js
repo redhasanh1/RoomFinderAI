@@ -56,15 +56,15 @@ class RoomPalApp {
         await this.loadUserProfile();
         this.updateProfileCTA();
 
+        // The marketplace is public. This used to hide the entire people list
+        // unless you were logged in AND already had a roommate profile, so a
+        // first-time visitor landed on a page with nobody on it — exactly the
+        // person you need to show the marketplace to. The profile requirement
+        // still stands, but it is enforced at the point of contact
+        // (openPersonContact) rather than by hiding everyone.
         const listSection = document.getElementById('roommateListSection');
-        if (!this.currentUser || !this.hasUserProfile) {
-            if (listSection) listSection.classList.add('hidden');
-            const loading = document.getElementById('landingLoadingState');
-            if (loading) loading.classList.add('hidden');
-        } else {
-            if (listSection) listSection.classList.remove('hidden');
-            await this.loadLandingProfiles();
-        }
+        if (listSection) listSection.classList.remove('hidden');
+        await this.loadLandingProfiles();
 
         console.log('RoomPal Smart Matching initialized');
     }
@@ -179,19 +179,17 @@ class RoomPalApp {
                     this.allPeople = await this.api.getSeekerProfiles({}) || [];
                     console.log('Fetched seeker profiles:', this.allPeople.length);
                 } else {
-                    console.warn('API not initialized, using demo profiles');
-                    this.allPeople = this.getDemoProfiles();
+                    console.warn('Roommate API not initialized — showing no profiles rather than fabricating them');
+                    this.allPeople = [];
                 }
             } else {
-                console.warn('No API instance available, using demo profiles');
-                this.allPeople = this.getDemoProfiles();
+                console.warn('No roommate API instance available');
+                this.allPeople = [];
             }
 
-            // If database returned empty, show demo profiles so page isn't blank
-            if (this.allPeople.length === 0) {
-                console.log('No profiles in database, showing demo profiles');
-                this.allPeople = this.getDemoProfiles();
-            }
+            // Deliberately no demo fallback: this is a live marketplace, and six
+            // hardcoded strangers presented as real people is worse than an
+            // honest empty state.
 
             // Filter out current user
             if (this.currentUser) {
@@ -473,9 +471,18 @@ class RoomPalApp {
     createMatchCard(person) {
         const avatarUrl = person.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(person.name || 'User')}&background=6366f1&color=fff&size=160`;
         const name = person.name || 'Anonymous';
-        const location = person.preferred_areas?.[0] || 'Location flexible';
+        // Someone advertising a room states where the room IS (room_location);
+        // a seeker states where they WANT to live (preferred_areas).
+        const location = (person.user_type === 'has_spot'
+            ? (person.room_location || person.preferred_areas?.[0])
+            : person.preferred_areas?.[0]) || 'Location flexible';
+        const isHost = person.user_type === 'has_spot';
+        const typeLabel = isHost ? 'Has a room' : 'Looking for a room';
+        const typeClass = isHost ? 'bg-emerald-50 text-emerald-700' : 'bg-indigo-50 text-indigo-700';
         const budgetMax = person.budget_max || 0;
-        const budgetText = budgetMax ? `Up to $${budgetMax}/mo` : 'Budget flexible';
+        const budgetText = isHost && person.room_rent
+            ? `$${person.room_rent}/mo`
+            : (budgetMax ? `Up to $${budgetMax}/mo` : 'Budget flexible');
         const bio = person.bio || 'Looking for a great roommate!';
         const truncatedBio = bio.length > 80 ? bio.substring(0, 80) + '...' : bio;
         const moveInDate = person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible';
@@ -499,10 +506,17 @@ class RoomPalApp {
 
         return `
             <div class="bg-white rounded-2xl shadow-sm border hover:shadow-lg transition-all duration-300 overflow-hidden">
-                <!-- Match Score Badge -->
+                <!-- Match Score Badge. Only shown when we can actually compute it:
+                     without the viewer's own profile calculateMatchScore() returns
+                     Math.random()*30+60, and a fabricated percentage is worse than
+                     no percentage. Everyone still sees who the person is. -->
                 <div class="relative">
+                    ${this.hasUserProfile ? `
                     <div class="absolute top-3 right-3 ${matchColor} text-white px-3 py-1 rounded-full text-sm font-bold shadow-md">
                         ${matchScore}% Match
+                    </div>` : ''}
+                    <div class="absolute top-3 left-3 ${typeClass} px-2.5 py-1 rounded-full text-xs font-semibold shadow-sm">
+                        ${typeLabel}
                     </div>
                     <div class="h-24 bg-gradient-to-br from-indigo-400 to-purple-500"></div>
                     <img src="${avatarUrl}" alt="${name}" class="w-20 h-20 rounded-full border-4 border-white absolute -bottom-10 left-1/2 -translate-x-1/2 object-cover" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=6366f1&color=fff&size=160'">
@@ -592,19 +606,15 @@ class RoomPalApp {
                     this.landingProfiles = await this.api.getSeekerProfiles({}) || [];
                     console.log('Fetched landing profiles:', this.landingProfiles.length);
                 } else {
-                    console.warn('API not initialized, using demo profiles for landing');
-                    this.landingProfiles = this.getDemoProfiles();
+                    console.warn('Roommate API not initialized — landing list empty');
+                    this.landingProfiles = [];
                 }
             } else {
-                console.warn('No API instance available, using demo profiles for landing');
-                this.landingProfiles = this.getDemoProfiles();
+                console.warn('No roommate API instance available for landing');
+                this.landingProfiles = [];
             }
 
-            // If database returned empty, show demo profiles
-            if (this.landingProfiles.length === 0) {
-                console.log('No profiles in database, showing demo profiles on landing');
-                this.landingProfiles = this.getDemoProfiles();
-            }
+            // No demo fallback here either — see loadRoommateMatches().
 
             // Filter out current user
             if (this.currentUser) {
@@ -689,17 +699,27 @@ class RoomPalApp {
         const cityFilter = document.getElementById('landingCityFilter')?.value || '';
         const budgetFilter = document.getElementById('landingBudgetFilter')?.value || '';
         const lifestyleFilter = document.getElementById('landingLifestyleFilter')?.value || '';
+        const typeFilter = document.querySelector('.rp-type-btn.active')?.dataset.type || '';
 
         // Start with all profiles
         this.landingProfiles = [...(this.allLandingProfiles || [])];
 
         // Filter
         this.landingProfiles = this.landingProfiles.filter(person => {
-            // City filter
+            // City / area, free text. The old dropdown offered six fixed
+            // Canadian cities and only searched preferred_areas, so real entries
+            // like "Downtown Toronto" or a room advertised in Vancouver via
+            // room_location were unreachable. Match either field.
             if (cityFilter) {
-                const areas = (person.preferred_areas || []).join(' ').toLowerCase();
-                if (!areas.includes(cityFilter.toLowerCase())) return false;
+                const haystack = [
+                    (person.preferred_areas || []).join(' '),
+                    person.room_location || ''
+                ].join(' ').toLowerCase();
+                if (!haystack.includes(cityFilter.trim().toLowerCase())) return false;
             }
+
+            // Who they are: seeking a room, or advertising one.
+            if (typeFilter && person.user_type !== typeFilter) return false;
 
             // Budget filter
             if (budgetFilter) {
@@ -1265,6 +1285,22 @@ class RoomPalApp {
             window.location.href = 'login.html';
             return;
         }
+
+        // The profile requirement used to be enforced by hiding the entire
+        // people list. Now that the marketplace is public, it has to be stated
+        // here: you can browse freely, but you need a profile of your own
+        // before messaging someone — they need to see who is contacting them.
+        if (!this.hasUserProfile) {
+            this.pendingContact = { personId, personName };
+            alert(`Create your roommate profile first so ${personName} can see who you are. It takes a minute.`);
+            this.showSection('seeking');
+            const tab = document.querySelector('[data-seeking-tab="createProfile"]');
+            if (tab) tab.click();
+            const form = document.getElementById('quickProfileForm');
+            if (form) form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            return;
+        }
+
         window.startFloatingChatWith(personId, personName);
     }
 
@@ -1502,6 +1538,18 @@ class RoomPalApp {
             this.showToast(isEditing ? 'Profile updated!' : 'Profile created! Finding your matches...', 'success');
 
             await this.loadRoommateMatches();
+            await this.loadLandingProfiles();
+
+            // If they were sent here by clicking Contact, take them straight to
+            // that conversation rather than making them find the person again.
+            if (this.pendingContact) {
+                const { personId, personName } = this.pendingContact;
+                this.pendingContact = null;
+                this.showSection('landing');
+                if (typeof window.startFloatingChatWith === 'function') {
+                    window.startFloatingChatWith(personId, personName);
+                }
+            }
 
         } catch (error) {
             console.error('Error creating profile:', error);
