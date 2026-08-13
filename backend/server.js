@@ -10596,6 +10596,40 @@ app.get('/api/sublease/interests', async (req, res) => {
 
         await setUserContext(userEmail);
 
+        // Interests recorded directly against a request (the normal path since
+        // express-interest stopped depending on compatibility matching). The
+        // legacy sublease_matches scan below still runs so older interest,
+        // which only ever existed as booleans on a match row, keeps showing.
+        const direct = [];
+        try {
+            const { data: rows } = await supabase
+                .from('sublease_interests')
+                .select('id, request_id, interested_email, conversation_id, created_at')
+                .eq('owner_email', userEmail)
+                .order('created_at', { ascending: false });
+            for (const r of rows || []) {
+                const { data: reqRow } = await supabase
+                    .from('sublease_requests')
+                    .select('title')
+                    .eq('id', r.request_id)
+                    .maybeSingle();
+                direct.push({
+                    match_id: null,
+                    interest_id: r.id,
+                    request_id: r.request_id,
+                    conversation_id: r.conversation_id,
+                    listing_title: reqRow ? reqRow.title : 'Your sublease request',
+                    interested_user_email: r.interested_email,
+                    interested_user_name: String(r.interested_email || '').split('@')[0],
+                    interested_listing_title: null,
+                    match_status: 'interested',
+                    expressed_at: r.created_at
+                });
+            }
+        } catch (e) {
+            console.warn('sublease_interests lookup failed:', e.message);
+        }
+
         const { data: myRequests, error: reqErr } = await supabase
             .from('sublease_requests')
             .select('id, title, type, user_email')
@@ -10607,7 +10641,7 @@ app.get('/api/sublease/interests', async (req, res) => {
         }
 
         if (!myRequests || myRequests.length === 0) {
-            return res.json({ success: true, interests: [] });
+            return res.json({ success: true, interests: direct });
         }
 
         const interests = [];
@@ -10655,8 +10689,14 @@ app.get('/api/sublease/interests', async (req, res) => {
             }
         }
 
-        interests.sort((a, b) => new Date(b.expressed_at || 0) - new Date(a.expressed_at || 0));
-        res.json({ success: true, interests });
+        // Direct interest wins over a legacy match row for the same person and
+        // request, so re-expressed interest is not listed twice.
+        const seen = new Set(direct.map(d => `${d.request_id}|${d.interested_user_email}`));
+        const merged = direct.concat(
+            interests.filter(i => !seen.has(`${i.request_id}|${i.interested_user_email}`))
+        );
+        merged.sort((a, b) => new Date(b.expressed_at || 0) - new Date(a.expressed_at || 0));
+        res.json({ success: true, interests: merged });
 
     } catch (error) {
         console.error('Sublease interests error:', error);
@@ -10676,6 +10716,15 @@ app.post('/api/sublease/express-interest', async (req, res) => {
         await setUserContext(userEmail);
 
         // Browse flow: frontend sends { requestId, userEmail }
+        //
+        // Interest is now recorded as its own fact in `sublease_interests` and a
+        // conversation is opened immediately. The previous implementation went
+        // through the compatibility matcher, which made a deliberate click
+        // dependent on a similarity score: with no opposite-type request of your
+        // own it fabricated a throwaway `Interest in: ...` row carrying only
+        // city/state/rent, which scores exactly 30.00 for a same-city pair —
+        // and the matcher only inserts above 30. Every such click returned
+        // "Could not create match record" and left the junk row behind.
         if (requestId && !matchId) {
             const { data: viewedReq, error: reqErr } = await supabase
                 .from('sublease_requests')
@@ -10688,50 +10737,82 @@ app.post('/api/sublease/express-interest', async (req, res) => {
             if (viewedReq.user_email === userEmail) {
                 return res.status(400).json({ error: 'Cannot express interest on your own request' });
             }
-            const oppositeType = viewedReq.type === 'transfer' ? 'seeking' : 'transfer';
-            let { data: userReq } = await supabase
-                .from('sublease_requests')
-                .select('*')
-                .eq('user_email', userEmail)
-                .eq('type', oppositeType)
-                .eq('status', 'active')
-                .limit(1)
-                .maybeSingle();
-            if (!userReq) {
-                const { data: created, error: createErr } = await supabase
-                    .from('sublease_requests')
+
+            const ownerEmail = viewedReq.user_email;
+
+            // One conversation per (request, interested user), in either
+            // direction — the owner may have written first.
+            const { data: existingConvos } = await supabase
+                .from('conversations')
+                .select('id, sender_email, receiver_email')
+                .eq('listing_id', requestId);
+            let conversation = (existingConvos || []).find(c => {
+                const a = (c.sender_email || '').toLowerCase();
+                const b = (c.receiver_email || '').toLowerCase();
+                const me = userEmail.toLowerCase();
+                const owner = (ownerEmail || '').toLowerCase();
+                return (a === me && b === owner) || (a === owner && b === me);
+            });
+
+            if (!conversation) {
+                const { data: newConvo, error: convoErr } = await supabase
+                    .from('conversations')
                     .insert({
-                        user_email: userEmail,
-                        type: oppositeType,
-                        status: 'active',
-                        title: `Interest in: ${viewedReq.title}`,
-                        city: viewedReq.city,
-                        state: viewedReq.state,
-                        rent_amount: viewedReq.rent_amount,
-                        min_budget: viewedReq.min_budget,
-                        max_budget: viewedReq.max_budget
+                        listing_id: requestId,
+                        sender_email: userEmail,
+                        receiver_email: ownerEmail,
+                        context: 'sublease',
+                        created_at: new Date().toISOString()
                     })
-                    .select()
+                    .select('id')
                     .single();
-                if (createErr) {
-                    return res.status(500).json({ error: 'Could not create interest profile' });
+                if (convoErr) {
+                    console.error('Sublease interest: conversation create failed:', convoErr.message);
+                } else {
+                    conversation = newConvo;
                 }
-                userReq = created;
             }
-            await findAndCreateMatches(viewedReq.id, viewedReq.type);
-            const transferId = viewedReq.type === 'transfer' ? viewedReq.id : userReq.id;
-            const seekingId = viewedReq.type === 'seeking' ? viewedReq.id : userReq.id;
-            const { data: matchRow } = await supabase
-                .from('sublease_matches')
-                .select('id')
-                .eq('transfer_request_id', transferId)
-                .eq('seeking_request_id', seekingId)
-                .maybeSingle();
-            if (!matchRow) {
-                return res.status(500).json({ error: 'Could not create match record' });
+
+            // UNIQUE(request_id, interested_email) makes repeat clicks a no-op
+            // rather than piling up duplicates.
+            const { error: interestErr } = await supabase
+                .from('sublease_interests')
+                .upsert({
+                    request_id: requestId,
+                    interested_email: userEmail,
+                    owner_email: ownerEmail,
+                    conversation_id: conversation ? conversation.id : null
+                }, { onConflict: 'request_id,interested_email' });
+            if (interestErr) {
+                console.error('Sublease interest: upsert failed:', interestErr.message);
+                return res.status(500).json({ error: 'Could not record interest' });
             }
-            matchId = matchRow.id;
-            requestType = oppositeType;
+
+            // Best-effort owner notification; never fail the request over it.
+            try {
+                await supabase.from('ai_chats').insert({
+                    user_email: ownerEmail,
+                    title: 'Sublease Interest',
+                    conversation_data: JSON.stringify([{
+                        role: 'system',
+                        type: 'sublease_interest',
+                        content: `${userEmail} is interested in "${viewedReq.title}"`,
+                        request_id: requestId,
+                        conversation_id: conversation ? conversation.id : null,
+                        created_at: new Date().toISOString()
+                    }])
+                });
+            } catch (notifyErr) {
+                console.warn('Sublease interest notification failed:', notifyErr.message);
+            }
+
+            return res.json({
+                success: true,
+                message: 'Interest sent',
+                conversationId: conversation ? conversation.id : null,
+                ownerEmail,
+                title: viewedReq.title
+            });
         }
 
         if (!matchId || !requestType) {

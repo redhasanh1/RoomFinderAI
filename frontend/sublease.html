@@ -330,8 +330,10 @@
                 const user = await UniversalAuth.getCurrentUser();
                 if (user?.email) {
                     userEmail = user.email;
-                    document.getElementById('authLink').textContent = 'Profile';
-                    document.getElementById('authLink').href = 'profile.html';
+                    // #authLink does not exist on this page — the shared nav owns
+                    // the auth UI now. Calling .textContent on null threw here,
+                    // before searchSubleases() below ever ran, which is why the
+                    // Browse panel was empty until you clicked the tab.
                     searchSubleases();
                     return;
                 }
