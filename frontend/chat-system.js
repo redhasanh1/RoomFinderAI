@@ -910,15 +910,35 @@ class ChatSystem {
     }
 
     async loadListingConversationsWithUnread(currentUser) {
+        // Listings are fetched separately rather than embedded. The embed
+        // `listings (title, id)` needed the foreign key on
+        // conversations.listing_id, which was removed so a conversation can
+        // also reference a sublease_request. Without it PostgREST returns
+        // PGRST200 and the whole inbox fails to load.
         const { data: conversations, error } = await this.supabase
             .from('conversations')
-            .select(`*, listings (title, id)`)
+            .select('*')
             .or(`sender_email.eq.${currentUser.email},receiver_email.eq.${currentUser.email}`)
             .order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error loading conversations:', error);
             return [];
+        }
+
+        const listingIds = [...new Set((conversations || [])
+            .map(c => c.listing_id).filter(Boolean))];
+        const listingsById = {};
+        if (listingIds.length) {
+            const { data: listingRows } = await this.supabase
+                .from('listings')
+                .select('id, title')
+                .in('id', listingIds);
+            for (const l of listingRows || []) listingsById[l.id] = l;
+        }
+        for (const c of conversations || []) {
+            // Sublease threads have no listing row; the title falls back below.
+            c.listings = listingsById[c.listing_id] || null;
         }
 
         const result = [];

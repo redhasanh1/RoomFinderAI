@@ -849,25 +849,32 @@
                 const container = document.getElementById('chatHistory');
 
                 // Fetch conversations from Supabase where user is sender or receiver
+                // Listings are looked up separately. Embedding them needed the
+                // foreign key on conversations.listing_id, which was removed so
+                // a conversation can also point at a sublease request. With the
+                // embed, PostgREST returns PGRST200 and this whole panel showed
+                // "Error loading chat history".
                 const { data: conversations, error } = await supabaseClient
                     .from('conversations')
-                    .select(`
-                        id,
-                        listing_id,
-                        sender_email,
-                        receiver_email,
-                        created_at,
-                        listings (
-                            id,
-                            title,
-                            price,
-                            street,
-                            city
-                        )
-                    `)
+                    .select('id, listing_id, sender_email, receiver_email, created_at, context')
                     .or(`sender_email.eq.${user.email},receiver_email.eq.${user.email}`)
                     .order('created_at', { ascending: false })
                     .limit(10);
+
+                if (conversations && conversations.length) {
+                    const ids = [...new Set(conversations.map(c => c.listing_id).filter(Boolean))];
+                    const byId = {};
+                    if (ids.length) {
+                        const { data: rows } = await supabaseClient
+                            .from('listings')
+                            .select('id, title, price, street, city')
+                            .in('id', ids);
+                        for (const l of rows || []) byId[l.id] = l;
+                    }
+                    // Sublease threads have no listings row — left null and
+                    // handled by the 'Listing' fallback below.
+                    conversations.forEach(c => { c.listings = byId[c.listing_id] || null; });
+                }
 
                 if (error) {
                     console.error('Error fetching conversations:', error);
@@ -947,14 +954,26 @@
                 } else {
                     console.warn('API failed, trying direct Supabase query...');
                     // Fallback: direct Supabase query
+                    // favorites has no foreign key to listings either (this embed
+                    // was already failing with PGRST200 before today), so the
+                    // listing rows are fetched separately and joined here.
                     const { data, error } = await supabase
                         .from('favorites')
-                        .select('*, listings(*)')
+                        .select('*')
                         .eq('user_email', user.email);
 
                     if (!error && data) {
+                        const favListingIds = [...new Set(data.map(f => f.listing_id).filter(Boolean))];
+                        const favById = {};
+                        if (favListingIds.length) {
+                            const { data: favRows } = await supabase
+                                .from('listings')
+                                .select('*')
+                                .in('id', favListingIds);
+                            for (const l of favRows || []) favById[l.id] = l;
+                        }
                         savedListings = data.map(fav => ({
-                            ...fav.listings,
+                            ...(favById[fav.listing_id] || {}),
                             favorite_id: fav.id,
                             saved_at: fav.created_at
                         })).filter(l => l.id);
