@@ -1234,6 +1234,19 @@
             max-width: 1200px;
             margin: 0 auto;
         }
+        /* 14 models is a long scroll on a phone, and each is a full-size PNG.
+           Show the first four on small screens; the section is a taster, and
+           "View Real Listings" sits directly below it. Hidden cards are not
+           downloaded, so this also saves mobile data. Desktop is unchanged. */
+        @media (max-width: 640px) {
+            .house-models-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+            }
+            .house-models-grid .house-model-card:nth-child(n+5) {
+                display: none;
+            }
+        }
         .house-model-card {
             background: #fff;
             border-radius: 1rem;
