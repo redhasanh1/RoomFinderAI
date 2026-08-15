@@ -953,8 +953,10 @@ class RoomPalApp {
 
     async loadRooms() {
         const grid = document.getElementById('roomsGrid');
-        const emptyState = document.getElementById('emptyState');
-        const resultsCount = document.getElementById('resultsCount');
+        const emptyState = document.getElementById('emptyState')
+            || document.getElementById('matchEmptyState');
+        const resultsCount = document.getElementById('resultsCount')
+            || document.getElementById('matchResultsCount');
 
         if (!grid) return;
 
@@ -989,20 +991,29 @@ class RoomPalApp {
     }
 
     renderRooms() {
+        // #emptyState and #resultsCount do not exist in roommate-matching.html
+        // (it has matchEmptyState / landingEmptyState / matchResultsCount), so
+        // both branches below used to throw on null before any card was
+        // painted. loadRooms()'s catch swallowed it and showed "Failed to load
+        // rooms" even when rows came back. Guarded, with the real ids tried.
         const grid = document.getElementById('roomsGrid');
-        const emptyState = document.getElementById('emptyState');
-        const resultsCount = document.getElementById('resultsCount');
+        const emptyState = document.getElementById('emptyState')
+            || document.getElementById('matchEmptyState');
+        const resultsCount = document.getElementById('resultsCount')
+            || document.getElementById('matchResultsCount');
+
+        if (!grid) return;
 
         if (this.filteredRooms.length === 0) {
             grid.classList.add('hidden');
-            emptyState.classList.remove('hidden');
-            resultsCount.textContent = 'No rooms found';
+            if (emptyState) emptyState.classList.remove('hidden');
+            if (resultsCount) resultsCount.textContent = 'No rooms found';
             return;
         }
 
         grid.classList.remove('hidden');
-        emptyState.classList.add('hidden');
-        resultsCount.textContent = `${this.filteredRooms.length} room${this.filteredRooms.length !== 1 ? 's' : ''} available`;
+        if (emptyState) emptyState.classList.add('hidden');
+        if (resultsCount) resultsCount.textContent = `${this.filteredRooms.length} room${this.filteredRooms.length !== 1 ? 's' : ''} available`;
 
         grid.innerHTML = this.filteredRooms.map(room => this.createRoomCard(room)).join('');
     }
@@ -1062,9 +1073,13 @@ class RoomPalApp {
     // ==================== LOAD PEOPLE ====================
 
     async loadPeople() {
-        const grid = document.getElementById('peopleGrid');
-        const emptyState = document.getElementById('peopleEmptyState');
-        const resultsCount = document.getElementById('peopleResultsCount');
+        const grid = document.getElementById('peopleGrid')
+            || document.getElementById('allSeekersGrid')
+            || document.getElementById('seekersGrid');
+        const emptyState = document.getElementById('peopleEmptyState')
+            || document.getElementById('landingEmptyState');
+        const resultsCount = document.getElementById('peopleResultsCount')
+            || document.getElementById('landingResultsCount');
 
         if (!grid) return;
 
@@ -1107,9 +1122,13 @@ class RoomPalApp {
     }
 
     renderPeople() {
-        const grid = document.getElementById('peopleGrid');
-        const emptyState = document.getElementById('peopleEmptyState');
-        const resultsCount = document.getElementById('peopleResultsCount');
+        const grid = document.getElementById('peopleGrid')
+            || document.getElementById('allSeekersGrid')
+            || document.getElementById('seekersGrid');
+        const emptyState = document.getElementById('peopleEmptyState')
+            || document.getElementById('landingEmptyState');
+        const resultsCount = document.getElementById('peopleResultsCount')
+            || document.getElementById('landingResultsCount');
 
         if (this.filteredPeople.length === 0) {
             grid.classList.add('hidden');
