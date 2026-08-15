@@ -5,7 +5,6 @@ Allow: /index.html
 Allow: /login.html
 Allow: /pricing.html
 Allow: /listings.html
-Allow: /student-housing.html
 Allow: /sublease.html
 Allow: /roommate-matching.html
 Allow: /ai-negotiator.html

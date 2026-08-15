@@ -410,7 +410,6 @@
                     <div class="dropdown-menu" id="browse-dropdown">
                         <a href="listings.html" class="dropdown-item">Browse Listings</a>
                         <a href="#add-listing" class="dropdown-item" onclick="event.preventDefault(); toggleAddListingForm();">Add Listing</a>
-                        <a href="student-housing.html" class="dropdown-item">Student Housing</a>
                         <a href="sublease.html" class="dropdown-item">Sublease</a>
                     </div>
                 </div>
@@ -3826,18 +3825,36 @@
 
                 const userEmail = currentUser.email;
 
+                // Listings fetched separately, not embedded. The nested
+                // `listings (title, id)` needed the foreign key on
+                // conversations.listing_id, which was removed so a conversation
+                // can also reference a sublease request. With the embed
+                // PostgREST returns PGRST200 and this panel showed no
+                // conversations at all.
                 const { data: conversations, error } = await supabase
                     .from('conversations')
-                    .select(`
-                        *,
-                        listings (title, id)
-                    `)
+                    .select('*')
                     .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`)
                     .order('created_at', { ascending: false });
 
                 if (error) {
                     console.error('Error loading conversations:', error);
                     return;
+                }
+
+                const convListingIds = [...new Set((conversations || [])
+                    .map(c => c.listing_id).filter(Boolean))];
+                const convListingsById = {};
+                if (convListingIds.length) {
+                    const { data: listingRows } = await supabase
+                        .from('listings')
+                        .select('id, title')
+                        .in('id', convListingIds);
+                    for (const l of listingRows || []) convListingsById[l.id] = l;
+                }
+                for (const c of conversations || []) {
+                    // Sublease threads have no listing row; title falls back below.
+                    c.listings = convListingsById[c.listing_id] || null;
                 }
 
                 // Get unread counts for each conversation
@@ -6443,6 +6460,7 @@
         if (btn) btn.click();
     }, true);
 </script>
+    <script src="/js/site-bootstrap.js" defer></script>
     <script src="/js/site-nav.js?v=20260809e"></script>
 </body>
 </html>
