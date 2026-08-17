@@ -598,7 +598,49 @@ app.get('/listings-new', blockInProduction, (req, res) => {
 const frontendPath = path.join(__dirname, '..', 'frontend');
 console.log('🌐 Serving frontend files from:', frontendPath);
 
-// Inject platform-status banner assets into HTML pages before static fallback
+// Hand a native Google sign-in back to the iOS app.
+//
+// The app cannot run Google OAuth inside its web view — Google rejects
+// embedded user agents — so it opens the consent screen in a real Safari
+// session, which can only return through a redirect URI already registered on
+// the OAuth client. The only one registered is the site root, so Google lands
+// here with ?code=…, and this bounces it into the app's custom scheme.
+//
+// Gated on the state prefix the app sets, so ordinary traffic to the homepage
+// (including anyone arriving with an unrelated ?code= parameter) falls
+// straight through to the normal page. The authorization code is single-use
+// and worthless without the client secret, which never leaves the server.
+const IOS_APP_SCHEME = 'roomfinderai';
+const IOS_OAUTH_STATE_PREFIX = 'rfios.';
+
+// Where Google sends the app's sign-in back to.
+//
+// The site root, because that is the only redirect URI registered on the OAuth
+// client — verified against Google's authorization endpoint rather than
+// assumed. A dedicated /api/auth/google/native-callback route also exists
+// below and is cleaner; switch NATIVE_REDIRECT_URI to it once that URI has
+// been added in the Google console, and nothing else has to change.
+const GOOGLE_NATIVE_REDIRECT_PATH = '/api/auth/google/native-callback';
+const GOOGLE_NATIVE_REDIRECT_URI = 'https://www.roomfinderai.com';
+
+app.get('/', (req, res, next) => {
+    const { code, error, state } = req.query;
+    if (typeof state !== 'string' || !state.startsWith(IOS_OAUTH_STATE_PREFIX)) {
+        return next();
+    }
+    if (!code && !error) {
+        return next();
+    }
+
+    const params = new URLSearchParams();
+    if (error) params.set('error', String(error));
+    if (code) params.set('code', String(code));
+    params.set('state', state);
+
+    return res.redirect(`${IOS_APP_SCHEME}://auth/google?${params.toString()}`);
+});
+
+// Inject shared site assets into HTML pages before static fallback
 app.use(createHtmlInjectionMiddleware(frontendPath));
 
 // Custom middleware to block static serving of listings.html
@@ -3145,9 +3187,6 @@ app.get('/api/auth/google/callback', (req, res) => {
 // Nothing sensitive is minted here: the authorization code is single-use, is
 // worthless without the client secret the app never sees, and is exchanged by
 // /api/auth/google/oauth-code below.
-const GOOGLE_NATIVE_REDIRECT_PATH = '/api/auth/google/native-callback';
-const GOOGLE_NATIVE_REDIRECT_URI = `https://www.roomfinderai.com${GOOGLE_NATIVE_REDIRECT_PATH}`;
-const IOS_APP_SCHEME = 'roomfinderai';
 
 app.get(GOOGLE_NATIVE_REDIRECT_PATH, (req, res) => {
     const { code, error, state } = req.query;

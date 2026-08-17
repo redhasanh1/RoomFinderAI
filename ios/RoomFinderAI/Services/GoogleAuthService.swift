@@ -68,7 +68,12 @@ final class GoogleAuthService: NSObject {
 
         // `state` is generated per attempt and checked on return, so a redirect
         // the app did not start cannot complete a sign-in.
-        let state = UUID().uuidString
+        //
+        // The "rfios." prefix is what tells the server this redirect belongs to
+        // the app and should be bounced into the custom URL scheme. Google only
+        // has the site root registered as a redirect URI, so without the marker
+        // the server cannot tell an app sign-in from ordinary homepage traffic.
+        let state = "rfios." + UUID().uuidString
 
         var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
         components.queryItems = [
