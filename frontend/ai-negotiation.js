@@ -4139,6 +4139,26 @@ Generate ONLY the message. No greetings, no signatures.
                     console.log('🔔 Message sender:', newMessage.sender_email);
                     console.log('🔔 Message content:', newMessage.content);
                     
+                    // Don't answer a conversation that already has an owner.
+                    //
+                    // ai-chat.js opens a per-conversation channel when a
+                    // negotiation starts, and this listener sees every INSERT
+                    // in the table, so both of them woke up on the same
+                    // landlord message and each made its own call to
+                    // /api/negotiate/reply. Two completions, two bills, two
+                    // different answers — in one live negotiation this one
+                    // offered $1800 while the other offered $1750 for the same
+                    // message. The insert-level dedup hid the second message
+                    // but only after both had already been paid for.
+                    //
+                    // This listener still covers everything ai-chat.js has not
+                    // claimed: threads from an earlier session, and the docked
+                    // chat on the listings page, which never registers one.
+                    if (window.aiChat?.autoReplyChannels?.has(newMessage.conversation_id)) {
+                        console.log('📨 Conversation already handled by the per-conversation listener — not generating a second reply');
+                        return;
+                    }
+
                     // Check if this is a reply to an AI negotiation
                     if (newMessage.sender_email !== 'ai-negotiator@roomfinder.com') {
                         console.log('📨 Processing reply from:', newMessage.sender_email);

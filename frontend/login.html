@@ -785,7 +785,20 @@
     appleBtn.addEventListener('click', handleAppleSignIn);
 
     // Load OAuth config early
-    loadOAuthConfig().then(()=> initializeGoogleSignIn());
+    loadOAuthConfig().then(()=> {
+      initializeGoogleSignIn();
+
+      // Hide Apple sign-in unless the server actually has a Services ID for
+      // it. APPLE_CLIENT_ID has never been set, so AppleID.auth.init() was
+      // skipped and the button called signIn() on an uninitialised SDK — the
+      // user got "Apple Sign-In failed, please try email/password" every
+      // single time. A button that cannot work should not be offered.
+      // Native iOS sign-in is unaffected: it never goes through this SDK.
+      if (!oauthConfig?.appleClientId && appleBtn) {
+        appleBtn.style.display = 'none';
+        console.warn('Apple Sign-In hidden: APPLE_CLIENT_ID is not configured on the server.');
+      }
+    });
   });
   </script>
 </body>

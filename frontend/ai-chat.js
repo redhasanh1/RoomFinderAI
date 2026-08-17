@@ -335,7 +335,7 @@ class AIChatHandler {
         try {
             const { data: profile, error } = await this.supabase
                 .from('profiles')
-                .select('*')
+                .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
                 .eq('email', this.currentUser.email)
                 .single();
 

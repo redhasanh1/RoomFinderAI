@@ -949,7 +949,7 @@
                 // Check if user exists in profiles table
                 let { data: profile, error } = await supabase
                     .from('profiles')
-                    .select('*')
+                    .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
                     .eq('email', currentUser.email)
                     .single();
 
@@ -968,7 +968,7 @@
                     const { data, error: insertError } = await supabase
                         .from('profiles')
                         .insert([newProfile])
-                        .select()
+                        .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
                         .single();
 
                     if (insertError) {

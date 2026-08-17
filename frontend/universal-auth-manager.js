@@ -363,9 +363,13 @@ async function initSupabaseAuth() {
 
     try {
         // Check if user exists in profiles table
+        // Named columns rather than *, because the browser key no longer has
+        // read access to the sensitive half of this table (phone, date of
+        // birth, home address, and so on). A `select('*')` now fails outright
+        // with a permission error instead of quietly returning less.
         let { data: profile, error } = await supabaseClient
             .from('profiles')
-            .select('*')
+            .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
             .eq('email', currentUser.email)
             .single();
 
@@ -377,7 +381,7 @@ async function initSupabaseAuth() {
             const { data, error: insertError } = await supabaseClient
                 .from('profiles')
                 .upsert([newProfile], { onConflict: 'email' })
-                .select()
+                .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
                 .single();
 
             if (insertError) {
