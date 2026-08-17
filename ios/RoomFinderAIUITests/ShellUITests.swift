@@ -24,10 +24,39 @@ final class ShellUITests: XCTestCase {
         app.launch()
     }
 
+    /// Polls a condition instead of sleeping a fixed amount.
+    @discardableResult
+    private func waitUntil(_ timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            Thread.sleep(forTimeInterval: 0.4)
+        }
+        return condition()
+    }
+
+    /// Taps a tab and gives it a chance to settle before the test continues.
+    ///
+    /// Deliberately does NOT assert that the tab became selected. Under load a
+    /// tap can be swallowed while the previous screen is still laying out, and
+    /// a helper that fails there reports a navigation problem when the screen
+    /// under test is perfectly fine. It taps again instead, and leaves the
+    /// judgement to the test's own assertions.
+    private func selectTab(_ name: String) {
+        let tab = app.tabBars.buttons[name]
+        XCTAssertTrue(tab.waitForExistence(timeout: 45), "\(name) tab never appeared")
+
+        tab.tap()
+        guard !waitUntil(12, { tab.isSelected }) else { return }
+
+        tab.tap()
+        waitUntil(12, { tab.isSelected })
+    }
+
     /// RoomPal gave up its tab slot to Post, so Home is the way in.
     private func openRoomPal() {
         _ = app.tabBars.buttons["Home"].waitForExistence(timeout: 45)
-        app.tabBars.buttons["Home"].tap()
+        selectTab("Home")
         let tile = app.buttons["Find a roommate"]
         XCTAssertTrue(tile.waitForExistence(timeout: 30), "Home has no way into RoomPal")
         tile.tap()
@@ -60,7 +89,7 @@ final class ShellUITests: XCTestCase {
     /// Profile is the one tab still rendering the site.
     func testProfileRendersTheSite() {
         waitForFirstPage()
-        app.tabBars.buttons["Profile"].tap()
+        selectTab("Profile")
 
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 45),
@@ -72,8 +101,7 @@ final class ShellUITests: XCTestCase {
     /// Post is an action, not a place: it opens the sheet and leaves you where
     /// you were, so dismissing it does not strand you on a blank tab.
     func testPostTabOpensSheetAndKeepsYourPlace() {
-        _ = app.tabBars.buttons["Listings"].waitForExistence(timeout: 45)
-        app.tabBars.buttons["Listings"].tap()
+        selectTab("Listings")
 
         app.tabBars.buttons["Post"].tap()
 
@@ -93,7 +121,7 @@ final class ShellUITests: XCTestCase {
     func testNativeListingsLoadAndOpen() {
         waitForFirstPage()
 
-        app.tabBars.buttons["Listings"].tap()
+        selectTab("Listings")
 
         // Matched on the price rather than taken as `cells.firstMatch`: the
         // section header ("9 rooms") is itself exposed as a cell, and tapping
@@ -133,7 +161,7 @@ final class ShellUITests: XCTestCase {
     /// Native search must actually filter the list rather than decorate it.
     func testNativeListingsSearchFilters() {
         waitForFirstPage()
-        app.tabBars.buttons["Listings"].tap()
+        selectTab("Listings")
 
         let anyCard = app.buttons
             .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
@@ -160,7 +188,7 @@ final class ShellUITests: XCTestCase {
 
         // Profile is the only web-backed tab left, and this test is
         // specifically about the web view's content inset.
-        app.tabBars.buttons["Profile"].tap()
+        selectTab("Profile")
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 45))
 
@@ -201,8 +229,8 @@ final class ShellUITests: XCTestCase {
     func testReselectingTabReturnsToRoot() {
         waitForFirstPage()
 
+        selectTab("Profile")
         let profile = app.tabBars.buttons["Profile"]
-        profile.tap()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
 
         Thread.sleep(forTimeInterval: 8)
@@ -226,7 +254,7 @@ final class ShellUITests: XCTestCase {
     /// call the model unprompted — each turn costs an API request.
     func testNativeNegotiatorAnswersTheTenant() {
         waitForFirstPage()
-        app.tabBars.buttons["Messages"].tap()
+        selectTab("Messages")
 
         let opener = app.buttons["Find me a 1 bedroom under $1500"]
         XCTAssertTrue(opener.waitForExistence(timeout: 20),
@@ -267,7 +295,7 @@ final class ShellUITests: XCTestCase {
     /// dense list where every room looks identical.
     func testListingsShowCategoriesAndCards() {
         waitForFirstPage()
-        app.tabBars.buttons["Listings"].tap()
+        selectTab("Listings")
 
         for category in ["All", "Apartment", "House"] {
             XCTAssertTrue(app.buttons[category].waitForExistence(timeout: 30),
@@ -331,7 +359,7 @@ final class ShellUITests: XCTestCase {
         waitForFirstPage()
         // From Listings: Home has its own "Sublease" quick-action tile, which
         // makes the name ambiguous while the menu is open.
-        app.tabBars.buttons["Listings"].tap()
+        selectTab("Listings")
 
         let more = app.buttons["More"]
         XCTAssertTrue(more.waitForExistence(timeout: 10), "The More button is missing")
@@ -351,14 +379,14 @@ final class ShellUITests: XCTestCase {
     /// section means replies from real landlords have nowhere to appear.
     func testMessagesHubHasBothSections() {
         waitForFirstPage()
-        app.tabBars.buttons["Messages"].tap()
+        selectTab("Messages")
 
         XCTAssertTrue(app.buttons["AI Negotiator"].waitForExistence(timeout: 20),
                       "The AI Negotiator section is missing")
-        XCTAssertTrue(app.buttons["Inbox"].exists,
+        XCTAssertTrue(app.buttons["Direct Messages"].exists,
                       "The inbox section is missing")
 
-        app.buttons["Inbox"].tap()
+        app.buttons["Direct Messages"].tap()
 
         // Signed out in the test environment, so the inbox asks for sign-in
         // rather than silently showing nothing.
@@ -377,7 +405,7 @@ final class ShellUITests: XCTestCase {
 
         // Start somewhere other than the destination so the assertion means
         // something.
-        app.tabBars.buttons["Profile"].tap()
+        selectTab("Profile")
         Thread.sleep(forTimeInterval: 3)
 
         app.open(URL(string: "roomfinderai://listings.html")!)

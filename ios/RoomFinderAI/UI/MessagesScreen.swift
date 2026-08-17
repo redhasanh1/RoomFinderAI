@@ -9,9 +9,9 @@ import SwiftUI
 /// three is still legible at a glance.
 struct MessagesScreen: View {
 
-    enum Section: String, CaseIterable {
+    enum Section: String, CaseIterable, Hashable {
         case negotiator = "AI Negotiator"
-        case inbox = "Inbox"
+        case inbox = "Direct Messages"
     }
 
     @State private var section: Section = .negotiator
@@ -24,13 +24,13 @@ struct MessagesScreen: View {
         // its own, which stacked a second header under the segmented control.
         NavigationStack {
             VStack(spacing: 0) {
-                Picker("Section", selection: $section) {
-                    ForEach(Section.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal, 16)
-                .padding(.bottom, 8)
-                .onChange(of: section) { _, _ in Haptics.select() }
+                // A custom switcher rather than .pickerStyle(.segmented):
+                // the system control is fixed at around 32pt with a small
+                // caption font, which is cramped for the two things this whole
+                // tab is divided into.
+                SectionSwitcher(section: $section)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 10)
 
                 switch section {
                 case .negotiator:
@@ -77,6 +77,49 @@ struct MessagesScreen: View {
                 NegotiationGoalsSheet(goals: $negotiation.goals)
             }
         }
+    }
+}
+
+/// The two halves of this tab, sized to be tapped without aiming.
+private struct SectionSwitcher: View {
+
+    @Binding var section: MessagesScreen.Section
+    @Namespace private var highlight
+
+    var body: some View {
+        HStack(spacing: 6) {
+            ForEach(MessagesScreen.Section.allCases, id: \.self) { option in
+                let selected = option == section
+
+                Button {
+                    guard !selected else { return }
+                    Haptics.select()
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) {
+                        section = option
+                    }
+                } label: {
+                    Text(option.rawValue)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(selected ? .white : .primary)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 46)
+                        .background {
+                            if selected {
+                                // Matched geometry so the highlight slides
+                                // between the two rather than blinking.
+                                Capsule()
+                                    .fill(Theme.gradient)
+                                    .matchedGeometryEffect(id: "switcher", in: highlight)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(selected ? [.isSelected] : [])
+            }
+        }
+        .padding(5)
+        .background(Capsule().fill(Color(.secondarySystemBackground)))
     }
 }
 
