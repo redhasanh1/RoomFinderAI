@@ -10,8 +10,23 @@ import SwiftUI
 @MainActor
 final class AppState: ObservableObject {
 
-    @Published var selectedTab: AppTab = .home
-    @Published var moreDestination: MoreDestination?
+    /// Restored from the last session. Someone who lives in Listings should
+    /// not be dropped back on Home every launch.
+    ///
+    /// Only the tab is remembered, deliberately — not each tab's URL. Coming
+    /// back hours later to a half-finished checkout page or a stale listing
+    /// would be worse than starting at a section's root.
+    @Published var selectedTab: AppTab = AppState.restoredTab() {
+        didSet { UserDefaults.standard.set(selectedTab.rawValue, forKey: Self.tabKey) }
+    }
+
+    private static let tabKey = "lastSelectedTab"
+
+    private static func restoredTab() -> AppTab {
+        guard let raw = UserDefaults.standard.string(forKey: tabKey),
+              let tab = AppTab(rawValue: raw) else { return .home }
+        return tab
+    }
 
     private var stores: [AppTab: WebViewStore] = [:]
 

@@ -45,15 +45,18 @@ private struct RootView: View {
             }
         }
         .task {
-            let home = state.store(for: .home)
-            home.loadIfNeeded()
+            // The tab being restored from last session, not necessarily Home —
+            // waiting on Home's load while showing Listings would hold the
+            // splash over a page nobody is about to see.
+            let first = state.store(for: state.selectedTab)
+            first.loadIfNeeded()
 
             // Whichever comes first: the page is ready, or two and a half
             // seconds have passed. The cap matters — on a bad connection an
             // uncapped splash is indistinguishable from a frozen app, and the
             // tab bar underneath is usable regardless.
             let deadline = Date().addingTimeInterval(2.5)
-            while !home.hasFinishedFirstLoad && Date() < deadline {
+            while !first.hasFinishedFirstLoad && Date() < deadline {
                 try? await Task.sleep(for: .milliseconds(60))
             }
 
