@@ -6,6 +6,7 @@ const fs = require('fs');
 const { PLATFORM_STATUS } = require('./platform-status');
 const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
 const { verifyAppleIdentityToken } = require('./apple-auth');
+const { registerComplianceRoutes } = require('./account-compliance');
 const { callAI, getAIStatus } = require('./ai-providers');
 const { success: apiSuccess, notFound: apiNotFound, error: apiError } = require('./api-response');
 const {
@@ -652,6 +653,11 @@ app.use((req, res, next) => {
     }
     next();
 });
+
+// Account deletion, reporting and blocking — App Store guidelines 5.1.1(v)
+// and 1.2. Registered with a getter because `supabase` is assigned during
+// async startup and would still be undefined if captured here by value.
+registerComplianceRoutes(app, () => supabase);
 
 // Universal links: iOS fetches this file to decide whether tapping a
 // roomfinderai.com link should open the app. It has to be served from the
