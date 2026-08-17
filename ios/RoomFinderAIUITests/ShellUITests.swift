@@ -45,7 +45,7 @@ final class ShellUITests: XCTestCase {
     func testTabBarHasPostInTheMiddle() {
         _ = app.tabBars.buttons["Home"].waitForExistence(timeout: 45)
 
-        let expected = ["Home", "Listings", "Post", "Negotiate", "Profile"]
+        let expected = ["Home", "Listings", "Post", "Messages", "Profile"]
         for name in expected {
             XCTAssertTrue(app.tabBars.buttons[name].exists, "\(name) tab is missing")
         }
@@ -206,8 +206,12 @@ final class ShellUITests: XCTestCase {
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
 
         Thread.sleep(forTimeInterval: 8)
-        app.webViews.firstMatch.swipeUp(velocity: .fast)
-        app.webViews.firstMatch.swipeUp(velocity: .fast)
+        // Re-query rather than reusing the earlier element: profile.html
+        // redirects to login when signed out, which replaces the web view and
+        // invalidates any handle taken before the redirect.
+        if app.webViews.firstMatch.waitForExistence(timeout: 20) {
+            app.webViews.firstMatch.swipeUp(velocity: .fast)
+        }
 
         profile.tap()
 
@@ -222,7 +226,7 @@ final class ShellUITests: XCTestCase {
     /// call the model unprompted — each turn costs an API request.
     func testNativeNegotiatorAnswersTheTenant() {
         waitForFirstPage()
-        app.tabBars.buttons["Negotiate"].tap()
+        app.tabBars.buttons["Messages"].tap()
 
         let opener = app.buttons["Find me a 1 bedroom under $1500"]
         XCTAssertTrue(opener.waitForExistence(timeout: 20),
@@ -325,19 +329,45 @@ final class ShellUITests: XCTestCase {
     /// unreachable and the app fails review for missing a privacy policy.
     func testMoreMenuReachesSecondaryPages() {
         waitForFirstPage()
+        // From Listings: Home has its own "Sublease" quick-action tile, which
+        // makes the name ambiguous while the menu is open.
+        app.tabBars.buttons["Listings"].tap()
 
         let more = app.buttons["More"]
         XCTAssertTrue(more.waitForExistence(timeout: 10), "The More button is missing")
         more.tap()
 
-        for label in ["Share", "Refresh", "Sublease", "Privacy Policy", "Terms of Service"] {
-            XCTAssertTrue(app.buttons[label].waitForExistence(timeout: 5),
+        for label in ["Sublease", "Privacy Policy", "Terms of Service"] {
+            XCTAssertTrue(app.buttons["more-\(label)"].waitForExistence(timeout: 5),
                           "\(label) is missing from the More menu")
         }
 
-        app.buttons["Sublease"].tap()
+        app.buttons["more-Sublease"].tap()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45),
                       "Sublease did not open")
+    }
+
+    /// The messages hub carries both kinds of conversation. Missing either
+    /// section means replies from real landlords have nowhere to appear.
+    func testMessagesHubHasBothSections() {
+        waitForFirstPage()
+        app.tabBars.buttons["Messages"].tap()
+
+        XCTAssertTrue(app.buttons["AI Negotiator"].waitForExistence(timeout: 20),
+                      "The AI Negotiator section is missing")
+        XCTAssertTrue(app.buttons["Inbox"].exists,
+                      "The inbox section is missing")
+
+        app.buttons["Inbox"].tap()
+
+        // Signed out in the test environment, so the inbox asks for sign-in
+        // rather than silently showing nothing.
+        let signedOut = app.staticTexts["Sign in to see messages"]
+        let empty = app.staticTexts["No messages yet"]
+        let loaded = app.cells.firstMatch
+        let appeared = signedOut.waitForExistence(timeout: 25)
+            || empty.exists || loaded.exists
+        XCTAssertTrue(appeared, "The inbox showed nothing at all")
     }
 
     /// A deep link from email or a push notification has to land on the tab
@@ -350,13 +380,13 @@ final class ShellUITests: XCTestCase {
         app.tabBars.buttons["Profile"].tap()
         Thread.sleep(forTimeInterval: 3)
 
-        app.open(URL(string: "roomfinderai://roommate-matching.html")!)
+        app.open(URL(string: "roomfinderai://listings.html")!)
 
-        let roompal = app.tabBars.buttons["RoomPal"]
-        XCTAssertTrue(roompal.waitForExistence(timeout: 15))
+        let listings = app.tabBars.buttons["Listings"]
+        XCTAssertTrue(listings.waitForExistence(timeout: 15))
         // isSelected is the honest check — the tab exists either way.
         let selected = NSPredicate(format: "isSelected == true")
-        expectation(for: selected, evaluatedWith: roompal)
+        expectation(for: selected, evaluatedWith: listings)
         waitForExpectations(timeout: 20)
     }
 }

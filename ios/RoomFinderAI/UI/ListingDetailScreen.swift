@@ -133,7 +133,7 @@ struct ListingDetailScreen: View {
                 Haptics.impact(.medium)
                 // The negotiator needs the site's session and its own state, so
                 // it opens on the tab that owns it rather than being rebuilt.
-                state.route(to: .negotiator, url: AppConfig.url("ai-negotiator.html?listing=\(listing.id)"))
+                state.selectedTab = .messages
                 dismiss()
             } label: {
                 Label("Negotiate this rent", systemImage: "bubble.left.and.text.bubble.right.fill")

@@ -10,13 +10,15 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// selection straight back to the tab you were on — it is an action, not a
     /// place, which is why it has no screen.
     case post
-    case negotiator
+    /// Both kinds of conversation: the AI negotiator, and real threads with
+    /// landlords and roommates.
+    case messages
     case profile
 
     /// The five slots, in order. RoomPal is reached from Home rather than
     /// occupying a slot: a sixth tab would push the bar into iOS's "More"
     /// overflow and bury a real tab behind a chevron.
-    static let tabBar: [AppTab] = [.home, .listings, .post, .negotiator, .profile]
+    static let tabBar: [AppTab] = [.home, .listings, .post, .messages, .profile]
 
     var id: String { rawValue }
 
@@ -25,7 +27,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "Home"
         case .listings:   return "Listings"
         case .post:       return "Post"
-        case .negotiator: return "Negotiate"
+        case .messages:   return "Messages"
         case .profile:    return "Profile"
         }
     }
@@ -37,7 +39,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "house.fill"
         case .listings:   return "building.2.fill"
         case .post:       return "plus.circle.fill"
-        case .negotiator: return "bubble.left.and.text.bubble.right.fill"
+        case .messages:   return "bubble.left.and.text.bubble.right.fill"
         case .profile:    return "person.crop.circle.fill"
         }
     }
@@ -47,7 +49,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "index.html"
         case .listings:   return "listings.html"
         case .post:       return "listings.html"
-        case .negotiator: return "ai-negotiator.html"
+        case .messages:   return "ai-negotiator.html"
         case .profile:    return "profile.html"
         }
     }
@@ -65,7 +67,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         // has no web view to hand a URL to. listing_details.html and
         // favorites.html are left unowned so they open in a web-capable tab.
         case "listings.html":                   return .listings
-        case "ai-negotiator.html":              return .negotiator  // native; selecting it is the whole action
+        case "ai-negotiator.html":              return .messages  // native; selecting it is the whole action
         // RoomPal has no slot of its own; Home opens it.
         case "roommate-matching.html":          return .home
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile

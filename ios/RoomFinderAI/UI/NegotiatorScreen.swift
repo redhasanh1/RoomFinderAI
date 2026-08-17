@@ -7,12 +7,15 @@ import SwiftUI
 /// tenant's own words sit on the right in the brand colour, the AI's on the
 /// left — the arrangement the website settled on, so someone moving between
 /// the two is never unsure who said what.
+/// Content only — no navigation stack or title of its own. The Messages hub
+/// that hosts it supplies both, because two stacked headers (a segmented
+/// control above a second navigation bar) read as a layout fault.
 struct NegotiatorScreen: View {
 
-    @EnvironmentObject private var state: AppState
-    @StateObject private var service = NegotiationService()
+    @ObservedObject var service: NegotiationService
+    @Binding var showingGoals: Bool
+
     @State private var draft = ""
-    @State private var showingGoals = false
     @FocusState private var inputFocused: Bool
 
     /// Openers, so the first message is a tap rather than a blank page.
@@ -23,42 +26,14 @@ struct NegotiatorScreen: View {
     ]
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                transcript
+        VStack(spacing: 0) {
+            transcript
 
-                if let error = service.errorMessage {
-                    errorBar(error)
-                }
+            if let error = service.errorMessage {
+                errorBar(error)
+            }
 
-                composer
-            }
-            .navigationTitle("Negotiate")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button {
-                        Haptics.impact(.light)
-                        showingGoals = true
-                    } label: {
-                        Image(systemName: "target")
-                    }
-                    .accessibilityLabel("Your goals")
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    MoreMenu {
-                        Button(role: .destructive) {
-                            Haptics.impact(.medium)
-                            service.reset()
-                        } label: {
-                            Label("Start over", systemImage: "arrow.counterclockwise")
-                        }
-                    }
-                }
-            }
-            .sheet(isPresented: $showingGoals) {
-                NegotiationGoalsSheet(goals: $service.goals)
-            }
+            composer
         }
     }
 

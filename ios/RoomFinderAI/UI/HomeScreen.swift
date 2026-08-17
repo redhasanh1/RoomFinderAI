@@ -61,7 +61,7 @@ struct HomeScreen: View {
 
             Button {
                 Haptics.impact(.medium)
-                state.selectedTab = .negotiator
+                state.selectedTab = .messages
             } label: {
                 Label("Start negotiating", systemImage: "sparkles")
                     .font(.subheadline.weight(.semibold))

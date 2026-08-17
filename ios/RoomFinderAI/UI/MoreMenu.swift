@@ -35,6 +35,9 @@ struct MoreMenu<Extra: View>: View {
                 } label: {
                     Label(destination.title, systemImage: destination.symbol)
                 }
+                // Namespaced because other tabs keep views alive with the same
+                // names — Home has its own "Sublease" tile, for instance.
+                .accessibilityIdentifier("more-\(destination.title)")
             }
 
             // Only offered while iOS would still show the system prompt. Once

@@ -15,7 +15,7 @@ struct RootTabView: View {
                     switch tab {
                     case .home:       HomeScreen()
                     case .listings:   ListingsScreen()
-                    case .negotiator: NegotiatorScreen()
+                    case .messages:   MessagesScreen()
                     case .profile:    BrowserScreen(tab: tab, store: state.store(for: tab))
                     case .post:
                         // Never actually shown — selecting this slot opens the
