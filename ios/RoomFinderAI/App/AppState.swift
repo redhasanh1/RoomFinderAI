@@ -23,6 +23,13 @@ final class AppState: ObservableObject {
     private static let tabKey = "lastSelectedTab"
 
     private static func restoredTab() -> AppTab {
+        // UI tests each relaunch the app but share one install, so a restored
+        // tab would leak from one test into the next and make them pass or fail
+        // depending on the order they happened to run in.
+        if ProcessInfo.processInfo.arguments.contains("-uiTestingResetState") {
+            UserDefaults.standard.removeObject(forKey: tabKey)
+            return .home
+        }
         guard let raw = UserDefaults.standard.string(forKey: tabKey),
               let tab = AppTab(rawValue: raw) else { return .home }
         return tab

@@ -18,6 +18,9 @@ final class ShellUITests: XCTestCase {
     override func setUpWithError() throws {
         continueAfterFailure = false
         app = XCUIApplication()
+        // Every test starts on Home. Without this the tab restored from the
+        // previous test's last tap decides where this one begins.
+        app.launchArguments = ["-uiTestingResetState"]
         app.launch()
     }
 
