@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Release entitlements. Identical to RoomFinderAI.entitlements except for
+	     aps-environment, which is the whole reason this second file exists.
+
+	     Both configurations used to share one file declaring
+	     aps-environment = development. Automatic signing reads that and
+	     concludes the build needs an iOS App Development provisioning profile,
+	     which cannot be created unless the team has a registered device — so
+	     archiving failed with "Your team has no devices from which to generate
+	     a provisioning profile" even though an App Store build needs no devices
+	     at all. Declaring production here lets automatic signing pick the App
+	     Store profile instead.
+
+	     It also has to be right at runtime: a production build must talk to
+	     api.push.apple.com, and a token minted under the development
+	     entitlement is rejected there. PushService reports 'production' for
+	     non-DEBUG builds, and the APNs key covers both hosts. -->
+
+	<!-- Guideline 4.8: required because the app offers Google sign-in. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+
+	<key>aps-environment</key>
+	<string>production</string>
+
+	<!-- Universal links: makes https://www.roomfinderai.com/... open the app
+	     instead of Safari. Served from
+	     https://www.roomfinderai.com/.well-known/apple-app-site-association -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:www.roomfinderai.com</string>
+		<string>applinks:roomfinderai.com</string>
+	</array>
+</dict>
+</plist>
