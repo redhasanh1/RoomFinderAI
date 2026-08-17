@@ -19,6 +19,7 @@ struct ListingsScreen: View {
     @State private var bedrooms: Int?
     @State private var category: Category = .all
     @State private var searchTask: Task<Void, Never>?
+    @State private var detail: Listing?
 
     /// Property types, plus an "All". Derived from `propertyType`, which is
     /// what the website's own filters use.
@@ -73,6 +74,7 @@ struct ListingsScreen: View {
                     content
                 }
             }
+            .navigationDestination(item: $detail) { ListingDetailScreen(listing: $0) }
             .navigationTitle("Listings")
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Search by city or neighbourhood")
@@ -99,39 +101,105 @@ struct ListingsScreen: View {
 
     private var content: some View {
         ScrollView {
-            LazyVStack(alignment: .leading, spacing: 18) {
+            LazyVStack(alignment: .leading, spacing: 26) {
                 if visibleListings.isEmpty {
                     EmptyResults(hasFilters: hasActiveFilters || category != .all,
                                  clear: clearFilters)
                         .padding(.top, 40)
                 } else {
+                    // Sections, not one undifferentiated column. A single run
+                    // of identical cards gives no reason to look past the
+                    // third one; grouping gives the page a shape and surfaces
+                    // rooms that would otherwise be buried.
+                    ForEach(sections) { section in
+                        ListingSection(
+                            section: section,
+                            onSelect: { detail = $0 }
+                        )
+                    }
+
                     HStack {
                         Text(resultsSummary)
-                            .font(.subheadline.weight(.medium))
+                            .font(.footnote)
                             .foregroundStyle(.secondary)
                         Spacer()
                         if hasActiveFilters || category != .all {
-                            Button("Clear", action: clearFilters)
-                                .font(.subheadline.weight(.semibold))
+                            Button("Clear filters", action: clearFilters)
+                                .font(.footnote.weight(.semibold))
                         }
                     }
                     .padding(.horizontal, 16)
-
-                    ForEach(visibleListings) { listing in
-                        NavigationLink {
-                            ListingDetailScreen(listing: listing)
-                        } label: {
-                            ListingCard(listing: listing)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 16)
-                    }
+                    .padding(.top, 4)
                 }
             }
             .padding(.top, 4)
             // Clears the floating post button so the last room is reachable.
             .padding(.bottom, 96)
         }
+    }
+
+    /// How the rooms are grouped.
+    ///
+    /// Built from what is actually on screen rather than a fixed list, so a
+    /// section never appears empty: a city with nothing under $1,200 simply
+    /// does not get a Budget row.
+    private var sections: [Section] {
+        let rooms = visibleListings
+        guard !rooms.isEmpty else { return [] }
+
+        var result: [Section] = []
+
+        // Newest first is what the API already returns.
+        result.append(Section(id: "featured",
+                              title: "Featured",
+                              subtitle: "Newest rooms on RoomFinderAI",
+                              style: .carousel,
+                              listings: Array(rooms.prefix(8))))
+
+        let affordable = rooms.filter { ($0.price ?? .greatestFiniteMagnitude) <= 1200 }
+        if affordable.count >= 2 {
+            result.append(Section(id: "budget",
+                                  title: "Under $1,200",
+                                  subtitle: "Easier on the rent",
+                                  style: .carousel,
+                                  listings: Array(affordable.prefix(8))))
+        }
+
+        let verified = rooms.filter { $0.userVerified == true }
+        if verified.count >= 2 {
+            result.append(Section(id: "verified",
+                                  title: "Verified hosts",
+                                  subtitle: "Identity checked by us",
+                                  style: .carousel,
+                                  listings: Array(verified.prefix(8))))
+        }
+
+        let shared = rooms.filter { ($0.bedrooms ?? 0) >= 2 }
+        if shared.count >= 2 {
+            result.append(Section(id: "shared",
+                                  title: "Good for sharing",
+                                  subtitle: "Two bedrooms or more",
+                                  style: .carousel,
+                                  listings: Array(shared.prefix(8))))
+        }
+
+        // Everything, so nothing is only reachable through a themed row.
+        result.append(Section(id: "all",
+                              title: category == .all ? "All rooms" : "All \(category.rawValue.lowercased())s",
+                              subtitle: nil,
+                              style: .list,
+                              listings: rooms))
+
+        return result
+    }
+
+    struct Section: Identifiable {
+        enum Style { case carousel, list }
+        let id: String
+        let title: String
+        let subtitle: String?
+        let style: Style
+        let listings: [Listing]
     }
 
     /// Horizontal chips. Filtered on the client because the rooms are already
@@ -254,7 +322,7 @@ struct ListingsScreen: View {
 
 /// A room, big enough to judge. The photo does the work — everything else is
 /// laid over or under it in one glance-able block.
-private struct ListingCard: View {
+struct ListingCard: View {
     let listing: Listing
 
     var body: some View {
@@ -409,5 +477,109 @@ private struct LoadingCards: View {
         RoundedRectangle(cornerRadius: 4)
             .fill(Color(.secondarySystemBackground))
             .frame(width: width, height: 13)
+    }
+}
+
+/// One titled group of rooms: a horizontal shelf for themed rows, a vertical
+/// run of full-width cards for the complete set.
+private struct ListingSection: View {
+
+    let section: ListingsScreen.Section
+    let onSelect: (Listing) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(section.title)
+                    .font(.title3.weight(.bold))
+                if let subtitle = section.subtitle {
+                    Text(subtitle)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 16)
+
+            switch section.style {
+            case .carousel:
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(section.listings) { listing in
+                            Button { onSelect(listing) } label: {
+                                ShelfCard(listing: listing)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+
+            case .list:
+                LazyVStack(spacing: 16) {
+                    ForEach(section.listings) { listing in
+                        Button { onSelect(listing) } label: {
+                            ListingCard(listing: listing)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, 16)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// The card used inside a horizontal shelf — narrower than the full-width one,
+/// but still photo-led so a room can be judged at a glance.
+private struct ShelfCard: View {
+    let listing: Listing
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ZStack(alignment: .topTrailing) {
+                AsyncImage(url: listing.imageURL) { phase in
+                    if case .success(let image) = phase {
+                        image.resizable().aspectRatio(contentMode: .fill)
+                    } else {
+                        Theme.gradient.opacity(0.18)
+                    }
+                }
+                .frame(width: 260, height: 160)
+                .clipped()
+
+                if listing.userVerified == true {
+                    Image(systemName: "checkmark.seal.fill")
+                        .font(.caption)
+                        .foregroundStyle(.white)
+                        .padding(6)
+                        .background(Circle().fill(.black.opacity(0.5)))
+                        .padding(8)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(listing.title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(listing.displayLocation)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                Text(listing.priceText)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(Theme.brand)
+            }
+            .frame(width: 260, alignment: .leading)
+            .padding(12)
+        }
+        .background(Color(.secondarySystemGroupedBackground),
+                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Color.primary.opacity(0.06), lineWidth: 1)
+        )
+        .accessibilityElement(children: .combine)
+        .accessibilityHint("Opens this room")
     }
 }

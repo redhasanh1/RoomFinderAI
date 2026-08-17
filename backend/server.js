@@ -957,7 +957,21 @@ function validateListingInput(data) {
  *
  * Returns public URLs in the shape `POST /api/listings` expects for `media`.
  */
-app.post('/api/listings/photos', upload.array('photos', 6), async (req, res) => {
+app.post('/api/listings/photos', (req, res, next) => {
+    // Multer's own failures (rejected field name, file too large, bad form
+    // encoding) otherwise propagate to the global handler and come back as a
+    // bare "Internal server error", which says nothing about what to fix.
+    upload.array('photos', 6)(req, res, (err) => {
+        if (err) {
+            console.error('Listing photo upload rejected:', err.name, err.message);
+            return res.status(400).json({
+                success: false,
+                message: err.message || 'Those photos could not be accepted'
+            });
+        }
+        next();
+    });
+}, async (req, res) => {
     try {
         if (!supabase) {
             return res.status(503).json({ success: false, message: 'Storage not connected' });

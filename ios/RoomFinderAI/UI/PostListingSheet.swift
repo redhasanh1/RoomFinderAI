@@ -10,6 +10,7 @@ import SwiftUI
 struct PostListingSheet: View {
 
     @Environment(\.dismiss) private var dismiss
+    @ObservedObject private var user = CurrentUser.shared
 
     @State private var title = ""
     @State private var price = ""
@@ -54,7 +55,7 @@ struct PostListingSheet: View {
 
     private var form: some View {
         Form {
-            if !CurrentUser.isSignedIn {
+            if !user.isSignedIn {
                 Section {
                     Label("Sign in first from the Profile tab, or your room won't be linked to your account.",
                           systemImage: "person.crop.circle.badge.exclamationmark")
@@ -214,7 +215,7 @@ struct PostListingSheet: View {
 
         func append(_ string: String) { body.append(Data(string.utf8)) }
 
-        if let email = CurrentUser.email {
+        if let email = CurrentUser.shared.email {
             append("--\(boundary)\r\n")
             append("Content-Disposition: form-data; name=\"userEmail\"\r\n\r\n\(email)\r\n")
         }
@@ -261,7 +262,7 @@ struct PostListingSheet: View {
             "description": description,
             "media": media
         ]
-        if let email = CurrentUser.email { payload["userEmail"] = email }
+        if let email = CurrentUser.shared.email { payload["userEmail"] = email }
 
         var request = URLRequest(url: AppConfig.url("api/listings"))
         request.httpMethod = "POST"

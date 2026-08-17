@@ -113,7 +113,7 @@ struct ReportSheet: View {
 
         Task {
             do {
-                let reporter = CurrentUser.email
+                let reporter = CurrentUser.shared.email
                 try await ModerationService.shared.report(
                     targetType: targetType,
                     targetId: targetId,

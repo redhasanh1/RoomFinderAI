@@ -14,7 +14,7 @@ final class MessagingService: ObservableObject {
     @Published var errorMessage: String?
 
     func loadConversations() async {
-        guard let email = CurrentUser.email else {
+        guard let email = CurrentUser.shared.email else {
             conversations = []
             hasLoadedOnce = true
             return
@@ -44,7 +44,7 @@ final class MessagingService: ObservableObject {
     }
 
     func messages(in conversationId: String) async throws -> [ChatMessage] {
-        guard let email = CurrentUser.email else { return [] }
+        guard let email = CurrentUser.shared.email else { return [] }
 
         var components = URLComponents(url: AppConfig.url("api/messages"),
                                        resolvingAgainstBaseURL: false)!
@@ -64,7 +64,7 @@ final class MessagingService: ObservableObject {
 
     @discardableResult
     func send(_ text: String, in conversationId: String) async throws -> ChatMessage? {
-        guard let email = CurrentUser.email else { return nil }
+        guard let email = CurrentUser.shared.email else { return nil }
 
         var request = URLRequest(url: AppConfig.url("api/messages"))
         request.httpMethod = "POST"

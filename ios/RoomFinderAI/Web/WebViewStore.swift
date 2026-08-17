@@ -434,11 +434,10 @@ extension WebViewStore {
             // `body["email"]` is NSNull after a sign-out, which must clear the
             // cached address rather than be ignored.
             let email = body["email"] as? String
-            if CurrentUser.email != email {
-                CurrentUser.email = email
-                if let email {
-                    Task { await ModerationService.shared.refreshBlockList(for: email) }
-                }
+            let changed = CurrentUser.shared.email != email?.nilIfEmpty
+            CurrentUser.shared.update(email: email)
+            if changed, let email = email?.nilIfEmpty {
+                Task { await ModerationService.shared.refreshBlockList(for: email) }
             }
 
         case "page":

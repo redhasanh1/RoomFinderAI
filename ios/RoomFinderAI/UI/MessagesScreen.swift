@@ -126,6 +126,7 @@ private struct SectionSwitcher: View {
 private struct InboxList: View {
 
     @EnvironmentObject private var state: AppState
+    @ObservedObject private var user = CurrentUser.shared
     @ObservedObject var messaging: MessagingService
 
     var body: some View {
@@ -133,7 +134,7 @@ private struct InboxList: View {
         // arrangement fell through to an empty List in the moment before the
         // first load finished, which showed a completely blank screen.
         Group {
-            if !CurrentUser.isSignedIn {
+            if !user.isSignedIn {
                 StatusScreen(
                     symbol: "person.crop.circle.badge.questionmark",
                     title: "Sign in to see messages",
@@ -168,6 +169,11 @@ private struct InboxList: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .task { await messaging.loadConversations() }
+        // Signing in happens on the Profile tab, in a web view. Without this
+        // the inbox kept showing "sign in to see messages" afterwards.
+        .onChange(of: user.email) { _, _ in
+            Task { await messaging.loadConversations() }
+        }
         .refreshable {
             Haptics.impact(.light)
             await messaging.loadConversations()
@@ -303,7 +309,7 @@ private struct ConversationScreen: View {
     }
 
     private func bubble(for message: ChatMessage) -> some View {
-        let mine = message.isMine(CurrentUser.email)
+        let mine = message.isMine(CurrentUser.shared.email)
         return Text(message.content ?? "")
             .foregroundStyle(mine ? .white : .primary)
             .padding(.horizontal, 14)

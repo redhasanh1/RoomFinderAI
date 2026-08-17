@@ -49,7 +49,7 @@ final class NegotiationService: ObservableObject {
             "conversationHistory": history,
             "tenantGoals": goals.apiPayload
         ]
-        if let email = CurrentUser.email { body["userEmail"] = email }
+        if let email = CurrentUser.shared.email { body["userEmail"] = email }
 
         do {
             var request = URLRequest(url: AppConfig.url("api/chat"))
