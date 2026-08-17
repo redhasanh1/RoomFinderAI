@@ -5,6 +5,15 @@
 	<key>CFBundleDisplayName</key>
 	<string>RoomFinderAI</string>
 
+	<!-- The website has no dark styles at all — not one prefers-color-scheme
+	     rule across the whole frontend. Following the system theme would put a
+	     dark navigation bar and dark tab bar around a permanently white page,
+	     which reads as a rendering fault rather than a design. Locked to light
+	     until the site itself has a dark palette; then this key comes out and
+	     the web view follows along on its own. -->
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
+
 	<!-- Apple requires an explicit answer here or every upload is held for a
 	     manual compliance question. The app ships no cryptography of its own;
 	     it only speaks HTTPS, which is an exempt use. -->

@@ -1,0 +1,18 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["TEAMID.com.roomfinderai.app"],
+        "components": [
+          { "/": "/listings.html", "comment": "Open a listing in the app" },
+          { "/": "/listing_details.html", "comment": "Open a listing detail page in the app" },
+          { "/": "/ai-negotiator.html", "comment": "Open the negotiator in the app" },
+          { "/": "/roommate-matching.html", "comment": "Open RoomPal in the app" },
+          { "/": "/sublease.html", "comment": "Open sublease posts in the app" },
+          { "/": "/profile.html", "comment": "Open the profile in the app" },
+          { "/": "/", "comment": "Open the home page in the app" }
+        ]
+      }
+    ]
+  }
+}

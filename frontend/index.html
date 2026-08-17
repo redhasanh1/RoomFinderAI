@@ -1388,6 +1388,31 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
+
+        /* The decorative loops on this page run forever: a 400%-wide gradient
+           panning across the hero, a floating dot layer, and a 200% x 200%
+           grid rotating underneath it. On a phone that is continuous GPU work
+           for the entire visit, which shows up as heat and battery drain, and
+           the page looks the same without it.
+
+           Stopped for anyone who has asked for less motion, and on phones,
+           where the cost is highest and the effect is least visible. The
+           gradient keeps its first frame — the hero is still a gradient, it
+           just stops panning. Entrance animations are untouched: they run once
+           and then stop on their own. */
+        @media (prefers-reduced-motion: reduce), (max-width: 767px) {
+            .hero-gradient { animation: none; background-size: 100% 100%; }
+            .hero-gradient::before,
+            .hero-gradient::after { animation: none; }
+        }
+
+        /* Someone who has asked for reduced motion wants the repeating ones
+           gone everywhere, not only in the hero. */
+        @media (prefers-reduced-motion: reduce) {
+            [class*="animate-float"],
+            .floating-element,
+            .blink { animation: none !important; }
+        }
     </style>
     <script src="/js/service-checker.js" defer></script>
 </head>

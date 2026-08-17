@@ -611,6 +611,28 @@ app.use((req, res, next) => {
     next();
 });
 
+// Universal links: iOS fetches this file to decide whether tapping a
+// roomfinderai.com link should open the app. It has to be served from the
+// apex of /.well-known, with no extension, as application/json — Apple's
+// fetcher rejects text/plain, which is what express.static would infer from
+// an extensionless file. Registered before the static handler so it wins.
+app.get('/.well-known/apple-app-site-association', (req, res) => {
+    const aasaPath = path.join(frontendPath, '.well-known', 'apple-app-site-association');
+    if (!fs.existsSync(aasaPath)) {
+        return res.status(404).json({ error: 'Not configured' });
+    }
+    const body = fs.readFileSync(aasaPath, 'utf8');
+    // A file still carrying the placeholder Team ID would make iOS cache a
+    // broken association for days. Better to answer 404 until it is filled in.
+    if (body.includes('TEAMID')) {
+        console.warn('apple-app-site-association still contains the TEAMID placeholder — not serving it.');
+        return res.status(404).json({ error: 'Not configured' });
+    }
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(body);
+});
+
 app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
         // Disable caching for JavaScript and HTML files to ensure updates are loaded immediately
