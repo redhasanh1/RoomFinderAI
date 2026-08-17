@@ -363,7 +363,12 @@
 
         document.addEventListener('DOMContentLoaded', async () => {
             if (typeof UniversalAuth !== 'undefined') {
-                UniversalAuth.init({ allowAnonymous: false, requireSupabase: true });
+                // allowAnonymous, because this page already handles the logged
+                // out case itself — see the prompt built below. With it false,
+                // init() redirected straight to login.html and that prompt was
+                // unreachable code: a visitor tapping Sublease was thrown at a
+                // login form having never seen what the page is for.
+                UniversalAuth.init({ allowAnonymous: true, requireSupabase: true });
                 const user = await UniversalAuth.getCurrentUser();
                 if (user?.email) {
                     userEmail = user.email;
