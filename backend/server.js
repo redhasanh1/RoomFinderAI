@@ -1020,6 +1020,85 @@ app.post('/api/listings/photos', (req, res, next) => {
     }
 });
 
+/**
+ * Draft a listing's title and description from the facts already entered.
+ *
+ * Writing the copy is the part of posting a room that people abandon halfway
+ * through, so this turns the details they have already typed — city, type,
+ * bedrooms, rent — into something they can edit rather than a blank box.
+ *
+ * The model never invents facts it was not given: the prompt forbids amenities,
+ * measurements and neighbourhood claims, because a listing that promises a
+ * balcony nobody has is worse than no description at all.
+ */
+app.post('/api/listings/draft', openAiRateLimitMiddleware, async (req, res) => {
+    try {
+        const { city, street, houseType, bedrooms, bathrooms, price, utilities, notes } = req.body || {};
+
+        if (!city && !houseType && !notes) {
+            return res.status(400).json({
+                success: false,
+                message: 'Enter at least the city and property type first'
+            });
+        }
+
+        const facts = [
+            houseType && `Property type: ${houseType}`,
+            bedrooms != null && `Bedrooms: ${bedrooms}`,
+            bathrooms != null && `Bathrooms: ${bathrooms}`,
+            price && `Monthly rent: $${price}`,
+            city && `City: ${city}`,
+            street && `Street: ${street}`,
+            utilities && `Utilities: ${utilities}`,
+            notes && `Extra notes from the host: ${notes}`
+        ].filter(Boolean).join('\n');
+
+        const result = await callAI(config, {
+            maxTokens: 320,
+            temperature: 0.7,
+            messages: [
+                {
+                    role: 'system',
+                    content: [
+                        'You write rental listings for RoomFinderAI.',
+                        'Return ONLY strict JSON: {"title": string, "description": string}.',
+                        'The title is at most 60 characters, concrete, no ALL CAPS, no emoji, no exclamation marks.',
+                        'The description is 2 to 4 short sentences, plain and warm, written for a tenant.',
+                        'Use ONLY the facts given. Never invent amenities, square footage, transit links, furniture, or neighbourhood claims.',
+                        'Do not mention price in the description; it is shown separately.',
+                        'Never use em dashes.'
+                    ].join(' ')
+                },
+                { role: 'user', content: facts }
+            ]
+        });
+
+        // callAI returns { content, ... }; the model occasionally wraps JSON in
+        // a code fence, which JSON.parse will not accept.
+        const raw = String(result?.content || '').replace(/```json|```/g, '').trim();
+
+        let draft;
+        try {
+            draft = JSON.parse(raw);
+        } catch (e) {
+            console.warn('Listing draft was not valid JSON:', raw.slice(0, 200));
+            return res.status(502).json({ success: false, message: 'The assistant returned an unusable draft. Please try again.' });
+        }
+
+        const title = String(draft.title || '').trim().slice(0, 80);
+        const description = String(draft.description || '').trim();
+
+        if (!title || !description) {
+            return res.status(502).json({ success: false, message: 'The assistant returned an empty draft. Please try again.' });
+        }
+
+        res.json({ success: true, title, description });
+    } catch (error) {
+        console.error('Listing draft failed:', error.message);
+        res.status(500).json({ success: false, message: 'Could not write a draft right now' });
+    }
+});
+
 // API: Add a new listing
 app.post('/api/listings', async (req, res) => {
     try {
