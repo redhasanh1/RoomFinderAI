@@ -14,6 +14,8 @@ struct RootTabView: View {
                     // the site, which is where that functionality lives.
                     if tab == .listings {
                         ListingsScreen()
+                    } else if tab == .negotiator {
+                        NegotiatorScreen()
                     } else {
                         BrowserScreen(tab: tab, store: state.store(for: tab))
                     }
@@ -34,10 +36,10 @@ struct RootTabView: View {
             set: { newValue in
                 if newValue == state.selectedTab {
                     Haptics.impact(.light)
-                    // The native tab manages its own scrolling and has no web
-                    // view; asking for a store here would build one that never
-                    // gets shown.
-                    if newValue != .listings {
+                    // The native tabs manage their own scrolling and have no
+                    // web view; asking for a store here would build one that
+                    // never gets shown.
+                    if newValue != .listings && newValue != .negotiator {
                         state.store(for: newValue).popToRoot()
                     }
                 } else {

@@ -47,9 +47,9 @@ final class AppState: ObservableObject {
         return store
     }
 
-    /// Tabs that render the site. Listings is native and has no web view, so
-    /// a URL cannot be handed to it.
-    private var webCapableTabs: Set<AppTab> { [.home, .negotiator, .roompal, .profile] }
+    /// Tabs that render the site. Listings and Negotiate are native and have
+    /// no web view, so a URL cannot be handed to them.
+    private var webCapableTabs: Set<AppTab> { [.home, .roompal, .profile] }
 
     /// Send a URL to the tab that owns it and bring that tab forward.
     func route(to tab: AppTab, url: URL) {

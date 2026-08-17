@@ -34,9 +34,9 @@ final class ShellUITests: XCTestCase {
     func testAllFiveTabsLoadContent() {
         waitForFirstPage()
 
-        // Listings is native and is covered by its own test below; the rest
-        // render the site.
-        for name in ["Negotiate", "RoomPal", "Profile", "Home"] {
+        // Listings and Negotiate are native and have their own tests below;
+        // the rest render the site.
+        for name in ["RoomPal", "Profile", "Home"] {
             let tab = app.tabBars.buttons[name]
             XCTAssertTrue(tab.waitForExistence(timeout: 10), "\(name) tab is missing")
             tab.tap()
@@ -65,7 +65,7 @@ final class ShellUITests: XCTestCase {
         // decoded, since the price only exists if it was.
         // `containing` matches on descendants, which holds whether or not the
         // row's children are merged into a single accessibility element.
-        let pricedRow = app.cells
+        let pricedRow = app.buttons
             .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
             .firstMatch
 
@@ -74,7 +74,7 @@ final class ShellUITests: XCTestCase {
             // the API not answering; "no rows" without it is the screen never
             // finishing its load; rows without prices is a decoding problem.
             let sawError = app.staticTexts["Couldn't load rooms"].exists
-            let cellCount = app.cells.count
+            let cellCount = app.buttons.count
             XCTFail("""
                 Native listings produced no priced row after 60s.
                 error screen shown: \(sawError), cells present: \(cellCount)
@@ -99,9 +99,10 @@ final class ShellUITests: XCTestCase {
         waitForFirstPage()
         app.tabBars.buttons["Listings"].tap()
 
-        XCTAssertTrue(app.cells.firstMatch.waitForExistence(timeout: 45))
-        let unfilteredCount = app.cells.count
-        XCTAssertGreaterThan(unfilteredCount, 0)
+        let anyCard = app.buttons
+            .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
+            .firstMatch
+        XCTAssertTrue(anyCard.waitForExistence(timeout: 60))
 
         let field = app.searchFields.firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 10), "No native search field")
@@ -164,21 +165,83 @@ final class ShellUITests: XCTestCase {
     func testReselectingTabReturnsToRoot() {
         waitForFirstPage()
 
-        let negotiate = app.tabBars.buttons["Negotiate"]
-        negotiate.tap()
+        let roompal = app.tabBars.buttons["RoomPal"]
+        roompal.tap()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
 
         Thread.sleep(forTimeInterval: 8)
         app.webViews.firstMatch.swipeUp(velocity: .fast)
         app.webViews.firstMatch.swipeUp(velocity: .fast)
 
-        negotiate.tap()
-        Thread.sleep(forTimeInterval: 3)
+        roompal.tap()
 
-        // Back at the root, the navigation bar shows the tab's own name rather
-        // than a page title.
-        XCTAssertTrue(app.navigationBars["Negotiate"].exists,
+        // Returning to the root reloads the page, so this waits for the title
+        // to settle instead of assuming a fixed delay is long enough.
+        XCTAssertTrue(app.navigationBars["RoomPal"].waitForExistence(timeout: 45),
                       "Re-tapping the tab did not return to the section root")
+    }
+
+    /// The negotiator is the product's flagship and is now native. It works
+    /// FOR the tenant: they say what they want and it answers. It must not
+    /// call the model unprompted — each turn costs an API request.
+    func testNativeNegotiatorAnswersTheTenant() {
+        waitForFirstPage()
+        app.tabBars.buttons["Negotiate"].tap()
+
+        let opener = app.buttons["Find me a 1 bedroom under $1500"]
+        XCTAssertTrue(opener.waitForExistence(timeout: 20),
+                      "The negotiator did not show its opening screen")
+        XCTAssertFalse(app.webViews.firstMatch.exists,
+                       "Negotiate should be native, but a web view was found")
+
+        // Nothing may be sent before the tenant asks for it.
+        Thread.sleep(forTimeInterval: 6)
+        XCTAssertTrue(opener.exists,
+                      "The negotiator started talking on its own")
+
+        opener.tap()
+
+        // The tenant's own words come back as theirs, not as a landlord's.
+        // Each bubble is merged into a single accessibility element so
+        // VoiceOver reads "You: <message>" in one stop, which makes it an
+        // `other` element rather than a staticText.
+        let tenantTurn = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH[c] 'You:'"))
+            .firstMatch
+        XCTAssertTrue(tenantTurn.waitForExistence(timeout: 20),
+                      "The tenant's message was not shown as theirs")
+
+        // And a real reply from /api/chat.
+        let reply = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label BEGINSWITH[c] 'AI Negotiator:'"))
+            .firstMatch
+        XCTAssertTrue(reply.waitForExistence(timeout: 60),
+                      "The negotiator never replied")
+
+        // Nothing anywhere should ask the tenant to speak for the landlord.
+        XCTAssertFalse(app.textFields["What did the landlord say?"].exists,
+                       "The composer is still framed as the landlord's side")
+    }
+
+    /// The rooms browser must present rooms as cards with categories, not as a
+    /// dense list where every room looks identical.
+    func testListingsShowCategoriesAndCards() {
+        waitForFirstPage()
+        app.tabBars.buttons["Listings"].tap()
+
+        for category in ["All", "Apartment", "House"] {
+            XCTAssertTrue(app.buttons[category].waitForExistence(timeout: 30),
+                          "The \(category) category chip is missing")
+        }
+
+        let card = app.buttons
+            .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
+            .firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 60),
+                      "No room cards appeared")
+        // A card, not a list row: tall enough to carry a photo worth looking at.
+        XCTAssertGreaterThan(card.frame.height, 200,
+                             "Rooms are rendering as thin list rows, not cards")
     }
 
     /// The overflow menu is where every page that is not a tab lives — legal,
