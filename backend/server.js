@@ -9,6 +9,7 @@ const { verifyAppleIdentityToken } = require('./apple-auth');
 const { registerComplianceRoutes } = require('./account-compliance');
 const { registerMessagingRoutes } = require('./messaging');
 const { registerPushRoutes } = require('./push');
+const { registerProfileRoutes } = require('./profiles');
 const { validatePropertyPhoto } = require('./photo-validation');
 const { callAI, getAIStatus } = require('./ai-providers');
 const { success: apiSuccess, notFound: apiNotFound, error: apiError } = require('./api-response');
@@ -673,6 +674,7 @@ registerComplianceRoutes(app, () => supabase);
 // rather than trusting the client to only ask for its own threads.
 registerMessagingRoutes(app, () => supabase);
 registerPushRoutes(app, () => supabase);
+registerProfileRoutes(app, () => supabase);
 
 // Universal links: iOS fetches this file to decide whether tapping a
 // roomfinderai.com link should open the app. It has to be served from the

@@ -14,6 +14,7 @@
     <script src="universal-auth-protection.js"></script>
     
     <!-- 🔄 UNIVERSAL AUTHENTICATION MANAGER -->
+    <script src="/js/profiles-client.js?v=20260817"></script>
     <script src="universal-auth-manager.js"></script>
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -3230,83 +3231,35 @@
                 listingId: listing.id
             });
 
-            // Verify both users are registered in profiles database
+            // Make sure both sides have a profile row before opening a chat.
+            //
+            // This was four separate browser queries against `profiles` — two
+            // selects, then an insert for whichever side was missing. Doing it
+            // from the browser meant the anon key needed read and write access
+            // to a table holding every user's phone number and home address,
+            // and that key ships in this page's source.
             console.log('🔍 Checking user profiles...');
-            let currentUserProfile, listingOwnerProfile, currentUserError, listingOwnerError;
-            
-            try {
-                const currentUserResult = await supabase
-                    .from('profiles')
-                    .select('email')
-                    .eq('email', currentUser.email)
-                    .single();
-                currentUserProfile = currentUserResult.data;
-                currentUserError = currentUserResult.error;
-                
-                console.log('👤 Current user profile check:', { 
-                    found: !!currentUserProfile, 
-                    error: currentUserError?.message 
-                });
-                
-                const ownerResult = await supabase
-                    .from('profiles')
-                    .select('email')
-                    .eq('email', listing.user_email)
-                    .single();
-                listingOwnerProfile = ownerResult.data;
-                listingOwnerError = ownerResult.error;
-                
-                console.log('🏠 Listing owner profile check:', { 
-                    found: !!listingOwnerProfile, 
-                    error: listingOwnerError?.message 
-                });
-                
-            } catch (profileError) {
-                console.error('💥 Error checking profiles:', profileError);
-                alert('Database connection error. Please try again.');
+            const profilesClient = window.RoomFinderProfiles;
+            if (!profilesClient) {
+                console.error('💥 Profiles client not loaded');
+                alert('Chat setup error. Please refresh the page.');
                 return;
             }
 
-            // Auto-create profile for current user if missing
-            if (currentUserError || !currentUserProfile) {
-                console.log('Creating missing profile for current user...');
-                const { error: createCurrentUserError } = await supabase
-                    .from('profiles')
-                    .insert([{
-                        email: currentUser.email,
-                        first_name: currentUser.firstName || 'User',
-                        last_name: currentUser.lastName || '',
-                        created_at: new Date().toISOString()
-                    }]);
-                
-                if (createCurrentUserError) {
-                    console.error('Error creating current user profile:', createCurrentUserError);
-                    alert('Error setting up your profile. Please try refreshing the page.');
-                    return;
-                }
-                console.log('✅ Created profile for current user');
-            }
+            const [mineReady, ownerReady] = await Promise.all([
+                profilesClient.ensureProfile(currentUser.email),
+                profilesClient.ensureProfile(listing.user_email)
+            ]);
 
-            // Auto-create profile for listing owner if missing
-            if (listingOwnerError || !listingOwnerProfile) {
-                console.log('Creating missing profile for listing owner...');
-                // Try to get the listing owner's info from local storage or use defaults
-                const { error: createOwnerError } = await supabase
-                    .from('profiles')
-                    .insert([{
-                        email: listing.user_email,
-                        first_name: 'User',
-                        last_name: '',
-                        created_at: new Date().toISOString()
-                    }]);
-                
-                if (createOwnerError) {
-                    console.error('Error creating listing owner profile:', createOwnerError);
-                    alert('Error setting up chat. Please try again.');
-                    return;
-                }
-                console.log('✅ Created profile for listing owner');
+            if (!mineReady) {
+                alert('Error setting up your profile. Please try refreshing the page.');
+                return;
             }
+            if (!ownerReady) {
+                alert('Error setting up chat. Please try again.');
+                return;
+            }
+            console.log('✅ Both profiles ready');
 
             await ensureUserEmailRow(currentUser.email, currentUser.firstName, currentUser.lastName);
             await ensureUserEmailRow(listing.user_email, 'User', '');
@@ -3909,14 +3862,13 @@
                 }).filter(Boolean))];
 
                 if (otherEmails.length > 0) {
-                    const { data: profiles } = await supabase
-                        .from('profiles')
-                        .select('email, first_name, last_name, profile_image_url')
-                        .in('email', otherEmails);
-                    const profileByEmail = {};
-                    (profiles || []).forEach(p => {
-                        if (p.email) profileByEmail[p.email.toLowerCase()] = p;
-                    });
+                    // Deliberately per-address rather than one `.in(...)`
+                    // query: a single call that returns a set of people is the
+                    // enumeration primitive this change exists to remove.
+                    // Inboxes are small and the calls run in parallel.
+                    const profileByEmail = window.RoomFinderProfiles
+                        ? await window.RoomFinderProfiles.getDisplayProfiles(otherEmails)
+                        : {};
                     filteredConversations.forEach(conv => {
                         const senderLower = conv.sender_email?.toLowerCase();
                         const otherEmail = senderLower === userEmailLower ? conv.receiver_email : conv.sender_email;

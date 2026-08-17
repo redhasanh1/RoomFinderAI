@@ -75,15 +75,12 @@ async function getCurrentUser() {
             console.log('🔍 Supabase session:', session?.user?.email || 'no session');
             if (!session?.user) return null;
             
-            // Get profile data from profiles table
-            const { data: profile, error } = await window.supabase
-                .from('profiles')
-                .select('first_name, last_name, email, profile_image_url')
-                .eq('email', session.user.email)
-                .single();
-                
-            if (error) {
-                console.warn('Profile fetch error:', error);
+            // Through the server: the browser key is no longer allowed to
+            // read this table, because it could be used to list every user's
+            // address.
+            const profile = await window.RoomFinderProfiles?.getMyProfile(session.user.email);
+
+            if (!profile) {
                 return {
                     email: session.user.email,
                     firstName: 'User',
@@ -114,14 +111,8 @@ async function getStoredProfileImage(email) {
     try {
         if (!window.supabase || !email) return DEFAULT_PROFILE_IMAGE;
         
-        // Get profile image from Supabase
-        const { data: profile, error } = await window.supabase
-            .from('profiles')
-            .select('profile_image_url')
-            .eq('email', email)
-            .single();
-            
-        const storedImage = profile?.profile_image_url;
+        // Server-side lookup, one address at a time.
+        const storedImage = await window.RoomFinderProfiles?.getProfileImage(email);
         
         if (storedImage && storedImage !== 'null' && storedImage !== 'undefined') {
             return storedImage;
@@ -363,32 +354,13 @@ async function initSupabaseAuth() {
 
     try {
         // Check if user exists in profiles table
-        // Named columns rather than *, because the browser key no longer has
-        // read access to the sensitive half of this table (phone, date of
-        // birth, home address, and so on). A `select('*')` now fails outright
-        // with a permission error instead of quietly returning less.
-        let { data: profile, error } = await supabaseClient
-            .from('profiles')
-            .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
-            .eq('email', currentUser.email)
-            .single();
-
-        if (error || !profile) {
-            const newProfile = {
-                email: currentUser.email,
-                profile_image_url: DEFAULT_PROFILE_IMAGE
-            };
-            const { data, error: insertError } = await supabaseClient
-                .from('profiles')
-                .upsert([newProfile], { onConflict: 'email' })
-                .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
-                .single();
-
-            if (insertError) {
-                console.error('Error creating profile:', insertError);
-                return false;
-            }
-            profile = data;
+        // One call: the server returns the profile and creates it first if it
+        // does not exist, which is what the select-then-insert below used to do
+        // from the browser.
+        const profile = await window.RoomFinderProfiles?.getMyProfile(currentUser.email);
+        if (!profile) {
+            console.error('Could not load or create profile for', currentUser.email);
+            return false;
         }
 
         currentUser.id = profile.id;

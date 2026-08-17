@@ -51,14 +51,10 @@ async function getCurrentUser() {
         const { data: { session } } = await client.auth.getSession();
         if (!session?.user) return null;
 
-        const { data: profile, error } = await client
-            .from('profiles')
-            .select('first_name, last_name, email, profile_image_url')
-            .eq('email', session.user.email)
-            .single();
+        // Server-side: the browser key can no longer read this table.
+        const profile = await window.RoomFinderProfiles?.getMyProfile(session.user.email);
 
-        if (error) {
-            console.warn('Profile fetch error:', error);
+        if (!profile) {
             return {
                 email: session.user.email,
                 firstName: 'User',
@@ -121,16 +117,13 @@ async function checkEmailExists(email) {
         const client = await ensureSupabaseClient();
         if (!client) return false;
 
-        const { data: profile } = await client
-            .from('profiles')
-            .select('email')
-            .eq('email', email)
-            .maybeSingle();
-
+        // Was a direct read of `profiles` filtered by address, which is
+        // exactly the enumeration this change removes. The server answers about
+        // one address and returns nothing but whether it has a profile.
         const { data: { session } } = await client.auth.getSession();
         if (session?.user?.email === email) return true;
 
-        return !!profile;
+        return !!(await window.RoomFinderProfiles?.profileExists(email));
     } catch (error) {
         console.error('Email check error:', error);
         return false;

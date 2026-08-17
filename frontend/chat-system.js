@@ -649,41 +649,25 @@ class ChatSystem {
      * Ensure user profiles exist for both users
      */
     async ensureUserProfiles(currentUser, listing) {
-        // Check current user profile
-        const { data: currentProfile, error: currentError } = await this.supabase
-            .from('profiles')
-            .select('email')
-            .eq('email', currentUser.email)
-            .single();
-
-        if (currentError || !currentProfile) {
-            await this.supabase
-                .from('profiles')
-                .insert({
-                    email: currentUser.email,
-                    first_name: currentUser.firstName || 'User',
-                    last_name: currentUser.lastName || '',
-                    created_at: new Date().toISOString()
-                });
+        // Both rows are created server-side now. This used to select from
+        // `profiles` and insert into it straight from the browser, which is why
+        // the anon key needed read and write access to a table holding every
+        // user's address and phone number.
+        //
+        // The placeholder names the old code wrote ('User', '') are gone with
+        // it: the server creates the row with an address and nothing else,
+        // rather than stamping a fake first name over a profile the person may
+        // fill in properly later.
+        const profiles = window.RoomFinderProfiles;
+        if (!profiles) {
+            console.warn('Profiles client not loaded — cannot set up chat profiles');
+            return;
         }
 
-        // Check listing owner profile
-        const { data: ownerProfile, error: ownerError } = await this.supabase
-            .from('profiles')
-            .select('email')
-            .eq('email', listing.user_email)
-            .single();
-
-        if (ownerError || !ownerProfile) {
-            await this.supabase
-                .from('profiles')
-                .insert({
-                    email: listing.user_email,
-                    first_name: 'User',
-                    last_name: '',
-                    created_at: new Date().toISOString()
-                });
-        }
+        await Promise.all([
+            profiles.ensureProfile(currentUser?.email),
+            profiles.ensureProfile(listing?.user_email)
+        ]);
     }
 
     /**

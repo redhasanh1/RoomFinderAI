@@ -7,6 +7,7 @@
     <title>Personal Rental Agent</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="js/supabase-config-init.js"></script>
+    <script src="/js/profiles-client.js?v=20260817"></script>
     <script src="universal-auth-manager.js?v=3.0.1"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/notifications.js?v=20260129b"></script>
@@ -946,36 +947,16 @@
             }
 
             try {
-                // Check if user exists in profiles table
-                let { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
-                    .eq('email', currentUser.email)
-                    .single();
+                // Fetch-or-create, in one server call. This was a select
+                // against `profiles` followed by an insert if it came back
+                // empty, both from the browser — which is why the anon key
+                // needed read and write access to a table holding every user's
+                // phone number and address.
+                const profile = await window.RoomFinderProfiles?.getMyProfile(currentUser.email);
 
-                if (error && error.code !== 'PGRST116') {
-                    console.error('Database error checking profile:', error);
-                    return null; // Don't redirect, just continue without profile
-                }
-
-                // Create profile if missing
                 if (!profile) {
-                    console.log('Creating missing profile for current user...');
-                    const newProfile = {
-                        email: currentUser.email,
-                        profile_image: defaultProfileImage
-                    };
-                    const { data, error: insertError } = await supabase
-                        .from('profiles')
-                        .insert([newProfile])
-                        .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
-                        .single();
-
-                    if (insertError) {
-                        console.error('Error creating profile:', insertError);
-                        return null; // Don't redirect, continue without profile
-                    }
-                    profile = data;
+                    console.error('Could not load or create profile for', currentUser.email);
+                    return null; // Don't redirect, just continue without profile
                 }
 
                 // Update user with profile info

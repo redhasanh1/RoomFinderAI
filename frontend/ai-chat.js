@@ -333,13 +333,10 @@ class AIChatHandler {
         }
 
         try {
-            const { data: profile, error } = await this.supabase
-                .from('profiles')
-                .select('id, email, first_name, last_name, profile_image, profile_image_url, is_pro, plan')
-                .eq('email', this.currentUser.email)
-                .single();
+            // Via the server; the browser key no longer reads this table.
+            const profile = await window.RoomFinderProfiles?.getMyProfile(this.currentUser.email);
 
-            if (error) {
+            if (!profile) {
                 console.log('⚠️ Profile not found for anonymous user');
                 return false;
             }
