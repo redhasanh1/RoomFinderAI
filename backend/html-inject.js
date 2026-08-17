@@ -8,10 +8,12 @@ function injectSiteShell(html) {
         return html;
     }
 
+    // The platform-status banner used to be injected here, announcing that the
+    // Android and iOS apps were closed. The iOS app is being released, so the
+    // notice is no longer true — and it was appearing inside the iOS app
+    // itself, telling its own users the app did not exist.
     const injection = [
-        '<link rel="stylesheet" href="/css/platform-status.css">',
         '<link rel="stylesheet" href="/modules/css/main.css">',
-        '<script src="/js/platform-status-banner.js" defer></script>',
         '<script src="/js/site-nav.js" defer></script>',
         '<script src="/js/site-bootstrap.js" defer></script>'
     ].join('\n');

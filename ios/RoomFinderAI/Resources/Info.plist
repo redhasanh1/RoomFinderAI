@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>RoomFinderAI</string>
+
+	<!-- Apple requires an explicit answer here or every upload is held for a
+	     manual compliance question. The app ships no cryptography of its own;
+	     it only speaks HTTPS, which is an exempt use. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+
+	<!-- Portrait-only on iPhone: the site's layout is a single responsive
+	     column and landscape gives it nothing but a shorter viewport.
+	     iPad keeps every orientation because reviewers test rotation there. -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+
+	<!-- Photo picker and camera are reached through the site's file inputs
+	     (listing photos, profile avatars). WKWebView presents the system
+	     pickers, but the app still has to declare why it wants them. -->
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos of a room to add to a listing or your profile.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Choose photos from your library to add to a listing or your profile.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Show rooms and roommates near you instead of asking you to type a city.</string>
+	<key>NSFaceIDUsageDescription</key>
+	<string>Unlock RoomFinderAI without retyping your password.</string>
+
+	<!-- Custom scheme for deep links from email and push. Universal links are
+	     handled separately by the Associated Domains entitlement. -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.roomfinderai.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>roomfinderai</string>
+			</array>
+		</dict>
+	</array>
+
+	<!-- Required. Without a launch screen iOS runs the app in a letterboxed
+	     compatibility window on every modern iPhone. Empty dict = a plain
+	     full-screen canvas in the colour below, which the SwiftUI splash then
+	     fades out of with no visible seam. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>
