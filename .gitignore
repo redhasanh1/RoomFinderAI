@@ -89,3 +89,8 @@ xcuserdata/
 *.xcscmblueprint
 *.xccheckout
 scripts/_results/
+
+# Apple push signing keys. Cannot be re-downloaded from Apple, and a leaked
+# one lets anyone send notifications to your users.
+*.p8
+AuthKey_*.p8
