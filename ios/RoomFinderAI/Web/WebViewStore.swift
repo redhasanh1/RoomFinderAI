@@ -179,15 +179,30 @@ final class WebViewStore: NSObject, ObservableObject {
     }
 
     /// Page titles are written for search engines — "RoomFinderAI - Find Your
-    /// Perfect Room | AI-Powered Roommate Matching". A navigation bar needs the
-    /// first clause and nothing else.
+    /// Perfect Room | AI-Powered Roommate Matching", "RoomFinder AI - Login".
+    /// A navigation bar wants the part that says which page this is.
     private static func displayTitle(_ raw: String?) -> String {
         guard let raw, !raw.isEmpty else { return "" }
-        let head = raw.split(separator: "|").first.map(String.init) ?? raw
-        return head
-            .replacingOccurrences(of: "RoomFinderAI -", with: "")
-            .replacingOccurrences(of: "RoomFinderAI –", with: "")
-            .trimmingCharacters(in: .whitespaces)
+
+        // Drop everything after the first pipe: that clause is keyword padding.
+        var title = raw.split(separator: "|").first.map(String.init) ?? raw
+
+        // Strip a leading brand name however it is punctuated or spaced. Doing
+        // this by regex rather than by literal covers "RoomFinderAI -",
+        // "RoomFinder AI –" and "RoomFinderAI:" without listing each one.
+        if let range = title.range(of: #"^\s*RoomFinder\s*AI\s*[-–—:|]\s*"#,
+                                   options: [.regularExpression, .caseInsensitive]) {
+            title.removeSubrange(range)
+        }
+
+        title = title.trimmingCharacters(in: .whitespaces)
+        // A page titled only with the brand name tells the user nothing the
+        // tab bar has not already said.
+        if title.range(of: #"^\s*RoomFinder\s*AI\s*$"#,
+                       options: [.regularExpression, .caseInsensitive]) != nil {
+            return ""
+        }
+        return title
     }
 }
 
@@ -409,6 +424,12 @@ extension WebViewStore {
         case "requestPush":
             PushService.shared.requestAuthorization()
 
+        case "googleSignIn":
+            startGoogleSignIn()
+
+        case "appleSignIn":
+            startAppleSignIn()
+
         case "page":
             if let raw = body["url"] as? String, let url = URL(string: raw) {
                 currentURL = url
@@ -420,5 +441,93 @@ extension WebViewStore {
         default:
             break
         }
+    }
+
+    /// Runs Google's consent screen natively, then hands the authorization code
+    /// back to the page so the site's own exchange-and-store logic runs. The
+    /// app never sees a password and never duplicates the login logic.
+    private func startGoogleSignIn() {
+        Task {
+            do {
+                let result = try await GoogleAuthService.shared.signIn(
+                    presentingFrom: presenter?.view.window
+                )
+                let code = Self.jsStringLiteral(result.code)
+                let redirect = Self.jsStringLiteral(result.redirectURI)
+                _ = try? await webView.evaluateJavaScript(
+                    "window.RoomFinderNative.completeGoogleSignIn(\(code), \(redirect));"
+                )
+                Haptics.notify(.success)
+            } catch GoogleAuthService.AuthError.cancelled {
+                // Backing out of a sign-in is not an error worth a dialog.
+                return
+            } catch {
+                Haptics.notify(.error)
+                guard let presenter else { return }
+                let alert = UIAlertController(
+                    title: "Google Sign-In Failed",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                presenter.present(alert, animated: true)
+            }
+        }
+    }
+
+    /// Shows the system Sign in with Apple sheet, then hands the credential to
+    /// the page, which posts it to the same endpoint the website uses.
+    private func startAppleSignIn() {
+        Task {
+            do {
+                let credential = try await AppleAuthService.shared.signIn(
+                    presentingFrom: presenter?.view.window
+                )
+
+                // Shaped exactly like the AppleID JavaScript library's payload
+                // so the page's handler does not need to know which one it got.
+                var payload: [String: Any] = ["identityToken": credential.identityToken]
+                if let code = credential.authorizationCode { payload["authorizationCode"] = code }
+                if credential.firstName != nil || credential.lastName != nil {
+                    payload["user"] = [
+                        "name": [
+                            "firstName": credential.firstName ?? "",
+                            "lastName": credential.lastName ?? ""
+                        ]
+                    ]
+                }
+
+                guard let data = try? JSONSerialization.data(withJSONObject: payload),
+                      let json = String(data: data, encoding: .utf8) else { return }
+
+                _ = try? await webView.evaluateJavaScript("window.completeAppleSignIn(\(json));")
+                Haptics.notify(.success)
+            } catch AppleAuthService.AuthError.cancelled {
+                return
+            } catch {
+                Haptics.notify(.error)
+                guard let presenter else { return }
+                let alert = UIAlertController(
+                    title: "Sign in with Apple Failed",
+                    message: error.localizedDescription,
+                    preferredStyle: .alert
+                )
+                alert.addAction(UIAlertAction(title: "OK", style: .default))
+                presenter.present(alert, animated: true)
+            }
+        }
+    }
+
+    /// Escapes a value for interpolation into evaluated JavaScript. An
+    /// authorization code is opaque and could in principle contain a quote;
+    /// building the literal with JSONSerialization means it can never break
+    /// out of the string it is meant to be.
+    private static func jsStringLiteral(_ value: String) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: [value]),
+              let array = String(data: data, encoding: .utf8),
+              array.count >= 2 else {
+            return "\"\""
+        }
+        return String(array.dropFirst().dropLast())
     }
 }

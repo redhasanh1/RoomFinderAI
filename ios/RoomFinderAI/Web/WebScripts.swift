@@ -34,6 +34,12 @@ enum WebScripts {
     /* Footer links live in the native More menu instead. */
     footer, .site-footer, .footer { display: none !important; }
 
+    /* Pages that carry their own fixed "Back to Home" bar — login, signup,
+       forgot-password — stack it under the native navigation bar, giving two
+       back affordances one above the other. The native one wins. */
+    body > header.fixed,
+    body > header[class*="fixed"] { display: none !important; }
+
     /* iOS momentum scrolling inside any pane the site scrolls itself. */
     body { -webkit-overflow-scrolling: touch; }
 
@@ -70,8 +76,47 @@ enum WebScripts {
         haptic: function (style) { post('haptic', { style: style || 'light' }); },
         openExternal: function (url) { post('openExternal', { url: url }); },
         setBadge: function (count) { post('badge', { count: count | 0 }); },
-        requestPushPermission: function () { post('requestPush', {}); }
+        requestPushPermission: function () { post('requestPush', {}); },
+        // Neither provider can complete OAuth inside a web view — Google
+        // rejects embedded user agents outright, and Apple's library needs a
+        // popup. login.html checks for these two functions and defers to them,
+        // then finishes the sign-in with its own logic, so account handling
+        // lives in exactly one place.
+        signInWithGoogle: function () { post('googleSignIn', {}); },
+        signInWithApple: function () { post('appleSignIn', {}); }
       };
+
+      // Called back by the app once the native flow returns a code.
+      window.RoomFinderNative.completeGoogleSignIn = function (code, redirectUri) {
+        if (typeof window.handleGoogleAuthCode === 'function') {
+          window.handleGoogleAuthCode({ code: code, redirectUri: redirectUri });
+        }
+      };
+
+      // Reclaim the space pages reserve for the fixed header we just hid.
+      //
+      // Every page does this differently — `main.pt-24` on the negotiator,
+      // `section.pt-40` on the homepage, `body.site-has-header` elsewhere — so
+      // rather than chase class names this measures the first element that is
+      // actually laid out and trims a top padding that is only explicable as
+      // header clearance. Anything under 64px is real design and left alone.
+      function trimHeaderOffset() {
+        var children = document.body ? document.body.children : [];
+        for (var i = 0; i < children.length; i++) {
+          var el = children[i];
+          var style = getComputedStyle(el);
+          if (style.display === 'none' || style.position === 'fixed' || style.position === 'absolute') continue;
+          if (parseFloat(style.paddingTop) >= 64) {
+            el.style.setProperty('padding-top', '16px', 'important');
+          }
+          return;
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', trimHeaderOffset);
+      // Re-run once the site's own scripts have finished injecting markup;
+      // several pages build their layout after DOMContentLoaded.
+      window.addEventListener('load', trimHeaderOffset);
 
       // Tell the shell when the document identity changes so the native title
       // and the selected tab stay truthful. The site is multi-page, but a few

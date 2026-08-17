@@ -660,7 +660,11 @@
       console.log('Google auth response:', resp);
       console.log('Authorization code received, length:', resp.code?.length);
       try{
-        const r = await fetch('/api/auth/google/oauth-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code: resp.code })});
+        // resp.redirectUri is only set by the iOS app, whose sign-in runs in a
+        // real Safari context and therefore gets a code issued against a real
+        // https redirect rather than the popup flow's 'postmessage'. The token
+        // exchange has to be told which one it was.
+        const r = await fetch('/api/auth/google/oauth-code',{method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ code: resp.code, redirectUri: resp.redirectUri })});
         const result = await r.json();
         if (r.ok){
           // Preserve custom profile image before saving
@@ -687,6 +691,15 @@
     }
 
     async function handleGoogleSignIn(){
+      // Inside the iOS app, hand off to the native flow. Google rejects OAuth
+      // started from an embedded web view (`disallowed_useragent`), and there
+      // is no popup for initCodeClient to open, so this path cannot succeed
+      // there. The app runs the same authorization-code flow in a real Safari
+      // context and calls handleGoogleAuthCode below with the result.
+      if (window.RoomFinderNative?.signInWithGoogle) {
+        window.RoomFinderNative.signInWithGoogle();
+        return;
+      }
       try {
         if (!oauthConfig) await loadOAuthConfig();
         if (!googleInitialized) initializeGoogleSignIn();
@@ -707,7 +720,40 @@
       }
     }
 
+    // Shared by the website's AppleID popup and by the iOS app's native
+    // Sign in with Apple sheet, so the account handling below exists once.
+    // The app calls it as window.completeAppleSignIn(...).
+    async function submitAppleCredential(payload){
+      const r = await fetch('/api/auth/apple',{
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body:JSON.stringify(payload)
+      });
+      const result = await r.json();
+      if (!r.ok){
+        alert(result.error || 'Apple Sign-In failed');
+        return;
+      }
+      localStorage.setItem('currentUser', JSON.stringify(result.user));
+      const users = JSON.parse(localStorage.getItem('users')||'[]');
+      const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
+      if (i>=0) users[i]=result.user; else users.push(result.user);
+      localStorage.setItem('users', JSON.stringify(users));
+      if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
+        UniversalAuth.redirectAfterLogin('index.html');
+      } else {
+        window.location.href = 'verification-modal.html?redirect=index.html';
+      }
+    }
+    window.completeAppleSignIn = submitAppleCredential;
+
     async function handleAppleSignIn(){
+      // The iOS app shows the system Sign in with Apple sheet instead: the
+      // AppleID JS library relies on a popup, which a web view has no way to
+      // open, so this path silently does nothing there.
+      if (window.RoomFinderNative?.signInWithApple) {
+        window.RoomFinderNative.signInWithApple();
+        return;
+      }
       if (!oauthConfig) await loadOAuthConfig();
       if (typeof AppleID === 'undefined'){ alert('Apple Sign-In is currently unavailable.'); return; }
       try{
@@ -722,25 +768,11 @@
           window.appleIdInitialized = true;
         }
         const response = await AppleID.auth.signIn();
-        const r = await fetch('/api/auth/apple',{
-          method:'POST', headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({ authorizationCode: response.authorization.code, identityToken: response.authorization.id_token, user: response.user })
+        await submitAppleCredential({
+          authorizationCode: response.authorization.code,
+          identityToken: response.authorization.id_token,
+          user: response.user
         });
-        const result = await r.json();
-        if (r.ok){
-          localStorage.setItem('currentUser', JSON.stringify(result.user));
-          const users = JSON.parse(localStorage.getItem('users')||'[]');
-          const i = users.findIndex(u=>u?.email?.toLowerCase()===result.user.email?.toLowerCase());
-          if (i>=0) users[i]=result.user; else users.push(result.user);
-          localStorage.setItem('users', JSON.stringify(users));
-          if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
-            UniversalAuth.redirectAfterLogin('index.html');
-          } else {
-            window.location.href = 'verification-modal.html?redirect=index.html';
-          }
-        }else{
-          alert(result.error || 'Apple Sign-In failed');
-        }
       }catch(error){
         if (error?.error === 'popup_closed_by_user') return;
         if (error?.error === 'popup_blocked_by_browser') alert('Apple popup was blocked. Please allow popups and try again.');

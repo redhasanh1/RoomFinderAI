@@ -12,16 +12,25 @@ struct WebViewContainer: UIViewControllerRepresentable {
 
     @ObservedObject var store: WebViewStore
 
+    /// Measured by SwiftUI *inside* the navigation stack, so it already
+    /// accounts for the navigation bar and the floating tab bar.
+    let safeArea: EdgeInsets
+
     func makeUIViewController(context: Context) -> WebHostController {
-        WebHostController(store: store)
+        let controller = WebHostController(store: store)
+        controller.apply(safeArea: safeArea)
+        return controller
     }
 
-    func updateUIViewController(_ controller: WebHostController, context: Context) {}
+    func updateUIViewController(_ controller: WebHostController, context: Context) {
+        controller.apply(safeArea: safeArea)
+    }
 }
 
 final class WebHostController: UIViewController {
 
     private let store: WebViewStore
+    private var appliedInsets: UIEdgeInsets = .zero
 
     init(store: WebViewStore) {
         self.store = store
@@ -39,10 +48,9 @@ final class WebHostController: UIViewController {
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
 
-        // Pinned to the safe area at the bottom only. The top is deliberately
-        // pinned to the raw view edge so page content scrolls up under the
-        // translucent navigation bar the way it does in Safari, instead of
-        // stopping at a hard line.
+        // Edge to edge on purpose. The page paints behind the translucent
+        // navigation bar and the floating tab bar, the way Safari does, and the
+        // content inset below keeps anything from being trapped under them.
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
@@ -51,6 +59,35 @@ final class WebHostController: UIViewController {
         ])
 
         store.presenter = self
+    }
+
+    /// Insets the scrollable content by the bar heights.
+    ///
+    /// `contentInsetAdjustmentBehavior` is `.never` because the web view is
+    /// laid out ignoring the safe area — left to itself it would compute zero
+    /// and let the page's last control sit permanently under the tab bar,
+    /// which is exactly what happened to the negotiator's "Login Required"
+    /// button.
+    func apply(safeArea: EdgeInsets) {
+        let insets = UIEdgeInsets(
+            top: safeArea.top,
+            left: 0,
+            bottom: safeArea.bottom,
+            right: 0
+        )
+        guard insets != appliedInsets else { return }
+        appliedInsets = insets
+
+        let scrollView = store.webView.scrollView
+        // Preserve where the user is: changing contentInset shifts the visible
+        // region, so the offset has to move with it or the page jumps.
+        let previousTop = scrollView.contentInset.top
+        scrollView.contentInset = insets
+        scrollView.verticalScrollIndicatorInsets = insets
+
+        if scrollView.contentOffset.y <= -previousTop + 1 {
+            scrollView.contentOffset.y = -insets.top
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {

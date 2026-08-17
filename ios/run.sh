@@ -12,13 +12,21 @@ BUNDLE_ID="com.roomfinderai.app"
 cd "$(dirname "$0")"
 
 echo "==> Building"
+# Piping through grep would otherwise hand us grep's exit status, so a failed
+# build still "succeeded" and the previous binary got installed and tested —
+# which is exactly how you end up debugging a fix that was never compiled.
+set +e
 xcodebuild -project RoomFinderAI.xcodeproj \
            -scheme RoomFinderAI \
            -sdk iphonesimulator \
            -destination "platform=iOS Simulator,name=$SIM_NAME" \
            -configuration Debug \
            CODE_SIGNING_ALLOWED=NO \
-           build 2>&1 | grep -E "error:|warning: .*(deprecat|unused|never)|BUILD" || true
+           build 2>&1 | tee /tmp/roomfinder-build.log \
+         | grep -E "error:|warning: .*(deprecat|unused|never)|BUILD"
+BUILD_STATUS=${PIPESTATUS[0]}
+set -e
+[ "$BUILD_STATUS" -eq 0 ] || { echo "Build failed — not installing."; exit "$BUILD_STATUS"; }
 
 APP=$(find ~/Library/Developer/Xcode/DerivedData/RoomFinderAI-*/Build/Products/Debug-iphonesimulator \
       -maxdepth 1 -name "RoomFinderAI.app" 2>/dev/null | head -1)

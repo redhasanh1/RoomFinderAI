@@ -14,8 +14,15 @@ struct BrowserScreen: View {
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
-                WebViewContainer(store: store)
-                    .ignoresSafeArea(edges: .bottom)
+                // The proxy measures the safe area *inside* the navigation
+                // stack, which is the only place the navigation bar and the
+                // floating tab bar are both accounted for. Those numbers are
+                // handed to the web view as a content inset; the view itself
+                // still runs edge to edge.
+                GeometryReader { proxy in
+                    WebViewContainer(store: store, safeArea: proxy.safeAreaInsets)
+                        .ignoresSafeArea()
+                }
 
                 LoadingBar(progress: store.progress, isLoading: store.isLoading)
 

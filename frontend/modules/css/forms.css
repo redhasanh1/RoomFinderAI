@@ -22,7 +22,13 @@
     outline: none;
 }
 
-.form-input:invalid {
+/* `:user-invalid`, not `:invalid`.
+   An empty required field is invalid from the moment it renders, so the plain
+   `:invalid` rule outlined every login and signup box in red before the user
+   had typed a character — the form looked like it had already rejected them.
+   `:user-invalid` waits until the field has actually been filled in and
+   blurred, or the form submitted. */
+.form-input:user-invalid {
     border-color: var(--color-danger);
 }
 

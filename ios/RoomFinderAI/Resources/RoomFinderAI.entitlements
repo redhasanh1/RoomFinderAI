@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Each of these must ALSO be switched on for the App ID in the Apple
+	     Developer portal (Certificates, Identifiers & Profiles → the
+	     com.roomfinderai.app identifier). The entitlement file alone is not
+	     enough: signing fails if the provisioning profile does not carry the
+	     same capability. -->
+
+	<!-- Guideline 4.8: required because the app offers Google sign-in. -->
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
+	</array>
+
+	<!-- 'development' here; the release build is switched to 'production'
+	     automatically when archiving with a distribution profile. -->
+	<key>aps-environment</key>
+	<string>development</string>
+
+	<!-- Universal links: makes https://www.roomfinderai.com/... open the app
+	     instead of Safari. Requires an apple-app-site-association file served
+	     from https://www.roomfinderai.com/.well-known/ — see ios/README.md. -->
+	<key>com.apple.developer.associated-domains</key>
+	<array>
+		<string>applinks:www.roomfinderai.com</string>
+		<string>applinks:roomfinderai.com</string>
+	</array>
+</dict>
+</plist>

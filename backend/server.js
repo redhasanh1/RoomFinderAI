@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const { PLATFORM_STATUS } = require('./platform-status');
 const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
+const { verifyAppleIdentityToken } = require('./apple-auth');
 const { callAI, getAIStatus } = require('./ai-providers');
 const { success: apiSuccess, notFound: apiNotFound, error: apiError } = require('./api-response');
 const {
@@ -2961,17 +2962,24 @@ app.post('/api/auth/google', async (req, res) => {
 // API: Google OAuth Code Exchange (OAuth 2.0 flow)
 app.post('/api/auth/google/oauth-code', async (req, res) => {
     try {
-        const { code } = req.body;
-        
+        const { code, redirectUri: requestedRedirectUri } = req.body;
+
         if (!code) {
             return res.status(400).json({ error: 'Authorization code is required' });
         }
 
-        // Exchange authorization code for tokens
-        // For popup mode with initCodeClient, Google expects 'postmessage' as redirect_uri
-        // This is a special value for the popup OAuth flow
-        const redirectUri = 'postmessage';
-        
+        // The redirect_uri sent to Google's token endpoint must match the one
+        // the code was issued for:
+        //   'postmessage'  — the website's popup flow (initCodeClient)
+        //   the native URI — the iOS app's ASWebAuthenticationSession flow
+        //
+        // Allowlisted rather than passed through, so this cannot be turned into
+        // a way to redirect codes somewhere we do not control.
+        const ALLOWED_REDIRECT_URIS = ['postmessage', GOOGLE_NATIVE_REDIRECT_URI];
+        const redirectUri = ALLOWED_REDIRECT_URIS.includes(requestedRedirectUri)
+            ? requestedRedirectUri
+            : 'postmessage';
+
         console.log('Redirect URI being used:', redirectUri);
         console.log('Request headers:', {
             origin: req.headers.origin,
@@ -3105,6 +3113,35 @@ app.get('/api/auth/google/callback', (req, res) => {
     res.redirect('/login.html');
 });
 
+// The redirect target for Google sign-in started from the iOS app.
+//
+// Google refuses to run OAuth inside an embedded web view, so the app opens
+// the consent screen in ASWebAuthenticationSession — a real Safari context —
+// which can only hand control back through a registered https redirect. That
+// lands here, and this bounces it into the app's custom scheme.
+//
+// Nothing sensitive is minted here: the authorization code is single-use, is
+// worthless without the client secret the app never sees, and is exchanged by
+// /api/auth/google/oauth-code below.
+const GOOGLE_NATIVE_REDIRECT_PATH = '/api/auth/google/native-callback';
+const GOOGLE_NATIVE_REDIRECT_URI = `https://www.roomfinderai.com${GOOGLE_NATIVE_REDIRECT_PATH}`;
+const IOS_APP_SCHEME = 'roomfinderai';
+
+app.get(GOOGLE_NATIVE_REDIRECT_PATH, (req, res) => {
+    const { code, error, state } = req.query;
+
+    const params = new URLSearchParams();
+    if (error) params.set('error', String(error));
+    if (code) params.set('code', String(code));
+    if (state) params.set('state', String(state));
+
+    res.redirect(`${IOS_APP_SCHEME}://auth/google?${params.toString()}`);
+});
+
+// Native Sign in with Apple issues tokens whose audience is the app's bundle
+// identifier rather than the web Services ID, so both are valid here.
+const APPLE_IOS_BUNDLE_ID = process.env.APPLE_IOS_BUNDLE_ID?.trim() || 'com.roomfinderai.app';
+
 // API: Apple OAuth Sign-In
 app.post('/api/auth/apple', async (req, res) => {
     try {
@@ -3114,17 +3151,21 @@ app.post('/api/auth/apple', async (req, res) => {
             return res.status(400).json({ error: 'Apple identity token is required' });
         }
 
-        // For demo purposes, we'll decode the JWT without verification
-        // In production, you should verify the JWT signature with Apple's public keys
-        const tokenParts = identityToken.split('.');
-        if (tokenParts.length !== 3) {
-            return res.status(401).json({ error: 'Invalid Apple token format' });
-        }
-
-        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString());
-        
-        // Verify token is from Apple and not expired
-        if (payload.iss !== 'https://appleid.apple.com' || payload.exp < Date.now() / 1000) {
+        // Signature, issuer, expiry and audience are all checked against
+        // Apple's published keys. The previous version decoded the payload and
+        // trusted it, which meant a hand-written JSON blob claiming any email
+        // address was a valid login for that account.
+        //
+        // Two audiences are accepted: the Services ID used by the website's
+        // JS flow, and the iOS bundle ID used by native Sign in with Apple.
+        let payload;
+        try {
+            payload = await verifyAppleIdentityToken(identityToken, [
+                config.APPLE_CLIENT_ID,
+                APPLE_IOS_BUNDLE_ID
+            ]);
+        } catch (verifyError) {
+            console.warn('Apple identity token rejected:', verifyError.message);
             return res.status(401).json({ error: 'Invalid or expired Apple token' });
         }
 
@@ -8475,6 +8516,10 @@ app.get('/api/config', (req, res) => {
         SUPABASE_ANON_KEY: config.SUPABASE_ANON_KEY,
         GOOGLE_OAUTH_CLIENT_ID: config.GOOGLE_OAUTH_CLIENT_ID,
         APPLE_CLIENT_ID: config.APPLE_CLIENT_ID,
+        // Read by the iOS app so the redirect URI lives in one place rather
+        // than being duplicated in Swift and drifting from the server's
+        // allowlist.
+        GOOGLE_NATIVE_REDIRECT_URI: GOOGLE_NATIVE_REDIRECT_URI,
         TURNSTILE_SITE_KEY: config.TURNSTILE_SITE_KEY,
         platforms: PLATFORM_STATUS.platforms,
         azureServicesAvailable: {
