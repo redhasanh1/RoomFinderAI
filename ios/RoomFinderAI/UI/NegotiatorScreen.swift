@@ -46,17 +46,14 @@ struct NegotiatorScreen: View {
                     .accessibilityLabel("Your goals")
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Menu {
+                    MoreMenu {
                         Button(role: .destructive) {
                             Haptics.impact(.medium)
                             service.reset()
                         } label: {
                             Label("Start over", systemImage: "arrow.counterclockwise")
                         }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
                     }
-                    .accessibilityLabel("More options")
                 }
             }
             .sheet(isPresented: $showingGoals) {

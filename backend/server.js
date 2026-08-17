@@ -7,6 +7,7 @@ const { PLATFORM_STATUS } = require('./platform-status');
 const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inject');
 const { verifyAppleIdentityToken } = require('./apple-auth');
 const { registerComplianceRoutes } = require('./account-compliance');
+const { registerMessagingRoutes } = require('./messaging');
 const { callAI, getAIStatus } = require('./ai-providers');
 const { success: apiSuccess, notFound: apiNotFound, error: apiError } = require('./api-response');
 const {
@@ -659,6 +660,10 @@ app.use((req, res, next) => {
 // async startup and would still be undefined if captured here by value.
 registerComplianceRoutes(app, () => supabase);
 
+// Conversations and messages for the iOS app, participant-checked server-side
+// rather than trusting the client to only ask for its own threads.
+registerMessagingRoutes(app, () => supabase);
+
 // Universal links: iOS fetches this file to decide whether tapping a
 // roomfinderai.com link should open the app. It has to be served from the
 // apex of /.well-known, with no extension, as application/json — Apple's
@@ -934,6 +939,65 @@ function validateListingInput(data) {
     if (!['included', 'not included'].includes(data.utilities?.toLowerCase())) errors.push('Utilities must be "included" or "not included"');
     return errors;
 }
+
+/**
+ * Listing photos, for the iOS app.
+ *
+ * The website uploads straight to Supabase storage from the browser using the
+ * anon key. An app cannot do that safely — a key inside a binary can be pulled
+ * out of it — so the app posts the image bytes here and the server does the
+ * upload with the service key.
+ *
+ * Returns public URLs in the shape `POST /api/listings` expects for `media`.
+ */
+app.post('/api/listings/photos', upload.array('photos', 6), async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ success: false, message: 'Storage not connected' });
+        }
+
+        const files = req.files || [];
+        if (!files.length) {
+            return res.status(400).json({ success: false, message: 'No photos received' });
+        }
+
+        const allowed = ['image/jpeg', 'image/png', 'image/heic', 'image/heif', 'image/webp'];
+        const urls = [];
+
+        for (const file of files) {
+            if (!allowed.includes(file.mimetype)) {
+                return res.status(400).json({
+                    success: false,
+                    message: `Unsupported image type: ${file.mimetype}`
+                });
+            }
+
+            // Namespaced by uploader so a listing's photos can be found and
+            // removed with the account, and suffixed randomly so two uploads in
+            // the same second cannot overwrite each other.
+            const owner = (req.body.userEmail || 'anonymous').replace(/[^a-zA-Z0-9@._-]/g, '_');
+            const extension = (file.originalname.split('.').pop() || 'jpg').toLowerCase();
+            const path = `Photos/${owner}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+
+            const { error } = await supabase.storage
+                .from('listing-media')
+                .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
+
+            if (error) {
+                console.error('Listing photo upload failed:', error.message);
+                return res.status(500).json({ success: false, message: 'Could not upload photo' });
+            }
+
+            const { data } = supabase.storage.from('listing-media').getPublicUrl(path);
+            urls.push(data.publicUrl);
+        }
+
+        res.json({ success: true, urls });
+    } catch (error) {
+        console.error('Listing photo endpoint failed:', error);
+        res.status(500).json({ success: false, message: 'Could not upload photos' });
+    }
+});
 
 // API: Add a new listing
 app.post('/api/listings', async (req, res) => {

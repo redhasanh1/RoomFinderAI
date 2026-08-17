@@ -6,9 +6,17 @@ import Foundation
 enum AppTab: String, CaseIterable, Identifiable, Codable {
     case home
     case listings
+    /// The middle slot. Selecting it opens the post sheet and hands the
+    /// selection straight back to the tab you were on — it is an action, not a
+    /// place, which is why it has no screen.
+    case post
     case negotiator
-    case roompal
     case profile
+
+    /// The five slots, in order. RoomPal is reached from Home rather than
+    /// occupying a slot: a sixth tab would push the bar into iOS's "More"
+    /// overflow and bury a real tab behind a chevron.
+    static let tabBar: [AppTab] = [.home, .listings, .post, .negotiator, .profile]
 
     var id: String { rawValue }
 
@@ -16,8 +24,8 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .home:       return "Home"
         case .listings:   return "Listings"
+        case .post:       return "Post"
         case .negotiator: return "Negotiate"
-        case .roompal:    return "RoomPal"
         case .profile:    return "Profile"
         }
     }
@@ -28,8 +36,8 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .home:       return "house.fill"
         case .listings:   return "building.2.fill"
+        case .post:       return "plus.circle.fill"
         case .negotiator: return "bubble.left.and.text.bubble.right.fill"
-        case .roompal:    return "person.2.fill"
         case .profile:    return "person.crop.circle.fill"
         }
     }
@@ -38,8 +46,8 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .home:       return "index.html"
         case .listings:   return "listings.html"
+        case .post:       return "listings.html"
         case .negotiator: return "ai-negotiator.html"
-        case .roompal:    return "roommate-matching.html"
         case .profile:    return "profile.html"
         }
     }
@@ -58,7 +66,8 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         // favorites.html are left unowned so they open in a web-capable tab.
         case "listings.html":                   return .listings
         case "ai-negotiator.html":              return .negotiator  // native; selecting it is the whole action
-        case "roommate-matching.html":          return .roompal
+        // RoomPal has no slot of its own; Home opens it.
+        case "roommate-matching.html":          return .home
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile
         default:                                return nil
         }

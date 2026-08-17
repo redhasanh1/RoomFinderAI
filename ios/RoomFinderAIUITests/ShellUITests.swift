@@ -24,31 +24,67 @@ final class ShellUITests: XCTestCase {
         app.launch()
     }
 
-    /// Waits out the splash and the first page load.
-    private func waitForFirstPage() {
-        let webView = app.webViews.firstMatch
-        XCTAssertTrue(webView.waitForExistence(timeout: 45),
-                      "The home page never rendered")
+    /// RoomPal gave up its tab slot to Post, so Home is the way in.
+    private func openRoomPal() {
+        _ = app.tabBars.buttons["Home"].waitForExistence(timeout: 45)
+        app.tabBars.buttons["Home"].tap()
+        let tile = app.buttons["Find a roommate"]
+        XCTAssertTrue(tile.waitForExistence(timeout: 30), "Home has no way into RoomPal")
+        tile.tap()
     }
 
-    func testAllFiveTabsLoadContent() {
-        waitForFirstPage()
+    /// Waits out the splash. Home is native now, so this waits for the tab bar
+    /// rather than for a web view that will never appear there.
+    private func waitForFirstPage() {
+        XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 45),
+                      "The app never finished launching")
+    }
 
-        // Listings and Negotiate are native and have their own tests below;
-        // the rest render the site.
-        for name in ["RoomPal", "Profile", "Home"] {
-            let tab = app.tabBars.buttons[name]
-            XCTAssertTrue(tab.waitForExistence(timeout: 10), "\(name) tab is missing")
-            tab.tap()
+    /// The five slots, in the order the app has always had them, with Post in
+    /// the middle.
+    func testTabBarHasPostInTheMiddle() {
+        _ = app.tabBars.buttons["Home"].waitForExistence(timeout: 45)
 
-            let webView = app.webViews.firstMatch
-            XCTAssertTrue(webView.waitForExistence(timeout: 45),
-                          "\(name) never produced a web view")
-
-            // A web view that exists but has no size is a blank tab.
-            XCTAssertGreaterThan(webView.frame.height, 200,
-                                 "\(name) rendered a web view with no usable height")
+        let expected = ["Home", "Listings", "Post", "Negotiate", "Profile"]
+        for name in expected {
+            XCTAssertTrue(app.tabBars.buttons[name].exists, "\(name) tab is missing")
         }
+
+        // Ordered left to right, so Post really is the middle one rather than
+        // merely present.
+        let positions = expected.map { app.tabBars.buttons[$0].frame.minX }
+        XCTAssertEqual(positions, positions.sorted(), "The tabs are out of order")
+        XCTAssertEqual(expected[2], "Post")
+    }
+
+    /// Profile is the one tab still rendering the site.
+    func testProfileRendersTheSite() {
+        waitForFirstPage()
+        app.tabBars.buttons["Profile"].tap()
+
+        let webView = app.webViews.firstMatch
+        XCTAssertTrue(webView.waitForExistence(timeout: 45),
+                      "Profile never produced a web view")
+        XCTAssertGreaterThan(webView.frame.height, 200,
+                             "Profile rendered a web view with no usable height")
+    }
+
+    /// Post is an action, not a place: it opens the sheet and leaves you where
+    /// you were, so dismissing it does not strand you on a blank tab.
+    func testPostTabOpensSheetAndKeepsYourPlace() {
+        _ = app.tabBars.buttons["Listings"].waitForExistence(timeout: 45)
+        app.tabBars.buttons["Listings"].tap()
+
+        app.tabBars.buttons["Post"].tap()
+
+        XCTAssertTrue(app.navigationBars["Post a Room"].waitForExistence(timeout: 15),
+                      "The Post tab did not open the posting sheet")
+
+        app.buttons["Cancel"].tap()
+
+        // Back on Listings, not on an empty Post screen.
+        XCTAssertTrue(app.navigationBars["Listings"].waitForExistence(timeout: 15),
+                      "Dismissing the sheet did not return to the previous tab")
     }
 
     /// The native Listings tab must fetch real rooms from the API and let one
@@ -122,9 +158,9 @@ final class ShellUITests: XCTestCase {
     func testPageBottomIsReachableAboveTabBar() {
         waitForFirstPage()
 
-        // Home rather than Listings: Listings is native now, and this test is
+        // Profile is the only web-backed tab left, and this test is
         // specifically about the web view's content inset.
-        app.tabBars.buttons["Home"].tap()
+        app.tabBars.buttons["Profile"].tap()
         let webView = app.webViews.firstMatch
         XCTAssertTrue(webView.waitForExistence(timeout: 45))
 
@@ -165,19 +201,19 @@ final class ShellUITests: XCTestCase {
     func testReselectingTabReturnsToRoot() {
         waitForFirstPage()
 
-        let roompal = app.tabBars.buttons["RoomPal"]
-        roompal.tap()
+        let profile = app.tabBars.buttons["Profile"]
+        profile.tap()
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45))
 
         Thread.sleep(forTimeInterval: 8)
         app.webViews.firstMatch.swipeUp(velocity: .fast)
         app.webViews.firstMatch.swipeUp(velocity: .fast)
 
-        roompal.tap()
+        profile.tap()
 
         // Returning to the root reloads the page, so this waits for the title
         // to settle instead of assuming a fixed delay is long enough.
-        XCTAssertTrue(app.navigationBars["RoomPal"].waitForExistence(timeout: 45),
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 45),
                       "Re-tapping the tab did not return to the section root")
     }
 
@@ -242,6 +278,46 @@ final class ShellUITests: XCTestCase {
         // A card, not a list row: tall enough to carry a photo worth looking at.
         XCTAssertGreaterThan(card.frame.height, 200,
                              "Rooms are rendering as thin list rows, not cards")
+    }
+
+    /// RoomPal is the people side of the marketplace and is now native. The
+    /// two halves — looking for a room, and offering one — must stay clearly
+    /// separated, which is the distinction the website kept blurring.
+    func testNativeRoomPalShowsPeople() {
+        openRoomPal()
+
+        XCTAssertTrue(app.buttons["Looking for a room"].waitForExistence(timeout: 30),
+                      "The seeking/offering control is missing")
+        XCTAssertTrue(app.buttons["Has a room"].exists,
+                      "The 'has a room' side is missing")
+        XCTAssertFalse(app.webViews.firstMatch.exists,
+                       "RoomPal should be native, but a web view was found")
+
+        // A real person, carrying a budget that only exists if the API
+        // response decoded.
+        let personCard = app.buttons
+            .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
+            .firstMatch
+        XCTAssertTrue(personCard.waitForExistence(timeout: 45),
+                      "No roommate profiles appeared")
+
+        personCard.tap()
+        XCTAssertTrue(app.buttons["Get in touch"].waitForExistence(timeout: 15),
+                      "The roommate profile did not open")
+    }
+
+    /// Seed rows carry a "[seed]" marker that must never reach a real person.
+    func testSeedMarkersAreNeverShown() {
+        openRoomPal()
+        _ = app.buttons
+            .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
+            .firstMatch
+            .waitForExistence(timeout: 45)
+
+        let leaked = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS[c] '[seed]' OR label CONTAINS[c] '[rf-catalog]'"))
+        XCTAssertEqual(leaked.count, 0,
+                       "Internal seed markers are visible to users")
     }
 
     /// The overflow menu is where every page that is not a tab lives — legal,

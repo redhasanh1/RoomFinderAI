@@ -52,7 +52,13 @@ struct ListingsScreen: View {
 
     var body: some View {
         NavigationStack {
-            Group {
+            // The category chips stay put through loading and failure. Having
+            // the filters vanish while the page thinks, then reappear, makes
+            // the screen feel like it is rebuilding itself.
+            VStack(spacing: 0) {
+                categoryStrip
+                    .padding(.bottom, 10)
+
                 if service.isLoading && service.listings.isEmpty {
                     LoadingCards()
                 } else if let error = service.errorMessage, service.listings.isEmpty {
@@ -73,6 +79,7 @@ struct ListingsScreen: View {
             .onChange(of: query) { _, _ in scheduleSearch() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { filterMenu }
+                ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
             .refreshable { await reloadAsync() }
         }
@@ -93,8 +100,6 @@ struct ListingsScreen: View {
     private var content: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 18) {
-                categoryStrip
-
                 if visibleListings.isEmpty {
                     EmptyResults(hasFilters: hasActiveFilters || category != .all,
                                  clear: clearFilters)
@@ -124,7 +129,8 @@ struct ListingsScreen: View {
                 }
             }
             .padding(.top, 4)
-            .padding(.bottom, 24)
+            // Clears the floating post button so the last room is reachable.
+            .padding(.bottom, 96)
         }
     }
 

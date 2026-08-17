@@ -35,6 +35,10 @@ final class AppState: ObservableObject {
         return tab
     }
 
+    /// Set when a link asks for RoomPal, which has no tab of its own. Home
+    /// watches this and pushes the screen.
+    @Published var showRoomPal = false
+
     private var stores: [AppTab: WebViewStore] = [:]
 
     func store(for tab: AppTab) -> WebViewStore {
@@ -47,9 +51,9 @@ final class AppState: ObservableObject {
         return store
     }
 
-    /// Tabs that render the site. Listings and Negotiate are native and have
-    /// no web view, so a URL cannot be handed to them.
-    private var webCapableTabs: Set<AppTab> { [.home, .roompal, .profile] }
+    /// Tabs that render the site. Only Profile does now — the other four are
+    /// native and have no web view, so a URL cannot be handed to them.
+    private var webCapableTabs: Set<AppTab> { [.profile] }
 
     /// Send a URL to the tab that owns it and bring that tab forward.
     func route(to tab: AppTab, url: URL) {
@@ -75,13 +79,18 @@ final class AppState: ObservableObject {
     /// Support, a policy page — open on the current tab so the user is not
     /// bounced somewhere unrelated to what they tapped.
     func open(_ url: URL) {
+        if url.path.hasSuffix("roommate-matching.html") {
+            select(.home)
+            showRoomPal = true
+            return
+        }
         if let owner = AppTab.owning(path: url.path) {
             route(to: owner, url: url)
             return
         }
-        // Falls back to Home when the current tab is the native one, which
-        // would otherwise silently swallow the link.
-        let host = webCapableTabs.contains(selectedTab) ? selectedTab : .home
+        // Falls back to Profile, the one tab that can render a page. Sending
+        // a site URL to a native tab would silently swallow the link.
+        let host = webCapableTabs.contains(selectedTab) ? selectedTab : .profile
         route(to: host, url: url)
     }
 
