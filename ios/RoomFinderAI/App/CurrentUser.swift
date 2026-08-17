@@ -41,5 +41,18 @@ final class CurrentUser: ObservableObject {
         } else {
             UserDefaults.standard.removeObject(forKey: Self.key)
         }
+
+        // Push registration is filed under the signed-in address, and the
+        // token usually arrives before anyone has signed in — so registering
+        // only from the token callback meant the common case never registered
+        // at all. Signing out hands the device back, so the next person on
+        // this phone does not receive the last one's messages.
+        Task {
+            if cleaned != nil {
+                await PushService.shared.registerWithServer()
+            } else {
+                await PushService.shared.unregisterWithServer()
+            }
+        }
     }
 }

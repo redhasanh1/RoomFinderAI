@@ -12,6 +12,8 @@
  * works today. Real sessions are the proper fix.
  */
 
+const { notifyNewMessage } = require('./push');
+
 /** Where a thread came from, for the label shown beside it. */
 const CONTEXT_LABELS = {
     listing: 'Listings',
@@ -196,6 +198,12 @@ function registerMessagingRoutes(app, getSupabase) {
             console.error('Failed to send message:', error.message);
             return res.status(500).json({ success: false, message: 'Could not send your message' });
         }
+
+        // Buzz the other person's phone. Deliberately not awaited: a push that
+        // is slow, or an APNs key that is missing entirely, must not make
+        // sending a message feel broken. The message is already saved.
+        notifyNewMessage(supabase, conversationId, userEmail)
+            .catch(e => console.error('Push after message send failed:', e.message));
 
         res.json({ success: true, data });
     });

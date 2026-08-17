@@ -4038,6 +4038,18 @@ Generate ONLY the message. No greetings, no signatures.
 
             console.log('✅ Sent negotiation message');
 
+            // Buzz the landlord's phone. This write went straight to Supabase,
+            // so it never passed through POST /api/messages and nothing
+            // server-side knows it happened — which is why a landlord could be
+            // negotiated with all afternoon and find out on their next visit.
+            // Fire-and-forget, and it carries no notification text: the server
+            // reads the thread and decides what to say.
+            fetch('/api/push/notify-message', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId, senderEmail: finalSenderEmail })
+            }).catch(e => console.warn('Push notify failed (non-fatal):', e?.message || e));
+
             // Live broadcast on the same chat-{conversationId} channel the docked chat
             // subscribes to in listings.html. Without this the landlord's screen has to
             // wait for the postgres_changes path (500ms-2s) to surface the AI's reply.

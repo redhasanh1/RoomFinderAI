@@ -42,6 +42,68 @@ final class PushService: NSObject, ObservableObject {
 
     func handleRegistration(token: Data) {
         deviceToken = token.map { String(format: "%02x", $0) }.joined()
+        Task { await registerWithServer() }
+    }
+
+    /// Hand the token to the server, which is the only thing that can turn it
+    /// into a notification.
+    ///
+    /// This used to be the end of the line: the token was computed, stored in
+    /// the property above, and nothing ever read it — so the app asked for
+    /// permission to send notifications it had no way of sending.
+    ///
+    /// Called again whenever the signed-in address changes, because the token
+    /// belongs to the phone and the server files it under whoever is using it.
+    func registerWithServer() async {
+        guard let deviceToken, let email = CurrentUser.shared.email else { return }
+
+        var request = URLRequest(url: AppConfig.url("api/push/register"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: [
+            "userEmail": email,
+            "token": deviceToken,
+            "environment": Self.apnsEnvironment
+        ])
+
+        do {
+            let (_, response) = try await URLSession.shared.data(for: request)
+            let code = (response as? HTTPURLResponse)?.statusCode ?? 0
+            // Worth a line either way: "I never get notifications" is
+            // otherwise invisible from the outside.
+            if (200..<300).contains(code) {
+                print("Push: registered device with server")
+            } else {
+                print("Push: server rejected the device token (HTTP \(code))")
+            }
+        } catch {
+            // Not worth surfacing or retrying hard — the next launch registers
+            // again, and nothing the user is doing right now depends on it.
+            print("Push: could not reach the server to register: \(error.localizedDescription)")
+        }
+    }
+
+    /// Release the token when someone signs out, so the next person to use
+    /// this phone does not get the last one's messages.
+    func unregisterWithServer() async {
+        guard let deviceToken else { return }
+
+        var request = URLRequest(url: AppConfig.url("api/push/unregister"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ["token": deviceToken])
+
+        _ = try? await URLSession.shared.data(for: request)
+    }
+
+    /// Debug builds get a sandbox token, which the production APNs host
+    /// rejects outright, so the server has to be told which one this is.
+    private static var apnsEnvironment: String {
+        #if DEBUG
+        return "development"
+        #else
+        return "production"
+        #endif
     }
 
     func setBadge(_ count: Int) {
