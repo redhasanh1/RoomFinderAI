@@ -13,7 +13,8 @@ struct RootTabView: View {
                     // it is login, billing, verification and account deletion,
                     // and duplicating that is how auth bugs are born.
                     switch tab {
-                    case .home:       HomeScreen()
+                    case .home:       ListingsScreen(showsHero: true, title: "Home")
+                    case .roompal:    RoomPalScreen()
                     case .listings:   ListingsScreen()
                     case .messages:   MessagesScreen()
                     case .profile:    BrowserScreen(tab: tab, store: state.store(for: tab))

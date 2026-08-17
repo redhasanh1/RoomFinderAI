@@ -9,6 +9,11 @@ import SwiftUI
 /// thing a rentals browser must not do.
 struct ListingsScreen: View {
 
+    /// Home shows a hero above the rooms; the screen is otherwise identical,
+    /// which is why there is one implementation rather than two that drift.
+    var showsHero = false
+    var title = "Listings"
+
     @EnvironmentObject private var state: AppState
     @ObservedObject private var network = NetworkMonitor.shared
     @ObservedObject private var moderation = ModerationService.shared
@@ -57,6 +62,8 @@ struct ListingsScreen: View {
             // the filters vanish while the page thinks, then reappear, makes
             // the screen feel like it is rebuilding itself.
             VStack(spacing: 0) {
+                if showsHero { hero }
+
                 categoryStrip
                     .padding(.bottom, 10)
 
@@ -75,7 +82,7 @@ struct ListingsScreen: View {
                 }
             }
             .navigationDestination(item: $detail) { ListingDetailScreen(listing: $0) }
-            .navigationTitle("Listings")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Search by city or neighbourhood")
             .onChange(of: query) { _, _ in scheduleSearch() }
@@ -200,6 +207,37 @@ struct ListingsScreen: View {
         let subtitle: String?
         let style: Style
         let listings: [Listing]
+    }
+
+    /// A compact banner, not a full-screen splash: on a browse screen the
+    /// rooms are the point, and a hero that fills the viewport just means
+    /// scrolling past it every single visit.
+    private var hero: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Let the AI negotiate")
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                Text("We argue the rent down for you")
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.9))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "sparkles")
+                .font(.title2)
+                .foregroundStyle(.white)
+        }
+        .padding(14)
+        .background(Theme.gradient, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.bottom, 12)
+        .onTapGesture {
+            Haptics.impact(.medium)
+            state.selectedTab = .messages
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 
     /// Horizontal chips. Filtered on the client because the rooms are already

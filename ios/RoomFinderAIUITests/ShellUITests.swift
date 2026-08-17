@@ -53,13 +53,9 @@ final class ShellUITests: XCTestCase {
         waitUntil(12, { tab.isSelected })
     }
 
-    /// RoomPal gave up its tab slot to Post, so Home is the way in.
+    /// RoomPal has its own tab now.
     private func openRoomPal() {
-        _ = app.tabBars.buttons["Home"].waitForExistence(timeout: 45)
-        selectTab("Home")
-        let tile = app.buttons["Find a roommate"]
-        XCTAssertTrue(tile.waitForExistence(timeout: 30), "Home has no way into RoomPal")
-        tile.tap()
+        selectTab("RoomPal")
     }
 
     /// Waits out the splash. Home is native now, so this waits for the tab bar
@@ -74,7 +70,7 @@ final class ShellUITests: XCTestCase {
     func testTabBarHasPostInTheMiddle() {
         _ = app.tabBars.buttons["Home"].waitForExistence(timeout: 45)
 
-        let expected = ["Home", "Listings", "Post", "Messages", "Profile"]
+        let expected = ["Home", "RoomPal", "Post", "Messages", "Profile"]
         for name in expected {
             XCTAssertTrue(app.tabBars.buttons[name].exists, "\(name) tab is missing")
         }
@@ -101,17 +97,22 @@ final class ShellUITests: XCTestCase {
     /// Post is an action, not a place: it opens the sheet and leaves you where
     /// you were, so dismissing it does not strand you on a blank tab.
     func testPostTabOpensSheetAndKeepsYourPlace() {
-        selectTab("Listings")
+        selectTab("Home")
 
         app.tabBars.buttons["Post"].tap()
 
         XCTAssertTrue(app.navigationBars["Post a Room"].waitForExistence(timeout: 15),
                       "The Post tab did not open the posting sheet")
 
+        // Autofill is the reason most people finish posting at all.
+        XCTAssertTrue(app.buttons.containing(
+            NSPredicate(format: "label CONTAINS[c] 'Write it for me' OR label CONTAINS[c] 'Fill in from my photo'")
+        ).firstMatch.exists, "The post form has no AI autofill")
+
         app.buttons["Cancel"].tap()
 
         // Back on Listings, not on an empty Post screen.
-        XCTAssertTrue(app.navigationBars["Listings"].waitForExistence(timeout: 15),
+        XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 15),
                       "Dismissing the sheet did not return to the previous tab")
     }
 
@@ -121,7 +122,7 @@ final class ShellUITests: XCTestCase {
     func testNativeListingsLoadAndOpen() {
         waitForFirstPage()
 
-        selectTab("Listings")
+        selectTab("Home")
 
         // Matched on the price rather than taken as `cells.firstMatch`: the
         // section header ("9 rooms") is itself exposed as a cell, and tapping
@@ -161,7 +162,7 @@ final class ShellUITests: XCTestCase {
     /// Native search must actually filter the list rather than decorate it.
     func testNativeListingsSearchFilters() {
         waitForFirstPage()
-        selectTab("Listings")
+        selectTab("Home")
 
         let anyCard = app.buttons
             .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
@@ -291,11 +292,11 @@ final class ShellUITests: XCTestCase {
                        "The composer is still framed as the landlord's side")
     }
 
-    /// The rooms browser must present rooms as cards with categories, not as a
-    /// dense list where every room looks identical.
+    /// The rooms browser lives on Home and must present rooms as cards with
+    /// categories, not as a dense list where every room looks identical.
     func testListingsShowCategoriesAndCards() {
         waitForFirstPage()
-        selectTab("Listings")
+        selectTab("Home")
 
         for category in ["All", "Apartment", "House"] {
             XCTAssertTrue(app.buttons[category].waitForExistence(timeout: 30),
@@ -359,7 +360,7 @@ final class ShellUITests: XCTestCase {
         waitForFirstPage()
         // From Listings: Home has its own "Sublease" quick-action tile, which
         // makes the name ambiguous while the menu is open.
-        selectTab("Listings")
+        selectTab("Home")
 
         let more = app.buttons["More"]
         XCTAssertTrue(more.waitForExistence(timeout: 10), "The More button is missing")
@@ -408,13 +409,14 @@ final class ShellUITests: XCTestCase {
         selectTab("Profile")
         Thread.sleep(forTimeInterval: 3)
 
+        // Rooms live on Home now, so a listings link belongs there.
         app.open(URL(string: "roomfinderai://listings.html")!)
 
-        let listings = app.tabBars.buttons["Listings"]
-        XCTAssertTrue(listings.waitForExistence(timeout: 15))
+        let home = app.tabBars.buttons["Home"]
+        XCTAssertTrue(home.waitForExistence(timeout: 15))
         // isSelected is the honest check — the tab exists either way.
         let selected = NSPredicate(format: "isSelected == true")
-        expectation(for: selected, evaluatedWith: listings)
-        waitForExpectations(timeout: 20)
+        expectation(for: selected, evaluatedWith: home)
+        waitForExpectations(timeout: 25)
     }
 }

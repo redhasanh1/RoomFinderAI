@@ -14,12 +14,43 @@ struct RoomPalScreen: View {
 
     @State private var kind: RoommateProfile.Kind = .seeking
     @State private var city = ""
+    @State private var budget: Budget = .any
     @State private var searchTask: Task<Void, Never>?
+
+    /// Budget bands, applied to what is already loaded. Scrolling a flat list
+    /// of strangers is the slowest possible way to find someone you could
+    /// actually live with.
+    enum Budget: String, CaseIterable, Identifiable {
+        case any = "Any budget"
+        case under800 = "Under $800"
+        case under1200 = "Under $1,200"
+        case under1800 = "Under $1,800"
+
+        var id: String { rawValue }
+
+        var ceiling: Int? {
+            switch self {
+            case .any:       return nil
+            case .under800:  return 800
+            case .under1200: return 1200
+            case .under1800: return 1800
+            }
+        }
+
+        func matches(_ profile: RoommateProfile) -> Bool {
+            guard let ceiling else { return true }
+            // The floor of what they expect to pay: someone whose minimum is
+            // above the band is priced out of it.
+            let floor = profile.roomRent ?? profile.budgetMin ?? 0
+            return floor > 0 && floor <= ceiling
+        }
+    }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 picker
+                budgetChips
 
                 Group {
                     if service.isLoading && service.profiles.isEmpty {
@@ -32,15 +63,15 @@ struct RoomPalScreen: View {
                             actionTitle: "Try Again",
                             action: reload
                         )
-                    } else if service.profiles.isEmpty && service.hasLoadedOnce {
+                    } else if shownProfiles.isEmpty && service.hasLoadedOnce {
                         StatusScreen(
                             symbol: "person.2.slash",
                             title: emptyTitle,
-                            message: city.isEmpty
+                            message: (city.isEmpty && budget == .any)
                                 ? "Nobody has posted here yet. Check back soon."
-                                : "Nobody matches \"\(city)\". Try another city.",
-                            actionTitle: city.isEmpty ? "Refresh" : "Clear search",
-                            action: { city = ""; reload() }
+                                : "Nobody matches those filters. Try a wider budget or another city.",
+                            actionTitle: (city.isEmpty && budget == .any) ? "Refresh" : "Clear filters",
+                            action: { city = ""; budget = .any; reload() }
                         )
                     } else {
                         people
@@ -81,18 +112,46 @@ struct RoomPalScreen: View {
         }
     }
 
+    private var budgetChips: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Budget.allCases) { option in
+                    let selected = option == budget
+                    Button {
+                        Haptics.select()
+                        budget = option
+                    } label: {
+                        Text(option.rawValue)
+                            .font(.subheadline.weight(.medium))
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 9)
+                            .background(
+                                Capsule().fill(selected
+                                               ? AnyShapeStyle(Theme.gradient)
+                                               : AnyShapeStyle(Color(.secondarySystemBackground)))
+                            )
+                            .foregroundStyle(selected ? .white : .primary)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+        .padding(.bottom, 10)
+    }
+
     private var people: some View {
         ScrollView {
             LazyVStack(spacing: 14) {
                 HStack {
-                    Text("\(visibleProfiles.count) \(visibleProfiles.count == 1 ? "person" : "people")")
+                    Text("\(shownProfiles.count) \(shownProfiles.count == 1 ? "person" : "people")")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
                     Spacer()
                 }
                 .padding(.horizontal, 16)
 
-                ForEach(visibleProfiles) { profile in
+                ForEach(shownProfiles) { profile in
                     NavigationLink {
                         RoommateDetailScreen(profile: profile)
                     } label: {
@@ -118,6 +177,11 @@ struct RoomPalScreen: View {
         // block list holds one; the marketplace still hides them everywhere an
         // address IS known (listings, messages).
         return service.profiles.filter { !moderation.blockedEmails.contains($0.id.lowercased()) }
+    }
+
+    /// What is actually shown: block list, then the budget band.
+    private var shownProfiles: [RoommateProfile] {
+        visibleProfiles.filter { budget.matches($0) }
     }
 
     private func scheduleSearch() {

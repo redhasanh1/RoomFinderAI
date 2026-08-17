@@ -25,6 +25,10 @@ struct PostListingSheet: View {
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var photos: [UIImage] = []
 
+    @State private var isDrafting = false
+    @State private var draftNote: String?
+    private let drafts = ListingDraftService()
+
     @State private var isSubmitting = false
     @State private var errorMessage: String?
     @State private var didPost = false
@@ -62,6 +66,39 @@ struct PostListingSheet: View {
                         .font(.footnote)
                         .foregroundStyle(.orange)
                 }
+            }
+
+            Section {
+                Button(action: autofill) {
+                    HStack(spacing: 10) {
+                        if isDrafting {
+                            ProgressView()
+                        } else {
+                            Image(systemName: "wand.and.stars")
+                                .foregroundStyle(Theme.brand)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(photos.isEmpty ? "Write it for me" : "Fill in from my photo")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(photos.isEmpty
+                                 ? "Uses the details you have entered"
+                                 : "Reads the room from your first photo")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
+                        Spacer()
+                    }
+                }
+                .disabled(isDrafting)
+
+                if let draftNote {
+                    Text(draftNote)
+                        .font(.caption)
+                        .foregroundStyle(draftNote.hasPrefix("Couldn't") ? .red : .secondary)
+                }
+            } footer: {
+                Text("Everything it writes stays editable. Check it before posting.")
             }
 
             Section("The room") {
@@ -168,6 +205,50 @@ struct PostListingSheet: View {
 
     /// Mirrors the server's own validation so problems are caught before the
     /// round trip rather than coming back as a list of errors afterwards.
+    /// Fills the form in. Prefers the photo, because a model that can see the
+    /// room writes something truer than one working from four form fields.
+    private func autofill() {
+        isDrafting = true
+        draftNote = nil
+        Haptics.impact(.light)
+
+        Task {
+            defer { isDrafting = false }
+            do {
+                let draft: ListingDraftService.Draft
+                if let photo = photos.first {
+                    draft = try await drafts.draft(from: photo)
+                } else {
+                    draft = try await drafts.draft(
+                        city: city, street: street, houseType: houseType,
+                        bedrooms: bedrooms, price: price,
+                        utilitiesIncluded: utilitiesIncluded, notes: description
+                    )
+                }
+
+                // Never overwrite what the host already wrote themselves.
+                if title.trimmingCharacters(in: .whitespaces).isEmpty, let value = draft.title {
+                    title = value
+                }
+                if description.trimmingCharacters(in: .whitespaces).isEmpty, let value = draft.description {
+                    description = value
+                }
+                if let type = draft.houseType, houseTypes.contains(type) {
+                    houseType = type
+                }
+                if let count = draft.bedrooms, count > 0, count <= 10 {
+                    bedrooms = count
+                }
+
+                draftNote = "Filled in. Edit anything that is not right."
+                Haptics.notify(.success)
+            } catch {
+                draftNote = "Couldn't write a draft: \(error.localizedDescription)"
+                Haptics.notify(.error)
+            }
+        }
+    }
+
     private func validate() -> String? {
         if title.trimmingCharacters(in: .whitespaces).isEmpty { return "Give your room a title." }
         guard let value = Int(price.filter(\.isNumber)), value > 0 else { return "Enter the monthly rent." }

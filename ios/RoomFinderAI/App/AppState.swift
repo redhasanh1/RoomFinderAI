@@ -35,10 +35,6 @@ final class AppState: ObservableObject {
         return tab
     }
 
-    /// Set when a link asks for RoomPal, which has no tab of its own. Home
-    /// watches this and pushes the screen.
-    @Published var showRoomPal = false
-
     private var stores: [AppTab: WebViewStore] = [:]
 
     func store(for tab: AppTab) -> WebViewStore {
@@ -79,11 +75,6 @@ final class AppState: ObservableObject {
     /// Support, a policy page — open on the current tab so the user is not
     /// bounced somewhere unrelated to what they tapped.
     func open(_ url: URL) {
-        if url.path.hasSuffix("roommate-matching.html") {
-            select(.home)
-            showRoomPal = true
-            return
-        }
         if let owner = AppTab.owning(path: url.path) {
             route(to: owner, url: url)
             return

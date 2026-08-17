@@ -9,6 +9,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// The middle slot. Selecting it opens the post sheet and hands the
     /// selection straight back to the tab you were on — it is an action, not a
     /// place, which is why it has no screen.
+    case roompal
     case post
     /// Both kinds of conversation: the AI negotiator, and real threads with
     /// landlords and roommates.
@@ -18,7 +19,13 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// The five slots, in order. RoomPal is reached from Home rather than
     /// occupying a slot: a sixth tab would push the bar into iOS's "More"
     /// overflow and bury a real tab behind a chevron.
-    static let tabBar: [AppTab] = [.home, .listings, .post, .messages, .profile]
+    /// The five slots, in order.
+    ///
+    /// RoomPal has its own tab now. Home absorbed room browsing to make room
+    /// for it: the two were showing the same rooms anyway, and a sixth tab
+    /// would have pushed the bar into iOS's "More" overflow and buried one
+    /// behind a chevron.
+    static let tabBar: [AppTab] = [.home, .roompal, .post, .messages, .profile]
 
     var id: String { rawValue }
 
@@ -26,6 +33,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .home:       return "Home"
         case .listings:   return "Listings"
+        case .roompal:    return "RoomPal"
         case .post:       return "Post"
         case .messages:   return "Messages"
         case .profile:    return "Profile"
@@ -38,6 +46,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .home:       return "house.fill"
         case .listings:   return "building.2.fill"
+        case .roompal:    return "person.2.fill"
         case .post:       return "plus.circle.fill"
         case .messages:   return "bubble.left.and.text.bubble.right.fill"
         case .profile:    return "person.crop.circle.fill"
@@ -48,6 +57,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .home:       return "index.html"
         case .listings:   return "listings.html"
+        case .roompal:    return "roommate-matching.html"
         case .post:       return "listings.html"
         case .messages:   return "ai-negotiator.html"
         case .profile:    return "profile.html"
@@ -66,10 +76,9 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         // Only listings.html itself maps here — the Listings tab is native and
         // has no web view to hand a URL to. listing_details.html and
         // favorites.html are left unowned so they open in a web-capable tab.
-        case "listings.html":                   return .listings
+        case "listings.html":                   return .home
         case "ai-negotiator.html":              return .messages  // native; selecting it is the whole action
-        // RoomPal has no slot of its own; Home opens it.
-        case "roommate-matching.html":          return .home
+        case "roommate-matching.html":          return .roompal
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile
         default:                                return nil
         }

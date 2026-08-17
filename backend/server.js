@@ -8,6 +8,7 @@ const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inje
 const { verifyAppleIdentityToken } = require('./apple-auth');
 const { registerComplianceRoutes } = require('./account-compliance');
 const { registerMessagingRoutes } = require('./messaging');
+const { validatePropertyPhoto } = require('./photo-validation');
 const { callAI, getAIStatus } = require('./ai-providers');
 const { success: apiSuccess, notFound: apiNotFound, error: apiError } = require('./api-response');
 const {
@@ -4619,6 +4620,21 @@ app.post('/api/analyze-property-photo', async (req, res) => {
             });
         }
 
+        // Look at the photo BEFORE generating anything from it.
+        //
+        // The old check ran afterwards and judged the generated text, which
+        // always reads like a listing because it is built from a template with
+        // defaults. A logo came back as a two-bedroom house in Los Angeles.
+        const verdict = await validatePropertyPhoto(Buffer.from(image), config);
+        if (verdict.checked && !verdict.isProperty) {
+            console.log('🚫 Rejected non-property photo:', verdict.reason);
+            return res.status(422).json({
+                success: false,
+                rejected: true,
+                error: verdict.reason
+            });
+        }
+
         console.log(`🔗 Calling Cloudflare Worker: ${workerUrl}`);
 
         // Call the Cloudflare Worker with image and optional location
@@ -4639,34 +4655,6 @@ app.post('/api/analyze-property-photo', async (req, res) => {
 
         const workerData = workerResponse.data;
         const analysisPayload = workerData.analysis || workerData;
-
-        // Reject obvious non-property uploads (memes, food, random images) before returning listing details.
-        const aiStatus = getAIStatus(config);
-        if (aiStatus.available.length && !DEMO_MODE) {
-            try {
-                const validateResult = await callAI(config, {
-                    messages: [{
-                        role: 'system',
-                        content: `You validate property photo analysis. The vision model analyzed an uploaded image and returned:\n${JSON.stringify(analysisPayload).slice(0, 2500)}\n\nWas the uploaded image likely a real rental property photo (room, apartment, house interior or exterior)? Or was it clearly NOT a property (food, meme, selfie, pet, blank, screenshot, random object)?\nReply JSON only: {"isPropertyPhoto":true|false,"reason":"one sentence"}`
-                    }],
-                    maxTokens: 120,
-                    temperature: 0.1
-                });
-                const jsonMatch = validateResult.content && validateResult.content.match(/\{[\s\S]*\}/);
-                if (jsonMatch) {
-                    const verdict = JSON.parse(jsonMatch[0]);
-                    if (verdict.isPropertyPhoto === false) {
-                        return res.status(422).json({
-                            success: false,
-                            rejected: true,
-                            error: verdict.reason || 'This image does not appear to be a property photo. Please upload a photo of the rental unit.'
-                        });
-                    }
-                }
-            } catch (validateErr) {
-                console.warn('Photo validation skipped (non-fatal):', validateErr.message);
-            }
-        }
 
         res.json(workerData);
 
