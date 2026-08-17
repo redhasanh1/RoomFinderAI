@@ -14,11 +14,14 @@ struct Listing: Identifiable, Decodable, Hashable {
     let propertyType: String?
     let available: Bool?
     let userVerified: Bool?
+    /// Who posted it — needed so a report can offer to block them.
+    let userEmail: String?
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, price, location, address
         case bedrooms, bathrooms, imageUrl, propertyType, available
         case userVerified = "user_verified"
+        case userEmail = "user_email"
     }
 
     /// Some rows carry a `[rf-catalog]` marker used by the website's seeding,

@@ -14,6 +14,7 @@ struct ListingsScreen: View {
 
     @EnvironmentObject private var state: AppState
     @ObservedObject private var network = NetworkMonitor.shared
+    @ObservedObject private var moderation = ModerationService.shared
     @StateObject private var service = ListingsService()
 
     @State private var query = ""
@@ -34,7 +35,7 @@ struct ListingsScreen: View {
                         actionTitle: "Try Again",
                         action: reload
                     )
-                } else if service.listings.isEmpty && service.hasLoadedOnce {
+                } else if visibleListings.isEmpty && service.hasLoadedOnce {
                     StatusScreen(
                         symbol: "magnifyingglass",
                         title: "No rooms match",
@@ -84,7 +85,7 @@ struct ListingsScreen: View {
             }
 
             Section {
-                ForEach(service.listings) { listing in
+                ForEach(visibleListings) { listing in
                     NavigationLink {
                         ListingDetailScreen(listing: listing)
                     } label: {
@@ -92,7 +93,7 @@ struct ListingsScreen: View {
                     }
                 }
             } header: {
-                Text("\(service.listings.count) \(service.listings.count == 1 ? "room" : "rooms")")
+                Text("\(visibleListings.count) \(visibleListings.count == 1 ? "room" : "rooms")")
             }
         }
         .listStyle(.insetGrouped)
@@ -137,6 +138,17 @@ struct ListingsScreen: View {
     }
 
     private var hasActiveFilters: Bool { maxPrice != nil || bedrooms != nil }
+
+    /// Blocking has to actually hide something to mean anything, so blocked
+    /// people's rooms are filtered out here rather than only being flagged.
+    private var visibleListings: [Listing] {
+        let blocked = moderation.blockedEmails
+        guard !blocked.isEmpty else { return service.listings }
+        return service.listings.filter { listing in
+            guard let author = listing.userEmail?.lowercased() else { return true }
+            return !blocked.contains(author)
+        }
+    }
 
     /// Debounced: typing a city name should not fire a request per keystroke.
     private func scheduleSearch() {

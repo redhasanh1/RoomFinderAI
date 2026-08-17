@@ -121,6 +121,21 @@ enum WebScripts {
       // Tell the shell when the document identity changes so the native title
       // and the selected tab stay truthful. The site is multi-page, but a few
       // flows (the negotiator, the listing modals) use pushState.
+      // Hand the signed-in address to the native side. The site stores it in
+      // localStorage, which Swift cannot read, and the native screens need it
+      // to file a report or block someone. Sends null on sign-out so the app
+      // does not keep acting as a user who has left.
+      function reportUser() {
+        var email = null;
+        try {
+          var stored = JSON.parse(localStorage.getItem('currentUser') || 'null');
+          email = stored && stored.email ? stored.email : null;
+        } catch (e) { /* malformed or unavailable */ }
+        post('user', { email: email });
+      }
+      document.addEventListener('DOMContentLoaded', reportUser);
+      window.addEventListener('load', reportUser);
+
       var report = function () { post('page', { url: location.href, title: document.title }); };
       ['pushState', 'replaceState'].forEach(function (fn) {
         var original = history[fn];

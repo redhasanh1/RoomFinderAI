@@ -12,6 +12,7 @@ struct ListingDetailScreen: View {
 
     @EnvironmentObject private var state: AppState
     @Environment(\.dismiss) private var dismiss
+    @State private var isReporting = false
 
     var body: some View {
         ScrollView {
@@ -44,11 +45,31 @@ struct ListingDetailScreen: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
-                ShareLink(item: listing.detailURL) {
-                    Image(systemName: "square.and.arrow.up")
+                Menu {
+                    ShareLink(item: listing.detailURL) {
+                        Label("Share", systemImage: "square.and.arrow.up")
+                    }
+                    Divider()
+                    // Guideline 1.2: reporting has to be reachable from the
+                    // content itself, not buried in a settings screen.
+                    Button(role: .destructive) {
+                        Haptics.impact(.light)
+                        isReporting = true
+                    } label: {
+                        Label("Report this listing", systemImage: "flag")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis.circle")
                 }
-                .accessibilityLabel("Share this room")
+                .accessibilityLabel("More options")
             }
+        }
+        .sheet(isPresented: $isReporting) {
+            ReportSheet(
+                targetType: .listing,
+                targetId: listing.id,
+                authorEmail: listing.userEmail
+            )
         }
     }
 

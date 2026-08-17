@@ -430,6 +430,17 @@ extension WebViewStore {
         case "appleSignIn":
             startAppleSignIn()
 
+        case "user":
+            // `body["email"]` is NSNull after a sign-out, which must clear the
+            // cached address rather than be ignored.
+            let email = body["email"] as? String
+            if CurrentUser.email != email {
+                CurrentUser.email = email
+                if let email {
+                    Task { await ModerationService.shared.refreshBlockList(for: email) }
+                }
+            }
+
         case "page":
             if let raw = body["url"] as? String, let url = URL(string: raw) {
                 currentURL = url
