@@ -1063,6 +1063,68 @@ function transformListingForAndroid(listing, verificationMap = {}) {
 }
 
 // API: Get all listings
+/**
+ * Roommate profiles, for the iOS app.
+ *
+ * The website reads this table straight from Supabase with the anon key. The
+ * app goes through here instead so the key is not shipped inside a binary, and
+ * so the app is not coupled to the table's column names — which have already
+ * been reshaped once.
+ *
+ * `user_type` splits the marketplace in two: 'seeking' is someone looking for
+ * a room, 'has_spot' is someone offering one.
+ */
+app.get('/api/roommate-profiles', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ success: false, data: null, message: 'Database not connected' });
+        }
+
+        const { userType, city, maxBudget } = req.query;
+
+        let query = supabase
+            .from('roommate_profiles')
+            .select('id, name, user_type, budget_min, budget_max, preferred_areas, move_in_date, bio, avatar_url, room_rent, room_location, room_description, room_photos, created_at')
+            .eq('is_active', true)
+            .order('created_at', { ascending: false })
+            .limit(200);
+
+        if (userType === 'seeking' || userType === 'has_spot') {
+            query = query.eq('user_type', userType);
+        }
+        if (maxBudget) {
+            const limit = parseInt(maxBudget, 10);
+            // Matches anyone whose floor is within budget; budget_min is the
+            // least they expect to pay, so a higher floor prices them out.
+            if (!Number.isNaN(limit)) query = query.lte('budget_min', limit);
+        }
+
+        const { data, error } = await query;
+        if (error) {
+            console.error('Error fetching roommate profiles:', error.message);
+            return res.status(500).json({ success: false, data: null, message: 'Failed to fetch roommate profiles' });
+        }
+
+        let profiles = data || [];
+
+        // City is matched here rather than in the query: it can live in
+        // preferred_areas (an array) OR room_location, and PostgREST cannot
+        // express that as a single OR across a scalar and an array column.
+        if (city && city.trim()) {
+            const needle = city.trim().toLowerCase();
+            profiles = profiles.filter((p) => {
+                const areas = Array.isArray(p.preferred_areas) ? p.preferred_areas.join(' ') : '';
+                return `${areas} ${p.room_location || ''}`.toLowerCase().includes(needle);
+            });
+        }
+
+        res.json({ success: true, data: profiles });
+    } catch (error) {
+        console.error('Roommate profiles endpoint failed:', error);
+        res.status(500).json({ success: false, data: null, message: 'Failed to fetch roommate profiles' });
+    }
+});
+
 app.get('/api/listings', async (req, res) => {
     try {
         console.log('🔍 DEBUG /api/listings: Request received');
