@@ -1,6 +1,6 @@
 # RoomFinderAI Platform Status
 
-**Last updated:** July 1, 2026
+**Last updated:** August 16, 2026
 
 > See also: [`DOCUMENTATION.md`](../DOCUMENTATION.md) for the full project reference.
 
@@ -10,15 +10,15 @@
 |----------|--------|--------------|
 | **Web** | **Active** | [https://www.roomfinderai.com](https://www.roomfinderai.com) |
 | **Android** | **Closed (temporary)** | Not on Google Play. Source retained in repo but not maintained for public use. |
-| **iOS** | **Closed (temporary)** | Not on the App Store or TestFlight. Source retained in repo but not maintained for public use. |
+| **iOS** | **In preparation** | Not yet on the App Store. Built from [`ios/`](../ios/) — a native SwiftUI shell over the live site, with every web feature available. |
 
-> **Use the website for all RoomFinderAI features right now.** Native mobile apps are paused while we stabilize backend integrations, storage, auth, and AI negotiation across platforms.
+> **Use the website for all RoomFinderAI features right now.** The iOS app renders the same site, so the two never diverge. Android remains paused.
 
 ---
 
 ## Why mobile apps are closed
 
-The Android (`RoomFinderAndroid-CLOSED/`) and iOS (`RoomFinderAI-IOS-CLOSED/`) codebases are **temporarily locked** while we:
+The Android (`RoomFinderAndroid-CLOSED/`) codebase is **temporarily locked** while we:
 
 1. Align all clients with the production API at `https://www.roomfinderai.com`
 2. Finish Supabase auth, storage, and realtime parity on web first
@@ -26,6 +26,8 @@ The Android (`RoomFinderAndroid-CLOSED/`) and iOS (`RoomFinderAI-IOS-CLOSED/`) c
 4. Reduce support load from incomplete mobile builds
 
 This is a **temporary product decision**, not a cancellation of mobile development.
+
+The original iOS rewrite in `RoomFinderAI-IOS-CLOSED/` was abandoned rather than revived: its Xcode project referenced 43 of the 276 Swift files on disk and it had drifted months behind the website. `ios/` replaces it with a native shell that renders the live site, so the app cannot fall out of step again.
 
 ---
 

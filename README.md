@@ -4,7 +4,7 @@ AI-powered rental search, negotiation, and marketplace platform.
 
 📖 **Full documentation:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
 
-> **Platform notice (July 2026):** Only the **web app** is live at [roomfinderai.com](https://www.roomfinderai.com). **Android and iOS native apps are temporarily closed** — not on Google Play or the App Store. See [`DOCUMENTATION.md`](DOCUMENTATION.md) and [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md).
+> **Platform notice (August 2026):** The **web app** is live at [roomfinderai.com](https://www.roomfinderai.com). A new **iOS app** lives in [`ios/`](ios/) and is being prepared for the App Store — see [`ios/README.md`](ios/README.md) for the remaining setup steps. The **Android** app is still closed. See [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md).
 
 ## Platforms
 
@@ -12,7 +12,8 @@ AI-powered rental search, negotiation, and marketplace platform.
 |----------|------|--------|
 | **Web** | [`frontend/`](frontend/) + [`backend/`](backend/) | **Active** — primary platform on Railway |
 | **Android** | [`RoomFinderAndroid-CLOSED/`](RoomFinderAndroid-CLOSED/) | **Closed (temporary)** — source retained, not distributed |
-| **iOS** | [`RoomFinderAI-IOS-CLOSED/`](RoomFinderAI-IOS-CLOSED/) | **Closed (temporary)** — source retained, not distributed |
+| **iOS** | [`ios/`](ios/) | **In preparation** — native SwiftUI shell over the live site, not yet on the App Store |
+| iOS (superseded) | [`RoomFinderAI-IOS-CLOSED/`](RoomFinderAI-IOS-CLOSED/) | Abandoned native rewrite, kept for reference only |
 | Legacy Android | [`archive/legacy-android/android/`](archive/legacy-android/android/) | Archived — deprecated Capacitor app |
 
 Public status page: **[/platform-status.html](https://www.roomfinderai.com/platform-status.html)** · API: `GET /api/platform-status`
@@ -35,7 +36,8 @@ RoomFinderAI/
 ├── backend/              # Express API server (production entry: backend/server.js)
 ├── frontend/             # Web UI (HTML/CSS/JS)
 ├── RoomFinderAndroid-CLOSED/  # Native Android app (CLOSED)
-├── RoomFinderAI-IOS-CLOSED/   # Native iOS app (CLOSED)
+├── ios/                       # Native iOS app (in preparation for App Store)
+├── RoomFinderAI-IOS-CLOSED/   # Superseded iOS rewrite, reference only
 ├── database/
 │   ├── migrations/     # Supabase schema migrations
 │   └── sql/              # One-off SQL scripts
