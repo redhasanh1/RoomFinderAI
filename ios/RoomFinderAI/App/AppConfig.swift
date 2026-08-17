@@ -32,19 +32,50 @@ enum AppConfig {
 
     /// Third-party hosts that must stay inside the app's own web view.
     ///
-    /// These are flows that navigate away and then redirect *back* to us —
-    /// Stripe Checkout is the one that matters. Handing them to Safari means
-    /// the user pays in a sheet, the success redirect lands in that sheet, and
-    /// the app never learns the payment happened.
+    /// Only `js.stripe.com` remains, because it is a script the site loads
+    /// rather than a place the user goes. Stripe *Checkout* is deliberately no
+    /// longer here — see `blocksPurchasing` below.
     static let inAppExternalHosts: Set<String> = [
-        "checkout.stripe.com",
-        "js.stripe.com",
-        "hooks.stripe.com",
-        "billing.stripe.com"
+        "js.stripe.com"
     ]
 
     static func staysInApp(_ url: URL) -> Bool {
         guard let host = url.host?.lowercased() else { return false }
         return inAppExternalHosts.contains(host)
+    }
+
+    // MARK: - Purchasing
+
+    /// Pages and hosts that sell the Pro plan, which this build does not offer.
+    ///
+    /// App Store guideline 3.1.1 requires anything that unlocks features inside
+    /// an app to be sold through In-App Purchase. This app is a web view over
+    /// the site, and the site sells Pro through Stripe — so simply dropping the
+    /// native Pricing menu item would not have been enough: the website's own
+    /// navigation still links to it, and a reviewer following that link finds a
+    /// card form. That is a straightforward rejection.
+    ///
+    /// So the whole route is closed on iOS. Pro remains available on the web,
+    /// which is expressly allowed as long as the app does not send people there
+    /// to buy it. Nothing here reads as an upsell for that reason.
+    private static let purchasePaths: Set<String> = [
+        "/pricing.html",
+        "/payment.html"
+    ]
+
+    private static let purchaseHosts: Set<String> = [
+        "checkout.stripe.com",
+        "billing.stripe.com",
+        "hooks.stripe.com"
+    ]
+
+    /// True for anything that would let someone buy a plan.
+    static func blocksPurchasing(_ url: URL) -> Bool {
+        if let host = url.host?.lowercased(), purchaseHosts.contains(host) { return true }
+
+        // Internal pages are matched on path, case-insensitively, and with any
+        // query string ignored — `pricing.html?plan=pro` is the same door.
+        guard isInternal(url) else { return false }
+        return purchasePaths.contains(url.path.lowercased())
     }
 }

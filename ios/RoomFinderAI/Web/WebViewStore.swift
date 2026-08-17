@@ -240,6 +240,16 @@ extension WebViewStore: WKNavigationDelegate {
             return
         }
 
+        // Nothing that sells the Pro plan opens in this build. The site links to
+        // its pricing page from its own navigation, so blocking here is what
+        // actually closes the route — hiding the link only discourages it.
+        // Silent on purpose: an alert saying "buy this on our website" is itself
+        // the steering that guideline 3.1.1 forbids.
+        if AppConfig.blocksPurchasing(url) {
+            decisionHandler(.cancel)
+            return
+        }
+
         if AppConfig.isInternal(url) {
             decisionHandler(.allow)
             // Only user-initiated navigation reassigns the tab. Redirects and
@@ -328,6 +338,11 @@ extension WebViewStore: WKUIDelegate {
                  for navigationAction: WKNavigationAction,
                  windowFeatures: WKWindowFeatures) -> WKWebView? {
         if let url = navigationAction.request.url, navigationAction.targetFrame == nil {
+            // Same rule for target="_blank": a new-window link to checkout is
+            // still a route to checkout.
+            if AppConfig.blocksPurchasing(url) {
+                return nil
+            }
             if AppConfig.isInternal(url) || AppConfig.staysInApp(url) {
                 webView.load(navigationAction.request)
             } else if let presenter {

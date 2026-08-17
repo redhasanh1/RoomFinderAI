@@ -16,6 +16,18 @@ enum WebScripts {
 
     html { -webkit-text-size-adjust: 100%; }
 
+    /* No route to buying the Pro plan in this build.
+       App Store guideline 3.1.1 wants in-app feature unlocks sold through
+       In-App Purchase, and the site sells Pro through Stripe. The navigation
+       delegate already refuses to open those pages; hiding the links stops
+       people tapping something that then does nothing. Both halves are needed:
+       CSS alone is bypassable, cancelling alone leaves dead links. */
+    a[href*="pricing.html"],
+    a[href*="payment.html"],
+    [data-upgrade-cta],
+    .upgrade-banner,
+    .pro-upsell { display: none !important; }
+
     /* The native tab bar already provides this navigation. */
     #header,
     .site-fixed-header,

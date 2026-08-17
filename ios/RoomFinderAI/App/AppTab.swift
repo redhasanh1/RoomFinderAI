@@ -98,7 +98,10 @@ struct MoreDestination: Identifiable, Hashable {
         .init(title: "Sublease",      symbol: "calendar.badge.clock", path: "sublease.html"),
         .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
         .init(title: "Legal Help",    symbol: "checkmark.shield.fill", path: "legal.html"),
-        .init(title: "Pricing",       symbol: "tag.fill",             path: "pricing.html"),
+        // No Pricing entry. The Pro plan is sold through Stripe on the website,
+        // and App Store guideline 3.1.1 requires anything unlocking in-app
+        // features to go through In-App Purchase. See AppConfig.blocksPurchasing,
+        // which closes the route rather than just hiding this row.
         .init(title: "Support",       symbol: "lifepreserver.fill",   path: "support.html"),
         .init(title: "Privacy Policy", symbol: "hand.raised.fill",    path: "privacy-policy.html"),
         .init(title: "Terms of Service", symbol: "doc.text.fill",     path: "terms-of-service.html")
