@@ -399,16 +399,23 @@ const upload = multer({
         fileSize: 10 * 1024 * 1024, // 10MB limit
     },
     fileFilter: (req, file, cb) => {
-        // Allow only image files for ID verification
-        if (file.fieldname === 'idDocument' || file.fieldname === 'facePhoto') {
-            if (file.mimetype.startsWith('image/')) {
-                cb(null, true);
-            } else {
-                cb(new Error('Only image files are allowed'), false);
-            }
-        } else {
-            cb(new Error('Invalid field name'), false);
+        // Images only, and only for fields that actually expect a file.
+        //
+        // 'photos' is listing photos from the iOS app. It was missing, so
+        // every upload from the app was rejected by this filter before the
+        // route ever ran — which surfaced as a bare 500 from the global error
+        // handler rather than anything explaining the problem.
+        const fileFields = ['idDocument', 'facePhoto', 'photos'];
+
+        if (!fileFields.includes(file.fieldname)) {
+            cb(new Error(`Unexpected file field: ${file.fieldname}`), false);
+            return;
         }
+        if (!file.mimetype.startsWith('image/')) {
+            cb(new Error('Only image files are allowed'), false);
+            return;
+        }
+        cb(null, true);
     }
 });
 
