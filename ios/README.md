@@ -24,6 +24,7 @@ page cannot do for itself:
 
 | Native | What it replaces |
 |---|---|
+| **Listings: browse, search and filter rooms, rendered from the API** | The listings web page |
 | Tab bar across five sections | The site's fixed header |
 | Overflow menu | The site's footer and "More" dropdown |
 | Share sheet | Nothing — a web view has no address bar to copy from |
@@ -74,20 +75,31 @@ The entitlements file already declares all three
 (`RoomFinderAI/Resources/RoomFinderAI.entitlements`). The portal has to agree
 or signing fails.
 
-### 2. Google Cloud Console — required for Google sign-in
+### 2. Google sign-in — nothing to do
 
 Google refuses OAuth from embedded web views, so the app runs the flow in
-`ASWebAuthenticationSession`. That needs one redirect URI registered against
-the **existing Web client** (no new client ID):
+`ASWebAuthenticationSession` and needs a registered https redirect URI to come
+back through.
 
-> APIs & Services → Credentials → your OAuth 2.0 Web client → Authorized
-> redirect URIs → add
-> `https://www.roomfinderai.com/api/auth/google/native-callback`
+Rather than assume which URIs were registered, each candidate was probed
+against Google's authorization endpoint. Exactly one is registered:
+`https://www.roomfinderai.com` — the bare site root, no trailing slash. So
+that is what the app uses.
 
-The backend already allowlists exactly that URI and bounces it to
-`roomfinderai://auth/google?code=…`. **Until this is added, tapping "Continue
-with Google" in the app returns `redirect_uri_mismatch`.** Email/password and
-Sign in with Apple are unaffected.
+The server watches for a `state` beginning with `rfios.` on `GET /`, and only
+then redirects into `roomfinderai://auth/google?code=…`. Ordinary homepage
+traffic, including anyone arriving with an unrelated `?code=`, falls straight
+through. Verified against production:
+
+```
+/?code=TESTCODE&state=rfios.abc  →  302  roomfinderai://auth/google?code=TESTCODE&…
+/                                →  200  (homepage)
+/?code=OTHER&state=other         →  200  (not hijacked)
+```
+
+A cleaner `/api/auth/google/native-callback` route also exists. If you ever add
+that URI in the Google console, point `GOOGLE_NATIVE_REDIRECT_URI` at it and
+nothing else changes.
 
 ### 3. Universal links — optional
 
@@ -118,18 +130,20 @@ tracking.
 
 ---
 
-## Known review risk
+## App Review
 
-Guideline 4.2 rejects apps that are only a web page in a frame. This one has
-native navigation, offline handling, share, push, deep links and two native
-sign-in flows — but the content is genuinely the website, and that is a
-judgement call the reviewer makes, not a box that gets ticked.
+**Guideline 4.2 (minimum functionality)** rejects apps that are only a web page
+in a frame. The Listings tab — browsing, searching and filtering rooms, which
+is the app's primary task — is fully native: `ListingsScreen` reads
+`/api/listings/search` directly and renders a real list with a system search
+field, filters, and a native detail screen. No web view is involved. Contacting
+a host and negotiating hand off to the site, because that is where the session
+and the chat live.
 
-If it is rejected on 4.2, the strongest single answer is a native search
-screen for listings — the API already exists — so browsing does not touch the
-web view at all. Worth building only if asked for.
+On top of that: native tab navigation, offline handling, share sheet, push,
+deep links, universal links, haptics, and two native sign-in flows.
 
-Guideline 4.8 is handled: the app offers Sign in with Apple alongside Google.
+**Guideline 4.8** is handled — Sign in with Apple is offered alongside Google.
 
 ## Testing
 

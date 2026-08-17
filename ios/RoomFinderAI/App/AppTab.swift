@@ -53,7 +53,10 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         let file = path.split(separator: "/").last.map(String.init) ?? path
         switch file {
         case "", "index.html":                  return .home
-        case "listings.html", "listing_details.html", "favorites.html": return .listings
+        // Only listings.html itself maps here — the Listings tab is native and
+        // has no web view to hand a URL to. listing_details.html and
+        // favorites.html are left unowned so they open in a web-capable tab.
+        case "listings.html":                   return .listings
         case "ai-negotiator.html":              return .negotiator
         case "roommate-matching.html":          return .roompal
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile

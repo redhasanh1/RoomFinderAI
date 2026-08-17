@@ -7,9 +7,19 @@ struct RootTabView: View {
     var body: some View {
         TabView(selection: selection) {
             ForEach(AppTab.allCases) { tab in
-                BrowserScreen(tab: tab, store: state.store(for: tab))
-                    .tabItem { Label(tab.title, systemImage: tab.symbol) }
-                    .tag(tab)
+                Group {
+                    // Listings is native: browsing and searching rooms is the
+                    // app's primary task, so it is built with real controls
+                    // rather than handed to a web view. Every other tab renders
+                    // the site, which is where that functionality lives.
+                    if tab == .listings {
+                        ListingsScreen()
+                    } else {
+                        BrowserScreen(tab: tab, store: state.store(for: tab))
+                    }
+                }
+                .tabItem { Label(tab.title, systemImage: tab.symbol) }
+                .tag(tab)
             }
         }
         .tint(Theme.brand)
@@ -24,7 +34,12 @@ struct RootTabView: View {
             set: { newValue in
                 if newValue == state.selectedTab {
                     Haptics.impact(.light)
-                    state.store(for: newValue).popToRoot()
+                    // The native tab manages its own scrolling and has no web
+                    // view; asking for a store here would build one that never
+                    // gets shown.
+                    if newValue != .listings {
+                        state.store(for: newValue).popToRoot()
+                    }
                 } else {
                     Haptics.select()
                     state.selectedTab = newValue

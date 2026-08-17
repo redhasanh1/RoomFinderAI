@@ -47,15 +47,28 @@ final class AppState: ObservableObject {
         return store
     }
 
+    /// Tabs that render the site. Listings is native and has no web view, so
+    /// a URL cannot be handed to it.
+    private var webCapableTabs: Set<AppTab> { [.home, .negotiator, .roompal, .profile] }
+
     /// Send a URL to the tab that owns it and bring that tab forward.
     func route(to tab: AppTab, url: URL) {
+        guard webCapableTabs.contains(tab) else {
+            // Selecting the native tab is the whole action; it fetches its own
+            // data and has nothing to navigate to.
+            select(tab)
+            return
+        }
         let target = store(for: tab)
         target.loadIfNeeded()
         target.load(url)
-        if selectedTab != tab {
-            Haptics.select()
-            selectedTab = tab
-        }
+        select(tab)
+    }
+
+    private func select(_ tab: AppTab) {
+        guard selectedTab != tab else { return }
+        Haptics.select()
+        selectedTab = tab
     }
 
     /// Any site URL, routed to its owning tab. Paths with no owner — Sublease,
@@ -64,11 +77,12 @@ final class AppState: ObservableObject {
     func open(_ url: URL) {
         if let owner = AppTab.owning(path: url.path) {
             route(to: owner, url: url)
-        } else {
-            let current = store(for: selectedTab)
-            current.loadIfNeeded()
-            current.load(url)
+            return
         }
+        // Falls back to Home when the current tab is the native one, which
+        // would otherwise silently swallow the link.
+        let host = webCapableTabs.contains(selectedTab) ? selectedTab : .home
+        route(to: host, url: url)
     }
 
     /// Frees the web content of tabs the user is not looking at. Called on a
