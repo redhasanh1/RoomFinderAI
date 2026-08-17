@@ -177,9 +177,51 @@ enum WebScripts {
         })();
         """
 
-        return [
+        var scripts = [
             WKUserScript(source: injectCSS, injectionTime: .atDocumentStart, forMainFrameOnly: true),
             WKUserScript(source: bridgeJS,  injectionTime: .atDocumentStart, forMainFrameOnly: true)
         ]
+
+        // UI-test sign-in, so a test can exercise the screens that only exist
+        // for a signed-in person — the inbox above all.
+        //
+        // Setting the native `CurrentUser` from a launch argument does not
+        // survive: the site is the authority on identity, so the first page
+        // load reports whatever is in `localStorage.currentUser` and a null
+        // there wipes it again. Seeding that key is the only thing the bridge
+        // actually reads, and it is the same shape the site writes on login.
+        // It grants nothing on its own — every API call is authorised
+        // server-side — so this cannot become a way in.
+        if let email = uiTestingSignInEmail {
+            let escaped = email.replacingOccurrences(of: "\\", with: "\\\\")
+                               .replacingOccurrences(of: "'", with: "\\'")
+            let seed = """
+            (function () {
+              try {
+                var existing = JSON.parse(localStorage.getItem('currentUser') || 'null');
+                if (existing && existing.email) return;
+                localStorage.setItem('currentUser', JSON.stringify({ email: '\(escaped)' }));
+              } catch (e) { /* storage unavailable */ }
+            })();
+            """
+            scripts.insert(
+                WKUserScript(source: seed, injectionTime: .atDocumentStart, forMainFrameOnly: true),
+                at: 0
+            )
+        }
+
+        return scripts
+    }
+
+    /// Read straight from the argument list rather than `UserDefaults`.
+    /// `NSArgumentDomain` parses these as `-key value` pairs, so a valueless
+    /// flag like `-uiTestingResetState` sitting in front of this one consumes
+    /// it, and the address silently arrives as nil.
+    private static var uiTestingSignInEmail: String? {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let flag = arguments.firstIndex(of: "-uiTestingSignInEmail"),
+              arguments.index(after: flag) < arguments.endIndex else { return nil }
+        let value = arguments[arguments.index(after: flag)]
+        return value.hasPrefix("-") ? nil : value
     }
 }

@@ -1314,6 +1314,41 @@ class AIChatHandler {
         this.negotiationState = 'idle';
     }
 
+    /**
+     * The listing number the tenant picked, or null if this message is not a
+     * pick at all.
+     *
+     * Only two shapes count: a bare number ("2", "#2"), or an explicit pick
+     * phrase ("view 2", "show me number 2", "the first one"). The number must
+     * also be inside the range we actually offered — "I can do 1800" names a
+     * price, not a listing, and must reach the search instead of being answered
+     * with "Invalid selection".
+     */
+    parseListingPick(cleanMessage) {
+        const count = Math.min(this.matchingListings?.length || 0, 5);
+        if (!count) return null;
+
+        const inRange = n => (Number.isInteger(n) && n >= 1 && n <= count ? n : null);
+
+        // "2", "#2", "2." — the whole message is the number.
+        const bare = cleanMessage.match(/^#?\s*(\d{1,2})\s*[.)]?$/);
+        if (bare) return inRange(parseInt(bare[1], 10));
+
+        // "view 2", "open #2", "listing 2", "number 2", "let's see 2"
+        const phrase = cleanMessage.match(
+            /\b(?:view|see|open|show|check|pick|choose|select|listing|option|number|no\.?|#)\s*#?\s*(\d{1,2})\b/
+        );
+        if (phrase) return inRange(parseInt(phrase[1], 10));
+
+        // "the first one", "second one please"
+        const words = { first: 1, second: 2, third: 3, fourth: 4, fifth: 5 };
+        for (const [word, n] of Object.entries(words)) {
+            if (new RegExp(`\\b${word}\\b`).test(cleanMessage)) return inRange(n);
+        }
+
+        return null;
+    }
+
     // Check if the message is a response to pending questions (listing selection, contact, etc.)
     checkForNegotiationResponse(message) {
         console.log('🔍 [RESPONSE CHECK] Checking message:', message, 'Pending:', this.pendingUserResponse);
@@ -1327,10 +1362,15 @@ class AIChatHandler {
 
         // Handle listing selection (user says "1", "2", "view 2", etc.)
         if (this.pendingUserResponse === 'listing_selection') {
-            // Check for number in message
-            const numberMatch = cleanMessage.match(/(\d+)/);
-            if (numberMatch) {
-                const listingNum = parseInt(numberMatch[1]);
+            // Only a message that IS a pick counts as one. Matching any digit
+            // anywhere meant "my budget is 2100" was read as "view listing
+            // 2100" and answered with "Invalid selection" — after results
+            // appeared there was no way to refine the search, because every
+            // useful follow-up (a price, a bedroom count, a date) has a number
+            // in it. Anything that isn't a pick falls through to normal
+            // handling so it runs as a fresh query.
+            const listingNum = this.parseListingPick(cleanMessage);
+            if (listingNum !== null) {
                 console.log('✅ User selected listing #', listingNum);
                 this.handleListingView(listingNum);
                 return true;
@@ -1390,10 +1430,9 @@ class AIChatHandler {
 
         // Handle continue browsing response
         if (this.pendingUserResponse === 'continue_browsing') {
-            // Check if they want to view another listing
-            const numberMatch = cleanMessage.match(/(\d+)/);
-            if (numberMatch) {
-                const listingNum = parseInt(numberMatch[1]);
+            // Same rule as above: a pick, not merely a message containing a digit.
+            const listingNum = this.parseListingPick(cleanMessage);
+            if (listingNum !== null) {
                 console.log('✅ User wants to view another listing #', listingNum);
                 this.handleListingView(listingNum);
                 return true;

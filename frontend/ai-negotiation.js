@@ -4001,18 +4001,34 @@ Generate ONLY the message. No greetings, no signatures.
             if (error) {
                 console.error('Error sending negotiation message with AI email:', error);
 
-                // Fallback: try using the user's email instead
+                // Fallback: try using the user's email instead, for when the AI
+                // sender address itself is rejected.
+                //
+                // The deterministic id has to come with it. Without it this
+                // insert was a fresh random row, so the dedup that the whole
+                // scheme rests on was skipped exactly when two paths were
+                // racing: both a $1750 and a $1800 reply reached one landlord,
+                // seconds apart, in a live negotiation. Carrying the id means
+                // the loser still collides and bails.
                 console.log('Retrying with user email...');
                 finalSenderEmail = userEmail;
                 finalContent = message;
+                const retryPayload = {
+                    conversation_id: conversationId,
+                    sender_email: finalSenderEmail,
+                    content: finalContent,
+                    created_at: createdAt
+                };
+                if (insertPayload.id) retryPayload.id = insertPayload.id;
+
                 const { error: retryError } = await this.supabase
                     .from('messages')
-                    .insert({
-                        conversation_id: conversationId,
-                        sender_email: finalSenderEmail,
-                        content: finalContent,
-                        created_at: createdAt
-                    });
+                    .insert(retryPayload);
+
+                if (retryError?.code === '23505') {
+                    console.log('📨 Lost dedup race on retry — another session already responded. Skipping.');
+                    return false;
+                }
 
                 if (retryError) {
                     console.error('Error sending negotiation message with user email:', retryError);
@@ -4138,6 +4154,19 @@ Generate ONLY the message. No greetings, no signatures.
                         const tenantEmail = conversation?.sender_email?.toLowerCase();
                         if (!meEmail || !tenantEmail || meEmail !== tenantEmail) {
                             console.log('📨 Skipping AI response — this session is not the tenant for this negotiation', { me: meEmail, tenant: tenantEmail });
+                            return;
+                        }
+
+                        // Never answer ourselves. The only test above is "not
+                        // sent by the AI address", so the tenant's own messages
+                        // counted as a landlord reply. That matters because
+                        // sendNegotiationMessage falls back to posting under
+                        // the tenant's address when the AI sender is rejected:
+                        // the AI's own line came back through this listener as
+                        // if the landlord had written it, and the negotiator
+                        // replied to itself while the landlord said nothing.
+                        if (newMessage.sender_email?.toLowerCase() === tenantEmail) {
+                            console.log('📨 Skipping — that is the tenant\'s own message, not a landlord reply');
                             return;
                         }
 

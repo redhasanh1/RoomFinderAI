@@ -420,3 +420,83 @@ final class ShellUITests: XCTestCase {
         waitForExpectations(timeout: 25)
     }
 }
+
+/// Drives a real reply out of the inbox, end to end.
+///
+/// The negotiator is only half a product if the other side cannot answer from
+/// a phone: the AI's message lands in a landlord's inbox, and everything after
+/// that depends on the thread opening and the composer actually sending. That
+/// path crosses the tab bar, the section switcher, a navigation push and a
+/// network write, which is exactly the kind of seam a screenshot cannot check.
+///
+/// Skipped unless the run supplies an account and a line to send, so the
+/// ordinary suite stays hermetic:
+///
+///   RFAI_UITEST_EMAIL=someone@example.com \
+///   RFAI_UITEST_REPLY="Sure, that works." \
+///   xcodebuild test -scheme RoomFinderAI ...
+final class InboxReplyUITests: XCTestCase {
+
+    private var app: XCUIApplication!
+
+    private var email: String? { ProcessInfo.processInfo.environment["RFAI_UITEST_EMAIL"] }
+    private var reply: String? { ProcessInfo.processInfo.environment["RFAI_UITEST_REPLY"] }
+
+    override func setUpWithError() throws {
+        continueAfterFailure = false
+        let email = try XCTUnwrap(self.email, "set RFAI_UITEST_EMAIL to run this test")
+
+        app = XCUIApplication()
+        // NSArgumentDomain wins over the persisted value, so the app comes up
+        // signed in as this account without touching the real defaults.
+        //
+        // Order matters: NSArgumentDomain reads these as `-key value` pairs, so
+        // the valueless `-uiTestingResetState` swallows whatever follows it.
+        // Left first, it ate `-currentUserEmail` and the app launched signed
+        // out — an inbox with nothing in it, blamed on the network.
+        app.launchArguments = ["-uiTestingSignInEmail", email, "-uiTestingResetState"]
+        app.launch()
+    }
+
+    func testRepliesToNewestThreadFromInbox() throws {
+        let reply = try XCTUnwrap(self.reply, "set RFAI_UITEST_REPLY to run this test")
+
+        let messages = app.tabBars.buttons["Messages"]
+        XCTAssertTrue(messages.waitForExistence(timeout: 60), "Messages tab never appeared")
+        messages.tap()
+
+        // The hub opens on the negotiator; the real inbox is the other half.
+        let inboxTab = app.buttons["Direct Messages"]
+        XCTAssertTrue(inboxTab.waitForExistence(timeout: 20), "Direct Messages switcher never appeared")
+        inboxTab.tap()
+
+        // Threads arrive over the network, so this is a wait, not a check.
+        // Name the state we ended in — "no cell appeared" is the same symptom
+        // for signed out, empty and offline, and they need different fixes.
+        let thread = app.cells.firstMatch
+        if !thread.waitForExistence(timeout: 45) {
+            let state = ["Sign in to see messages", "No messages yet", "Couldn't load messages"]
+                .first { app.staticTexts[$0].exists } ?? "still loading, or an unrecognised screen"
+            XCTFail("No conversation loaded in the inbox — screen says: \(state)")
+            return
+        }
+        thread.tap()
+
+        let composer = app.textFields["Message"]
+        XCTAssertTrue(composer.waitForExistence(timeout: 30), "The composer never appeared")
+        composer.tap()
+        composer.typeText(reply)
+
+        let send = app.buttons["Send"]
+        XCTAssertTrue(send.waitForExistence(timeout: 10), "No send button")
+        XCTAssertTrue(send.isEnabled, "Send stayed disabled with text in the composer")
+        send.tap()
+
+        // The sent line is appended to the transcript only after the write
+        // comes back, so its presence is the proof the message really went.
+        let sent = app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS %@", reply)
+        ).firstMatch
+        XCTAssertTrue(sent.waitForExistence(timeout: 45), "The reply never appeared in the transcript")
+    }
+}

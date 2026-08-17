@@ -6821,16 +6821,36 @@ Write your next message.`;
         // agreeing_to_price: null — so the over-ceiling offer went straight to
         // the landlord unchallenged. Scan the message text for any figure we
         // are offering above the ceiling, not just the number it admits to.
+        // Which way round the test goes matters. This used to require the
+        // message to match a list of offer phrasings ("i can do", "how about",
+        // "let's say"), and anything phrased differently was waved through: on
+        // a $1750 ceiling the model wrote "would you be willing to meet at
+        // $1800 with hydro included?" and it went to the landlord unchallenged,
+        // because "meet at" was not on the list. There is no finite list of
+        // ways to offer someone money.
+        //
+        // So the default is now "an over-ceiling figure in OUR message is an
+        // offer", and the exceptions are the narrow, checkable cases where the
+        // number is plainly theirs and not ours: quoting their price back, or
+        // rejecting it. Anything the exceptions do not cover fails safe into
+        // the guard, which rewrites the line rather than sending it.
         let textOffer = null;
         if (hasCeiling) {
-            const figures = (String(out.message || '').match(/\$\s?\d{3,5}(?:\.\d{2})?/g) || [])
-                .map(s => Number(s.replace(/[^\d.]/g, '')))
-                .filter(n => n >= 300 && n > ceiling);
-            // Quoting THEIR asking price back at them is fine ("the listing says
-            // $3675") — only flag it when we appear to be offering it ourselves.
-            const offering = /\b(i can (do|pay|go|manage|stretch)|how about|could we do|i.?ll take|let.?s say|happy with|agree to|works for me at)\b/i
-                .test(String(out.message || ''));
-            if (figures.length && offering) textOffer = Math.max.apply(null, figures);
+            // Per sentence, because one message routinely does both: "$1850 is
+            // over what I can manage, I can do $1750."
+            const notOurs = /\b(you (said|offered|mentioned|quoted|asked for|are asking)|your (asking|listed|price|offer)|the listing (says|is|has)|asking price|list price|advertised at)\b/i;
+            const rejecting = /\b(can'?t|cannot|can not|couldn'?t|unable to|won'?t|no way i can)\b|\b(is|are|that'?s|thats) (over|above|beyond|too (much|high)|more than|outside|out of)\b|\b(over|above|beyond|more than|outside|out of) (what|my|our) \b/i;
+
+            const offered = String(out.message || '')
+                .split(/(?<=[.!?])\s+/)
+                .flatMap(sentence => {
+                    if (notOurs.test(sentence) || rejecting.test(sentence)) return [];
+                    return (sentence.match(/\$\s?\d{3,5}(?:\.\d{2})?/g) || [])
+                        .map(s => Number(s.replace(/[^\d.]/g, '')))
+                        .filter(n => n >= 300 && n > ceiling);
+                });
+
+            if (offered.length) textOffer = Math.max.apply(null, offered);
         }
 
         // Stop asking, start offering. When the landlord never answers with a
