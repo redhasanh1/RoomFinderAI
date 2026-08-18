@@ -30,6 +30,86 @@
     <link rel="stylesheet" href="/modules/css/main.css"/>
 
     
+    <style>
+    /* ---- Gallery ---------------------------------------------------- */
+
+    /* A fixed stage with the photo contained inside it. The image was a bare
+       w-full, so a tall portrait photo pushed the whole column down and a wide
+       one overflowed the card. */
+    .gallery-stage {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 4 / 3;
+        background: #0f172a;
+        border-radius: 14px;
+        overflow: hidden;
+    }
+    .gallery-stage .hero-image {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;   /* never crop or distort the room */
+        cursor: zoom-in;
+        display: block;
+    }
+    .gallery-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 44px; height: 44px;
+        border: none; border-radius: 50%;
+        background: rgba(15, 23, 42, 0.55);
+        color: #fff; font-size: 20px; line-height: 1;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s ease;
+        z-index: 2;
+    }
+    .gallery-arrow:hover { background: rgba(15, 23, 42, 0.8); }
+    .gallery-arrow-left  { left: 12px; }
+    .gallery-arrow-right { right: 12px; }
+    .gallery-count {
+        position: absolute; bottom: 12px; right: 12px;
+        padding: 4px 10px; border-radius: 999px;
+        background: rgba(15, 23, 42, 0.6);
+        color: #fff; font-size: 12px; z-index: 2;
+    }
+
+    /* ---- Full-screen viewer ------------------------------------------ */
+
+    .lightbox {
+        position: fixed; inset: 0;
+        background: rgba(2, 6, 23, 0.94);
+        z-index: 9999;
+        display: none;
+        align-items: center; justify-content: center;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img {
+        max-width: 94vw; max-height: 92vh;
+        object-fit: contain;   /* keeps the ratio at any window size */
+        cursor: zoom-in;
+        transition: transform 0.2s ease;
+    }
+    .lightbox img.zoomed { transform: scale(2); cursor: zoom-out; }
+    .lightbox-close, .lightbox-arrow {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.12);
+        border: none; color: #fff; cursor: pointer;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.15s ease;
+    }
+    .lightbox-close:hover, .lightbox-arrow:hover { background: rgba(255, 255, 255, 0.25); }
+    .lightbox-close { top: 18px; right: 18px; width: 44px; height: 44px; font-size: 26px; }
+    .lightbox-arrow { top: 50%; transform: translateY(-50%); width: 52px; height: 52px; font-size: 24px; }
+    .lightbox-arrow-left  { left: 18px; }
+    .lightbox-arrow-right { right: 18px; }
+
+    @media (max-width: 640px) {
+        .gallery-arrow { width: 38px; height: 38px; }
+        .lightbox-arrow { width: 44px; height: 44px; }
+    }
+    </style>
 </head>
 <body class="flex flex-col min-h-screen">
     <!-- Header -->
@@ -223,6 +303,10 @@
                 .filter(entry => entry && entry.url
                     && (!entry.type || entry.type.startsWith('image/')));
 
+            // Shared with the arrows and the lightbox.
+            window.galleryImages = images.map(i => i.url);
+            window.galleryIndex = 0;
+
             const mainImage = images.length > 0
                 ? images[0].url
                 : 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjUwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZjNmNGY2Ii8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyNCIgZmlsbD0iIzk0YTNiOCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPk5vIEltYWdlIEF2YWlsYWJsZTwvdGV4dD48L3N2Zz4=';
@@ -240,14 +324,22 @@
                     <!-- Left Column - Images -->
                     <div class="lg:col-span-2">
                         <div class="glass-card p-4 mb-6">
-                            <img id="main-image" src="${mainImage}" alt="${listing.title}" class="hero-image w-full">
+                            <div class="gallery-stage">
+                                <img id="main-image" src="${mainImage}" alt="${listing.title}"
+                                     class="hero-image" onclick="openLightbox()">
+                                ${images.length > 1 ? `
+                                    <button class="gallery-arrow gallery-arrow-left" onclick="stepImage(-1)" aria-label="Previous photo">&#10094;</button>
+                                    <button class="gallery-arrow gallery-arrow-right" onclick="stepImage(1)" aria-label="Next photo">&#10095;</button>
+                                    <div class="gallery-count" id="gallery-count">1 / ${images.length}</div>
+                                ` : ''}
+                            </div>
 
                             ${images.length > 1 ? `
                                 <div class="flex gap-3 mt-4 overflow-x-auto pb-2">
                                     ${images.map((img, idx) => `
                                         <img src="${img.url}" alt="Image ${idx + 1}"
                                             class="thumbnail ${idx === 0 ? 'active' : ''}"
-                                            onclick="changeImage('${img.url}', this)">
+                                            onclick="showImage(${idx})">
                                     `).join('')}
                                 </div>
                             ` : ''}
@@ -337,11 +429,74 @@
         }
 
         // Change main image when thumbnail clicked
-        function changeImage(url, thumbnail) {
-            document.getElementById('main-image').src = url;
-            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
-            thumbnail.classList.add('active');
+        // The gallery is index-based rather than url-based so the arrows, the
+        // thumbnails and the lightbox all agree on which photo is showing.
+        function showImage(index) {
+            const images = window.galleryImages || [];
+            if (!images.length) return;
+
+            // Wraps, so the arrows never dead-end on the first or last photo.
+            window.galleryIndex = (index + images.length) % images.length;
+            const url = images[window.galleryIndex];
+
+            const main = document.getElementById('main-image');
+            if (main) main.src = url;
+
+            const counter = document.getElementById('gallery-count');
+            if (counter) counter.textContent = `${window.galleryIndex + 1} / ${images.length}`;
+
+            document.querySelectorAll('.thumbnail').forEach((t, i) => {
+                t.classList.toggle('active', i === window.galleryIndex);
+            });
+
+            const lightboxImage = document.getElementById('lightbox-image');
+            if (lightboxImage) lightboxImage.src = url;
         }
+
+        function stepImage(delta) {
+            showImage((window.galleryIndex || 0) + delta);
+        }
+
+        // Kept because older markup called it.
+        function changeImage(url) {
+            const index = (window.galleryImages || []).indexOf(url);
+            showImage(index < 0 ? 0 : index);
+        }
+
+        function openLightbox() {
+            if (!(window.galleryImages || []).length) return;
+            const box = document.getElementById('lightbox');
+            const image = document.getElementById('lightbox-image');
+            if (!box || !image) return;
+
+            image.src = window.galleryImages[window.galleryIndex || 0];
+            image.classList.remove('zoomed');
+            box.classList.add('open');
+            // The page behind must not scroll while the overlay is up.
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            const box = document.getElementById('lightbox');
+            if (box) box.classList.remove('open');
+            document.body.style.overflow = '';
+        }
+
+        function toggleZoom(event) {
+            event.stopPropagation();
+            const image = document.getElementById('lightbox-image');
+            if (image) image.classList.toggle('zoomed');
+        }
+
+        // Arrow keys and Escape, because a full-screen viewer that only responds
+        // to the mouse is annoying on a laptop.
+        document.addEventListener('keydown', (event) => {
+            const open = document.getElementById('lightbox')?.classList.contains('open');
+            if (event.key === 'Escape' && open) return closeLightbox();
+            if (!(window.galleryImages || []).length) return;
+            if (event.key === 'ArrowLeft') stepImage(-1);
+            if (event.key === 'ArrowRight') stepImage(1);
+        });
 
         // Contact owner — open in-app messaging on listings page
         let currentListingDetail = null;
@@ -442,5 +597,13 @@
     </script>
     <script src="/js/site-bootstrap.js" defer></script>
     <script src="/js/site-nav.js?v=20260809e"></script>
+    <!-- Full-screen photo viewer. Outside the listing container so it covers
+         the whole page regardless of where the gallery sits. -->
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <button class="lightbox-close" onclick="event.stopPropagation(); closeLightbox()" aria-label="Close">&times;</button>
+        <button class="lightbox-arrow lightbox-arrow-left" onclick="event.stopPropagation(); stepImage(-1)" aria-label="Previous photo">&#10094;</button>
+        <img id="lightbox-image" src="" alt="Listing photo" onclick="toggleZoom(event)">
+        <button class="lightbox-arrow lightbox-arrow-right" onclick="event.stopPropagation(); stepImage(1)" aria-label="Next photo">&#10095;</button>
+    </div>
 </body>
 </html>
