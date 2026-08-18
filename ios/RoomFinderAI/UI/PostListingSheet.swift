@@ -31,6 +31,9 @@ struct PostListingSheet: View {
     @State private var draftSteps: [String] = []
     /// What the model reported understanding, shown after it finishes.
     @State private var draftFindings: [String] = []
+    /// The rest of the form stays hidden until there is a photo to work
+    /// from, or the host says they would rather type it themselves.
+    @State private var showsDetails = false
     private let drafts = ListingDraftService()
 
     @State private var isSubmitting = false
@@ -93,11 +96,27 @@ struct PostListingSheet: View {
                     }
                 }
             } header: {
-                Text("Photos")
+                Text("Start with photos")
             } footer: {
-                Text("Rooms with photos get far more interest. Up to six.")
+                Text(photos.isEmpty
+                     ? "Add a photo of the room and it writes the listing for you. Up to six."
+                     : "Rooms with photos get far more interest. Up to six.")
             }
 
+            // Nothing else is shown until there is a photo, because the whole
+            // point of this screen is that the photo does the work. Someone who
+            // genuinely has no photo to hand still needs a way through, so the
+            // escape hatch is offered rather than the form being unreachable.
+            if !showsDetails {
+                Section {
+                    Button("I'd rather type it in myself") {
+                        withAnimation { showsDetails = true }
+                    }
+                    .font(.subheadline)
+                }
+            }
+
+            if !photos.isEmpty {
             Section {
                 Button(action: autofill) {
                     HStack(spacing: 10) {
@@ -174,7 +193,9 @@ struct PostListingSheet: View {
             } footer: {
                 Text("Everything it writes stays editable. Check it before posting.")
             }
+            }
 
+            if showsDetails {
             Section("The room") {
                 TextField("Title, e.g. Bright 1-bed near campus", text: $title)
                 LabeledContent("Rent per month") {
@@ -200,6 +221,8 @@ struct PostListingSheet: View {
             Section("Description") {
                 TextField("What's good about this place?", text: $description, axis: .vertical)
                     .lineLimit(3...8)
+            }
+
             }
 
             if let errorMessage {
@@ -242,6 +265,12 @@ struct PostListingSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Reveals the rest of the form once there is something to work from.
+    private func revealDetailsIfNeeded() {
+        guard !photos.isEmpty, !showsDetails else { return }
+        withAnimation { showsDetails = true }
+    }
+
     private func loadPhotos(_ items: [PhotosPickerItem]) async {
         var loaded: [UIImage] = []
         for item in items {
@@ -251,6 +280,7 @@ struct PostListingSheet: View {
             }
         }
         photos = loaded
+        revealDetailsIfNeeded()
     }
 
     /// Mirrors the server's own validation so problems are caught before the
