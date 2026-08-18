@@ -44,6 +44,7 @@ struct PostListingSheet: View {
     private enum Step { case photos, details }
     @State private var step: Step = .photos
     private let drafts = ListingDraftService()
+    private let locations = LocationProvider()
 
     @State private var isSubmitting = false
     @State private var errorMessage: String?
@@ -85,6 +86,14 @@ struct PostListingSheet: View {
                 }
             }
         }
+        // Only Cancel closes this.
+        //
+        // On iPad a tap outside the sheet dismissed it, and a swipe down did
+        // the same on both — throwing away the photos, the analysis and
+        // everything typed, with no warning and no way back. Losing a
+        // half-written listing to a stray tap is the worst thing this screen
+        // could do, so leaving is a deliberate act now.
+        .interactiveDismissDisabled()
     }
 
 
@@ -220,6 +229,23 @@ struct PostListingSheet: View {
 
     private var form: some View {
         Form {
+            // Say plainly whether the photo produced anything. This was a small
+            // grey caption inside a section, which is invisible when the fields
+            // you expected to be filled are empty and you are looking at those
+            // instead.
+            if let draftNote {
+                Section {
+                    Label {
+                        Text(draftNote)
+                            .font(.subheadline)
+                    } icon: {
+                        Image(systemName: draftFindings.isEmpty
+                              ? "exclamationmark.triangle.fill"
+                              : "checkmark.seal.fill")
+                    }
+                    .foregroundStyle(draftFindings.isEmpty ? Color.orange : Color.green)
+                }
+            }
             if !user.isSignedIn {
                 Section {
                     Label("Sign in first from the Profile tab, or your room won't be linked to your account.",
@@ -425,7 +451,7 @@ struct PostListingSheet: View {
 
     private func loadPhotos(_ items: [PhotosPickerItem]) async {
         var loaded: [UIImage] = []
-        var foundLocation: ListingDraftService.PhotoLocation?
+        var foundLocation: ListingDraftService.PhotoLocation?  // photo GPS, else the device
         for item in items {
             if let data = try? await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
@@ -436,6 +462,16 @@ struct PostListingSheet: View {
             }
         }
         photos = loaded
+
+        // PhotosPicker hands back images with their location stripped, so the
+        // EXIF read above usually finds nothing. Ask the device where it is
+        // instead — someone posting a room is standing in it. Only when the
+        // photo genuinely carried coordinates do we prefer those.
+        if foundLocation == nil,
+           let coordinate = await locations.currentCoordinate() {
+            foundLocation = .init(latitude: coordinate.latitude,
+                                  longitude: coordinate.longitude)
+        }
         photoLocation = foundLocation
 
         // Run the analysis without being asked. The previous screen offered a
@@ -443,7 +479,7 @@ struct PostListingSheet: View {
         // hunt for the thing that uses it. If it fails the details screen still
         // opens, just empty, so a bad photo never blocks posting.
         if !loaded.isEmpty {
-            await runAutofill()
+            await runAutofill(using: loaded.first)
             withAnimation { step = .details }
         }
     }
@@ -453,7 +489,7 @@ struct PostListingSheet: View {
     /// Fills the form in. Prefers the photo, because a model that can see the
     /// room writes something truer than one working from four form fields.
     private func autofill() {
-        Task { await runAutofill() }
+        Task { await runAutofill(using: photos.first) }
     }
 
     /// Reads the first photo and fills in whatever it can.
@@ -461,7 +497,12 @@ struct PostListingSheet: View {
     /// Awaitable on purpose: the caller advances to the details screen when this
     /// returns, so wrapping the work in a detached Task would move on before
     /// any of it had happened.
-    private func runAutofill() async {
+    /// - Parameter image: passed in rather than read back off `photos`.
+    ///   loadPhotos calls this immediately after assigning that state, and
+    ///   relying on the write having propagated meant it could see an empty
+    ///   array, take the no-photo branch and fail with "add a photo first"
+    ///   having just been given one.
+    private func runAutofill(using image: UIImage?) async {
         isDrafting = true
         draftNote = nil
         draftFindings = []
@@ -477,7 +518,7 @@ struct PostListingSheet: View {
 
         do {
             let draft: ListingDraftService.Draft
-            if let photo = photos.first {
+            if let photo = image {
                 progress("Preparing your photo")
                 progress("Sending it to be looked at")
                 draft = try await drafts.draft(from: photo, at: photoLocation)
