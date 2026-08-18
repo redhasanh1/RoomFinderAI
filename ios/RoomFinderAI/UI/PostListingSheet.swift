@@ -1,3 +1,4 @@
+import ImageIO
 import PhotosUI
 import SwiftUI
 
@@ -24,6 +25,9 @@ struct PostListingSheet: View {
 
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var photos: [UIImage] = []
+    /// Where the first photo was taken, if it says so. Used to fill the address
+    /// and to price the room against its actual area.
+    @State private var photoLocation: ListingDraftService.PhotoLocation?
 
     @State private var isDrafting = false
     @State private var draftNote: String?
@@ -58,6 +62,13 @@ struct PostListingSheet: View {
                     case .details: form
                     }
                 }
+            }
+            // On the sheet, not on one of the screens. This lived inside the
+            // details form, which is not in the hierarchy while the photo step
+            // is showing — so picking a photo on the first screen changed
+            // pickerItems with nothing listening, and nothing happened at all.
+            .onChange(of: pickerItems) { _, items in
+                Task { await loadPhotos(items) }
             }
             .navigationTitle(didPost ? "Posted" : (step == .photos ? "Add Photos" : "Check the Details"))
             .navigationBarTitleDisplayMode(.inline)
@@ -361,9 +372,6 @@ struct PostListingSheet: View {
                 }
             }
         }
-        .onChange(of: pickerItems) { _, items in
-            Task { await loadPhotos(items) }
-        }
         .disabled(isSubmitting)
         .overlay {
             if isSubmitting {
@@ -393,15 +401,42 @@ struct PostListingSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
+    /// Coordinates out of a photo's own metadata, or nil.
+    ///
+    /// Read from the file data with ImageIO, because `UIImage` keeps only the
+    /// pixels — by the time a photo is a UIImage its GPS tags are gone. Most
+    /// camera photos carry this; screenshots and downloads do not, which is why
+    /// every caller treats it as optional.
+    private static func coordinates(in data: Data) -> ListingDraftService.PhotoLocation? {
+        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let gps = properties[kCGImagePropertyGPSDictionary] as? [CFString: Any],
+              var latitude = gps[kCGImagePropertyGPSLatitude] as? Double,
+              var longitude = gps[kCGImagePropertyGPSLongitude] as? Double
+        else { return nil }
+
+        // EXIF stores magnitude and hemisphere separately.
+        if let ref = gps[kCGImagePropertyGPSLatitudeRef] as? String, ref == "S" { latitude = -latitude }
+        if let ref = gps[kCGImagePropertyGPSLongitudeRef] as? String, ref == "W" { longitude = -longitude }
+
+        guard latitude != 0 || longitude != 0 else { return nil }
+        return .init(latitude: latitude, longitude: longitude)
+    }
+
     private func loadPhotos(_ items: [PhotosPickerItem]) async {
         var loaded: [UIImage] = []
+        var foundLocation: ListingDraftService.PhotoLocation?
         for item in items {
             if let data = try? await item.loadTransferable(type: Data.self),
                let image = UIImage(data: data) {
                 loaded.append(image)
+                // Read the coordinates from the file itself, before UIImage
+                // drops them. First photo that has them wins.
+                if foundLocation == nil { foundLocation = Self.coordinates(in: data) }
             }
         }
         photos = loaded
+        photoLocation = foundLocation
 
         // Run the analysis without being asked. The previous screen offered a
         // button for it, which meant the common path was: add a photo, then
@@ -445,7 +480,7 @@ struct PostListingSheet: View {
             if let photo = photos.first {
                 progress("Preparing your photo")
                 progress("Sending it to be looked at")
-                draft = try await drafts.draft(from: photo)
+                draft = try await drafts.draft(from: photo, at: photoLocation)
                 progress("Reading the room")
             } else {
                 progress("Writing from the details you entered")
@@ -469,6 +504,26 @@ struct PostListingSheet: View {
             if let count = draft.bedrooms, count > 0, count <= 10 {
                 bedrooms = count
             }
+            // Every field the analysis can speak to, filled to the best of its
+            // ability. The rent estimate and the address were already coming
+            // back from the server and being discarded, which left the host
+            // guessing the two things that matter most.
+            if price.trimmingCharacters(in: .whitespaces).isEmpty,
+               let suggested = draft.price, suggested > 0 {
+                price = String(suggested)
+            }
+            if street.trimmingCharacters(in: .whitespaces).isEmpty,
+               let value = draft.street?.nilIfEmpty {
+                street = value
+            }
+            if city.trimmingCharacters(in: .whitespaces).isEmpty,
+               let value = draft.city?.nilIfEmpty {
+                city = value
+            }
+            if postalCode.trimmingCharacters(in: .whitespaces).isEmpty,
+               let value = draft.postalCode?.nilIfEmpty {
+                postalCode = value
+            }
 
             // What it understood, in its own terms. An empty list is itself
             // informative: the photo told it nothing useful, which is worth
@@ -477,6 +532,16 @@ struct PostListingSheet: View {
             if let type = draft.houseType { findings.append("Property type: \(type)") }
             if let count = draft.bedrooms, count > 0 { findings.append("Bedrooms: \(count)") }
             if let value = draft.title { findings.append("Title: \(value)") }
+            if let suggested = draft.price, suggested > 0 {
+                findings.append("Suggested rent: $\(suggested)/month")
+            }
+            let place = [draft.street, draft.city, draft.postalCode]
+                .compactMap { $0?.nilIfEmpty }
+                .joined(separator: ", ")
+            if !place.isEmpty { findings.append("Location from the photo: \(place)") }
+            if !draft.features.isEmpty {
+                findings.append("Spotted: \(draft.features.prefix(4).joined(separator: ", "))")
+            }
             if draft.description != nil { findings.append("Wrote a description") }
             draftFindings = findings
 

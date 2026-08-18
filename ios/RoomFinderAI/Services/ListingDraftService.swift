@@ -18,6 +18,22 @@ final class ListingDraftService {
         var description: String?
         var houseType: String?
         var bedrooms: Int?
+        /// The worker's rent estimate. It already computed this from the property
+        /// type, the features it spotted and the postcode, and the app was
+        /// throwing it away — leaving the host to guess the one number that
+        /// decides whether anyone enquires.
+        var price: Int?
+        var street: String?
+        var city: String?
+        var postalCode: String?
+        /// Notable things it saw, for the "what it saw" summary.
+        var features: [String] = []
+    }
+
+    /// Where a photo was taken, read out of its own metadata.
+    struct PhotoLocation {
+        let latitude: Double
+        let longitude: Double
     }
 
     enum DraftError: LocalizedError {
@@ -33,7 +49,7 @@ final class ListingDraftService {
     }
 
     /// Reads the room from a photo.
-    func draft(from image: UIImage) async throws -> Draft {
+    func draft(from image: UIImage, at location: PhotoLocation? = nil) async throws -> Draft {
         // Downscaled before sending: the endpoint takes the image as a JSON
         // array of bytes, which is roughly four times the size of the raw
         // file, so a full-resolution phone photo would be a multi-megabyte
@@ -47,16 +63,35 @@ final class ListingDraftService {
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // Vision models are slow; this is the one place a long wait is expected.
         request.timeoutInterval = 120
-        request.httpBody = try JSONSerialization.data(withJSONObject: ["image": Array(data)])
+        // Base64, not a JSON array of 90,000 boxed numbers.
+        //
+        // `["image": Array(data)]` made JSONSerialization allocate an NSNumber
+        // per byte and emit roughly half a megabyte of text for a 90KB photo.
+        // On device that is the difference between a moment and minutes — the
+        // server answers this endpoint in about 1.4s, so the wait was almost
+        // entirely the encoding.
+        var payload: [String: Any] = ["imageBase64": data.base64EncodedString()]
+        if let location {
+            payload["coords"] = ["lat": location.latitude, "lng": location.longitude]
+        }
+        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
 
         struct AnalysisResponse: Decodable {
             struct Analysis: Decodable {
+                struct Location: Decodable {
+                    let street: String?
+                    let city: String?
+                    let zip: String?
+                }
                 let title: String?
                 let description: String?
                 let house_type: String?
                 let bedrooms: Int?
+                let suggestedPrice: Double?
+                let features: [String]?
+                let location: Location?
             }
             let success: Bool
             let analysis: Analysis?
@@ -91,7 +126,12 @@ final class ListingDraftService {
             title: analysis.title,
             description: analysis.description,
             houseType: analysis.house_type,
-            bedrooms: analysis.bedrooms
+            bedrooms: analysis.bedrooms,
+            price: analysis.suggestedPrice.map { Int($0.rounded()) },
+            street: analysis.location?.street,
+            city: analysis.location?.city,
+            postalCode: analysis.location?.zip,
+            features: analysis.features ?? []
         )
     }
 

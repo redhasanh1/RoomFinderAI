@@ -4594,18 +4594,83 @@ app.get('/api/brevo-status', blockInProduction, async (req, res) => {
  * Analyzes a property photo using Cloudflare Workers AI (LLaVA)
  * FREE: 10,000 neurons/day
  */
+/**
+ * A place name for a pair of coordinates, for the photo analyser.
+ *
+ * The same Nominatim lookup /api/reverse-geocode exposes, factored out so the
+ * photo endpoint can use it directly instead of the app making a second round
+ * trip. Returns null rather than throwing: a photo with no usable GPS is the
+ * normal case, not an error, and the analysis still runs without it.
+ */
+async function addressFromCoords(lat, lng) {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+
+    try {
+        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`;
+        const response = await axios.get(url, {
+            headers: { 'User-Agent': 'RoomFinderAI/1.0 (property listing app)' },
+            timeout: 8000
+        });
+
+        const address = response.data?.address;
+        if (!address) return null;
+
+        const streetParts = [address.house_number, address.road].filter(Boolean);
+        return {
+            street: streetParts.length ? streetParts.join(' ') : null,
+            city: address.city || address.town || address.village || address.suburb || null,
+            state: address.state || null,
+            zip: address.postcode || null,
+            country: address.country || null
+        };
+    } catch (error) {
+        // Nominatim rate-limits and occasionally times out. Losing the address
+        // must not lose the whole analysis.
+        console.warn('📍 Reverse geocode failed:', error.message);
+        return null;
+    }
+}
+
 app.post('/api/analyze-property-photo', async (req, res) => {
     console.log('🖼️ Property photo analysis endpoint called');
 
     try {
-        const { image, location } = req.body;
+        const { imageBase64, coords } = req.body || {};
+        let { image, location } = req.body || {};
 
-        if (!image || !Array.isArray(image)) {
+        // Accept base64 as well as an array of bytes.
+        //
+        // The array form makes a client allocate one boxed number per byte and
+        // send roughly half a megabyte of JSON for a 90KB photo. The iOS app
+        // spent minutes encoding that while this endpoint answered in about a
+        // second. Base64 is one compact string; the array form still works, so
+        // nothing that already calls this breaks.
+        if (!image && typeof imageBase64 === 'string' && imageBase64.length) {
+            try {
+                image = Array.from(Buffer.from(imageBase64, 'base64'));
+            } catch (decodeError) {
+                console.log('❌ imageBase64 was not valid base64');
+                return res.status(400).json({ success: false, error: 'Invalid image data.' });
+            }
+        }
+
+        if (!image || !Array.isArray(image) || image.length === 0) {
             console.log('❌ Invalid image data received');
             return res.status(400).json({
                 success: false,
-                error: 'Invalid image data. Expected base64-encoded image as array of bytes.'
+                error: 'Invalid image data. Send imageBase64 as a base64 string, or image as an array of bytes.'
             });
+        }
+
+        // Coordinates out of the photo's own metadata. Turned into a place name
+        // here rather than in the app, so the address lookup and its API key
+        // stay server-side.
+        if (!location && coords && Number.isFinite(coords.lat) && Number.isFinite(coords.lng)) {
+            location = await addressFromCoords(coords.lat, coords.lng);
+            if (location) {
+                console.log(`📍 Resolved photo GPS to ${location.city || '?'} ${location.zip || ''}`);
+            }
         }
 
         console.log(`📸 Image received: ${image.length} bytes`);
