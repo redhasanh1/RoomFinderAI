@@ -74,21 +74,43 @@ struct ListingDetailScreen: View {
     }
 
     private var header: some View {
-        AsyncImage(url: listing.imageURL) { phase in
-            switch phase {
-            case .success(let image):
-                image.resizable().aspectRatio(contentMode: .fill)
-            default:
-                ZStack {
-                    Theme.gradient
-                    Image(systemName: "house.fill")
-                        .font(.system(size: 44))
-                        .foregroundStyle(.white.opacity(0.85))
+        // A 4:3 stage with the photo fitted inside it.
+        //
+        // This filled a fixed 260pt-tall band across the full width. On an
+        // iPad that band is around a thousand points wide, so an ordinary
+        // photo was scaled up enormously and cropped to a thin strip through
+        // its middle — a room became a slice of wall, which is what "the image
+        // is in some random place" was.
+        //
+        // Fitting inside a ratio that follows the width shows the whole room
+        // at any size, on either device, the same way the website does it.
+        ZStack {
+            // Sits behind the letterboxing, so a tall photo has a deliberate
+            // edge rather than a torn one.
+            Rectangle().fill(Color(.secondarySystemBackground))
+
+            AsyncImage(url: listing.imageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                case .empty:
+                    ProgressView()
+                default:
+                    ZStack {
+                        Theme.gradient
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(.white.opacity(0.85))
+                    }
                 }
             }
         }
-        .frame(height: 260)
         .frame(maxWidth: .infinity)
+        .aspectRatio(4 / 3, contentMode: .fit)
+        // Capped so the photo cannot push everything else off an iPad screen.
+        .frame(maxHeight: 420)
         .clipped()
     }
 
