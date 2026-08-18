@@ -1951,9 +1951,13 @@
 
                     if (error || !data || !data.media || data.media.length === 0) continue;
 
-                    const media = data.media;
-                    const firstImage = media.find(m => m && m.type && m.type.startsWith('image/'));
-                    if (!firstImage || !firstImage.url) continue;
+                    // Same two shapes as the detail page: objects from the
+                    // website, plain URL strings from the iOS app.
+                    const media = (data.media || [])
+                        .map(entry => typeof entry === 'string' ? { url: entry } : entry);
+                    const firstImage = media.find(m => m && m.url
+                        && (!m.type || m.type.startsWith('image/')));
+                    if (!firstImage) continue;
 
                     // Find the card and update its image
                     const card = document.querySelector(`.listing-card[data-listing-id="${listing.id}"]`);

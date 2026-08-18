@@ -211,10 +211,17 @@
             document.getElementById('page-title').textContent = listing.title;
             document.title = `${listing.title} - RoomFinderAI`;
 
-            // Get images
-            const images = listing.media && listing.media.length > 0
-                ? listing.media.filter(m => m.type && m.type.startsWith('image/'))
-                : [];
+            // Get images.
+            //
+            // media holds two shapes. Listings posted from the website store
+            // objects, { url, type }; listings posted from the iOS app store
+            // plain URL strings. This only understood the object form, so every
+            // room posted from the app rendered "No Image Available" on the web
+            // even though its photo had uploaded perfectly well.
+            const images = (listing.media || [])
+                .map(entry => typeof entry === 'string' ? { url: entry } : entry)
+                .filter(entry => entry && entry.url
+                    && (!entry.type || entry.type.startsWith('image/')));
 
             const mainImage = images.length > 0
                 ? images[0].url
