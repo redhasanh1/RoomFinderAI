@@ -74,6 +74,25 @@
         color: #fff; font-size: 12px; z-index: 2;
     }
 
+    /* Dots rather than a thumbnail strip. The strip repeated every photo
+       underneath the one already on screen, so three uploads looked like four
+       images with the first one duplicated. */
+    .gallery-dots {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 14px;
+    }
+    .gallery-dot {
+        width: 9px; height: 9px;
+        padding: 0; border: none; border-radius: 50%;
+        background: #cbd5e1;
+        cursor: pointer;
+        transition: background 0.15s ease, transform 0.15s ease;
+    }
+    .gallery-dot:hover { background: #94a3b8; }
+    .gallery-dot.active { background: #667eea; transform: scale(1.25); }
+
     /* ---- Full-screen viewer ------------------------------------------ */
 
     .lightbox {
@@ -335,11 +354,11 @@
                             </div>
 
                             ${images.length > 1 ? `
-                                <div class="flex gap-3 mt-4 overflow-x-auto pb-2">
+                                <div class="gallery-dots">
                                     ${images.map((img, idx) => `
-                                        <img src="${img.url}" alt="Image ${idx + 1}"
-                                            class="thumbnail ${idx === 0 ? 'active' : ''}"
-                                            onclick="showImage(${idx})">
+                                        <button class="gallery-dot ${idx === 0 ? 'active' : ''}"
+                                                onclick="showImage(${idx})"
+                                                aria-label="Photo ${idx + 1}"></button>
                                     `).join('')}
                                 </div>
                             ` : ''}
@@ -445,8 +464,8 @@
             const counter = document.getElementById('gallery-count');
             if (counter) counter.textContent = `${window.galleryIndex + 1} / ${images.length}`;
 
-            document.querySelectorAll('.thumbnail').forEach((t, i) => {
-                t.classList.toggle('active', i === window.galleryIndex);
+            document.querySelectorAll('.gallery-dot').forEach((dot, i) => {
+                dot.classList.toggle('active', i === window.galleryIndex);
             });
 
             const lightboxImage = document.getElementById('lightbox-image');
