@@ -90,6 +90,11 @@ final class ListingDraftService {
                     /// "gps" when it came from real coordinates, "ip" when it
                     /// was inferred from the network and is city-level at best.
                     let source: String?
+                    /// The reliable signal. The vision worker rewrites `source`
+                    /// to "gps" for anything it is handed, so an IP-derived
+                    /// area arrives claiming to be GPS; this flag is set by our
+                    /// own server and survives that.
+                    let approximate: Bool?
                 }
                 let title: String?
                 let description: String?
@@ -137,7 +142,8 @@ final class ListingDraftService {
             street: analysis.location?.street,
             city: analysis.location?.city,
             postalCode: analysis.location?.zip,
-            locationIsApproximate: analysis.location?.source == "ip",
+            locationIsApproximate: analysis.location?.approximate == true
+                || analysis.location?.source == "ip",
             features: analysis.features ?? []
         )
     }
