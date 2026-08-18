@@ -652,6 +652,80 @@ app.get('/', (req, res, next) => {
     return res.redirect(`${IOS_APP_SCHEME}://auth/google?${params.toString()}`);
 });
 
+
+/**
+ * Link previews for a shared listing.
+ *
+ * listing_details.html is a static shell that fetches the room with JavaScript,
+ * so a crawler for iMessage, WhatsApp, Slack or Twitter — none of which run
+ * JS — saw a page with no title, no description and no image, and rendered a
+ * blank card. Sharing a room looked broken, which is the one moment the
+ * listing most needs to look good.
+ *
+ * The tags are injected server-side for this one page, from the same row the
+ * client is about to fetch. Anything without an id, or an id that does not
+ * resolve, falls straight through to the normal page.
+ */
+app.get('/listing_details.html', async (req, res, next) => {
+    const id = String(req.query.id || '').trim();
+    if (!id || !supabase) return next();
+
+    try {
+        const { data: listing } = await supabase
+            .from('listings')
+            .select('id, title, description, price, city, media')
+            .eq('id', id)
+            .maybeSingle();
+
+        if (!listing) return next();
+
+        const filePath = path.join(frontendPath, 'listing_details.html');
+        if (!fs.existsSync(filePath)) return next();
+
+        const escape = (value) => String(value || '')
+            .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+
+        const image = Array.isArray(listing.media) ? listing.media.find(Boolean) : null;
+        const price = Number(listing.price) > 0 ? `$${Math.round(listing.price)}/month` : null;
+        const title = [listing.title, listing.city].filter(Boolean).join(' - ');
+        // The price belongs in the preview: it is the first thing anyone wants
+        // to know and the reason they tap.
+        const summary = [price, listing.description]
+            .filter(Boolean).join(' - ').slice(0, 200);
+        const pageUrl = `https://www.roomfinderai.com/listing_details.html?id=${encodeURIComponent(id)}`;
+
+        const tags = [
+            `<meta property="og:type" content="website">`,
+            `<meta property="og:site_name" content="RoomFinderAI">`,
+            `<meta property="og:title" content="${escape(title)}">`,
+            `<meta property="og:description" content="${escape(summary)}">`,
+            `<meta property="og:url" content="${escape(pageUrl)}">`,
+            image ? `<meta property="og:image" content="${escape(image)}">` : '',
+            image ? `<meta property="og:image:width" content="1200">` : '',
+            image ? `<meta property="og:image:height" content="630">` : '',
+            // summary_large_image is what makes the photo fill the card rather
+            // than sit in a thumbnail beside the text.
+            `<meta name="twitter:card" content="${image ? 'summary_large_image' : 'summary'}">`,
+            `<meta name="twitter:title" content="${escape(title)}">`,
+            `<meta name="twitter:description" content="${escape(summary)}">`,
+            image ? `<meta name="twitter:image" content="${escape(image)}">` : '',
+            `<meta name="description" content="${escape(summary)}">`
+        ].filter(Boolean).join('\n');
+
+        let html = fs.readFileSync(filePath, 'utf8');
+        html = html.includes('</head>')
+            ? html.replace('</head>', `${tags}\n</head>`)
+            : `${tags}\n${html}`;
+
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        return res.send(html);
+    } catch (error) {
+        console.error('Link preview injection failed:', error.message);
+        return next();
+    }
+});
+
 // Inject shared site assets into HTML pages before static fallback
 app.use(createHtmlInjectionMiddleware(frontendPath));
 
