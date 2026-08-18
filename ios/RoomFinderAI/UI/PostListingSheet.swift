@@ -241,9 +241,9 @@ struct PostListingSheet: View {
                     } icon: {
                         Image(systemName: draftFindings.isEmpty
                               ? "exclamationmark.triangle.fill"
-                              : "checkmark.seal.fill")
+                              : "wand.and.stars")
                     }
-                    .foregroundStyle(draftFindings.isEmpty ? Color.orange : Color.green)
+                    .foregroundStyle(draftFindings.isEmpty ? Color.orange : Color.secondary)
                 }
             }
             if !user.isSignedIn {
@@ -284,84 +284,6 @@ struct PostListingSheet: View {
             }
 
 
-            if !photos.isEmpty {
-            Section {
-                Button(action: autofill) {
-                    HStack(spacing: 10) {
-                        if isDrafting {
-                            ProgressView()
-                        } else {
-                            Image(systemName: "wand.and.stars")
-                                .foregroundStyle(Theme.brand)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(photos.isEmpty ? "Write it for me" : "Read my photo and fill this in")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.primary)
-                            Text(photos.isEmpty
-                                 ? "Add a photo above and it can describe the room itself"
-                                 : "Looks at your first photo and writes the listing")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        Spacer()
-                    }
-                }
-                .disabled(isDrafting)
-
-                // Say what it is doing, step by step.
-                //
-                // This used to be a bare spinner, so a photo upload and a
-                // vision call that together take several seconds looked like
-                // the button had hung. The website narrates the same work, and
-                // people were reasonably asking why the app did not.
-                if isDrafting {
-                    VStack(alignment: .leading, spacing: 6) {
-                        ForEach(draftSteps, id: \.self) { step in
-                            HStack(spacing: 8) {
-                                Image(systemName: "circle.fill")
-                                    .font(.system(size: 5))
-                                    .foregroundStyle(Theme.brand)
-                                Text(step)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .transition(.opacity)
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-
-                // What it actually understood, so the host can see whether it
-                // read the room correctly rather than diffing the fields by eye.
-                if !isDrafting, !draftFindings.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("What it saw")
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(.secondary)
-                        ForEach(draftFindings, id: \.self) { finding in
-                            HStack(alignment: .top, spacing: 8) {
-                                Image(systemName: "checkmark.circle.fill")
-                                    .font(.caption2)
-                                    .foregroundStyle(.green)
-                                Text(finding)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    .padding(.vertical, 2)
-                }
-
-                if let draftNote {
-                    Text(draftNote)
-                        .font(.caption)
-                        .foregroundStyle(draftNote.hasPrefix("Couldn't") ? .red : .secondary)
-                }
-            } footer: {
-                Text("Everything it writes stays editable. Check it before posting.")
-            }
-            }
 
             Section("The room") {
                 TextField("Title, e.g. Bright 1-bed near campus", text: $title)
@@ -488,10 +410,6 @@ struct PostListingSheet: View {
     /// round trip rather than coming back as a list of errors afterwards.
     /// Fills the form in. Prefers the photo, because a model that can see the
     /// room writes something truer than one working from four form fields.
-    private func autofill() {
-        Task { await runAutofill(using: photos.first) }
-    }
-
     /// Reads the first photo and fills in whatever it can.
     ///
     /// Awaitable on purpose: the caller advances to the details screen when this
@@ -592,7 +510,7 @@ struct PostListingSheet: View {
 
             draftNote = findings.isEmpty
                 ? "It couldn't tell much from that photo. Fill in what's missing below."
-                : "Filled in from your photo. Change anything that's wrong."
+                : "AI filled this in as best it could. Check anything that matters."
             Haptics.notify(findings.isEmpty ? .warning : .success)
         } catch {
             draftSteps = []
