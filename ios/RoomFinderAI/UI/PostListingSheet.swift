@@ -31,9 +31,14 @@ struct PostListingSheet: View {
     @State private var draftSteps: [String] = []
     /// What the model reported understanding, shown after it finishes.
     @State private var draftFindings: [String] = []
-    /// The rest of the form stays hidden until there is a photo to work
-    /// from, or the host says they would rather type it themselves.
-    @State private var showsDetails = false
+    /// Posting is two screens: pick photos, then check what the AI wrote.
+    ///
+    /// One long form asked for a title, a price and an address before the photo
+    /// that can supply most of it, which is backwards. The upload gets a screen
+    /// to itself, the analysis runs the moment a photo lands, and the details
+    /// screen opens already filled in.
+    private enum Step { case photos, details }
+    @State private var step: Step = .photos
     private let drafts = ListingDraftService()
 
     @State private var isSubmitting = false
@@ -45,15 +50,22 @@ struct PostListingSheet: View {
     var body: some View {
         NavigationStack {
             Group {
-                if didPost { confirmation } else { form }
+                if didPost {
+                    confirmation
+                } else {
+                    switch step {
+                    case .photos:  photoStep
+                    case .details: form
+                    }
+                }
             }
-            .navigationTitle(didPost ? "Posted" : "Post a Room")
+            .navigationTitle(didPost ? "Posted" : (step == .photos ? "Add Photos" : "Check the Details"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     Button(didPost ? "Done" : "Cancel") { dismiss() }
                 }
-                if !didPost {
+                if !didPost, step == .details {
                     ToolbarItem(placement: .topBarTrailing) {
                         Button("Post", action: submit)
                             .fontWeight(.semibold)
@@ -61,6 +73,137 @@ struct PostListingSheet: View {
                     }
                 }
             }
+        }
+    }
+
+
+    // MARK: - Step one: the photo
+
+    /// One big target and nothing else.
+    ///
+    /// The whole promise of this screen is that a photo does the work, so it is
+    /// the only thing on it. The manual route stays reachable underneath, at a
+    /// size that can actually be tapped, because someone posting from their
+    /// desk with no photo to hand must not hit a dead end.
+    private var photoStep: some View {
+        VStack(spacing: 22) {
+            Spacer(minLength: 8)
+
+            PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
+                VStack(spacing: 14) {
+                    Image(systemName: "photo.badge.plus")
+                        .font(.system(size: 54, weight: .light))
+                        .foregroundStyle(Theme.gradient)
+
+                    Text("Add photos of the room")
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                    Text("Up to six. The first one is what buyers see.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity)
+                // Square, so it reads as a drop target rather than a row.
+                .aspectRatio(1, contentMode: .fit)
+                .background(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .fill(Color(.secondarySystemBackground))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .strokeBorder(
+                            Theme.brand.opacity(0.35),
+                            style: StrokeStyle(lineWidth: 2, dash: [7, 5])
+                        )
+                )
+            }
+            .disabled(isDrafting)
+
+            // States what happens next, so the automatic analysis is expected
+            // rather than a surprise.
+            HStack(spacing: 8) {
+                Image(systemName: "wand.and.stars")
+                    .foregroundStyle(Theme.brand)
+                Text("The AI reads your photo and fills in the listing for you")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            if let draftNote, !isDrafting {
+                Text(draftNote)
+                    .font(.footnote)
+                    .foregroundStyle(draftNote.hasPrefix("Filled") ? Color.secondary : Color.red)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
+            Spacer()
+
+            Button {
+                Haptics.impact(.light)
+                withAnimation { step = .details }
+            } label: {
+                Text("Fill it in myself")
+                    .font(.body.weight(.semibold))
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Theme.brand)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(Theme.brand.opacity(0.10))
+            )
+            .disabled(isDrafting)
+
+            if !user.isSignedIn {
+                Label("Sign in from the Profile tab first, or this won't be linked to your account.",
+                      systemImage: "person.crop.circle.badge.exclamationmark")
+                    .font(.footnote)
+                    .foregroundStyle(.orange)
+            }
+        }
+        .padding(20)
+        .overlay {
+            if isDrafting { processingOverlay }
+        }
+    }
+
+    /// The analysis, shown as it happens.
+    ///
+    /// A vision call over an uploaded photo takes several seconds. Covering
+    /// that with a bare spinner invites a second tap; naming each step as it
+    /// starts makes the wait legible.
+    private var processingOverlay: some View {
+        ZStack {
+            Rectangle()
+                .fill(.regularMaterial)
+                .ignoresSafeArea()
+
+            VStack(spacing: 18) {
+                ProgressView()
+                    .controlSize(.large)
+
+                Text("Reading your photo")
+                    .font(.headline)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(draftSteps, id: \.self) { line in
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.caption)
+                                .foregroundStyle(Theme.brand)
+                            Text(line)
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    }
+                }
+            }
+            .padding(28)
         }
     }
 
@@ -103,18 +246,6 @@ struct PostListingSheet: View {
                      : "Rooms with photos get far more interest. Up to six.")
             }
 
-            // Nothing else is shown until there is a photo, because the whole
-            // point of this screen is that the photo does the work. Someone who
-            // genuinely has no photo to hand still needs a way through, so the
-            // escape hatch is offered rather than the form being unreachable.
-            if !showsDetails {
-                Section {
-                    Button("I'd rather type it in myself") {
-                        withAnimation { showsDetails = true }
-                    }
-                    .font(.subheadline)
-                }
-            }
 
             if !photos.isEmpty {
             Section {
@@ -195,7 +326,6 @@ struct PostListingSheet: View {
             }
             }
 
-            if showsDetails {
             Section("The room") {
                 TextField("Title, e.g. Bright 1-bed near campus", text: $title)
                 LabeledContent("Rent per month") {
@@ -221,8 +351,6 @@ struct PostListingSheet: View {
             Section("Description") {
                 TextField("What's good about this place?", text: $description, axis: .vertical)
                     .lineLimit(3...8)
-            }
-
             }
 
             if let errorMessage {
@@ -265,12 +393,6 @@ struct PostListingSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    /// Reveals the rest of the form once there is something to work from.
-    private func revealDetailsIfNeeded() {
-        guard !photos.isEmpty, !showsDetails else { return }
-        withAnimation { showsDetails = true }
-    }
-
     private func loadPhotos(_ items: [PhotosPickerItem]) async {
         var loaded: [UIImage] = []
         for item in items {
@@ -280,7 +402,15 @@ struct PostListingSheet: View {
             }
         }
         photos = loaded
-        revealDetailsIfNeeded()
+
+        // Run the analysis without being asked. The previous screen offered a
+        // button for it, which meant the common path was: add a photo, then
+        // hunt for the thing that uses it. If it fails the details screen still
+        // opens, just empty, so a bad photo never blocks posting.
+        if !loaded.isEmpty {
+            await runAutofill()
+            withAnimation { step = .details }
+        }
     }
 
     /// Mirrors the server's own validation so problems are caught before the
@@ -288,74 +418,78 @@ struct PostListingSheet: View {
     /// Fills the form in. Prefers the photo, because a model that can see the
     /// room writes something truer than one working from four form fields.
     private func autofill() {
+        Task { await runAutofill() }
+    }
+
+    /// Reads the first photo and fills in whatever it can.
+    ///
+    /// Awaitable on purpose: the caller advances to the details screen when this
+    /// returns, so wrapping the work in a detached Task would move on before
+    /// any of it had happened.
+    private func runAutofill() async {
         isDrafting = true
         draftNote = nil
         draftFindings = []
         draftSteps = []
         Haptics.impact(.light)
+        defer { isDrafting = false }
 
-        // Each step is appended as the work actually starts, not on a timer, so
-        // whatever is on screen is genuinely what is happening.
-        func step(_ text: String) {
+        // Appended as each stage actually begins, not on a timer, so what is on
+        // screen is genuinely what is happening.
+        func progress(_ text: String) {
             withAnimation(.easeOut(duration: 0.2)) { draftSteps.append(text) }
         }
 
-        Task {
-            defer { isDrafting = false }
-            do {
-                let draft: ListingDraftService.Draft
-                if let photo = photos.first {
-                    step("Preparing your photo…")
-                    step("Sending it to be looked at…")
-                    draft = try await drafts.draft(from: photo)
-                    step("Reading the room…")
-                } else {
-                    step("Writing from the details you entered…")
-                    draft = try await drafts.draft(
-                        city: city, street: street, houseType: houseType,
-                        bedrooms: bedrooms, price: price,
-                        utilitiesIncluded: utilitiesIncluded, notes: description
-                    )
-                }
-
-                // Never overwrite what the host already wrote themselves.
-                if title.trimmingCharacters(in: .whitespaces).isEmpty, let value = draft.title {
-                    title = value
-                }
-                if description.trimmingCharacters(in: .whitespaces).isEmpty, let value = draft.description {
-                    description = value
-                }
-                if let type = draft.houseType, houseTypes.contains(type) {
-                    houseType = type
-                }
-                if let count = draft.bedrooms, count > 0, count <= 10 {
-                    bedrooms = count
-                }
-
-                // Report what it understood, in its own terms. An empty list
-                // is itself informative: it means the photo told it nothing
-                // useful, which is worth knowing before posting.
-                var findings: [String] = []
-                if let type = draft.houseType { findings.append("Property type: \(type)") }
-                if let count = draft.bedrooms, count > 0 {
-                    findings.append("Bedrooms: \(count)")
-                }
-                if let value = draft.title { findings.append("Suggested title: \(value)") }
-                if draft.description != nil { findings.append("Wrote a description") }
-                draftFindings = findings
-
-                draftNote = findings.isEmpty
-                    ? "It couldn't tell much from that photo. Try a wider shot, or fill it in yourself."
-                    : "Filled in. Edit anything that is not right."
-                Haptics.notify(findings.isEmpty ? .warning : .success)
-            } catch {
-                draftSteps = []
-                // The server's own words. When it turns a photo down it says
-                // why, and that reason is the only thing that tells the host
-                // what to do about it.
-                draftNote = error.localizedDescription
-                Haptics.notify(.error)
+        do {
+            let draft: ListingDraftService.Draft
+            if let photo = photos.first {
+                progress("Preparing your photo")
+                progress("Sending it to be looked at")
+                draft = try await drafts.draft(from: photo)
+                progress("Reading the room")
+            } else {
+                progress("Writing from the details you entered")
+                draft = try await drafts.draft(
+                    city: city, street: street, houseType: houseType,
+                    bedrooms: bedrooms, price: price,
+                    utilitiesIncluded: utilitiesIncluded, notes: description
+                )
             }
+
+            // Never overwrite what the host already wrote themselves.
+            if title.trimmingCharacters(in: .whitespaces).isEmpty, let value = draft.title {
+                title = value
+            }
+            if description.trimmingCharacters(in: .whitespaces).isEmpty, let value = draft.description {
+                description = value
+            }
+            if let type = draft.houseType, houseTypes.contains(type) {
+                houseType = type
+            }
+            if let count = draft.bedrooms, count > 0, count <= 10 {
+                bedrooms = count
+            }
+
+            // What it understood, in its own terms. An empty list is itself
+            // informative: the photo told it nothing useful, which is worth
+            // knowing before posting.
+            var findings: [String] = []
+            if let type = draft.houseType { findings.append("Property type: \(type)") }
+            if let count = draft.bedrooms, count > 0 { findings.append("Bedrooms: \(count)") }
+            if let value = draft.title { findings.append("Title: \(value)") }
+            if draft.description != nil { findings.append("Wrote a description") }
+            draftFindings = findings
+
+            draftNote = findings.isEmpty
+                ? "It couldn't tell much from that photo. Fill in what's missing below."
+                : "Filled in from your photo. Change anything that's wrong."
+            Haptics.notify(findings.isEmpty ? .warning : .success)
+        } catch {
+            draftSteps = []
+            // The server's own words. When it turns a photo down it says why,
+            // and that reason is the only thing that tells the host what to do.
+            draftNote = error.localizedDescription
+            Haptics.notify(.error)
         }
     }
 
