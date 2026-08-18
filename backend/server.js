@@ -4632,6 +4632,53 @@ async function addressFromCoords(lat, lng) {
     }
 }
 
+/**
+ * A rough position from the caller's IP address, as a last resort.
+ *
+ * Used only when a photo carried no GPS and the person declined the location
+ * prompt. It resolves to a city and postcode, never a street: an IP address
+ * simply does not carry one, and inventing a street would put a real
+ * stranger's home on a live listing. Whatever comes back is marked
+ * `source: 'ip'` so the app can present it as approximate and let the host
+ * correct it.
+ *
+ * ip-api.com is free and needs no key. Their free tier is non-commercial, so
+ * this is worth revisiting if it ever runs at volume.
+ */
+async function addressFromIP(req) {
+    try {
+        // Railway sits behind a proxy, so the socket address is the proxy's.
+        const forwarded = String(req.headers['x-forwarded-for'] || '').split(',')[0].trim();
+        const ip = forwarded || req.socket?.remoteAddress || '';
+
+        // Anything local tells us nothing about where the user is.
+        if (!ip || ip.startsWith('127.') || ip.startsWith('10.') || ip.startsWith('192.168.') || ip === '::1') {
+            return null;
+        }
+
+        const response = await axios.get(
+            `http://ip-api.com/json/${encodeURIComponent(ip)}?fields=status,city,regionName,zip,country`,
+            { timeout: 5000 }
+        );
+
+        const data = response.data;
+        if (!data || data.status !== 'success' || !data.city) return null;
+
+        return {
+            street: null,          // an IP cannot know this
+            city: data.city,
+            state: data.regionName || null,
+            zip: data.zip || null,
+            country: data.country || null,
+            source: 'ip',
+            approximate: true
+        };
+    } catch (error) {
+        console.warn('📍 IP geolocation failed:', error.message);
+        return null;
+    }
+}
+
 app.post('/api/analyze-property-photo', async (req, res) => {
     console.log('🖼️ Property photo analysis endpoint called');
 
@@ -4670,6 +4717,16 @@ app.post('/api/analyze-property-photo', async (req, res) => {
             location = await addressFromCoords(coords.lat, coords.lng);
             if (location) {
                 console.log(`📍 Resolved photo GPS to ${location.city || '?'} ${location.zip || ''}`);
+            }
+        }
+
+        // Still nothing: no GPS in the photo and the location prompt declined.
+        // The IP gets the city and postcode, which is most of the address and
+        // beats an empty form. The street stays blank for the host to type.
+        if (!location) {
+            location = await addressFromIP(req);
+            if (location) {
+                console.log(`📍 Approximate location from IP: ${location.city} ${location.zip || ''}`);
             }
         }
 

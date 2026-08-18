@@ -26,6 +26,9 @@ final class ListingDraftService {
         var street: String?
         var city: String?
         var postalCode: String?
+        /// True when the address came from an IP lookup rather than GPS, so
+        /// the host is told to check it rather than trusting a guess.
+        var locationIsApproximate = false
         /// Notable things it saw, for the "what it saw" summary.
         var features: [String] = []
     }
@@ -84,6 +87,9 @@ final class ListingDraftService {
                     let street: String?
                     let city: String?
                     let zip: String?
+                    /// "gps" when it came from real coordinates, "ip" when it
+                    /// was inferred from the network and is city-level at best.
+                    let source: String?
                 }
                 let title: String?
                 let description: String?
@@ -131,6 +137,7 @@ final class ListingDraftService {
             street: analysis.location?.street,
             city: analysis.location?.city,
             postalCode: analysis.location?.zip,
+            locationIsApproximate: analysis.location?.source == "ip",
             features: analysis.features ?? []
         )
     }

@@ -579,7 +579,11 @@ struct PostListingSheet: View {
             let place = [draft.street, draft.city, draft.postalCode]
                 .compactMap { $0?.nilIfEmpty }
                 .joined(separator: ", ")
-            if !place.isEmpty { findings.append("Location from the photo: \(place)") }
+            if !place.isEmpty {
+                findings.append(draft.locationIsApproximate
+                    ? "Rough area (check this): \(place)"
+                    : "Location from the photo: \(place)")
+            }
             if !draft.features.isEmpty {
                 findings.append("Spotted: \(draft.features.prefix(4).joined(separator: ", "))")
             }
