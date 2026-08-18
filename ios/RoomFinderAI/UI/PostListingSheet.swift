@@ -31,8 +31,9 @@ struct PostListingSheet: View {
 
     @State private var isDrafting = false
     @State private var draftNote: String?
-    /// Live narration while the draft is being written.
-    @State private var draftSteps: [String] = []
+    @State private var spinAngle: Double = 0
+    @State private var sparklePulse = false
+    @State private var captionIndex = 0
     /// What the model reported understanding, shown after it finishes.
     @State private var draftFindings: [String] = []
     /// Posting is two screens: pick photos, then check what the AI wrote.
@@ -191,41 +192,92 @@ struct PostListingSheet: View {
         }
     }
 
-    /// The analysis, shown as it happens.
+    /// The wait, made worth looking at.
     ///
-    /// A vision call over an uploaded photo takes several seconds. Covering
-    /// that with a bare spinner invites a second tap; naming each step as it
-    /// starts makes the wait legible.
+    /// This used to narrate the plumbing — "preparing your photo", "sending it
+    /// to be looked at" — which reads like surveillance of your own upload and
+    /// tells the host nothing they care about. It now says what is being worked
+    /// out for them, over a spinning brand-coloured ring, and cycles so a slow
+    /// vision call does not look like a frozen screen.
     private var processingOverlay: some View {
         ZStack {
-            Rectangle()
-                .fill(.regularMaterial)
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [Theme.brand.opacity(0.16), Theme.brandDeep.opacity(0.24)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .background(.regularMaterial)
+            .ignoresSafeArea()
 
-            VStack(spacing: 18) {
-                ProgressView()
-                    .controlSize(.large)
+            VStack(spacing: 26) {
+                ZStack {
+                    // Track.
+                    Circle()
+                        .stroke(Theme.brand.opacity(0.15), lineWidth: 8)
 
-                Text("Reading your photo")
-                    .font(.headline)
+                    // The moving arc.
+                    Circle()
+                        .trim(from: 0, to: 0.28)
+                        .stroke(
+                            AngularGradient(
+                                colors: [Theme.brand, Theme.brandDeep, Theme.brand],
+                                center: .center
+                            ),
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(spinAngle))
 
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(draftSteps, id: \.self) { line in
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.caption)
-                                .foregroundStyle(Theme.brand)
-                            Text(line)
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
-                        }
+                    Image(systemName: "sparkles")
+                        .font(.system(size: 34, weight: .medium))
+                        .foregroundStyle(Theme.gradient)
+                        .scaleEffect(sparklePulse ? 1.12 : 0.9)
+                        .opacity(sparklePulse ? 1 : 0.75)
+                }
+                .frame(width: 108, height: 108)
+
+                VStack(spacing: 8) {
+                    Text("AI processing")
+                        .font(.title3.weight(.bold))
+                        .foregroundStyle(Theme.gradient)
+
+                    Text(Self.processingCaptions[captionIndex])
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .id(captionIndex)
                         .transition(.opacity.combined(with: .move(edge: .bottom)))
-                    }
+                }
+                .frame(maxWidth: 280)
+            }
+            .padding(32)
+        }
+        .task {
+            // Spin and pulse for as long as this view is on screen.
+            withAnimation(.linear(duration: 1.1).repeatForever(autoreverses: false)) {
+                spinAngle = 360
+            }
+            withAnimation(.easeInOut(duration: 0.85).repeatForever(autoreverses: true)) {
+                sparklePulse = true
+            }
+            // Rotate the copy so a long wait still feels like progress.
+            while !Task.isCancelled {
+                try? await Task.sleep(nanoseconds: 1_900_000_000)
+                guard !Task.isCancelled else { return }
+                withAnimation(.easeInOut(duration: 0.35)) {
+                    captionIndex = (captionIndex + 1) % Self.processingCaptions.count
                 }
             }
-            .padding(28)
         }
     }
+
+    /// What it is working out, in the host's terms rather than the system's.
+    private static let processingCaptions = [
+        "Looking around the room",
+        "Spotting the good bits",
+        "Working out a fair rent",
+        "Writing your description",
+        "Almost there"
+    ]
 
     private var form: some View {
         Form {
@@ -424,25 +476,15 @@ struct PostListingSheet: View {
         isDrafting = true
         draftNote = nil
         draftFindings = []
-        draftSteps = []
         Haptics.impact(.light)
         defer { isDrafting = false }
 
-        // Appended as each stage actually begins, not on a timer, so what is on
-        // screen is genuinely what is happening.
-        func progress(_ text: String) {
-            withAnimation(.easeOut(duration: 0.2)) { draftSteps.append(text) }
-        }
 
         do {
             let draft: ListingDraftService.Draft
             if let photo = image {
-                progress("Preparing your photo")
-                progress("Sending it to be looked at")
                 draft = try await drafts.draft(from: photo, at: photoLocation)
-                progress("Reading the room")
             } else {
-                progress("Writing from the details you entered")
                 draft = try await drafts.draft(
                     city: city, street: street, houseType: houseType,
                     bedrooms: bedrooms, price: price,
@@ -513,7 +555,6 @@ struct PostListingSheet: View {
                 : "AI filled this in as best it could. Check anything that matters."
             Haptics.notify(findings.isEmpty ? .warning : .success)
         } catch {
-            draftSteps = []
             // The server's own words. When it turns a photo down it says why,
             // and that reason is the only thing that tells the host what to do.
             draftNote = error.localizedDescription
