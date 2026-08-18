@@ -200,7 +200,15 @@ final class ListingDraftService {
         let scale = min(1, maxDimension / longest)
         let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
 
-        let renderer = UIGraphicsImageRenderer(size: size)
+        // scale = 1, or the renderer quietly draws at the screen's scale and
+        // returns a bitmap two or three times the size that was asked for. On
+        // an iPad that turned a 900px request into 1800px and a ~90KB upload
+        // into 1MB, which is most of why analysis felt slow.
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1
+        format.opaque = true
+
+        let renderer = UIGraphicsImageRenderer(size: size, format: format)
         let resized = renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: size))
         }

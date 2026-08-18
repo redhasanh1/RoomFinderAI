@@ -49,6 +49,10 @@ struct PostListingSheet: View {
 
     @State private var isSubmitting = false
     @State private var errorMessage: String?
+    /// Shown as an alert as well as inline. The inline copy sits at the bottom
+    /// of a long form, so tapping Post with something missing looked like the
+    /// button did nothing at all.
+    @State private var showsProblem = false
     @State private var didPost = false
 
     private let houseTypes = ["Apartment", "House", "Condo", "Studio", "Room", "Townhouse"]
@@ -95,6 +99,11 @@ struct PostListingSheet: View {
         // half-written listing to a stray tap is the worst thing this screen
         // could do, so leaving is a deliberate act now.
         .interactiveDismissDisabled()
+        .alert("Can't post yet", isPresented: $showsProblem) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(errorMessage ?? "Something is missing.")
+        }
     }
 
 
@@ -575,6 +584,7 @@ struct PostListingSheet: View {
     private func submit() {
         if let problem = validate() {
             errorMessage = problem
+            showsProblem = true
             Haptics.notify(.error)
             return
         }
@@ -592,6 +602,7 @@ struct PostListingSheet: View {
                 Haptics.notify(.success)
                 didPost = true
             } catch let error as PostError {
+                showsProblem = true
                 Haptics.notify(.error)
                 errorMessage = error.message
             } catch {
