@@ -133,6 +133,10 @@ struct ListingDetailScreen: View {
                 Haptics.impact(.medium)
                 // The negotiator needs the site's session and its own state, so
                 // it opens on the tab that owns it rather than being rebuilt.
+                // Hand the room over as well: switching tabs alone dropped the
+                // listing, so the negotiator opened blank and the button read
+                // as doing nothing.
+                state.pendingNegotiationListing = listing
                 state.selectedTab = .messages
                 dismiss()
             } label: {

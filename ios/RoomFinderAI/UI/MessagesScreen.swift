@@ -14,6 +14,7 @@ struct MessagesScreen: View {
         case inbox = "Direct Messages"
     }
 
+    @EnvironmentObject private var state: AppState
     @State private var section: Section = .negotiator
     @State private var showingGoals = false
     @StateObject private var messaging = MessagingService()
@@ -38,6 +39,15 @@ struct MessagesScreen: View {
                 case .inbox:
                     InboxList(messaging: messaging)
                 }
+            }
+            // A room arrived from "Negotiate this rent". Open on the negotiator
+            // and brief it about that specific room, rather than dropping the
+            // user on a blank chat that has no idea what they just tapped.
+            .task(id: state.pendingNegotiationListing?.id) {
+                guard let listing = state.pendingNegotiationListing else { return }
+                state.pendingNegotiationListing = nil
+                section = .negotiator
+                await negotiation.start(about: listing)
             }
             .navigationTitle("Messages")
             .navigationBarTitleDisplayMode(.inline)

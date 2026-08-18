@@ -20,6 +20,18 @@ final class AppState: ObservableObject {
         didSet { UserDefaults.standard.set(selectedTab.rawValue, forKey: Self.tabKey) }
     }
 
+    /// The room someone tapped "Negotiate this rent" on, waiting to be picked
+    /// up by the Messages tab.
+    ///
+    /// That button used to switch tabs and nothing else, so the negotiator
+    /// opened on its blank "tell me what you're after" screen with no idea
+    /// which room had just been chosen. From the outside it looked like the
+    /// button did nothing at all.
+    ///
+    /// Cleared by whoever consumes it, so returning to Messages later does not
+    /// re-open a negotiation about a listing from an hour ago.
+    @Published var pendingNegotiationListing: Listing?
+
     private static let tabKey = "lastSelectedTab"
 
     private static func restoredTab() -> AppTab {

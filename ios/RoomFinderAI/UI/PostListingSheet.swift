@@ -27,6 +27,10 @@ struct PostListingSheet: View {
 
     @State private var isDrafting = false
     @State private var draftNote: String?
+    /// Live narration while the draft is being written.
+    @State private var draftSteps: [String] = []
+    /// What the model reported understanding, shown after it finishes.
+    @State private var draftFindings: [String] = []
     private let drafts = ListingDraftService()
 
     @State private var isSubmitting = false
@@ -68,6 +72,32 @@ struct PostListingSheet: View {
                 }
             }
 
+
+            Section {
+                PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
+                    Label(photos.isEmpty ? "Add photos" : "\(photos.count) photo\(photos.count == 1 ? "" : "s") selected",
+                          systemImage: "photo.on.rectangle.angled")
+                }
+                if !photos.isEmpty {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
+                                Image(uiImage: image)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fill)
+                                    .frame(width: 74, height: 74)
+                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            }
+                        }
+                        .padding(.vertical, 4)
+                    }
+                }
+            } header: {
+                Text("Photos")
+            } footer: {
+                Text("Rooms with photos get far more interest. Up to six.")
+            }
+
             Section {
                 Button(action: autofill) {
                     HStack(spacing: 10) {
@@ -78,12 +108,12 @@ struct PostListingSheet: View {
                                 .foregroundStyle(Theme.brand)
                         }
                         VStack(alignment: .leading, spacing: 2) {
-                            Text(photos.isEmpty ? "Write it for me" : "Fill in from my photo")
+                            Text(photos.isEmpty ? "Write it for me" : "Read my photo and fill this in")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundStyle(.primary)
                             Text(photos.isEmpty
-                                 ? "Uses the details you have entered"
-                                 : "Reads the room from your first photo")
+                                 ? "Add a photo above and it can describe the room itself"
+                                 : "Looks at your first photo and writes the listing")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -91,6 +121,50 @@ struct PostListingSheet: View {
                     }
                 }
                 .disabled(isDrafting)
+
+                // Say what it is doing, step by step.
+                //
+                // This used to be a bare spinner, so a photo upload and a
+                // vision call that together take several seconds looked like
+                // the button had hung. The website narrates the same work, and
+                // people were reasonably asking why the app did not.
+                if isDrafting {
+                    VStack(alignment: .leading, spacing: 6) {
+                        ForEach(draftSteps, id: \.self) { step in
+                            HStack(spacing: 8) {
+                                Image(systemName: "circle.fill")
+                                    .font(.system(size: 5))
+                                    .foregroundStyle(Theme.brand)
+                                Text(step)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .transition(.opacity)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+
+                // What it actually understood, so the host can see whether it
+                // read the room correctly rather than diffing the fields by eye.
+                if !isDrafting, !draftFindings.isEmpty {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("What it saw")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                        ForEach(draftFindings, id: \.self) { finding in
+                            HStack(alignment: .top, spacing: 8) {
+                                Image(systemName: "checkmark.circle.fill")
+                                    .font(.caption2)
+                                    .foregroundStyle(.green)
+                                Text(finding)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
 
                 if let draftNote {
                     Text(draftNote)
@@ -122,30 +196,6 @@ struct PostListingSheet: View {
                     .textInputAutocapitalization(.characters)
             }
 
-            Section {
-                PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
-                    Label(photos.isEmpty ? "Add photos" : "\(photos.count) photo\(photos.count == 1 ? "" : "s") selected",
-                          systemImage: "photo.on.rectangle.angled")
-                }
-                if !photos.isEmpty {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 8) {
-                            ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 74, height: 74)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            }
-                        }
-                        .padding(.vertical, 4)
-                    }
-                }
-            } header: {
-                Text("Photos")
-            } footer: {
-                Text("Rooms with photos get far more interest. Up to six.")
-            }
 
             Section("Description") {
                 TextField("What's good about this place?", text: $description, axis: .vertical)
@@ -210,15 +260,27 @@ struct PostListingSheet: View {
     private func autofill() {
         isDrafting = true
         draftNote = nil
+        draftFindings = []
+        draftSteps = []
         Haptics.impact(.light)
+
+        // Each step is appended as the work actually starts, not on a timer, so
+        // whatever is on screen is genuinely what is happening.
+        func step(_ text: String) {
+            withAnimation(.easeOut(duration: 0.2)) { draftSteps.append(text) }
+        }
 
         Task {
             defer { isDrafting = false }
             do {
                 let draft: ListingDraftService.Draft
                 if let photo = photos.first {
+                    step("Preparing your photo…")
+                    step("Sending it to be looked at…")
                     draft = try await drafts.draft(from: photo)
+                    step("Reading the room…")
                 } else {
+                    step("Writing from the details you entered…")
                     draft = try await drafts.draft(
                         city: city, street: street, houseType: houseType,
                         bedrooms: bedrooms, price: price,
@@ -240,10 +302,28 @@ struct PostListingSheet: View {
                     bedrooms = count
                 }
 
-                draftNote = "Filled in. Edit anything that is not right."
-                Haptics.notify(.success)
+                // Report what it understood, in its own terms. An empty list
+                // is itself informative: it means the photo told it nothing
+                // useful, which is worth knowing before posting.
+                var findings: [String] = []
+                if let type = draft.houseType { findings.append("Property type: \(type)") }
+                if let count = draft.bedrooms, count > 0 {
+                    findings.append("Bedrooms: \(count)")
+                }
+                if let value = draft.title { findings.append("Suggested title: \(value)") }
+                if draft.description != nil { findings.append("Wrote a description") }
+                draftFindings = findings
+
+                draftNote = findings.isEmpty
+                    ? "It couldn't tell much from that photo. Try a wider shot, or fill it in yourself."
+                    : "Filled in. Edit anything that is not right."
+                Haptics.notify(findings.isEmpty ? .warning : .success)
             } catch {
-                draftNote = "Couldn't write a draft: \(error.localizedDescription)"
+                draftSteps = []
+                // The server's own words. When it turns a photo down it says
+                // why, and that reason is the only thing that tells the host
+                // what to do about it.
+                draftNote = error.localizedDescription
                 Haptics.notify(.error)
             }
         }

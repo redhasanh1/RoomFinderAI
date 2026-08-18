@@ -50,9 +50,6 @@ final class ListingDraftService {
         request.httpBody = try JSONSerialization.data(withJSONObject: ["image": Array(data)])
 
         let (responseData, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw DraftError.failed("The photo analysis service could not be reached.")
-        }
 
         struct AnalysisResponse: Decodable {
             struct Analysis: Decodable {
@@ -64,6 +61,25 @@ final class ListingDraftService {
             let success: Bool
             let analysis: Analysis?
             let error: String?
+            let rejected: Bool?
+        }
+
+        guard let http = response as? HTTPURLResponse else {
+            throw DraftError.failed("The photo analysis service could not be reached.")
+        }
+
+        // A rejected photo comes back 422 with a specific, useful reason —
+        // "this is a styled interior rendering, not a photograph of a real
+        // rental property". That used to be discarded by a status-code check
+        // that reported "the service could not be reached" instead, so a
+        // working validator doing exactly the right thing looked like the
+        // feature was broken. Read the body before judging on the status.
+        if !(200..<300).contains(http.statusCode) {
+            if let body = try? JSONDecoder().decode(AnalysisResponse.self, from: responseData),
+               let message = body.error, !message.isEmpty {
+                throw DraftError.failed(message)
+            }
+            throw DraftError.failed("The photo analysis service could not be reached.")
         }
 
         let decoded = try JSONDecoder().decode(AnalysisResponse.self, from: responseData)
