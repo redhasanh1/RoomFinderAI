@@ -1269,18 +1269,21 @@ app.post('/api/listings', async (req, res) => {
 
 // Transform listing data to match Android model
 function transformListingForAndroid(listing, verificationMap = {}) {
-    // Extract imageUrl from media array, ensuring it's always a string
-    let imageUrl = null;
-    if (listing.media && listing.media.length > 0) {
-        const firstMedia = listing.media[0];
-        if (typeof firstMedia === 'string') {
-            // If media[0] is already a string URL
-            imageUrl = firstMedia;
-        } else if (firstMedia && typeof firstMedia === 'object') {
-            // If media[0] is an object, extract the URL
-            imageUrl = firstMedia.url || firstMedia.data || null;
-        }
-    }
+    // Every photo, not just the first.
+    //
+    // Only imageUrl went out, so the apps could never show more than one photo
+    // of a room however many were uploaded — no swiping, no gallery, nothing.
+    // media holds two shapes: plain URL strings from the app, { url } objects
+    // from the website.
+    const imageUrls = (listing.media || [])
+        .map((entry) => {
+            if (typeof entry === 'string') return entry;
+            if (entry && typeof entry === 'object') return entry.url || entry.data || null;
+            return null;
+        })
+        .filter((url) => typeof url === 'string' && url.length > 0);
+
+    const imageUrl = imageUrls[0] || null;
 
     // Check if the lister is verified
     const userEmail = listing.user_email || listing.userEmail;
@@ -1296,6 +1299,9 @@ function transformListingForAndroid(listing, verificationMap = {}) {
         bedrooms: listing.bedrooms,
         bathrooms: listing.bathrooms || 1, // Default to 1 if not specified
         imageUrl: imageUrl, // Always a string or null
+        // The full set, so a client can offer a gallery. Kept alongside
+        // imageUrl rather than replacing it, because existing callers read it.
+        imageUrls: imageUrls,
         propertyType: listing.house_type || listing.houseType, // Handle both snake_case and camelCase
         available: true, // Default to available
         createdAt: listing.created_at || listing.createdAt,
