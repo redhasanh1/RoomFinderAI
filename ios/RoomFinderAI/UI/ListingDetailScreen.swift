@@ -45,7 +45,10 @@ struct ListingDetailScreen: View {
                 .padding(20)
             }
         }
-        .ignoresSafeArea(edges: .top)
+        // The photo used to run up under the navigation bar, which suited the
+        // old edge-to-edge crop. Now that it is fitted rather than filled, the
+        // top of the room was simply hidden behind the menu. Nothing on this
+        // screen should sit under the bar.
         .navigationTitle(listing.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
