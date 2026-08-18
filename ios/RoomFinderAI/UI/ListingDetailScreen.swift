@@ -15,6 +15,9 @@ struct ListingDetailScreen: View {
     @State private var isReporting = false
     @State private var photoIndex = 0
     @State private var isViewingPhotos = false
+    /// Filled only when the API sent fewer photos than the listing has.
+    @State private var extraPhotos: [URL] = []
+    private let gallery = ListingGalleryService()
 
     var body: some View {
         ScrollView {
@@ -75,8 +78,15 @@ struct ListingDetailScreen: View {
         }
     }
 
+    /// The API's photos when it sends them, otherwise whatever the fallback
+    /// managed to read.
+    private var photos: [URL] {
+        let fromAPI = listing.galleryURLs
+        return fromAPI.count > 1 ? fromAPI : (extraPhotos.isEmpty ? fromAPI : extraPhotos)
+    }
+
     private var header: some View {
-        let photos = listing.galleryURLs
+        let photos = self.photos
 
         return Group {
             if photos.count > 1 {
@@ -105,6 +115,13 @@ struct ListingDetailScreen: View {
         }
         .fullScreenCover(isPresented: $isViewingPhotos) {
             PhotoViewer(urls: photos, index: $photoIndex)
+        }
+        // Only when the API gave us one photo or none: a server that already
+        // sends the full set makes this a no-op.
+        .task {
+            guard listing.galleryURLs.count <= 1 else { return }
+            let found = await gallery.photos(for: listing.id)
+            if found.count > 1 { extraPhotos = found }
         }
     }
 
