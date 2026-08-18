@@ -685,11 +685,23 @@
           console.error('OAuth code exchange failed:', result);
           alert(result.error || 'Google Sign-In failed');
         }
-      }catch(e){ 
+      }catch(e){
         console.error('OAuth code exchange error:', e);
-        alert('Google Sign-In failed. Please try again.'); 
+        alert('Google Sign-In failed. Please try again.');
       }
     }
+
+    // The iOS app calls this after its native Google flow returns a code, via
+    // window.RoomFinderNative.completeGoogleSignIn, which does:
+    //
+    //     if (typeof window.handleGoogleAuthCode === 'function') { ... }
+    //
+    // Everything in this script lives inside a DOMContentLoaded closure, so
+    // the declaration above is local and that check was always false. Signing
+    // in through Google in the app worked all the way to the authorization
+    // code and then silently did nothing — no error, no alert, no sign-in.
+    // Apple sign-in already exposes itself the same way a few lines below.
+    window.handleGoogleAuthCode = handleGoogleAuthCode;
 
     async function handleGoogleSignIn(){
       // Inside the iOS app, hand off to the native flow. Google rejects OAuth
