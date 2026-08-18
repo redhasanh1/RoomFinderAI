@@ -25,6 +25,17 @@ struct PostListingSheet: View {
 
     @State private var pickerItems: [PhotosPickerItem] = []
     @State private var photos: [UIImage] = []
+    /// The bytes each photo arrived as, in the same order.
+    ///
+    /// Uploading re-encoded `photos` instead, which meant the upload depended on
+    /// state that a second, overlapping pick could rewrite underneath it — the
+    /// way three chosen photos turned into one of them sent twice. Holding the
+    /// original data means what is uploaded is exactly what was picked, and it
+    /// skips a needless re-compression.
+    @State private var photoData: [Data] = []
+    /// Cancels a previous load when a new selection arrives, so two runs cannot
+    /// interleave and leave a mixed set behind.
+    @State private var loadTask: Task<Void, Never>?
     /// Where the first photo was taken, if it says so. Used to fill the address
     /// and to price the room against its actual area.
     @State private var photoLocation: ListingDraftService.PhotoLocation?
@@ -74,7 +85,9 @@ struct PostListingSheet: View {
             // is showing — so picking a photo on the first screen changed
             // pickerItems with nothing listening, and nothing happened at all.
             .onChange(of: pickerItems) { _, items in
-                Task { await loadPhotos(items) }
+                // Replace any load still running, rather than racing it.
+                loadTask?.cancel()
+                loadTask = Task { await loadPhotos(items) }
             }
             .navigationTitle(didPost ? "Posted" : (step == .photos ? "Add Photos" : "Check the Details"))
             .navigationBarTitleDisplayMode(.inline)
@@ -434,17 +447,28 @@ struct PostListingSheet: View {
 
     private func loadPhotos(_ items: [PhotosPickerItem]) async {
         var loaded: [UIImage] = []
+        var loadedData: [Data] = []
         var foundLocation: ListingDraftService.PhotoLocation?  // photo GPS, else the device
+
         for item in items {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
-                loaded.append(image)
-                // Read the coordinates from the file itself, before UIImage
-                // drops them. First photo that has them wins.
-                if foundLocation == nil { foundLocation = Self.coordinates(in: data) }
-            }
+            if Task.isCancelled { return }
+            guard let data = try? await item.loadTransferable(type: Data.self),
+                  let image = UIImage(data: data) else { continue }
+
+            // The picker can hand back the same asset twice; uploading it twice
+            // then looks like the other photos silently vanished.
+            if loadedData.contains(data) { continue }
+
+            loaded.append(image)
+            loadedData.append(data)
+            // Read the coordinates from the file itself, before UIImage drops
+            // them. First photo that has them wins.
+            if foundLocation == nil { foundLocation = Self.coordinates(in: data) }
         }
+
+        if Task.isCancelled { return }
         photos = loaded
+        photoData = loadedData
 
         // PhotosPicker hands back images with their location stripped, so the
         // EXIF read above usually finds nothing. Ask the device where it is
@@ -625,11 +649,11 @@ struct PostListingSheet: View {
             append("Content-Disposition: form-data; name=\"userEmail\"\r\n\r\n\(email)\r\n")
         }
 
-        for (index, image) in photos.enumerated() {
-            // Re-encoded as JPEG at 0.8: a modern phone photo is several
-            // megabytes, and six of them would make posting a room feel broken
-            // on anything but wifi.
-            guard let data = image.jpegData(compressionQuality: 0.8) else { continue }
+        // Snapshotted before the loop: this runs across await points, and
+        // reading the state each time round meant a photo picked mid-upload
+        // could change what was being sent.
+        let outgoing = photoData
+        for (index, data) in outgoing.enumerated() {
             append("--\(boundary)\r\n")
             append("Content-Disposition: form-data; name=\"photos\"; filename=\"room-\(index).jpg\"\r\n")
             append("Content-Type: image/jpeg\r\n\r\n")

@@ -1539,11 +1539,30 @@
         async function deleteListing(id) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser')) || {};
 
+            // Deleting used to happen on the tap, with no confirmation at all.
+            // A listing is not recoverable once it is gone, and the button sits
+            // beside Edit on a card people scroll past — one mis-tap on a phone
+            // destroyed a room and everything written about it.
+            //
+            // Typing the word is deliberate: a yes/no box is dismissed by
+            // reflex, and this is the one action here that cannot be undone.
+            const card = document.querySelector(`[onclick*="deleteListing('${id}')"]`)?.closest('.rounded-lg');
+            const name = card?.querySelector('h3, h4')?.textContent?.trim() || 'this listing';
+
+            const typed = prompt(
+                `Delete "${name}"?\n\n` +
+                'This permanently removes the listing and its photos. It cannot be undone.\n\n' +
+                'Type DELETE to confirm.'
+            );
+
+            if (typed === null) return;                       // cancelled
+            if (typed.trim().toUpperCase() !== 'DELETE') {
+                alert('Not deleted. You need to type DELETE exactly.');
+                return;
+            }
+
             console.log('DELETE REQUEST:', { listingId: id, userEmail: currentUser.email });
 
-            // Find the listing card element (button's grandparent is the card)
-            const deleteButton = document.querySelector(`[onclick*="deleteListing('${id}')"]`);
-            const card = deleteButton ? deleteButton.closest('.rounded-lg') : null;
 
             try {
                 // Show loading state with animation on the card
