@@ -13,6 +13,8 @@ struct ListingDetailScreen: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var isReporting = false
+    @State private var photoIndex = 0
+    @State private var isViewingPhotos = false
 
     var body: some View {
         ScrollView {
@@ -74,27 +76,51 @@ struct ListingDetailScreen: View {
     }
 
     private var header: some View {
-        // A 4:3 stage with the photo fitted inside it.
-        //
-        // This filled a fixed 260pt-tall band across the full width. On an
-        // iPad that band is around a thousand points wide, so an ordinary
-        // photo was scaled up enormously and cropped to a thin strip through
-        // its middle — a room became a slice of wall, which is what "the image
-        // is in some random place" was.
-        //
-        // Fitting inside a ratio that follows the width shows the whole room
-        // at any size, on either device, the same way the website does it.
+        let photos = listing.galleryURLs
+
+        return Group {
+            if photos.count > 1 {
+                // Swipeable, with dots. A room is sold on its photos and only
+                // the first was ever reachable here.
+                TabView(selection: $photoIndex) {
+                    ForEach(Array(photos.enumerated()), id: \.offset) { index, url in
+                        photoStage(url).tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .always))
+                .indexViewStyle(.page(backgroundDisplayMode: .always))
+            } else {
+                photoStage(photos.first)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .aspectRatio(4 / 3, contentMode: .fit)
+        // Capped so a photo cannot push the rest of the screen away on an iPad.
+        .frame(maxHeight: 420)
+        .clipped()
+        .onTapGesture {
+            guard !photos.isEmpty else { return }
+            Haptics.impact(.light)
+            isViewingPhotos = true
+        }
+        .fullScreenCover(isPresented: $isViewingPhotos) {
+            PhotoViewer(urls: photos, index: $photoIndex)
+        }
+    }
+
+    /// One photo, fitted rather than filled.
+    ///
+    /// This used to fill a fixed 260pt band across the full width. On an iPad
+    /// that band is around a thousand points wide, so an ordinary photo was
+    /// scaled up enormously and cropped to a strip through its middle.
+    private func photoStage(_ url: URL?) -> some View {
         ZStack {
-            // Sits behind the letterboxing, so a tall photo has a deliberate
-            // edge rather than a torn one.
             Rectangle().fill(Color(.secondarySystemBackground))
 
-            AsyncImage(url: listing.imageURL) { phase in
+            AsyncImage(url: url) { phase in
                 switch phase {
                 case .success(let image):
-                    image
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
+                    image.resizable().aspectRatio(contentMode: .fit)
                 case .empty:
                     ProgressView()
                 default:
@@ -107,11 +133,6 @@ struct ListingDetailScreen: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity)
-        .aspectRatio(4 / 3, contentMode: .fit)
-        // Capped so the photo cannot push everything else off an iPad screen.
-        .frame(maxHeight: 420)
-        .clipped()
     }
 
     private var titleBlock: some View {

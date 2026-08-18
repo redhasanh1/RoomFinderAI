@@ -11,6 +11,9 @@ struct Listing: Identifiable, Decodable, Hashable {
     let bedrooms: Int?
     let bathrooms: Int?
     let imageUrl: String?
+    /// Every photo, when the server offers them. Older responses only carried
+    /// `imageUrl`, so this stays optional and falls back to it.
+    let imageUrls: [String]?
     let propertyType: String?
     let available: Bool?
     let userVerified: Bool?
@@ -19,7 +22,7 @@ struct Listing: Identifiable, Decodable, Hashable {
 
     enum CodingKeys: String, CodingKey {
         case id, title, description, price, location, address
-        case bedrooms, bathrooms, imageUrl, propertyType, available
+        case bedrooms, bathrooms, imageUrl, imageUrls, propertyType, available
         case userVerified = "user_verified"
         case userEmail = "user_email"
     }
@@ -55,6 +58,13 @@ struct Listing: Identifiable, Decodable, Hashable {
     var imageURL: URL? {
         guard let imageUrl, !imageUrl.isEmpty else { return nil }
         return URL(string: imageUrl)
+    }
+
+    /// The gallery, in order. Falls back to the single image so a room posted
+    /// before the server sent the full set still shows its photo.
+    var galleryURLs: [URL] {
+        let candidates = (imageUrls?.isEmpty == false) ? imageUrls! : [imageUrl].compactMap { $0 }
+        return candidates.compactMap { $0.isEmpty ? nil : URL(string: $0) }
     }
 
     /// The web page for this listing, used when the native screen hands off for
