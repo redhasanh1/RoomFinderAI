@@ -177,6 +177,22 @@ function isSecurityCheckPassed() {
  * Redirect after login — skip verification-modal if already verified
  */
 function redirectAfterLogin(redirectUrl) {
+    // Inside the iOS app, land on the profile page.
+    //
+    // Login is hosted by the Profile tab, and the default target is
+    // index.html — the website's homepage. The app has its own native home
+    // screen, so that dropped a second, web homepage inside the Profile tab
+    // and read as the app glitching after signing in.
+    //
+    // The Turnstile interstitial is skipped for the same surface: it is a
+    // bot check for anonymous web traffic, and someone who has just completed
+    // Google or Apple sign-in through the system's own Safari context has
+    // already proved more than it ever could.
+    if (window.RoomFinderNative) {
+        window.location.href = 'profile.html';
+        return;
+    }
+
     const target = redirectUrl || 'index.html';
     if (isSecurityCheckPassed()) {
         window.location.href = target;

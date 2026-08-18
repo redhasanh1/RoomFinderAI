@@ -420,7 +420,9 @@
             if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
               UniversalAuth.redirectAfterLogin('index.html');
             } else {
-              window.location.href = 'verification-modal.html?redirect=index.html';
+              window.location.href = window.RoomFinderNative
+            ? 'profile.html'
+            : 'verification-modal.html?redirect=index.html';
             }
           }else{
             alert(result.error || 'Login failed');
@@ -524,7 +526,9 @@
           if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
             UniversalAuth.redirectAfterLogin('index.html');
           } else {
-            window.location.href = 'verification-modal.html?redirect=index.html';
+            window.location.href = window.RoomFinderNative
+            ? 'profile.html'
+            : 'verification-modal.html?redirect=index.html';
           }
         }else{
           alert(result.error || 'Verification failed');
@@ -648,7 +652,9 @@
           if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
             UniversalAuth.redirectAfterLogin('index.html');
           } else {
-            window.location.href = 'verification-modal.html?redirect=index.html';
+            window.location.href = window.RoomFinderNative
+            ? 'profile.html'
+            : 'verification-modal.html?redirect=index.html';
           }
         }else{
           alert(result.error || 'Google Sign-In failed');
@@ -679,7 +685,9 @@
           if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
             UniversalAuth.redirectAfterLogin('index.html');
           } else {
-            window.location.href = 'verification-modal.html?redirect=index.html';
+            window.location.href = window.RoomFinderNative
+            ? 'profile.html'
+            : 'verification-modal.html?redirect=index.html';
           }
         }else{
           console.error('OAuth code exchange failed:', result);
@@ -754,7 +762,9 @@
       if (window.UniversalAuth && UniversalAuth.redirectAfterLogin) {
         UniversalAuth.redirectAfterLogin('index.html');
       } else {
-        window.location.href = 'verification-modal.html?redirect=index.html';
+        window.location.href = window.RoomFinderNative
+            ? 'profile.html'
+            : 'verification-modal.html?redirect=index.html';
       }
     }
     window.completeAppleSignIn = submitAppleCredential;
