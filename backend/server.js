@@ -9065,6 +9065,22 @@ app.post('/api/admin/verify-user', async (req, res) => {
             return res.status(500).json({ error: 'Failed to update verification' });
         }
 
+        // The badge is read from two places: listings check
+        // user_verifications, the profile checks users.is_verified. Updating
+        // only one meant an approved host showed as verified in one view and
+        // not the other.
+        const { error: badgeError } = await supabase
+            .from('users')
+            .update({
+                is_verified: action === 'approve',
+                verification_badge_earned_at: action === 'approve' ? new Date().toISOString() : null
+            })
+            .eq('email', userEmail);
+
+        if (badgeError) {
+            console.error('Verification saved but badge not updated:', badgeError.message);
+        }
+
         console.log(`✅ User ${userEmail} verification ${action}ed`);
 
         res.json({
@@ -9167,6 +9183,56 @@ app.post('/api/verify/head-pose', upload.single('facePhoto'), async (req, res) =
 });
 
 // API: Admin - Clear all test data (listings, chats, activities, negotiations)
+/**
+ * A short-lived link to one submitted document, for the person reviewing it.
+ *
+ * `govdocs` is a private bucket, correctly: these are passports. Nothing in the
+ * app could read from it, so the review queue listed submissions that nobody
+ * could actually look at. Signed for ten minutes, long enough to check and not
+ * long enough to become a link that gets forwarded.
+ */
+app.get('/api/admin/verification-document', async (req, res) => {
+    try {
+        const adminKey = req.headers['x-admin-key'] || req.query.adminKey;
+        const validAdminKey = getAdminKey();
+        if (!validAdminKey || adminKey !== validAdminKey) {
+            return res.status(403).json({ error: 'Unauthorized' });
+        }
+        if (!supabase) return res.status(503).json({ error: 'Database unavailable' });
+
+        const { userEmail, kind } = req.query;
+        if (!userEmail) return res.status(400).json({ error: 'userEmail is required' });
+
+        const { data: record } = await supabase
+            .from('user_verifications')
+            .select('id_verification_data, face_verification_data')
+            .eq('user_email', userEmail)
+            .maybeSingle();
+
+        if (!record) return res.status(404).json({ error: 'No submission for that address' });
+
+        const path = kind === 'selfie'
+            ? record.face_verification_data?.face_photo_path
+            : record.id_verification_data?.id_document_path;
+
+        if (!path) return res.status(404).json({ error: 'Nothing was stored for that' });
+
+        const { data: signed, error } = await supabase.storage
+            .from('govdocs')
+            .createSignedUrl(path, 600);
+
+        if (error) {
+            console.error('Could not sign document URL:', error.message);
+            return res.status(500).json({ error: 'Could not open that document' });
+        }
+
+        res.json({ url: signed.signedUrl, expiresInSeconds: 600 });
+    } catch (error) {
+        console.error('verification-document failed:', error.message);
+        res.status(500).json({ error: 'Could not open that document' });
+    }
+});
+
 app.post('/api/admin/clear-data', async (req, res) => {
     try {
         const { adminKey, tables } = req.body;

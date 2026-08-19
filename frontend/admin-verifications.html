@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Verification Review · RoomFinderAI</title>
+    <link rel="stylesheet" href="/modules/css/main.css"/>
+    <style>
+        body { background: #f4f5f9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 0; color: #1a1a2e; }
+        .wrap { max-width: 1000px; margin: 0 auto; padding: 2rem 1.25rem 4rem; }
+        h1 { font-size: 1.6rem; margin: 0 0 0.35rem; }
+        .sub { color: #6b7280; margin: 0 0 2rem; font-size: 0.95rem; }
+
+        .panel { background: #fff; border-radius: 16px; padding: 1.5rem; box-shadow: 0 4px 20px rgba(0,0,0,0.06); margin-bottom: 1.25rem; }
+
+        label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 0.4rem; }
+        input[type="password"], input[type="text"], textarea {
+            width: 100%; padding: 0.7rem 0.85rem; border: 1px solid #d5d7e0;
+            border-radius: 10px; font-size: 0.95rem; box-sizing: border-box; font-family: inherit;
+        }
+        button { font: inherit; font-weight: 600; border-radius: 10px; cursor: pointer; border: none; padding: 0.7rem 1.3rem; }
+        .primary { background: #667eea; color: #fff; }
+        .approve { background: #16a34a; color: #fff; }
+        .reject  { background: #fff; color: #b91c1c; border: 1px solid #f0b4b4; }
+        .ghost   { background: #eef0f6; color: #374151; }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .row { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+        .doc { flex: 1 1 320px; min-width: 280px; }
+        .doc img { width: 100%; border-radius: 12px; border: 1px solid #e5e7eb; background: #fafafa; display: block; }
+        .facts { flex: 1 1 300px; min-width: 260px; }
+        .facts dt { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7280; margin-top: 0.9rem; }
+        .facts dd { margin: 0.15rem 0 0; font-size: 0.95rem; }
+        .note { background: #f6f7fb; border-left: 3px solid #667eea; padding: 0.7rem 0.9rem; border-radius: 0 8px 8px 0; font-size: 0.88rem; color: #374151; margin-top: 1rem; }
+        .actions { display: flex; gap: 0.7rem; margin-top: 1.25rem; flex-wrap: wrap; align-items: center; }
+        .warn { color: #b45309; font-size: 0.85rem; margin-top: 0.75rem; }
+        .empty { text-align: center; color: #6b7280; padding: 3rem 1rem; }
+        .flash { padding: 0.8rem 1rem; border-radius: 10px; margin-bottom: 1rem; font-size: 0.9rem; }
+        .flash.ok  { background: #ecfdf5; color: #065f46; }
+        .flash.bad { background: #fef2f2; color: #991b1b; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <h1>Verification review</h1>
+    <p class="sub">
+        Every submission here already passed an automatic check that it is a government
+        document and has not expired. That check only filters out obvious rubbish, so
+        whether the document is genuine, and whether it belongs to this person, is your call.
+    </p>
+
+    <div id="flash" class="flash hidden"></div>
+
+    <!-- Key gate -->
+    <div class="panel" id="gate">
+        <label for="adminKey">Admin key</label>
+        <input type="password" id="adminKey" placeholder="The ADMIN_KEY from your Railway variables" autocomplete="off">
+        <p class="warn">Kept in this tab only, and forgotten when you close it.</p>
+        <div class="actions">
+            <button class="primary" onclick="loadQueue()">Open the queue</button>
+        </div>
+    </div>
+
+    <div id="queue"></div>
+</div>
+
+<script>
+    // sessionStorage, not localStorage: the key should not outlive the tab.
+    const keyStore = {
+        get: () => sessionStorage.getItem('rfAdminKey') || '',
+        set: (v) => sessionStorage.setItem('rfAdminKey', v),
+        clear: () => sessionStorage.removeItem('rfAdminKey')
+    };
+
+    function flash(message, ok = true) {
+        const el = document.getElementById('flash');
+        el.textContent = message;
+        el.className = `flash ${ok ? 'ok' : 'bad'}`;
+        el.classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, c =>
+            ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+
+    async function loadQueue() {
+        const key = document.getElementById('adminKey').value.trim() || keyStore.get();
+        if (!key) return flash('Enter the admin key first.', false);
+        keyStore.set(key);
+
+        const queue = document.getElementById('queue');
+        queue.innerHTML = '<div class="panel"><div class="empty">Loading…</div></div>';
+
+        let payload;
+        try {
+            const res = await fetch('/api/admin/pending-verifications', {
+                headers: { 'x-admin-key': key }
+            });
+            payload = await res.json();
+            if (!res.ok) throw new Error(payload.error || `HTTP ${res.status}`);
+        } catch (e) {
+            keyStore.clear();
+            queue.innerHTML = '';
+            return flash(`Could not open the queue: ${e.message}`, false);
+        }
+
+        document.getElementById('gate').classList.add('hidden');
+        document.getElementById('flash').classList.add('hidden');
+
+        const rows = payload.verifications || [];
+        if (!rows.length) {
+            queue.innerHTML = '<div class="panel"><div class="empty">Nothing waiting. Everyone who has applied has been dealt with.</div></div>';
+            return;
+        }
+
+        queue.innerHTML = rows.map(render).join('');
+        rows.forEach(row => showDocument(row.user_email));
+    }
+
+    function render(row) {
+        const check = row.id_verification_data?.machine_check || {};
+        const skipped = row.id_verification_data?.machine_check_skipped;
+        const id = escapeHtml(row.user_email);
+
+        const fact = (label, value) => value
+            ? `<dt>${label}</dt><dd>${escapeHtml(value)}</dd>` : '';
+
+        return `
+        <div class="panel" id="card-${id}">
+            <div class="row">
+                <div class="doc">
+                    <img id="img-${id}" alt="Submitted document" src=""
+                         onerror="this.alt='Could not load the document'">
+                    <div class="actions">
+                        <button class="ghost" onclick="showDocument('${id}', 'selfie')">Show their selfie</button>
+                        <button class="ghost" onclick="showDocument('${id}')">Show the document</button>
+                    </div>
+                </div>
+
+                <div class="facts">
+                    <dl>
+                        <dt>Account</dt><dd>${id}</dd>
+                        ${fact('Document type', check.docType)}
+                        ${fact('Name on document', check.name)}
+                        ${fact('Expires', check.dateOfExpiration)}
+                        ${fact('Country', check.countryRegion)}
+                        ${fact('Submitted', row.updated_at?.slice(0, 16).replace('T', ' '))}
+                    </dl>
+
+                    ${check.modelNote ? `<div class="note"><strong>What the check read:</strong><br>${escapeHtml(check.modelNote)}</div>` : ''}
+                    ${skipped ? `<p class="warn">No automatic check ran on this one (${escapeHtml(skipped)}), so look at it more carefully.</p>` : ''}
+
+                    <div class="actions">
+                        <button class="approve" onclick="decide('${id}', 'approve')">Approve</button>
+                        <button class="reject" onclick="decide('${id}', 'reject')">Reject</button>
+                    </div>
+                    <p class="warn">Approving turns on their verified badge across the site.</p>
+                </div>
+            </div>
+        </div>`;
+    }
+
+    /**
+     * The bucket is private, so images come through a link the server signs and
+     * that expires in ten minutes.
+     */
+    async function showDocument(userEmail, kind = 'id') {
+        const img = document.getElementById(`img-${userEmail}`);
+        if (!img) return;
+        try {
+            const res = await fetch(
+                `/api/admin/verification-document?userEmail=${encodeURIComponent(userEmail)}&kind=${kind}`,
+                { headers: { 'x-admin-key': keyStore.get() } });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+            img.src = data.url;
+        } catch (e) {
+            img.removeAttribute('src');
+            img.alt = `Could not load the ${kind === 'selfie' ? 'selfie' : 'document'}: ${e.message}`;
+        }
+    }
+
+    async function decide(userEmail, action) {
+        let reason = null;
+        if (action === 'reject') {
+            reason = prompt('Why is this being rejected? They will be told.');
+            if (reason === null) return;
+        }
+        if (action === 'approve' &&
+            !confirm(`Approve ${userEmail}? This turns on their verified badge.`)) return;
+
+        try {
+            const res = await fetch('/api/admin/verify-user', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ adminKey: keyStore.get(), userEmail, action, reason })
+            });
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+
+            document.getElementById(`card-${userEmail}`)?.remove();
+            flash(`${userEmail} ${action === 'approve' ? 'approved' : 'rejected'}.`);
+
+            if (!document.querySelectorAll('#queue .panel').length) loadQueue();
+        } catch (e) {
+            flash(`That did not go through: ${e.message}`, false);
+        }
+    }
+
+    // Straight back in on a refresh, without retyping the key.
+    if (keyStore.get()) loadQueue();
+</script>
+</body>
+</html>
