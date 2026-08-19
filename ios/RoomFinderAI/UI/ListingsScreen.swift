@@ -63,6 +63,11 @@ struct ListingsScreen: View {
             VStack(spacing: 0) {
                 if showsHero { hero }
 
+                // At the top, where people look for it. It was moved to the
+                // bottom to be in reach of a thumb, but a search bar you have
+                // to hunt for is worse than one you have to stretch to.
+                searchBar
+
                 categoryStrip
                     .padding(.bottom, 10)
 
@@ -86,13 +91,6 @@ struct ListingsScreen: View {
             .navigationDestination(for: Listing.self) { ListingDetailScreen(listing: $0) }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
-            // Search and filters sit at the bottom, in reach of a thumb.
-            //
-            // `.searchable` puts them in the navigation bar, which on a phone
-            // is the far corner of the screen and on an iPad is nowhere near
-            // where the hand already is. This is the one control people use
-            // constantly on this screen.
-            .safeAreaInset(edge: .bottom) { searchBar }
             .onChange(of: query) { _, _ in scheduleSearch() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
@@ -317,18 +315,23 @@ struct ListingsScreen: View {
             .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
 
             filterMenu
-                .padding(10)
-                .background(
-                    Circle().fill(hasActiveFilters
-                                  ? AnyShapeStyle(Theme.gradient)
-                                  : AnyShapeStyle(Color(.secondarySystemBackground)))
-                )
+                .padding(.horizontal, hasActiveFilters ? 14 : 13)
+                .padding(.vertical, 12)
                 .foregroundStyle(hasActiveFilters ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.brand))
+                .background(
+                    Capsule().fill(hasActiveFilters
+                                   ? AnyShapeStyle(Theme.gradient)
+                                   : AnyShapeStyle(Color(.systemBackground)))
+                )
+                .overlay(
+                    Capsule().strokeBorder(
+                        hasActiveFilters ? Color.clear : Theme.brand.opacity(0.35),
+                        lineWidth: 1.5)
+                )
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
         }
         .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 6)
-        .background(.bar)
+        .padding(.bottom, 12)
     }
 
     private var filterMenu: some View {
@@ -362,14 +365,30 @@ struct ListingsScreen: View {
                 }
             }
         } label: {
-            Image(systemName: hasActiveFilters
-                  ? "line.3.horizontal.decrease.circle.fill"
-                  : "line.3.horizontal.decrease.circle")
+            HStack(spacing: 6) {
+                Image(systemName: "slider.horizontal.3")
+                    .font(.system(size: 17, weight: .semibold))
+                // Says which filters are on rather than only that some are, so
+                // a list that looks short has a visible reason.
+                if let summary = activeFilterSummary {
+                    Text(summary)
+                        .font(.footnote.weight(.semibold))
+                        .lineLimit(1)
+                }
+            }
         }
-        .accessibilityLabel("Filters")
+        .accessibilityLabel(activeFilterSummary.map { "Filters, \($0)" } ?? "Filters")
     }
 
     private var hasActiveFilters: Bool { maxPrice != nil || bedrooms != nil }
+
+    /// The filters currently on, in the fewest words that still say which.
+    private var activeFilterSummary: String? {
+        var parts: [String] = []
+        if let maxPrice { parts.append("under $\(Int(maxPrice))") }
+        if let bedrooms { parts.append("\(bedrooms)+ bed") }
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
 
     private var resultsSummary: String {
         let count = visibleListings.count
