@@ -91,6 +91,10 @@ struct ListingsScreen: View {
             .navigationDestination(for: Listing.self) { ListingDetailScreen(listing: $0) }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
+            // Posting is the other half of this product, and a tab-bar slot is
+            // easy to miss among four others. A plus with the word on it says
+            // what it does without being read twice.
+            .overlay(alignment: .bottomTrailing) { postButton }
             .onChange(of: query) { _, _ in scheduleSearch() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
@@ -269,6 +273,28 @@ struct ListingsScreen: View {
             }
             .padding(.horizontal, 16)
         }
+    }
+
+    private var postButton: some View {
+        Button {
+            Haptics.impact(.medium)
+            state.wantsToPost = true
+        } label: {
+            HStack(spacing: 7) {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .bold))
+                Text("Post a room")
+                    .font(.subheadline.weight(.semibold))
+            }
+            .foregroundStyle(.white)
+            .padding(.horizontal, 18)
+            .padding(.vertical, 13)
+            .background(Theme.gradient, in: Capsule())
+            .shadow(color: Theme.brand.opacity(0.35), radius: 10, y: 4)
+        }
+        .padding(.trailing, 18)
+        .padding(.bottom, 18)
+        .accessibilityLabel("Post a room")
     }
 
     /// The search field and the filters, pinned above the tab bar.

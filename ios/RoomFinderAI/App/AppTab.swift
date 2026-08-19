@@ -30,7 +30,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// and the whole thing read as cramped. Listings and Sublease are in the
     /// menu instead, which is what the site's own "More" does with its
     /// overflow.
-    static let tabBar: [AppTab] = [.home, .roompal, .post, .messages, .profile]
+    static let tabBar: [AppTab] = [.home, .sublease, .post, .messages, .profile]
 
     var id: String { rawValue }
 
@@ -90,6 +90,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case "listings.html":                   return .listings
         case "ai-negotiator.html":              return .messages  // native; selecting it is the whole action
         case "roommate-matching.html":          return .roompal
+        case "sublease.html":                   return .sublease
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile
         default:                                return nil
         }
@@ -106,8 +107,8 @@ struct MoreDestination: Identifiable, Hashable {
     let path: String
 
     static let all: [MoreDestination] = [
-        .init(title: "Sublease",      symbol: "calendar.badge.clock", path: "sublease.html"),
         .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
+        .init(title: "Listings",      symbol: "building.2.fill",      path: "listings.html"),
         .init(title: "Legal Help",    symbol: "checkmark.shield.fill", path: "legal.html"),
         // No Pricing entry. The Pro plan is sold through Stripe on the website,
         // and App Store guideline 3.1.1 requires anything unlocking in-app

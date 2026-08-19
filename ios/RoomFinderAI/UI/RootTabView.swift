@@ -17,7 +17,7 @@ struct RootTabView: View {
                     case .roompal:    RoomPalScreen()
                     case .listings:   ListingsScreen()
                     case .messages:   MessagesScreen()
-                    case .sublease:   BrowserScreen(tab: tab, store: state.store(for: tab))
+                    case .sublease:   SubleaseScreen()
                     case .profile:    BrowserScreen(tab: tab, store: state.store(for: tab))
                     case .post:
                         // Never actually shown — selecting this slot opens the
@@ -33,6 +33,11 @@ struct RootTabView: View {
         .tint(Theme.brand)
         .sheet(isPresented: $isPosting) {
             PostListingSheet()
+        }
+        .onChange(of: state.wantsToPost) { _, wants in
+            guard wants else { return }
+            isPosting = true
+            state.wantsToPost = false
         }
         // Menu pages open over the app with their own Done button, so you come
         // back to the tab you were on rather than being left somewhere else.

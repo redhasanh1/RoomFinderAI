@@ -37,6 +37,10 @@ final class AppState: ObservableObject {
     /// native negotiation loop would use this again.
     @Published var pendingNegotiationListing: Listing?
 
+    /// Raised when something outside the tab bar asks to post a room, so the
+    /// shell can open the sheet.
+    @Published var wantsToPost = false
+
     /// A site page opened from the menu, shown over whatever tab you were on.
     ///
     /// These used to be routed to a tab. Sublease pointed at a tab that is no
@@ -101,9 +105,10 @@ final class AppState: ObservableObject {
 
     /// Tabs that render the site. Only Profile does now — the other four are
     /// native and have no web view, so a URL cannot be handed to them.
-    /// Sublease has no native screen yet, so it renders the site's page inside
-    /// the app the way Profile does. Everything else is native.
-    private var webCapableTabs: Set<AppTab> { [.profile, .sublease] }
+    /// Profile is the only tab left rendering the site: it is login, billing,
+    /// verification and account deletion, and duplicating that is how auth bugs
+    /// are born. Everything else is native.
+    private var webCapableTabs: Set<AppTab> { [.profile] }
 
     /// Send a URL to the tab that owns it and bring that tab forward.
     func route(to tab: AppTab, url: URL) {
