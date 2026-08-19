@@ -41,7 +41,10 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .roompal:    return "RoomPal"
         case .sublease:   return "Sublease"
         case .post:       return "Post"
-        case .messages:   return "Negotiator"
+        // "Messages", not "Negotiator". The tab holds two halves: the AI
+        // negotiator and real threads with landlords and roommates. Naming it
+        // after one of them hides the other.
+        case .messages:   return "Messages"
         case .profile:    return "Profile"
         }
     }
