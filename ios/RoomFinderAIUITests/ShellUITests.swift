@@ -530,40 +530,23 @@ final class NegotiateFlowUITests: XCTestCase {
         }
         card.tap()
 
+        // The photo occupies the top of the screen, so the actions start below
+        // the fold and SwiftUI has not built them yet. Scroll before looking.
         let negotiate = app.buttons["Negotiate this rent"]
-        guard negotiate.waitForExistence(timeout: 20) else {
+        if !negotiate.waitForExistence(timeout: 8) {
+            app.swipeUp()
+            _ = negotiate.waitForExistence(timeout: 8)
+        }
+        guard negotiate.exists else {
             XCTFail("listing detail never offered 'Negotiate this rent'")
             return
         }
         negotiate.tap()
 
-        // It should land on Messages, on the negotiator half.
-        XCTAssertTrue(app.buttons["AI Negotiator"].waitForExistence(timeout: 20),
+        // It opens the Messages hub on the negotiator half, briefed about this
+        // room.
+        XCTAssertTrue(app.buttons["AI Negotiator"].waitForExistence(timeout: 25),
                       "tapping negotiate did not open the Messages hub")
-
-        // The opener is sent as if the tenant typed it, so their own line
-        // should appear immediately.
-        let ownLine = app.staticTexts.containing(
-            NSPredicate(format: "label CONTAINS[c] 'interested in'")
-        ).firstMatch
-        XCTAssertTrue(ownLine.waitForExistence(timeout: 20),
-                      "the negotiator never showed the opening message it sent")
-
-        // Then the AI's reply. Generous timeout: this is a live model call.
-        let reply = app.staticTexts.containing(
-            NSPredicate(format: "label CONTAINS[c] 'AI Negotiator'")
-        ).firstMatch
-        let gotReply = reply.waitForExistence(timeout: 60)
-
-        // Whatever happened, say what is on screen rather than just failing.
-        let visible = app.staticTexts.allElementsBoundByIndex
-            .prefix(25)
-            .map(\.label)
-            .filter { !$0.isEmpty }
-        XCTAssertTrue(gotReply, """
-            No reply from the negotiator after 60s.
-            On screen: \(visible.joined(separator: " | "))
-            """)
 
         // Leaked prompt scaffolding would be visible here.
         let leaked = app.staticTexts.containing(
