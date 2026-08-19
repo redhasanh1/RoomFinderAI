@@ -122,6 +122,74 @@ function registerMessagingRoutes(app, getSupabase) {
         res.json({ success: true, data });
     });
 
+    /**
+     * Find or create the thread between the person asking and a listing's owner.
+     *
+     * The website creates this row straight from the browser, which is why no
+     * endpoint existed. The app cannot: it has no Supabase session, and the
+     * table is no longer reachable with the browser key. Without this there was
+     * no way for the app to start a negotiation at all — it could only ever
+     * chat to an assistant about a room.
+     *
+     * Idempotent, and deliberately checks both directions: the landlord may
+     * have messaged first, and a second row for the same pair would split one
+     * conversation into two half-threads.
+     */
+    app.post('/api/conversations', async (req, res) => {
+        const supabase = getSupabase();
+        if (!supabase) return res.status(503).json({ success: false, message: 'Database not connected' });
+
+        const { listingId, userEmail } = req.body || {};
+        if (!listingId || !userEmail) {
+            return res.status(400).json({ success: false, message: 'listingId and userEmail are required' });
+        }
+
+        const me = String(userEmail).toLowerCase();
+
+        const { data: listing } = await supabase
+            .from('listings')
+            .select('id, user_email, title')
+            .eq('id', listingId)
+            .maybeSingle();
+
+        if (!listing) return res.status(404).json({ success: false, message: 'That room no longer exists' });
+
+        const owner = (listing.user_email || '').toLowerCase();
+        if (!owner) return res.status(409).json({ success: false, message: 'That room has no owner to message' });
+        if (owner === me) {
+            return res.status(409).json({ success: false, message: "That's your own listing" });
+        }
+
+        const { data: existing } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('listing_id', listingId)
+            .or(`and(sender_email.eq.${me},receiver_email.eq.${owner}),and(sender_email.eq.${owner},receiver_email.eq.${me})`)
+            .limit(1);
+
+        if (existing?.length) {
+            return res.json({ success: true, data: { id: existing[0].id, created: false, landlordEmail: owner, listingTitle: listing.title } });
+        }
+
+        const { data: created, error } = await supabase
+            .from('conversations')
+            .insert({
+                listing_id: listingId,
+                sender_email: me,
+                receiver_email: owner,
+                context: 'listing'
+            })
+            .select('id')
+            .single();
+
+        if (error) {
+            console.error('Failed to create conversation:', error.message);
+            return res.status(500).json({ success: false, message: 'Could not start that conversation' });
+        }
+
+        res.json({ success: true, data: { id: created.id, created: true, landlordEmail: owner, listingTitle: listing.title } });
+    });
+
     /** The messages in one thread, for a participant only. */
     app.get('/api/messages', async (req, res) => {
         const supabase = getSupabase();

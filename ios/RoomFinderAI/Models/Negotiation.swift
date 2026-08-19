@@ -52,6 +52,31 @@ struct NegotiationGoals: Codable, Equatable {
 
     /// Only the fields actually filled in — sending empty values would have the
     /// AI negotiate for things nobody asked about.
+    /// The same goals under the names `/api/negotiate/reply` expects.
+    ///
+    /// That endpoint owns the price ceiling, so what it is told here decides
+    /// what the AI is allowed to agree to. `monthly_budget` in particular is a
+    /// hard limit: it will not commit above it.
+    var negotiationPayload: [String: Any] {
+        var payload: [String: Any] = [:]
+        if let maxRent { payload["monthly_budget"] = maxRent }
+        if let maxRent, let targetRent, maxRent > targetRent {
+            payload["target_reduction"] = maxRent - targetRent
+        }
+        if !moveInDate.isEmpty { payload["movein_date"] = moveInDate }
+        if let leaseMonths { payload["lease_length"] = "\(leaseMonths) months" }
+        if petFriendly { payload["pets"] = "yes" } else { payload["pets"] = "none" }
+        if parkingNeeded { payload["must_haves"] = ["parking"] }
+        if utilitiesIncluded { payload["ask_utilities_included"] = true }
+        if !notes.isEmpty { payload["notes"] = notes }
+        // Sensible defaults so the AI has a position to argue from rather than
+        // hedging every sentence.
+        payload["employment"] = "stable full-time work, good references"
+        payload["assertiveness"] = "firm but polite"
+        payload["tone"] = "friendly"
+        return payload
+    }
+
     var apiPayload: [String: Any] {
         var payload: [String: Any] = [:]
         if let maxRent { payload["maxRent"] = maxRent }

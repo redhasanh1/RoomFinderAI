@@ -192,20 +192,16 @@ struct ListingDetailScreen: View {
 
     private var actions: some View {
         VStack(spacing: 12) {
-            // Back to the native chat.
+            // Opens the negotiation itself, in the app.
             //
-            // This briefly opened the site's negotiator for the room, to reuse
-            // the engine that actually messages landlords. That page pulls
-            // Tailwind, Supabase and two sign-in SDKs on top of 156KB of HTML,
-            // and inside a web view it sat blank long enough to read as frozen
-            // — a worse experience than the chat it replaced. Reusing the
-            // engine is still the right idea; embedding that page is not the
-            // way to do it.
-            Button {
-                Haptics.impact(.medium)
-                state.pendingNegotiationListing = listing
-                state.selectedTab = .messages
-                dismiss()
+            // This has been through two wrong shapes: switching to the
+            // assistant chat, which discussed the room but never contacted
+            // anyone, and embedding the website's negotiator, which sat blank
+            // long enough to look frozen. The thread with the landlord is now
+            // native, so the messages are visible and nothing has to load a
+            // page to get here.
+            NavigationLink {
+                NegotiationRoomScreen(listing: listing)
             } label: {
                 Label("Negotiate this rent", systemImage: "bubble.left.and.text.bubble.right.fill")
                     .font(.headline)
