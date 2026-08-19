@@ -91,12 +91,12 @@ struct ListingsScreen: View {
             .navigationDestination(for: Listing.self) { ListingDetailScreen(listing: $0) }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
-            // Posting is the other half of this product, and a tab-bar slot is
-            // easy to miss among four others. A plus with the word on it says
-            // what it does without being read twice.
-            .overlay(alignment: .bottomTrailing) { postButton }
             .onChange(of: query) { _, _ in scheduleSearch() }
             .toolbar {
+                // Up here with the rest of the controls, not floating over the
+                // rooms. Posting is the other half of this product and a
+                // tab-bar slot among four others is easy to miss.
+                ToolbarItem(placement: .topBarTrailing) { postButton }
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
             .refreshable { await reloadAsync() }
@@ -280,20 +280,17 @@ struct ListingsScreen: View {
             Haptics.impact(.medium)
             state.wantsToPost = true
         } label: {
-            HStack(spacing: 7) {
+            HStack(spacing: 5) {
                 Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .bold))
-                Text("Post a room")
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 14, weight: .bold))
+                Text("Post")
+                    .font(.subheadline.weight(.bold))
             }
             .foregroundStyle(.white)
-            .padding(.horizontal, 18)
-            .padding(.vertical, 13)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
             .background(Theme.gradient, in: Capsule())
-            .shadow(color: Theme.brand.opacity(0.35), radius: 10, y: 4)
         }
-        .padding(.trailing, 18)
-        .padding(.bottom, 18)
         .accessibilityLabel("Post a room")
     }
 
