@@ -61,7 +61,8 @@ struct NegotiatorCampaignScreen: View {
                 .foregroundStyle(campaign.goals.isConfirmed ? AnyShapeStyle(.green) : AnyShapeStyle(Theme.gradient))
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(campaign.goals.isConfirmed ? "Goals confirmed" : "Check your goals")
+                Text(campaign.goals.isConfirmed ? "Goals confirmed"
+                     : (campaign.goals.isUsable ? "Check your goals" : "No budget set yet"))
                     .font(.caption.weight(.semibold))
                 Text(campaign.goals.summary)
                     .font(.caption2)
@@ -89,7 +90,11 @@ struct NegotiatorCampaignScreen: View {
                         showingGoals = true
                     }
                 } label: {
-                    Text("These are right")
+                    // Says what it will actually do. It used to read "These are
+                    // right" even with no budget set, where it could only open
+                    // the form — so tapping it looked like it had ignored you
+                    // and pressed Edit instead.
+                    Text(campaign.goals.isUsable ? "These are right" : "Set your budget")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)

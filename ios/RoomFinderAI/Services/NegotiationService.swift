@@ -262,9 +262,17 @@ final class NegotiationService: ObservableObject {
         guard !fresh.isEmpty else { return }
 
         guard campaign.goals.isConfirmed, campaign.goals.isUsable else {
+            // Name the button that will actually work. Telling someone to tap
+            // "These are right" when no budget is set sends them to a control
+            // that can only open the form, which reads as the app ignoring them.
+            let howMany = fresh.count == 1 ? "this one" : "all \(fresh.count) of these"
+            let whatToDo = campaign.goals.isUsable
+                ? "check your goals at the top of this screen and tap \u{201C}These are right\u{201D}"
+                : "tap \u{201C}Set your budget\u{201D} at the top of this screen and tell me the most you'll pay"
+
             messages.append(NegotiationMessage(
                 author: .negotiator,
-                text: "I can start negotiating on \(fresh.count == 1 ? "this one" : "all \(fresh.count) of these") right now — check your goals at the top of this screen and tap \u{201C}These are right\u{201D} first, so I know what I'm allowed to agree to.",
+                text: "I can start negotiating on \(howMany) right now. First, \(whatToDo), so I know what I'm allowed to agree to.",
                 sentAt: Date()
             ))
             return

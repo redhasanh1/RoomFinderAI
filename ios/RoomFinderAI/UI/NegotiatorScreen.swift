@@ -16,7 +16,19 @@ struct NegotiatorScreen: View {
     @Binding var showingGoals: Bool
 
     @State private var draft = ""
+    @StateObject private var dictation = SpeechDictation()
     @FocusState private var inputFocused: Bool
+
+    /// Starts or stops listening. What is heard goes into the same box as
+    /// typing, so it can be corrected before it is sent.
+    private func toggleDictation() async {
+        if dictation.isListening {
+            dictation.stop()
+        } else {
+            inputFocused = false
+            await dictation.start()
+        }
+    }
 
     /// Openers, so the first message is a tap rather than a blank page.
     private let suggestions = [
@@ -29,12 +41,18 @@ struct NegotiatorScreen: View {
         VStack(spacing: 0) {
             transcript
 
-            if let error = service.errorMessage {
+            if let error = service.errorMessage ?? dictation.errorMessage {
                 errorBar(error)
             }
 
             composer
         }
+        .onChange(of: dictation.transcript) { _, spoken in
+            guard !spoken.isEmpty else { return }
+            draft = spoken
+        }
+        // Never leave the microphone running because someone swiped away.
+        .onDisappear { dictation.stop() }
     }
 
     private var transcript: some View {
@@ -110,7 +128,10 @@ struct NegotiatorScreen: View {
             Image(systemName: "exclamationmark.triangle.fill")
             Text(message).font(.footnote)
             Spacer()
-            Button("Dismiss") { service.errorMessage = nil }
+            Button("Dismiss") {
+                service.errorMessage = nil
+                dictation.errorMessage = nil
+            }
                 .font(.footnote.weight(.semibold))
         }
         .padding(.horizontal, 16)
@@ -123,7 +144,24 @@ struct NegotiatorScreen: View {
         VStack(spacing: 0) {
             Divider()
             HStack(alignment: .bottom, spacing: 10) {
-                TextField("Tell me what you're looking for…", text: $draft, axis: .vertical)
+                // Talking beats typing a paragraph about what you want on a
+                // phone keyboard, and it is the first thing anyone does here.
+                Button {
+                    Haptics.impact(.light)
+                    Task { await toggleDictation() }
+                } label: {
+                    Image(systemName: dictation.isListening ? "waveform.circle.fill" : "mic.circle.fill")
+                        .font(.system(size: 30))
+                        .foregroundStyle(dictation.isListening
+                                         ? AnyShapeStyle(.red)
+                                         : AnyShapeStyle(Theme.brand))
+                        .symbolEffect(.pulse, isActive: dictation.isListening)
+                }
+                .disabled(service.isThinking)
+                .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Talk instead of typing")
+
+                TextField(dictation.isListening ? "Listening…" : "Tell me what you're looking for…",
+                          text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .textFieldStyle(.plain)
                     .padding(.horizontal, 14)

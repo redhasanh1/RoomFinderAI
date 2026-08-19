@@ -38,6 +38,10 @@
 	<!-- Photo picker and camera are reached through the site's file inputs
 	     (listing photos, profile avatars). WKWebView presents the system
 	     pickers, but the app still has to declare why it wants them. -->
+	<key>NSMicrophoneUsageDescription</key>
+	<string>So you can talk to the negotiator instead of typing what you're looking for.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>To turn what you say into text in the chat. Speech is transcribed on your device where your device supports it.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Take photos of a room to add to a listing or your profile.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
