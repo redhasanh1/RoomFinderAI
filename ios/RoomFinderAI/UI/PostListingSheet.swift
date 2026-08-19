@@ -129,6 +129,13 @@ struct PostListingSheet: View {
     /// size that can actually be tapped, because someone posting from their
     /// desk with no photo to hand must not hit a dead end.
     private var photoStep: some View {
+        // Scrolling, and the target is capped.
+        //
+        // A square that fills the width is most of an iPad sheet on its own,
+        // which pushed everything under it past the sheet's edge. It still drew,
+        // so "Fill it in myself" looked present and simply did not respond:
+        // taps outside a container's bounds are clipped before they reach it.
+        ScrollView {
         VStack(spacing: 22) {
             Spacer(minLength: 8)
 
@@ -146,9 +153,7 @@ struct PostListingSheet: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                .frame(maxWidth: .infinity)
-                // Square, so it reads as a drop target rather than a row.
-                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 340)
                 .background(
                     RoundedRectangle(cornerRadius: 22, style: .continuous)
                         .fill(Color(.secondarySystemBackground))
@@ -190,15 +195,19 @@ struct PostListingSheet: View {
             } label: {
                 Text("Fill it in myself")
                     .font(.body.weight(.semibold))
+                    .foregroundStyle(Theme.brand)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Theme.brand.opacity(0.10))
+                    )
+                    // The whole pill, not just the glyphs. The background used
+                    // to be applied outside the label, which draws the shape
+                    // but does not make it tappable.
+                    .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(Theme.brand)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Theme.brand.opacity(0.10))
-            )
             .disabled(isDrafting)
 
             if !user.isSignedIn {
@@ -209,6 +218,8 @@ struct PostListingSheet: View {
             }
         }
         .padding(20)
+        }
+        .scrollBounceBehavior(.basedOnSize)
         .overlay {
             if isDrafting { processingOverlay }
         }
