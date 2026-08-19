@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 
 /// The sections of the app, matching the website's header so the two do not
 /// have to be learned separately. Favourites, Support and the legal pages live
@@ -40,7 +41,13 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .listings:   return "Listings"
         case .roompal:    return "RoomPal"
         case .sublease:   return "Sublease"
-        case .post:       return "Post a room"
+        // iPad's floating tab bar draws labels and no icons at all, on any
+        // tab, so the symbol below is never seen there. The plus has to be in
+        // the words for the one action in a row of places to look like one.
+        case .post:
+            // Short, because the bar sizes to fit: "+ Post a room" pushed
+            // Profile off the end into an overflow chevron.
+            return UIDevice.current.userInterfaceIdiom == .pad ? "+ Post" : "Post"
         // "Messages", not "Negotiator". The tab holds two halves: the AI
         // negotiator and real threads with landlords and roommates. Naming it
         // after one of them hides the other.
