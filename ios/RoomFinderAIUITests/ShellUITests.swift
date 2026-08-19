@@ -501,57 +501,232 @@ final class InboxReplyUITests: XCTestCase {
     }
 }
 
-/// Walks the path from a listing into the negotiator, the way someone using the
-/// app does, and reports what is actually on screen at each step.
+/// Drives a whole negotiation on the simulator: open a room, start it, and stay
+/// on the screen until the deal closes.
 ///
-/// Written because "negotiate does nothing" and "it doesn't show the messages"
-/// were both reported from the device and neither could be reproduced by
-/// calling the API — the failures were in the view layer, which only a run of
-/// the real screens exposes.
+/// Written because every failure in this feature so far has been in the view
+/// layer — a button that navigated nowhere, a phase the screen could enter and
+/// never leave — and none of them reproduce by calling the API. The landlord's
+/// side is played by a script running outside the test, so this is two real
+/// parties talking through the real server.
 final class NegotiateFlowUITests: XCTestCase {
 
     private var app: XCUIApplication!
 
+    /// The seeded room this runs against. Matching on a listing whose price is
+    /// known is what lets the closing banner's arithmetic be checked.
+    private let roomName = "Sunny 2 Bed"
+    private let tenant = "rf.test.tenant.aug17@gmail.com"
+
     override func setUpWithError() throws {
         continueAfterFailure = true          // keep going, so one run reports everything
         app = XCUIApplication()
-        app.launchArguments = ["-uiTestingResetState"]
+        // Valueless flags last: NSArgumentDomain reads these as -key value
+        // pairs, so a bare flag in front swallows the address after it.
+        app.launchArguments = ["-uiTestingSignInEmail", tenant, "-uiTestingResetState"]
         app.launch()
     }
 
-    func testNegotiateFromAListing() {
-        XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 60), "app never launched")
-
-        // Find a real room card by its price, the same way the listings test does.
-        let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] '/mo'")).firstMatch
-        guard card.waitForExistence(timeout: 60) else {
-            XCTFail("no listings loaded, so the negotiate path cannot be reached")
-            return
+    /// Opens the seeded room and taps through to its negotiation screen.
+    ///
+    /// Filters the list down to the one room first. Home shows the same room in
+    /// three sections and its cards merge their children, so matching by name
+    /// resolves to whichever container happens to come first — tapping that only
+    /// scrolls the carousel, which is indistinguishable from a card that will
+    /// not open. Searching leaves exactly one card to tap.
+    private func openNegotiationForTestRoom() -> Bool {
+        let pricedCard = app.buttons
+            .containing(NSPredicate(format: "label CONTAINS[c] '/mo'"))
+            .firstMatch
+        guard pricedCard.waitForExistence(timeout: 60) else {
+            XCTFail("no rooms loaded at all, so there is nothing to negotiate on")
+            return false
         }
-        card.tap()
 
-        // The photo occupies the top of the screen, so the actions start below
-        // the fold and SwiftUI has not built them yet. Scroll before looking.
+        // iPad keeps search behind a magnifier; iPhone shows the field outright.
+        var field = app.searchFields.firstMatch
+        if !field.exists {
+            let magnifier = app.buttons["Search"].firstMatch
+            if magnifier.exists { magnifier.tap() }
+            field = app.searchFields.firstMatch
+        }
+        guard field.waitForExistence(timeout: 15) else {
+            XCTFail("no search field, so the test room cannot be isolated — saw: \(onScreen())")
+            return false
+        }
+        field.tap()
+        field.typeText(roomName)
+
+        let filtered = waitUntil(30) {
+            self.app.staticTexts.containing(
+                NSPredicate(format: "label CONTAINS[c] %@", self.roomName)
+            ).firstMatch.exists
+                && !self.app.staticTexts["Cozy Studio in Kitsilano, Vancouver"].exists
+        }
+        if !filtered { print("SEARCH DID NOT NARROW >>> \(onScreen())") }
+
+        pricedCard.tap()
+
+        // The photo fills the top of the screen, so the actions start below the
+        // fold and SwiftUI has not built them yet.
         let negotiate = app.buttons["Negotiate this rent"]
-        if !negotiate.waitForExistence(timeout: 8) {
+        if !negotiate.waitForExistence(timeout: 10) {
             app.swipeUp()
-            _ = negotiate.waitForExistence(timeout: 8)
+            _ = negotiate.waitForExistence(timeout: 10)
         }
         guard negotiate.exists else {
-            XCTFail("listing detail never offered 'Negotiate this rent'")
+            XCTFail("could not reach 'Negotiate this rent' — saw: \(onScreen())")
+            return false
+        }
+
+        // Prove it is the right room before starting anything: negotiating
+        // against a stranger's listing would be a real message to a real person.
+        XCTAssertTrue(app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS[c] %@", roomName)).firstMatch.exists,
+            "opened a room, but not the test room")
+
+        negotiate.tap()
+        return true
+    }
+
+    /// Taps a tab on any device.
+    ///
+    /// iPad builds the tab bar out of `_UIFloatingTabBarItemCell`, which is not
+    /// a descendant of any `tabBars` element, so the iPhone-shaped query finds
+    /// nothing and the whole run reports "app never launched".
+    private func tapTab(_ name: String) -> Bool {
+        // Cells first: that is what iPad's floating tab bar builds its items
+        // from, and "Profile" also appears as a button inside page content, so
+        // an unqualified button query matches more than one thing.
+        let candidates = [
+            app.cells[name].firstMatch,
+            app.tabBars.buttons[name].firstMatch,
+            app.buttons[name].firstMatch
+        ]
+        for candidate in candidates {
+            if candidate.waitForExistence(timeout: 15), candidate.isHittable {
+                candidate.tap()
+                return true
+            }
+        }
+        return false
+    }
+
+    /// True once the shell is up, whichever shape its tab bar takes.
+    private func waitForLaunch() -> Bool {
+        waitUntil(60) {
+            self.app.tabBars.buttons["Home"].exists
+                || self.app.buttons["Home"].exists
+                || self.app.cells["Home"].exists
+        }
+    }
+
+    /// Everything currently on screen, so a failure says what the tenant was
+    /// looking at rather than which assertion tripped.
+    private func onScreen() -> String {
+        app.staticTexts.allElementsBoundByIndex
+            .prefix(60)
+            .map(\.label)
+            .filter { !$0.isEmpty }
+            .joined(separator: " | ")
+    }
+
+    func testNegotiationRunsToAClosedDeal() {
+        XCTAssertTrue(waitForLaunch(), "app never launched")
+
+        // Identity comes from the site, so the bridge has to have loaded a page
+        // once before a native screen knows who is signed in.
+        XCTAssertTrue(tapTab("Profile"), "no Profile tab to sign in through")
+        Thread.sleep(forTimeInterval: 10)
+        XCTAssertTrue(tapTab("Home"), "could not get back to Home")
+
+        guard openNegotiationForTestRoom() else { return }
+
+        let startButton = app.buttons["Start negotiating"]
+        guard startButton.waitForExistence(timeout: 20) else {
+            XCTFail("the negotiation screen never opened — saw: \(onScreen())")
             return
         }
-        negotiate.tap()
+        XCTAssertTrue(app.staticTexts["Let the AI do the asking"].exists,
+                      "the primer explaining what is about to happen is missing")
+        startButton.tap()
 
-        // It opens the Messages hub on the negotiator half, briefed about this
-        // room.
-        XCTAssertTrue(app.buttons["AI Negotiator"].waitForExistence(timeout: 25),
-                      "tapping negotiate did not open the Messages hub")
+        // From here the tenant does nothing. If the screen needs a tap to make
+        // progress, or parks on a phase it cannot leave, this loop times out and
+        // the transcript below says where it stopped.
+        let closed = app.staticTexts["Deal agreed"]
+        let deadline = Date().addingTimeInterval(420)
+        var lastSeen = ""
+        while Date() < deadline, !closed.exists {
+            Thread.sleep(forTimeInterval: 10)
+            let now = onScreen()
+            if now != lastSeen {
+                print("TRANSCRIPT >>> \(now)")
+                lastSeen = now
+            }
+            // A dead end is worth failing on immediately rather than after
+            // seven minutes of polling.
+            if app.buttons["Try again"].exists {
+                print("NEGOTIATION FAILED >>> \(now)")
+                break
+            }
+        }
+
+        print("FINAL SCREEN >>> \(onScreen())")
+        XCTAssertTrue(closed.exists, "the negotiation never reached a closed deal")
+
+        // Closed means closed: no button left implying there is more to do.
+        XCTAssertFalse(app.buttons["Start negotiating"].exists,
+                       "a finished negotiation still offers to start one")
+        XCTAssertFalse(app.buttons["Working…"].exists,
+                       "a finished negotiation is still showing a working state")
+        XCTAssertTrue(app.staticTexts.containing(
+                        NSPredicate(format: "label CONTAINS 'under asking'")).firstMatch.exists
+                      || app.staticTexts.containing(
+                        NSPredicate(format: "label CONTAINS '/month'")).firstMatch.exists,
+                      "the closing banner does not say what was agreed")
 
         // Leaked prompt scaffolding would be visible here.
-        let leaked = app.staticTexts.containing(
-            NSPredicate(format: "label CONTAINS 'CRITERIA'")
-        ).firstMatch
-        XCTAssertFalse(leaked.exists, "the criteria block is leaking into the chat")
+        XCTAssertFalse(app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS 'CRITERIA'")).firstMatch.exists,
+            "the criteria block is leaking into the transcript")
+    }
+
+    /// Reopening a negotiation already under way must show it, not offer to
+    /// start it over.
+    func testReopeningShowsTheNegotiationInProgress() {
+        XCTAssertTrue(waitForLaunch(), "app never launched")
+        XCTAssertTrue(tapTab("Profile"), "no Profile tab")
+        Thread.sleep(forTimeInterval: 10)
+        XCTAssertTrue(tapTab("Home"), "could not get back to Home")
+
+        guard openNegotiationForTestRoom() else { return }
+
+        // The thread already has messages in it from the run above, so the
+        // primer must have been replaced by the transcript.
+        let resumed = waitUntil(30) {
+            self.app.staticTexts["Landlord"].exists || self.app.staticTexts["Deal agreed"].exists
+        }
+        print("REOPENED >>> \(onScreen())")
+
+        // Kept so the finished screen can actually be looked at, not just
+        // asserted about.
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "reopened-negotiation"
+        shot.lifetime = .keepAlways
+        add(shot)
+        XCTAssertTrue(resumed, "reopening showed nothing of the negotiation already in progress")
+        XCTAssertFalse(app.staticTexts["Let the AI do the asking"].exists,
+                       "reopening an active negotiation showed the start-over primer")
+    }
+
+    @discardableResult
+    private func waitUntil(_ timeout: TimeInterval, _ condition: () -> Bool) -> Bool {
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if condition() { return true }
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return condition()
     }
 }

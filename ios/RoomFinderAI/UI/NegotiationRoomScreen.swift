@@ -31,9 +31,13 @@ struct NegotiationRoomScreen: View {
         }
         .navigationTitle("Negotiating")
         .navigationBarTitleDisplayMode(.inline)
-        // Catches up whenever the screen comes back, so a landlord reply that
-        // arrived while the app was elsewhere is answered on return.
-        .task { if negotiation.canStart == false { await negotiation.refresh() } }
+        // Picks the thread back up and then keeps answering on its own for as
+        // long as the screen is open, so nothing here waits on the tenant
+        // pressing a button to find out what happened.
+        .task {
+            await negotiation.resume()
+            await negotiation.pollWhileWaiting()
+        }
     }
 
     // MARK: - Status
@@ -46,7 +50,7 @@ struct NegotiationRoomScreen: View {
             case .starting:
                 working("Getting in touch…")
             case .waitingForLandlord:
-                label("Waiting for the landlord to reply", "clock", .secondary)
+                working("Waiting for the landlord to reply")
             case .replying:
                 working("Writing a reply…")
             case .closed(let price, let viewing):
@@ -134,6 +138,10 @@ struct NegotiationRoomScreen: View {
                 }
                 .padding(16)
             }
+            // Opens pinned to the newest message. Scrolling there only on a
+            // change left the last bubble half under the footer when the
+            // transcript was already full on arrival.
+            .defaultScrollAnchor(.bottom)
             .onChange(of: negotiation.messages.count) { _, _ in
                 withAnimation(.easeOut(duration: 0.25)) {
                     proxy.scrollTo(negotiation.messages.last?.id, anchor: .bottom)
@@ -188,14 +196,15 @@ struct NegotiationRoomScreen: View {
                 primaryButton("Working…", enabled: false) { }
             case .waitingForLandlord:
                 VStack(spacing: 6) {
-                    primaryButton(isRefreshing ? "Checking…" : "Check for a reply", enabled: !isRefreshing) {
+                    primaryButton(isRefreshing ? "Checking…" : "Check now", enabled: !isRefreshing) {
                         isRefreshing = true
                         await negotiation.refresh()
                         isRefreshing = false
                     }
-                    Text("It answers on its own whenever you open this screen.")
+                    Text("Checking every few seconds. Your AI answers the landlord for you — you can close the app.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
                 }
             case .closed:
                 Text("Nothing left to do here.")

@@ -77,9 +77,54 @@ final class LandlordNegotiationService: ObservableObject {
                 await loadMessages()
             }
 
-            phase = awaitingOurReply ? .replying : .waitingForLandlord
+            phase = .waitingForLandlord
+            // A thread resumed mid-exchange may already be owed an answer.
+            // Setting .replying here instead would park the screen on
+            // "Writing a reply…" with nothing on its way to write one.
+            if awaitingOurReply { await refresh() }
         } catch {
             phase = .failed(readable(error))
+        }
+    }
+
+    /// Picks up an existing thread without saying anything.
+    ///
+    /// Called when the screen opens. Without it, coming back to a negotiation
+    /// already in progress showed the "Start negotiating" primer, as if none of
+    /// it had happened.
+    func resume() async {
+        guard let me = CurrentUser.shared.email, conversationID == nil else { return }
+        guard let conversation = try? await openConversation(listingID: listing.id, me: me) else { return }
+
+        conversationID = conversation.id
+        landlordEmail = conversation.landlordEmail
+        await loadMessages()
+
+        // An empty thread is a negotiation that has not started, so leave the
+        // primer and its button alone.
+        guard !messages.isEmpty else { return }
+
+        if let done = Self.savedOutcome(for: conversation.id) {
+            phase = .closed(price: done.price, viewing: done.viewing)
+            return
+        }
+
+        phase = .waitingForLandlord
+        if awaitingOurReply { await refresh() }
+    }
+
+    /// Answers the landlord on its own for as long as the screen is open.
+    ///
+    /// A negotiation where the tenant has to keep pressing a button to find out
+    /// whether anyone replied is the tenant doing the work again. This is still
+    /// polling rather than a socket, because the app also has to catch up after
+    /// being closed, and one path is easier to trust than two.
+    func pollWhileWaiting() async {
+        while !Task.isCancelled {
+            try? await Task.sleep(for: .seconds(5))
+            if Task.isCancelled { return }
+            if case .closed = phase { return }
+            if case .waitingForLandlord = phase { await refresh() }
         }
     }
 
@@ -91,7 +136,7 @@ final class LandlordNegotiationService: ObservableObject {
     /// open because its tab is already there, but an app that negotiates while
     /// closed needs push, and this at least means opening the screen catches up.
     func refresh() async {
-        guard let me = CurrentUser.shared.email, conversationID != nil else { return }
+        guard let me = CurrentUser.shared.email, let conversationID else { return }
 
         await loadMessages()
         if case .closed = phase { return }
@@ -109,6 +154,8 @@ final class LandlordNegotiationService: ObservableObject {
 
             if reply.dealClosed {
                 phase = .closed(price: reply.agreedPrice, viewing: reply.viewingWhen)
+                Self.remember(price: reply.agreedPrice, viewing: reply.viewingWhen,
+                              for: conversationID)
             } else {
                 phase = .waitingForLandlord
             }
@@ -237,6 +284,28 @@ final class LandlordNegotiationService: ObservableObject {
         let sender = (message.senderEmail ?? "").lowercased()
         if sender.contains("ai-negotiator") { return true }
         return sender == (CurrentUser.shared.email ?? "").lowercased()
+    }
+
+    // MARK: - Remembering the outcome
+
+    /// Only `/api/negotiate/reply` can judge that a deal is done, and it judges
+    /// from a message being sent. Reopening the screen sends nothing, so the
+    /// verdict has to be kept here or the finished negotiation reads as still
+    /// waiting on a landlord who has nothing left to say.
+    private static func key(_ conversationID: String) -> String {
+        "negotiationClosed.\(conversationID)"
+    }
+
+    private static func remember(price: Int?, viewing: String?, for conversationID: String) {
+        var stored: [String: Any] = [:]
+        if let price { stored["price"] = price }
+        if let viewing { stored["viewing"] = viewing }
+        UserDefaults.standard.set(stored, forKey: key(conversationID))
+    }
+
+    private static func savedOutcome(for conversationID: String) -> (price: Int?, viewing: String?)? {
+        guard let stored = UserDefaults.standard.dictionary(forKey: key(conversationID)) else { return nil }
+        return (stored["price"] as? Int, stored["viewing"] as? String)
     }
 
     private func readable(_ error: Error) -> String {
