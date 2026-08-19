@@ -145,6 +145,16 @@ final class NegotiationService: ObservableObject {
             // When the AI read this as a search, actually run it — a reply
             // saying "let me find those" followed by nothing is the single
             // most annoying thing an assistant can do.
+            // What they just said becomes the goals.
+            //
+            // Someone who types "a place in Toronto under 2200" has already
+            // given the budget and the city. Making them open a form and type
+            // both again is the app asking twice for the same thing. The purple
+            // button is there to confirm, not to collect.
+            if let criteria = reply.criteria {
+                applyToGoals(criteria)
+            }
+
             if let criteria = reply.criteria, criteria.wantsSearch {
                 let found = await searchRooms(criteria)
                 message.listings = found
@@ -248,6 +258,36 @@ final class NegotiationService: ObservableObject {
         return lines.joined(separator: " ")
     }
 
+    /// Copies what the AI understood into the goals the negotiator argues from.
+    ///
+    /// Any change withdraws the tenant's confirmation, so a new budget has to be
+    /// confirmed before anything goes out on it. Saying a lower number and
+    /// having the AI keep arguing to the old one is the worst thing this could
+    /// do.
+    private func applyToGoals(_ criteria: AssistantReply.Criteria) {
+        let campaign = NegotiationCampaign.shared
+        var goals = campaign.goals
+        let before = goals
+
+        if let price = criteria.price, price > 0 {
+            goals.maxRent = price
+            // A first ask under the ceiling. Opening at the limit concedes the
+            // negotiation before it starts.
+            goals.targetRent = (price * 0.9).rounded()
+        }
+        if let city = criteria.city?.nilIfEmpty {
+            goals.city = city
+        }
+
+        var changed = goals
+        changed.confirmedAt = before.confirmedAt
+        guard changed != before else { return }
+
+        goals.confirmedAt = nil
+        campaign.goals = goals
+        campaign.saveGoals()
+    }
+
     /// Hands what the chat found to the campaign and says what happened.
     ///
     /// Gated on confirmed goals: those numbers are what the AI argues to, and
@@ -267,7 +307,7 @@ final class NegotiationService: ObservableObject {
             // that can only open the form, which reads as the app ignoring them.
             let howMany = fresh.count == 1 ? "this one" : "all \(fresh.count) of these"
             let whatToDo = campaign.goals.isUsable
-                ? "check your goals at the top of this screen and tap \u{201C}These are right\u{201D}"
+                ? "check the goals at the top of this screen, I've filled them in from what you said, and tap \u{201C}These are right\u{201D}"
                 : "tap \u{201C}Set your budget\u{201D} at the top of this screen and tell me the most you'll pay"
 
             messages.append(NegotiationMessage(
