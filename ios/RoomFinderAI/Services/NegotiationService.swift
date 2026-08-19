@@ -122,9 +122,26 @@ final class NegotiationService: ObservableObject {
 
             messages.append(message)
         } catch {
-            errorMessage = (error as? URLError)?.code == .notConnectedToInternet
-                ? "You're offline. Reconnect to keep talking."
-                : "The negotiator couldn't reply. Please try again."
+            // Name the failure. "Couldn't reply" covered a dead network, a
+            // rejected request and a response we failed to read, which are
+            // three different problems and gave no way to tell them apart from
+            // the outside.
+            if let urlError = error as? URLError {
+                switch urlError.code {
+                case .notConnectedToInternet, .networkConnectionLost:
+                    errorMessage = "You're offline. Reconnect to keep talking."
+                case .timedOut:
+                    errorMessage = "That took too long. Tap send to try again."
+                default:
+                    errorMessage = "Couldn't reach the negotiator (\(urlError.code.rawValue))."
+                }
+            } else if error is DecodingError {
+                errorMessage = "The negotiator sent something I couldn't read. Try again."
+                print("Negotiator decode failure: \(error)")
+            } else {
+                errorMessage = "The negotiator couldn't reply. Please try again."
+                print("Negotiator failure: \(error)")
+            }
         }
     }
 

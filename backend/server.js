@@ -5480,11 +5480,29 @@ Fill criteria from the conversation. intent: "search", "negotiate", or "chat".`;
         if (chatMode === 'rental') {
             const criteriaMatch = fullResponse.match(/###CRITERIA###(.+?)###END###/s);
             if (criteriaMatch) {
+                // Strip the block first, unconditionally.
+                //
+                // This used to happen inside the try, after the parse. When the
+                // model wrote "price":$3900 — invalid JSON because of the
+                // dollar sign — the parse threw and the raw
+                // ###CRITERIA###...###END### was left sitting in the reply the
+                // user reads. Whether we can understand the block has nothing
+                // to do with whether it should be shown to anyone.
+                aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
+
+                // Then repair the usual ways a language model breaks JSON while
+                // writing about money: a currency symbol before the number,
+                // thousands separators inside it, a trailing comma.
+                const repaired = criteriaMatch[1]
+                    .replace(/:\s*\$\s*/g, ': ')
+                    .replace(/(\d),(\d{3})\b/g, '$1$2')
+                    .replace(/,(\s*[}\]])/g, '$1')
+                    .trim();
+
                 try {
-                    extractedCriteria = JSON.parse(criteriaMatch[1]);
-                    aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
+                    extractedCriteria = JSON.parse(repaired);
                 } catch (e) {
-                    console.log('⚠️ Could not parse criteria JSON:', e.message);
+                    console.log('⚠️ Could not parse criteria JSON:', e.message, '|', repaired.slice(0, 120));
                 }
             }
             if (tenantGoals?.monthly_budget && !extractedCriteria.price) {
