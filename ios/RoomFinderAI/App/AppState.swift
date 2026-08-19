@@ -82,7 +82,9 @@ final class AppState: ObservableObject {
 
     /// Tabs that render the site. Only Profile does now — the other four are
     /// native and have no web view, so a URL cannot be handed to them.
-    private var webCapableTabs: Set<AppTab> { [.profile] }
+    /// Sublease has no native screen yet, so it renders the site's page inside
+    /// the app the way Profile does. Everything else is native.
+    private var webCapableTabs: Set<AppTab> { [.profile, .sublease] }
 
     /// Send a URL to the tab that owns it and bring that tab forward.
     func route(to tab: AppTab, url: URL) {

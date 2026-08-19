@@ -17,6 +17,7 @@ struct RootTabView: View {
                     case .roompal:    RoomPalScreen()
                     case .listings:   ListingsScreen()
                     case .messages:   MessagesScreen()
+                    case .sublease:   BrowserScreen(tab: tab, store: state.store(for: tab))
                     case .profile:    BrowserScreen(tab: tab, store: state.store(for: tab))
                     case .post:
                         // Never actually shown — selecting this slot opens the

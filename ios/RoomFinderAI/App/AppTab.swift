@@ -1,31 +1,29 @@
 import Foundation
 
-/// The five things people open the app to do. Everything else — Sublease,
-/// Favourites, Pricing, Support, Legal — lives in the native overflow menu,
-/// mirroring the website's "More" dropdown so the two never drift apart.
+/// The sections of the app, matching the website's header so the two do not
+/// have to be learned separately. Favourites, Support and the legal pages live
+/// in the native overflow menu, mirroring the site's "More" dropdown.
 enum AppTab: String, CaseIterable, Identifiable, Codable {
     case home
     case listings
-    /// The middle slot. Selecting it opens the post sheet and hands the
-    /// selection straight back to the tab you were on — it is an action, not a
-    /// place, which is why it has no screen.
-    case roompal
-    case post
     /// Both kinds of conversation: the AI negotiator, and real threads with
-    /// landlords and roommates.
+    /// landlords and roommates. Named after what the website calls it.
     case messages
+    case roompal
+    case sublease
+    /// An action, not a place. Selecting it opens the post sheet and hands the
+    /// selection straight back to the tab you were on, which is why it has no
+    /// screen of its own.
+    case post
     case profile
 
-    /// The five slots, in order. RoomPal is reached from Home rather than
-    /// occupying a slot: a sixth tab would push the bar into iOS's "More"
-    /// overflow and bury a real tab behind a chevron.
-    /// The five slots, in order.
+    /// The same sections the website's header has, in the same order, plus
+    /// Post.
     ///
-    /// RoomPal has its own tab now. Home absorbed room browsing to make room
-    /// for it: the two were showing the same rooms anyway, and a sixth tab
-    /// would have pushed the bar into iOS's "More" overflow and buried one
-    /// behind a chevron.
-    static let tabBar: [AppTab] = [.home, .roompal, .post, .messages, .profile]
+    /// It used to be a five-slot bar with Sublease and Listings hidden in an
+    /// overflow menu, so someone who knew the site could not find them here.
+    /// Matching the site means the two do not have to be learned separately.
+    static let tabBar: [AppTab] = [.home, .listings, .messages, .roompal, .sublease, .post, .profile]
 
     var id: String { rawValue }
 
@@ -34,8 +32,9 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "Home"
         case .listings:   return "Listings"
         case .roompal:    return "RoomPal"
+        case .sublease:   return "Sublease"
         case .post:       return "Post"
-        case .messages:   return "Messages"
+        case .messages:   return "Negotiator"
         case .profile:    return "Profile"
         }
     }
@@ -47,6 +46,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "house.fill"
         case .listings:   return "building.2.fill"
         case .roompal:    return "person.2.fill"
+        case .sublease:   return "calendar.badge.clock"
         case .post:       return "plus.circle.fill"
         case .messages:   return "bubble.left.and.text.bubble.right.fill"
         case .profile:    return "person.crop.circle.fill"
@@ -58,6 +58,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "index.html"
         case .listings:   return "listings.html"
         case .roompal:    return "roommate-matching.html"
+        case .sublease:   return "sublease.html"
         case .post:       return "listings.html"
         case .messages:   return "ai-negotiator.html"
         case .profile:    return "profile.html"
@@ -76,7 +77,8 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         // Only listings.html itself maps here — the Listings tab is native and
         // has no web view to hand a URL to. listing_details.html and
         // favorites.html are left unowned so they open in a web-capable tab.
-        case "listings.html":                   return .home
+        case "listings.html":                   return .listings
+        case "sublease.html":                   return .sublease
         case "ai-negotiator.html":              return .messages  // native; selecting it is the whole action
         case "roommate-matching.html":          return .roompal
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile
@@ -95,7 +97,6 @@ struct MoreDestination: Identifiable, Hashable {
     let path: String
 
     static let all: [MoreDestination] = [
-        .init(title: "Sublease",      symbol: "calendar.badge.clock", path: "sublease.html"),
         .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
         .init(title: "Legal Help",    symbol: "checkmark.shield.fill", path: "legal.html"),
         // No Pricing entry. The Pro plan is sold through Stripe on the website,
