@@ -12,6 +12,63 @@ struct RoommateDetailScreen: View {
     @EnvironmentObject private var state: AppState
     @State private var isReporting = false
 
+    @State private var thread: Conversation?
+    @State private var isOpeningThread = false
+    @State private var threadProblem: String?
+
+    /// Opens the thread with whoever owns this profile.
+    ///
+    /// Many seeded profiles have no account behind them, and the server says so
+    /// in its own words rather than opening a conversation nobody will read.
+    private func openThread() async {
+        guard !isOpeningThread else { return }
+        guard let me = CurrentUser.shared.email else {
+            threadProblem = "Sign in on the Profile tab first to send a message."
+            return
+        }
+
+        isOpeningThread = true
+        threadProblem = nil
+        defer { isOpeningThread = false }
+
+        var request = URLRequest(url: AppConfig.url("api/roommate-conversations"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+        request.httpBody = try? JSONSerialization.data(withJSONObject: [
+            "profileId": profile.id,
+            "userEmail": me
+        ])
+
+        struct Opened: Decodable {
+            struct Payload: Decodable { let id: String; let otherParty: String? }
+            let data: Payload?
+            let message: String?
+        }
+
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let decoded = try? JSONDecoder().decode(Opened.self, from: data) else {
+            threadProblem = "Couldn't reach them. Check your connection."
+            return
+        }
+
+        guard let opened = decoded.data,
+              let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            threadProblem = decoded.message ?? "Couldn't open that conversation."
+            return
+        }
+
+        thread = Conversation(
+            id: opened.id,
+            context: "roommate",
+            otherParty: opened.otherParty,
+            subject: profile.displayName,
+            lastMessage: nil,
+            lastMessageAt: nil,
+            unreadCount: 0
+        )
+    }
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 22) {
@@ -47,22 +104,44 @@ struct RoommateDetailScreen: View {
                     }
                 }
 
-                NavigationLink {
-                    WebPageScreen(url: AppConfig.url("roommate-matching.html"), title: "Get in touch")
+                // Opens the thread here rather than dropping the person into a
+                // web view of the matching page and leaving them to find a
+                // contact form in it.
+                Button {
+                    Haptics.impact(.medium)
+                    Task { await openThread() }
                 } label: {
-                    Label("Get in touch", systemImage: "envelope.fill")
-                        .font(.headline)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
-                        .background(Theme.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    HStack(spacing: 8) {
+                        if isOpeningThread {
+                            ProgressView().controlSize(.small).tint(.white)
+                        } else {
+                            Image(systemName: "envelope.fill")
+                        }
+                        Text(isOpeningThread ? "Opening…" : "Get in touch")
+                    }
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(Theme.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
-                .simultaneousGesture(TapGesture().onEnded { Haptics.impact(.medium) })
+                .disabled(isOpeningThread)
+
+                if let threadProblem {
+                    Text(threadProblem)
+                        .font(.footnote)
+                        .foregroundStyle(.orange)
+                        .frame(maxWidth: .infinity, alignment: .center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .padding(20)
         }
         .navigationTitle(profile.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        .navigationDestination(item: $thread) { conversation in
+            ConversationScreen(conversation: conversation, messaging: MessagingService())
+        }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {

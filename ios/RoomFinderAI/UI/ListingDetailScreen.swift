@@ -23,6 +23,66 @@ struct ListingDetailScreen: View {
     /// happening.
     @ObservedObject private var campaign = NegotiationCampaign.shared
 
+    @State private var thread: Conversation?
+    @State private var isOpeningThread = false
+    @State private var threadProblem: String?
+
+    /// Finds or starts the thread with this room's owner, then opens it.
+    ///
+    /// Idempotent server-side, so tapping twice does not produce two threads —
+    /// which is what the old flow did, because the first tap gave no sign it
+    /// had done anything.
+    private func openThread() async {
+        guard !isOpeningThread else { return }
+        guard let me = CurrentUser.shared.email else {
+            threadProblem = "Sign in on the Profile tab first to message a host."
+            return
+        }
+
+        isOpeningThread = true
+        threadProblem = nil
+        defer { isOpeningThread = false }
+
+        var request = URLRequest(url: AppConfig.url("api/conversations"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.timeoutInterval = 30
+        request.httpBody = try? JSONSerialization.data(withJSONObject: [
+            "listingId": listing.id,
+            "userEmail": me
+        ])
+
+        struct Opened: Decodable {
+            struct Payload: Decodable { let id: String; let landlordEmail: String? }
+            let data: Payload?
+            let message: String?
+        }
+
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let decoded = try? JSONDecoder().decode(Opened.self, from: data) else {
+            threadProblem = "Couldn't reach the host. Check your connection."
+            return
+        }
+
+        guard let opened = decoded.data,
+              let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            // The server's own words: "That's your own listing" is more use
+            // than a status code.
+            threadProblem = decoded.message ?? "Couldn't open that conversation."
+            return
+        }
+
+        thread = Conversation(
+            id: opened.id,
+            context: "listing",
+            otherParty: opened.landlordEmail,
+            subject: listing.title,
+            lastMessage: nil,
+            lastMessageAt: nil,
+            unreadCount: 0
+        )
+    }
+
     /// Where this room stands, or nil when nothing has been started for it.
     private var negotiationStatus: (text: String, symbol: String, tint: Color)? {
         if let running = campaign.active.first(where: { $0.listingID == listing.id }) {
@@ -101,6 +161,11 @@ struct ListingDetailScreen: View {
                 }
                 .accessibilityLabel("More options")
             }
+        }
+        // Pushed once the thread exists, so the tap goes straight into the
+        // conversation rather than to a screen that then has to load one.
+        .navigationDestination(item: $thread) { conversation in
+            ConversationScreen(conversation: conversation, messaging: MessagingService())
         }
         .sheet(isPresented: $isReporting) {
             ReportSheet(
@@ -260,23 +325,41 @@ struct ListingDetailScreen: View {
                 .frame(maxWidth: .infinity, alignment: .center)
             }
 
-            // Pushed rather than routed to a tab: messaging needs the site's
-            // session and chat widget, and pushing keeps the user inside the
-            // listing they were reading with a back button to return.
-            NavigationLink {
-                WebPageScreen(url: listing.detailURL, title: "Contact Host")
+            // Opens the thread here, natively.
+            //
+            // This used to push a web view of the site's listing page and leave
+            // the person to find the contact form inside it — a browser, in an
+            // app, to send a message the app can already send. The thread it
+            // opens is the same one the negotiator and the inbox use.
+            Button {
+                Haptics.impact(.light)
+                Task { await openThread() }
             } label: {
-                Label("Contact host", systemImage: "envelope.fill")
-                    .font(.headline)
-                    .foregroundStyle(Theme.brand)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 15)
-                    .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(Theme.brand.opacity(0.4), lineWidth: 1.5)
-                    )
+                HStack(spacing: 8) {
+                    if isOpeningThread {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Image(systemName: "envelope.fill")
+                    }
+                    Text(isOpeningThread ? "Opening…" : "Contact host")
+                }
+                .font(.headline)
+                .foregroundStyle(Theme.brand)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Theme.brand.opacity(0.4), lineWidth: 1.5)
+                )
             }
-            .simultaneousGesture(TapGesture().onEnded { Haptics.impact(.light) })
+            .disabled(isOpeningThread)
+
+            if let threadProblem {
+                Text(threadProblem)
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+                    .frame(maxWidth: .infinity, alignment: .center)
+            }
         }
         .padding(.top, 4)
     }

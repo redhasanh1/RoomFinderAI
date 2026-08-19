@@ -36,6 +36,20 @@ struct Conversation: Identifiable, Decodable, Hashable {
     let lastMessageAt: String?
     let unreadCount: Int?
 
+    /// Spelled out because the compiler's memberwise initialiser is internal to
+    /// the file that declares it, and a thread opened from a listing has to be
+    /// built by hand rather than decoded.
+    init(id: String, context: String?, otherParty: String?, subject: String?,
+         lastMessage: String?, lastMessageAt: String?, unreadCount: Int?) {
+        self.id = id
+        self.context = context
+        self.otherParty = otherParty
+        self.subject = subject
+        self.lastMessage = lastMessage
+        self.lastMessageAt = lastMessageAt
+        self.unreadCount = unreadCount
+    }
+
     var source: Source { Source(rawValue: context ?? "listing") ?? .listing }
 
     /// The address is the only name we have for the other person, so the local

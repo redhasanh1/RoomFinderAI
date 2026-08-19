@@ -314,7 +314,7 @@ private struct ConversationRow: View {
 
 /// One thread, with the same bubble layout as the negotiator so the app reads
 /// consistently: your words on the right, theirs on the left.
-private struct ConversationScreen: View {
+struct ConversationScreen: View {
 
     let conversation: Conversation
     @ObservedObject var messaging: MessagingService

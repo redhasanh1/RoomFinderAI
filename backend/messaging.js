@@ -190,6 +190,83 @@ function registerMessagingRoutes(app, getSupabase) {
         res.json({ success: true, data: { id: created.id, created: true, landlordEmail: owner, listingTitle: listing.title } });
     });
 
+    /**
+     * Find or create the thread with the person behind a RoomPal profile.
+     *
+     * RoomPal had no messaging endpoint at all, so the app's "Get in touch"
+     * opened the website's matching page in a web view and left the person to
+     * work it out. Threads created here carry context 'roommate', which the
+     * inbox already labels as RoomPal.
+     *
+     * Most seeded profiles have no account behind them. That is answered
+     * plainly rather than by opening a thread nobody will ever read.
+     */
+    app.post('/api/roommate-conversations', async (req, res) => {
+        const supabase = getSupabase();
+        if (!supabase) return res.status(503).json({ success: false, message: 'Database not connected' });
+
+        const { profileId, userEmail } = req.body || {};
+        if (!profileId || !userEmail) {
+            return res.status(400).json({ success: false, message: 'profileId and userEmail are required' });
+        }
+
+        const me = String(userEmail).toLowerCase();
+
+        const { data: profile } = await supabase
+            .from('roommate_profiles')
+            .select('id, user_id, name')
+            .eq('id', profileId)
+            .maybeSingle();
+
+        if (!profile) return res.status(404).json({ success: false, message: 'That profile no longer exists' });
+
+        // The link between a roommate profile and an account is stored two
+        // different ways depending on when the row was written.
+        let owner = null;
+        for (const column of ['id', 'user_id']) {
+            const { data: account } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq(column, profile.user_id)
+                .maybeSingle();
+            if (account?.email) { owner = account.email.toLowerCase(); break; }
+        }
+
+        if (!owner) {
+            return res.status(409).json({
+                success: false,
+                message: `${profile.name || 'This profile'} isn't linked to an account yet, so they can't receive messages.`
+            });
+        }
+        if (owner === me) {
+            return res.status(409).json({ success: false, message: "That's your own profile" });
+        }
+
+        const { data: existing } = await supabase
+            .from('conversations')
+            .select('id')
+            .eq('context', 'roommate')
+            .or(`and(sender_email.eq.${me},receiver_email.eq.${owner}),and(sender_email.eq.${owner},receiver_email.eq.${me})`)
+            .limit(1);
+
+        if (existing?.length) {
+            return res.json({ success: true, data: { id: existing[0].id, created: false, otherParty: owner } });
+        }
+
+        const { data: created, error } = await supabase
+            .from('conversations')
+            .insert({ sender_email: me, receiver_email: owner, context: 'roommate' })
+            .select('id')
+            .single();
+
+        if (error) {
+            console.error('Failed to create roommate conversation:', error.message);
+            return res.status(500).json({ success: false, message: 'Could not start that conversation' });
+        }
+
+        res.json({ success: true, data: { id: created.id, created: true, otherParty: owner } });
+    });
+
     /** The messages in one thread, for a participant only. */
     app.get('/api/messages', async (req, res) => {
         const supabase = getSupabase();
