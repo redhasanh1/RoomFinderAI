@@ -390,6 +390,8 @@ struct ConversationScreen: View {
         VStack(spacing: 0) {
             Divider()
             HStack(alignment: .bottom, spacing: 10) {
+                DictationButton(text: $draft, isDisabled: isSending)
+
                 TextField("Message", text: $draft, axis: .vertical)
                     .lineLimit(1...5)
                     .padding(.horizontal, 14)

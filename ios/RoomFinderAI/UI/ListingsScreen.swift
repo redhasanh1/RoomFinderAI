@@ -276,12 +276,14 @@ struct ListingsScreen: View {
     /// The search field and the filters, pinned above the tab bar.
     private var searchBar: some View {
         HStack(spacing: 10) {
-            HStack(spacing: 8) {
+            HStack(spacing: 9) {
                 Image(systemName: "magnifyingglass")
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.brand)
 
                 TextField("Search by city or neighbourhood", text: $query)
                     .textFieldStyle(.plain)
+                    .font(.callout)
                     .autocorrectionDisabled()
                     .textInputAutocapitalization(.words)
                     .submitLabel(.search)
@@ -297,12 +299,22 @@ struct ListingsScreen: View {
                     }
                     .accessibilityLabel("Clear search")
                 }
+
+                // Say a city instead of typing it.
+                DictationButton(text: $query, size: 24)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 12)
+            // A filled capsule on a tinted bar reads as a bar, not a field.
+            // This is the control people use most on this screen, so it gets a
+            // solid surface, a brand-tinted edge and a little lift.
             .background(
-                Capsule().fill(Color(.secondarySystemBackground))
+                Capsule().fill(Color(.systemBackground))
             )
+            .overlay(
+                Capsule().strokeBorder(Theme.brand.opacity(0.35), lineWidth: 1.5)
+            )
+            .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
 
             filterMenu
                 .padding(10)

@@ -1,6 +1,7 @@
 import AVFoundation
 import Foundation
 import Speech
+import SwiftUI
 
 /// Turns speech into text for the chat composer.
 ///
@@ -110,5 +111,47 @@ final class SpeechDictation: NSObject, ObservableObject {
                 }
             }
         }
+    }
+}
+
+/// A microphone that dictates into whatever text it is bound to.
+///
+/// One control, used by the negotiator chat, the room search and every message
+/// thread, so talking works the same everywhere instead of existing in one
+/// corner of the app.
+struct DictationButton: View {
+
+    @Binding var text: String
+    var size: CGFloat = 30
+    var isDisabled = false
+
+    @StateObject private var dictation = SpeechDictation()
+
+    var body: some View {
+        Button {
+            Haptics.impact(.light)
+            Task {
+                if dictation.isListening {
+                    dictation.stop()
+                } else {
+                    await dictation.start()
+                }
+            }
+        } label: {
+            Image(systemName: dictation.isListening ? "waveform.circle.fill" : "mic.circle.fill")
+                .font(.system(size: size))
+                .foregroundStyle(dictation.isListening
+                                 ? AnyShapeStyle(.red)
+                                 : AnyShapeStyle(Theme.brand))
+                .symbolEffect(.pulse, isActive: dictation.isListening)
+        }
+        .disabled(isDisabled)
+        .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Talk instead of typing")
+        .onChange(of: dictation.transcript) { _, spoken in
+            guard !spoken.isEmpty else { return }
+            text = spoken
+        }
+        // Never leave the microphone open because someone navigated away.
+        .onDisappear { dictation.stop() }
     }
 }
