@@ -23,7 +23,14 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// It used to be a five-slot bar with Sublease and Listings hidden in an
     /// overflow menu, so someone who knew the site could not find them here.
     /// Matching the site means the two do not have to be learned separately.
-    static let tabBar: [AppTab] = [.home, .listings, .messages, .roompal, .sublease, .post, .profile]
+    /// Five slots, with Post dead centre.
+    ///
+    /// Seven was tried, to mirror the website's header. iOS sizes this bar to
+    /// fit whatever it is given rather than growing, so every item got narrower
+    /// and the whole thing read as cramped. Listings and Sublease are in the
+    /// menu instead, which is what the site's own "More" does with its
+    /// overflow.
+    static let tabBar: [AppTab] = [.home, .roompal, .post, .messages, .profile]
 
     var id: String { rawValue }
 
@@ -97,6 +104,7 @@ struct MoreDestination: Identifiable, Hashable {
     let path: String
 
     static let all: [MoreDestination] = [
+        .init(title: "Sublease",      symbol: "calendar.badge.clock", path: "sublease.html"),
         .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
         .init(title: "Legal Help",    symbol: "checkmark.shield.fill", path: "legal.html"),
         // No Pricing entry. The Pro plan is sold through Stripe on the website,
