@@ -225,7 +225,10 @@ async function notifyNewMessage(supabase, conversationId, senderEmail) {
         return await sendToUser(supabase, recipient, {
             title,
             body: preview || 'You have a new message.',
-            url: `messages.html?conversation=${conversationId}`
+            // `messages.html` has never existed on this site, so tapping a
+            // notification opened a 404. Messaging lives on the negotiator
+            // page, and in the app that path maps to the Messages tab.
+            url: `ai-negotiator.html?conversation=${conversationId}`
         });
     } catch (e) {
         console.error('Push: notifyNewMessage failed:', e.message);
