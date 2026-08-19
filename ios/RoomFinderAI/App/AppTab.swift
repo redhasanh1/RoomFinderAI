@@ -40,7 +40,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .listings:   return "Listings"
         case .roompal:    return "RoomPal"
         case .sublease:   return "Sublease"
-        case .post:       return "Post"
+        case .post:       return "Post a room"
         // "Messages", not "Negotiator". The tab holds two halves: the AI
         // negotiator and real threads with landlords and roommates. Naming it
         // after one of them hides the other.
@@ -57,7 +57,10 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .listings:   return "building.2.fill"
         case .roompal:    return "person.2.fill"
         case .sublease:   return "calendar.badge.clock"
-        case .post:       return "plus.circle.fill"
+        // A square plus, not a circle. The bar is otherwise all circles and
+        // rounded glyphs, so the one action among five places has to differ in
+        // shape to be spotted rather than read.
+        case .post:       return "plus.app.fill"
         case .messages:   return "bubble.left.and.text.bubble.right.fill"
         case .profile:    return "person.crop.circle.fill"
         }

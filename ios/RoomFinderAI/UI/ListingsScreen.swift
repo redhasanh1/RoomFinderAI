@@ -93,10 +93,6 @@ struct ListingsScreen: View {
             .navigationBarTitleDisplayMode(.large)
             .onChange(of: query) { _, _ in scheduleSearch() }
             .toolbar {
-                // Up here with the rest of the controls, not floating over the
-                // rooms. Posting is the other half of this product and a
-                // tab-bar slot among four others is easy to miss.
-                ToolbarItem(placement: .topBarTrailing) { postButton }
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
             .refreshable { await reloadAsync() }
@@ -273,25 +269,6 @@ struct ListingsScreen: View {
             }
             .padding(.horizontal, 16)
         }
-    }
-
-    private var postButton: some View {
-        Button {
-            Haptics.impact(.medium)
-            state.wantsToPost = true
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "plus")
-                    .font(.system(size: 14, weight: .bold))
-                Text("Post")
-                    .font(.subheadline.weight(.bold))
-            }
-            .foregroundStyle(.white)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-            .background(Theme.gradient, in: Capsule())
-        }
-        .accessibilityLabel("Post a room")
     }
 
     /// The search field and the filters, pinned above the tab bar.
