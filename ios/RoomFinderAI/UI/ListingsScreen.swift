@@ -24,7 +24,6 @@ struct ListingsScreen: View {
     @State private var bedrooms: Int?
     @State private var category: Category = .all
     @State private var searchTask: Task<Void, Never>?
-    @State private var detail: Listing?
 
     /// Property types, plus an "All". Derived from `propertyType`, which is
     /// what the website's own filters use.
@@ -81,7 +80,10 @@ struct ListingsScreen: View {
                     content
                 }
             }
-            .navigationDestination(item: $detail) { ListingDetailScreen(listing: $0) }
+            // Value-based, and declared once for the whole stack. Driving this
+            // from a bound item set inside the section rows opened nothing at
+            // all when a room was tapped in "All rooms".
+            .navigationDestination(for: Listing.self) { ListingDetailScreen(listing: $0) }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
             .searchable(text: $query, prompt: "Search by city or neighbourhood")
@@ -119,10 +121,7 @@ struct ListingsScreen: View {
                     // third one; grouping gives the page a shape and surfaces
                     // rooms that would otherwise be buried.
                     ForEach(sections) { section in
-                        ListingSection(
-                            section: section,
-                            onSelect: { detail = $0 }
-                        )
+                        ListingSection(section: section)
                     }
 
                     HStack {
@@ -436,7 +435,7 @@ private struct CardImage: View {
                 placeholder(showIcon: false)
             }
         }
-        .frame(height: 200)
+        .frame(height: 168)
         .frame(maxWidth: .infinity)
         .clipped()
     }
@@ -523,7 +522,11 @@ private struct LoadingCards: View {
 private struct ListingSection: View {
 
     let section: ListingsScreen.Section
-    let onSelect: (Listing) -> Void
+
+    /// Rooms sit side by side once there is room for them. A single column of
+    /// full-width cards on an iPad gives one room per screenful, each stretched
+    /// far wider than its photo wants to be.
+    private let columns = [GridItem(.adaptive(minimum: 300, maximum: 460), spacing: 16)]
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -543,7 +546,7 @@ private struct ListingSection: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 14) {
                         ForEach(section.listings) { listing in
-                            Button { onSelect(listing) } label: {
+                            NavigationLink(value: listing) {
                                 ShelfCard(listing: listing)
                             }
                             .buttonStyle(.plain)
@@ -553,15 +556,15 @@ private struct ListingSection: View {
                 }
 
             case .list:
-                LazyVStack(spacing: 16) {
+                LazyVGrid(columns: columns, spacing: 16) {
                     ForEach(section.listings) { listing in
-                        Button { onSelect(listing) } label: {
+                        NavigationLink(value: listing) {
                             ListingCard(listing: listing)
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, 16)
                     }
                 }
+                .padding(.horizontal, 16)
             }
         }
     }
