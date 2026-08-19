@@ -45,9 +45,21 @@ struct MessagesScreen: View {
             // user on a blank chat that has no idea what they just tapped.
             .task(id: state.pendingNegotiationListing?.id) {
                 guard let listing = state.pendingNegotiationListing else { return }
-                state.pendingNegotiationListing = nil
                 section = .negotiator
+
+                // Clear it *after* the work, not before.
+                //
+                // This task is keyed on that listing's id, so clearing it first
+                // changed the key and SwiftUI cancelled the task mid-flight —
+                // taking the request with it. The negotiator reported -999,
+                // NSURLErrorCancelled, and looked like a network fault when it
+                // was this view tearing down its own call.
+                //
+                // Clearing afterwards still stops a stale negotiation reopening
+                // later, and the cancellation it triggers lands on work that has
+                // already finished.
                 await negotiation.start(about: listing)
+                state.pendingNegotiationListing = nil
             }
             .navigationTitle("Messages")
             .navigationBarTitleDisplayMode(.inline)
