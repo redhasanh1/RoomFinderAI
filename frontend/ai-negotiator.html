@@ -1189,6 +1189,43 @@
                 checkNegotiatorHealth();
 
                 console.log('AI Negotiator initialized successfully with database integration!');
+
+                // Deep link from the iOS app: ai-negotiator.html?listing=<id>
+                //
+                // The app has its own negotiator chat, but the machinery that
+                // actually messages a landlord and shows the thread lives here.
+                // Rather than build a second copy of it natively and have the
+                // two drift, "Negotiate this rent" opens this page for that
+                // room, so the tenant sees the real messages either way.
+                //
+                // contactLandlord only searches results already on screen, so
+                // the room is fetched by id first.
+                const listingParam = new URLSearchParams(window.location.search).get('listing');
+                if (listingParam && aiNegotiator) {
+                    try {
+                        const { data: room, error: roomError } = await supabaseClient
+                            .from('listings')
+                            .select('*')
+                            .eq('id', listingParam)
+                            .maybeSingle();
+
+                        if (roomError || !room) {
+                            aiNegotiator.appendMessage('AI', "I couldn't find that room. It may have been taken down.", 'left');
+                        } else {
+                            // Keep the URL clean so a refresh does not start a
+                            // second negotiation for the same room.
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                            aiNegotiator.appendMessage(
+                                'AI',
+                                `Right, ${room.title} at $${Number(room.price || 0).toLocaleString()}/month. Let me speak to the landlord for you.`,
+                                'left'
+                            );
+                            aiNegotiator.startNegotiationForListing(room);
+                        }
+                    } catch (deepLinkError) {
+                        console.error('Could not start negotiation from the link:', deepLinkError);
+                    }
+                }
                 
             } catch (error) {
                 console.error('Failed to initialize AI Negotiator:', error);

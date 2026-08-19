@@ -30,6 +30,11 @@ final class AppState: ObservableObject {
     ///
     /// Cleared by whoever consumes it, so returning to Messages later does not
     /// re-open a negotiation about a listing from an hour ago.
+    ///
+    /// Currently unused: "Negotiate this rent" opens the site's negotiator for
+    /// the room instead, because that is where the machinery that messages a
+    /// landlord lives. Kept because the Messages tab still handles it, and a
+    /// native negotiation loop would use this again.
     @Published var pendingNegotiationListing: Listing?
 
     private static let tabKey = "lastSelectedTab"

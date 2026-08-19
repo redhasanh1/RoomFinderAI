@@ -192,16 +192,19 @@ struct ListingDetailScreen: View {
 
     private var actions: some View {
         VStack(spacing: 12) {
-            Button {
-                Haptics.impact(.medium)
-                // The negotiator needs the site's session and its own state, so
-                // it opens on the tab that owns it rather than being rebuilt.
-                // Hand the room over as well: switching tabs alone dropped the
-                // listing, so the negotiator opened blank and the button read
-                // as doing nothing.
-                state.pendingNegotiationListing = listing
-                state.selectedTab = .messages
-                dismiss()
+            // Opens the site's negotiator for this room rather than the app's
+            // own chat.
+            //
+            // The native chat briefs an assistant about what you want; the
+            // machinery that actually messages a landlord, shows the thread and
+            // works the price down lives on the web page. Sending this button
+            // there means the tenant sees the real conversation, and there is
+            // one negotiation engine rather than two that drift apart.
+            NavigationLink {
+                WebPageScreen(
+                    url: AppConfig.url("ai-negotiator.html?listing=\(listing.id)"),
+                    title: "Negotiate"
+                )
             } label: {
                 Label("Negotiate this rent", systemImage: "bubble.left.and.text.bubble.right.fill")
                     .font(.headline)

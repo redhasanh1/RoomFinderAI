@@ -500,3 +500,75 @@ final class InboxReplyUITests: XCTestCase {
         XCTAssertTrue(sent.waitForExistence(timeout: 45), "The reply never appeared in the transcript")
     }
 }
+
+/// Walks the path from a listing into the negotiator, the way someone using the
+/// app does, and reports what is actually on screen at each step.
+///
+/// Written because "negotiate does nothing" and "it doesn't show the messages"
+/// were both reported from the device and neither could be reproduced by
+/// calling the API — the failures were in the view layer, which only a run of
+/// the real screens exposes.
+final class NegotiateFlowUITests: XCTestCase {
+
+    private var app: XCUIApplication!
+
+    override func setUpWithError() throws {
+        continueAfterFailure = true          // keep going, so one run reports everything
+        app = XCUIApplication()
+        app.launchArguments = ["-uiTestingResetState"]
+        app.launch()
+    }
+
+    func testNegotiateFromAListing() {
+        XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 60), "app never launched")
+
+        // Find a real room card by its price, the same way the listings test does.
+        let card = app.buttons.containing(NSPredicate(format: "label CONTAINS[c] '/mo'")).firstMatch
+        guard card.waitForExistence(timeout: 60) else {
+            XCTFail("no listings loaded, so the negotiate path cannot be reached")
+            return
+        }
+        card.tap()
+
+        let negotiate = app.buttons["Negotiate this rent"]
+        guard negotiate.waitForExistence(timeout: 20) else {
+            XCTFail("listing detail never offered 'Negotiate this rent'")
+            return
+        }
+        negotiate.tap()
+
+        // It should land on Messages, on the negotiator half.
+        XCTAssertTrue(app.buttons["AI Negotiator"].waitForExistence(timeout: 20),
+                      "tapping negotiate did not open the Messages hub")
+
+        // The opener is sent as if the tenant typed it, so their own line
+        // should appear immediately.
+        let ownLine = app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS[c] 'interested in'")
+        ).firstMatch
+        XCTAssertTrue(ownLine.waitForExistence(timeout: 20),
+                      "the negotiator never showed the opening message it sent")
+
+        // Then the AI's reply. Generous timeout: this is a live model call.
+        let reply = app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS[c] 'AI Negotiator'")
+        ).firstMatch
+        let gotReply = reply.waitForExistence(timeout: 60)
+
+        // Whatever happened, say what is on screen rather than just failing.
+        let visible = app.staticTexts.allElementsBoundByIndex
+            .prefix(25)
+            .map(\.label)
+            .filter { !$0.isEmpty }
+        XCTAssertTrue(gotReply, """
+            No reply from the negotiator after 60s.
+            On screen: \(visible.joined(separator: " | "))
+            """)
+
+        // Leaked prompt scaffolding would be visible here.
+        let leaked = app.staticTexts.containing(
+            NSPredicate(format: "label CONTAINS 'CRITERIA'")
+        ).firstMatch
+        XCTAssertFalse(leaked.exists, "the criteria block is leaking into the chat")
+    }
+}
