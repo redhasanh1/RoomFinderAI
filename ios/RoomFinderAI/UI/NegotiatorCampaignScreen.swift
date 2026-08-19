@@ -61,7 +61,8 @@ struct NegotiatorCampaignScreen: View {
                 .foregroundStyle(campaign.goals.isConfirmed ? AnyShapeStyle(.green) : AnyShapeStyle(Theme.gradient))
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(campaign.goals.isConfirmed ? "Goals confirmed" : "Check your goals")
+                Text(campaign.goals.isConfirmed ? "Goals confirmed"
+                     : (campaign.goals.isUsable ? "Check your goals" : "No budget set yet"))
                     .font(.caption.weight(.semibold))
                 Text(campaign.goals.summary)
                     .font(.caption2)
@@ -89,7 +90,11 @@ struct NegotiatorCampaignScreen: View {
                         showingGoals = true
                     }
                 } label: {
-                    Text("These are right")
+                    // Two states, because the button does two different things.
+                    // With goals filled in it confirms them; with nothing to
+                    // confirm all it can do is open the form, and saying "These
+                    // are right" there reads as the app ignoring the tap.
+                    Text(campaign.goals.isUsable ? "These are right" : "Set your budget")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
