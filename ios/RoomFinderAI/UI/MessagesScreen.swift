@@ -18,6 +18,8 @@ struct MessagesScreen: View {
     @State private var section: Section = .negotiator
     @State private var showingGoals = false
     @State private var confirmingReset = false
+    @State private var askingAboutNotifications = false
+    @ObservedObject private var push = PushService.shared
     @StateObject private var messaging = MessagingService()
     @StateObject private var chat = NegotiationService()
     @ObservedObject private var campaign = NegotiationCampaign.shared
@@ -90,6 +92,16 @@ struct MessagesScreen: View {
             // A full page, not the small card a form sheet defaults to on
             // iPad: this is a screenful of fields and it was being shown in a
             // window smaller than the keyboard.
+            // Asked in our own words first, so a "no" here costs nothing and
+            // the one system prompt iOS allows is only spent on someone who
+            // has already said yes.
+            .alert("Tell you when a landlord agrees?", isPresented: $askingAboutNotifications) {
+                Button("Yes, notify me") { push.requestAuthorization() }
+                Button("Not now", role: .cancel) { }
+            } message: {
+                Text("Your AI keeps negotiating after you close the app, and landlords can take hours to reply. We'll ping you the moment one agrees.")
+            }
+            .task { push.refreshStatus() }
             // Reset deletes the conversations themselves, so it asks first.
             // The website's does the same, and it is not recoverable.
             .confirmationDialog("Reset negotiations?",
@@ -111,6 +123,13 @@ struct MessagesScreen: View {
                         // starts now, and the negotiations appear above.
                         if !campaign.queued.isEmpty {
                             Task { await campaign.start() }
+                        }
+                        // The only moment worth asking about notifications:
+                        // something is now running in the background that the
+                        // tenant cannot see the end of. Asked at launch it is a
+                        // prompt about nothing, and iOS only allows one.
+                        if push.authorizationStatus == .notDetermined {
+                            askingAboutNotifications = true
                         }
                     }
                 )

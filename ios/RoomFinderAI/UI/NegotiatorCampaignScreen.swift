@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// The negotiator half of Messages: your goals, the negotiations running, and
 /// the chat that starts more of them.
@@ -14,6 +15,7 @@ struct NegotiatorCampaignScreen: View {
 
     @ObservedObject var campaign: NegotiationCampaign
     @ObservedObject var chat: NegotiationService
+    @ObservedObject private var push = PushService.shared
     @Binding var showingGoals: Bool
 
     var body: some View {
@@ -25,6 +27,7 @@ struct NegotiatorCampaignScreen: View {
             goalsBar
 
             if !campaign.active.isEmpty { activeBar }
+            if !campaign.active.isEmpty && push.authorizationStatus == .denied { notificationsOffBar }
 
             if let message = campaign.errorMessage { notice(message) }
 
@@ -197,6 +200,30 @@ struct NegotiatorCampaignScreen: View {
         let agreed = campaign.closedCount
         if agreed > 0 { return "\(agreed) agreed — tap to see the offers" }
         return "Tap to read every message"
+    }
+
+    /// Only while a negotiation is actually running. Nagging about
+    /// notifications when nothing is happening is how an app gets its
+    /// notifications turned off in the first place.
+    private var notificationsOffBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "bell.slash.fill").foregroundStyle(.orange)
+            Text("Notifications are off, so you won't hear when a landlord agrees.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 8)
+            Button("Turn on") {
+                Haptics.impact(.light)
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .font(.caption.weight(.semibold))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color.orange.opacity(0.1),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     private func notice(_ message: String) -> some View {
