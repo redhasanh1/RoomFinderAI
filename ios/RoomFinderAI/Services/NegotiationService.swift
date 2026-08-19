@@ -306,9 +306,7 @@ final class NegotiationService: ObservableObject {
             // "These are right" when no budget is set sends them to a control
             // that can only open the form, which reads as the app ignoring them.
             let howMany = fresh.count == 1 ? "this one" : "all \(fresh.count) of these"
-            let whatToDo = campaign.goals.isUsable
-                ? "check the goals at the top of this screen, I've filled them in from what you said, and tap \u{201C}These are right\u{201D}"
-                : "tap \u{201C}Set your budget\u{201D} at the top of this screen and tell me the most you'll pay"
+            let whatToDo = "check the goals at the top of this screen, I've filled them in from what you said, and tap \u{201C}These are right\u{201D}"
 
             messages.append(NegotiationMessage(
                 author: .negotiator,
