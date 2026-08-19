@@ -37,6 +37,25 @@ final class AppState: ObservableObject {
     /// native negotiation loop would use this again.
     @Published var pendingNegotiationListing: Listing?
 
+    /// A site page opened from the menu, shown over whatever tab you were on.
+    ///
+    /// These used to be routed to a tab. Sublease pointed at a tab that is no
+    /// longer in the bar, so tapping it selected nothing and looked broken;
+    /// the others quietly took over the Profile tab, which is not where anyone
+    /// asked to go.
+    @Published var presentedPage: PresentedPage?
+
+    struct PresentedPage: Identifiable, Hashable {
+        let id = UUID()
+        let title: String
+        let url: URL
+    }
+
+    func present(_ destination: MoreDestination) {
+        presentedPage = PresentedPage(title: destination.title,
+                                      url: AppConfig.url(destination.path))
+    }
+
     /// Set when a room has just been queued, so Messages can open the goals
     /// form the first time rather than leaving the tenant to find it.
     @Published var justQueuedNegotiation = false

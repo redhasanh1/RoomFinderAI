@@ -88,7 +88,6 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         // has no web view to hand a URL to. listing_details.html and
         // favorites.html are left unowned so they open in a web-capable tab.
         case "listings.html":                   return .listings
-        case "sublease.html":                   return .sublease
         case "ai-negotiator.html":              return .messages  // native; selecting it is the whole action
         case "roommate-matching.html":          return .roompal
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile

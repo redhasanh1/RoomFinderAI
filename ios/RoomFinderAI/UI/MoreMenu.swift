@@ -31,7 +31,7 @@ struct MoreMenu<Extra: View>: View {
             ForEach(MoreDestination.all) { destination in
                 Button {
                     Haptics.select()
-                    state.open(AppConfig.url(destination.path))
+                    state.present(destination)
                 } label: {
                     Label(destination.title, systemImage: destination.symbol)
                 }

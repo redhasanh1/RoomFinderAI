@@ -34,6 +34,18 @@ struct RootTabView: View {
         .sheet(isPresented: $isPosting) {
             PostListingSheet()
         }
+        // Menu pages open over the app with their own Done button, so you come
+        // back to the tab you were on rather than being left somewhere else.
+        .sheet(item: $state.presentedPage) { page in
+            NavigationStack {
+                WebPageScreen(url: page.url, title: page.title)
+                    .toolbar {
+                        ToolbarItem(placement: .topBarLeading) {
+                            Button("Done") { state.presentedPage = nil }
+                        }
+                    }
+            }
+        }
     }
 
     /// Intercepts selection for two things: tapping the tab you are already on
