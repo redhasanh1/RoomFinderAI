@@ -8576,7 +8576,11 @@ function formatTimeAgo(date) {
  * nobody on the site can get verified.
  */
 async function askWorker(task, buffer) {
-    const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
+    // Its own variable, deliberately. CLOUDFLARE_WORKER_URL points at the
+    // property-photo worker, which has no idea what `task` means and happily
+    // ran a listing appraisal on someone's passport — returning a success with
+    // no verdict in it, so every upload sailed through.
+    const workerUrl = process.env.CLOUDFLARE_ID_WORKER_URL;
     if (!workerUrl) return null;
 
     const response = await fetch(workerUrl, {
