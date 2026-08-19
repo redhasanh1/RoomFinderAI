@@ -1287,7 +1287,9 @@ function transformListingForAndroid(listing, verificationMap = {}) {
 
     // Check if the lister is verified
     const userEmail = listing.user_email || listing.userEmail;
-    const isVerified = userEmail ? (verificationMap[userEmail] === 'approved') : false;
+    // 'verified' is what approving actually writes. This looked for 'approved',
+    // a status nothing has ever set, so the badge could not appear for anyone.
+    const isVerified = userEmail ? (verificationMap[userEmail] === 'verified') : false;
 
     return {
         id: listing.id,
@@ -8851,7 +8853,7 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                 idDocumentBase64 = req.file.buffer.toString('base64');
             }
 
-            // Save verification record with "pending_review" status
+            // Save the record for a person to review.
             try {
                 const verificationData = {
                     id_document_mimetype: req.file.mimetype,
@@ -8882,7 +8884,11 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                     .from('user_verifications')
                     .upsert({
                         user_email: userEmail,
-                        id_verification_status: 'pending_review',
+                        // 'pending', not 'pending_review'. The table's check
+                        // constraint allows pending | verified | failed only,
+                        // and every other spelling in this file was silently
+                        // rejected by Postgres.
+                        id_verification_status: 'pending',
                         id_verification_data: verificationData,
                         updated_at: new Date().toISOString()
                     }, { onConflict: 'user_email' });
@@ -8904,7 +8910,7 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
         res.json({
             success: true,
             message: 'Your ID has been submitted for verification. You will be notified once reviewed.',
-            status: 'pending_review'
+            status: 'pending'
         });
 
     } catch (error) {
@@ -8986,7 +8992,7 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
                 .from('user_verifications')
                 .upsert({
                     user_email: userEmail,
-                    face_verification_status: 'pending_review',
+                    face_verification_status: 'pending',
                     // Its own column. Writing this into id_verification_data
                     // would overwrite whatever the ID upload put there, and the
                     // two are uploaded one after the other.
@@ -9008,7 +9014,7 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
         res.json({
             success: true,
             message: 'Selfie submitted for verification. You will be notified once reviewed.',
-            status: 'pending_review'
+            status: 'pending'
         });
 
     } catch (error) {
@@ -9039,7 +9045,9 @@ app.post('/api/admin/verify-user', async (req, res) => {
             return res.status(400).json({ error: 'Action must be approve or reject' });
         }
 
-        const status = action === 'approve' ? 'verified' : 'rejected';
+        // 'failed', not 'rejected': the constraint has no 'rejected', so every
+        // rejection was refused by the database and the record stayed pending.
+        const status = action === 'approve' ? 'verified' : 'failed';
 
         const { error } = await supabase
             .from('user_verifications')
@@ -9085,7 +9093,7 @@ app.get('/api/admin/pending-verifications', async (req, res) => {
         const { data, error } = await supabase
             .from('user_verifications')
             .select('*')
-            .in('id_verification_status', ['pending_review', 'pending'])
+            .in('id_verification_status', ['pending'])
             .order('updated_at', { ascending: false });
 
         if (error) {

@@ -1359,7 +1359,7 @@
                     document.getElementById('successSection').classList.remove('hidden');
 
                     // Update local user status to pending
-                    currentUser.verificationStatus = 'pending_review';
+                    currentUser.verificationStatus = 'pending';
                     safeLocalStorageSetItem('currentUser', JSON.stringify(currentUser));
                 }, 500);
 
