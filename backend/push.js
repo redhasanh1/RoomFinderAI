@@ -184,7 +184,7 @@ async function notifyNewMessage(supabase, conversationId, senderEmail) {
     try {
         const { data: conversation } = await supabase
             .from('conversations')
-            .select('id, listing_id, sender_email, receiver_email')
+            .select('id, listing_id, sender_email, receiver_email, ai_managed')
             .eq('id', conversationId)
             .single();
 
@@ -194,6 +194,18 @@ async function notifyNewMessage(supabase, conversationId, senderEmail) {
         const participants = [conversation.sender_email, conversation.receiver_email].filter(Boolean);
         const recipient = participants.find(address => address.toLowerCase() !== from);
         if (!recipient) return { sent: 0 };
+
+        // Silence for the side whose AI is running the thread.
+        //
+        // A tenant negotiating five rooms got a push for every landlord reply,
+        // five conversations deep, about messages their negotiator answers on
+        // its own within seconds. The app tells them the thing that matters —
+        // a landlord agreeing — itself. The landlord still gets every message,
+        // because there is a person on that end reading them.
+        if (conversation.ai_managed &&
+            recipient.toLowerCase() === (conversation.sender_email || '').toLowerCase()) {
+            return { sent: 0, skipped: 'ai_managed' };
+        }
 
         // The AI negotiator writes under its own address on the tenant's
         // behalf, so pushing "ai-negotiator@roomfinder.com messaged you" would

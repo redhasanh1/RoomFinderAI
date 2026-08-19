@@ -120,13 +120,30 @@ extension PushService: UNUserNotificationCenterDelegate {
         [.banner, .list, .sound, .badge]
     }
 
-    /// Payloads may carry `{"url": "listings.html?id=..."}`; routing is handled
-    /// by the same deep-link path as `roomfinderai://` links.
+    /// Payloads may carry `{"url": "listings.html?id=..."}`.
+    ///
+    /// Only paths that belong to a tab are followed. A payload pointing at a
+    /// page that does not exist used to be opened anyway, which is how tapping a
+    /// message notification landed on a 404 — the server was sending
+    /// `messages.html`, a page this site has never had. Anything unrecognised
+    /// now opens Messages, which is where a notification about a message should
+    /// go regardless.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
-        guard let raw = info["url"] as? String else { return }
-        let url = raw.contains("://") ? URL(string: raw) : AppConfig.url(raw)
-        if let url { DeepLinkRouter.shared.handle(url) }
+        let raw = (info["url"] as? String) ?? ""
+
+        let path = raw.contains("://")
+            ? (URL(string: raw)?.path.split(separator: "/").last.map(String.init) ?? "")
+            : String(raw.split(separator: "?").first ?? "")
+
+        await MainActor.run {
+            if !path.isEmpty, AppTab.owning(path: path) != nil,
+               let url = raw.contains("://") ? URL(string: raw) : AppConfig.url(raw) {
+                DeepLinkRouter.shared.handle(url)
+            } else {
+                DeepLinkRouter.shared.handle(AppConfig.url("ai-negotiator.html"))
+            }
+        }
     }
 }

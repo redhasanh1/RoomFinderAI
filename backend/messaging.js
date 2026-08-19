@@ -139,7 +139,7 @@ function registerMessagingRoutes(app, getSupabase) {
         const supabase = getSupabase();
         if (!supabase) return res.status(503).json({ success: false, message: 'Database not connected' });
 
-        const { listingId, userEmail } = req.body || {};
+        const { listingId, userEmail, managedByAI } = req.body || {};
         if (!listingId || !userEmail) {
             return res.status(400).json({ success: false, message: 'listingId and userEmail are required' });
         }
@@ -168,6 +168,13 @@ function registerMessagingRoutes(app, getSupabase) {
             .limit(1);
 
         if (existing?.length) {
+            // A thread opened by hand and later negotiated is still AI-run;
+            // one opened by hand stays a normal conversation.
+            if (managedByAI) {
+                await supabase.from('conversations')
+                    .update({ ai_managed: true })
+                    .eq('id', existing[0].id);
+            }
             return res.json({ success: true, data: { id: existing[0].id, created: false, landlordEmail: owner, listingTitle: listing.title } });
         }
 
@@ -177,7 +184,8 @@ function registerMessagingRoutes(app, getSupabase) {
                 listing_id: listingId,
                 sender_email: me,
                 receiver_email: owner,
-                context: 'listing'
+                context: 'listing',
+                ai_managed: !!managedByAI
             })
             .select('id')
             .single();

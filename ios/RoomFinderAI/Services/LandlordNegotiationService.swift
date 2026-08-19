@@ -190,7 +190,11 @@ final class LandlordNegotiationService: ObservableObject {
         request.timeoutInterval = 30
         request.httpBody = try JSONSerialization.data(withJSONObject: [
             "listingId": listingID,
-            "userEmail": me
+            "userEmail": me,
+            // Marks the thread as one the AI runs, so the server stops pushing
+            // the tenant about replies their negotiator answers by itself.
+            // "Message host" leaves this off and keeps its notifications.
+            "managedByAI": true
         ])
 
         let (data, response) = try await URLSession.shared.data(for: request)
