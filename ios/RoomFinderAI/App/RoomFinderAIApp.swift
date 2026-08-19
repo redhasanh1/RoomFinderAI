@@ -75,7 +75,29 @@ final class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions options: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         Task { @MainActor in PushService.shared.configure() }
+        Self.makeBarsOpaque()
         return true
+    }
+
+    /// Solid navigation and tab bars, everywhere.
+    ///
+    /// Both are translucent by default, so anything scrolled past showed
+    /// through them — a listing photo or a page of the site sliding around
+    /// behind the menu, which reads as a layout fault rather than a material.
+    /// Set through the appearance proxy so every screen gets it, native and
+    /// web alike, rather than each one remembering to ask.
+    @MainActor
+    private static func makeBarsOpaque() {
+        let navigation = UINavigationBarAppearance()
+        navigation.configureWithOpaqueBackground()
+        UINavigationBar.appearance().standardAppearance = navigation
+        UINavigationBar.appearance().compactAppearance = navigation
+        UINavigationBar.appearance().scrollEdgeAppearance = navigation
+
+        let tab = UITabBarAppearance()
+        tab.configureWithOpaqueBackground()
+        UITabBar.appearance().standardAppearance = tab
+        UITabBar.appearance().scrollEdgeAppearance = tab
     }
 
     func application(_ application: UIApplication,
