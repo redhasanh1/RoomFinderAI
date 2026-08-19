@@ -8559,7 +8559,116 @@ function formatTimeAgo(date) {
     return `${Math.floor(diffInSeconds / 604800)} weeks ago`;
 }
 
-// API: Upload government ID for manual review (FREE - no Azure required)
+/**
+ * Checks that an upload is actually a government ID before it is stored.
+ *
+ * Two random photos used to sail straight through to "pending_review", which
+ * put junk in front of a human and told the person who uploaded it nothing was
+ * wrong until someone got round to looking. Azure's prebuilt-idDocument model
+ * reads passports and driving licences and returns the fields it found, so an
+ * image with no document in it is obvious immediately.
+ *
+ * This is a filter, not the decision. Anything that passes still goes to a
+ * person: a model reading a name off a card cannot tell you the card is real.
+ *
+ * Returns { ok, reason, fields }. When Azure is unreachable or unconfigured it
+ * returns ok with `skipped`, because an outage at Microsoft must not mean
+ * nobody on the site can get verified.
+ */
+async function inspectIdDocument(buffer, mimetype) {
+    if (!documentClient) return { ok: true, skipped: 'azure_not_configured' };
+
+    let documents;
+    try {
+        const poller = await documentClient.beginAnalyzeDocument('prebuilt-idDocument', buffer, {
+            contentType: mimetype === 'application/pdf' ? 'application/pdf' : undefined
+        });
+        ({ documents } = await poller.pollUntilDone());
+    } catch (error) {
+        console.error('ID inspection failed, falling back to manual review:', error.message);
+        return { ok: true, skipped: 'azure_error' };
+    }
+
+    const document = (documents || [])[0];
+    if (!document) {
+        return {
+            ok: false,
+            reason: "We couldn't find a government ID in that photo. Upload a clear picture of your passport or driving licence, with all four corners visible."
+        };
+    }
+
+    const field = (name) => document.fields?.[name];
+    const text = (name) => {
+        const value = field(name);
+        if (!value) return null;
+        return (typeof value.value === 'string' ? value.value : value.content) || null;
+    };
+    const date = (name) => {
+        const value = field(name);
+        if (!value?.value) return null;
+        const parsed = value.value instanceof Date ? value.value : new Date(value.value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    };
+
+    const expiry = date('DateOfExpiration');
+    if (expiry && expiry < new Date()) {
+        return {
+            ok: false,
+            reason: `That ID expired on ${expiry.toISOString().slice(0, 10)}. Upload one that is still valid.`
+        };
+    }
+
+    // Only the number's last four is kept. Manual review needs enough to match
+    // the document in front of them, not a full identifier sitting in a table.
+    const number = text('DocumentNumber');
+
+    return {
+        ok: true,
+        fields: {
+            docType: document.docType || null,
+            firstName: text('FirstName'),
+            lastName: text('LastName'),
+            documentNumberLast4: number ? String(number).slice(-4) : null,
+            dateOfBirth: date('DateOfBirth')?.toISOString().slice(0, 10) || null,
+            dateOfExpiration: expiry?.toISOString().slice(0, 10) || null,
+            countryRegion: text('CountryRegion'),
+            region: text('Region'),
+            confidence: document.confidence ?? null,
+            checkedAt: new Date().toISOString()
+        }
+    };
+}
+
+/**
+ * Checks a selfie has exactly one clear face in it.
+ *
+ * Not a match against the ID: comparing two faces is a Limited Access feature
+ * that Microsoft gates behind an application, and getting it wrong is worse
+ * than not doing it. This only rules out the obvious, a photo of a wall or a
+ * group shot, and leaves the comparison to the reviewer who has both images.
+ */
+async function inspectSelfie(buffer) {
+    if (!faceClient) return { ok: true, skipped: 'azure_not_configured' };
+
+    let faces;
+    try {
+        faces = await faceClient.face.detectWithStream(buffer, { detectionModel: 'detection_03' });
+    } catch (error) {
+        console.error('Selfie inspection failed, falling back to manual review:', error.message);
+        return { ok: true, skipped: 'azure_error' };
+    }
+
+    if (!faces || faces.length === 0) {
+        return { ok: false, reason: "We couldn't find a face in that photo. Take a clear selfie in good light, looking at the camera." };
+    }
+    if (faces.length > 1) {
+        return { ok: false, reason: `We found ${faces.length} faces in that photo. Send one of just you.` };
+    }
+
+    return { ok: true, fields: { faceCount: 1, checkedAt: new Date().toISOString() } };
+}
+
+// API: Upload government ID. Machine-checked, then reviewed by a person.
 app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) => {
     try {
         if (!req.file) {
@@ -8587,6 +8696,17 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
             mimetype: req.file.mimetype,
             size: req.file.size
         });
+
+        // Rejected uploads are not stored. Keeping a stranger's holiday snap in
+        // a bucket called govdocs helps nobody and is one more thing to leak.
+        const inspection = await inspectIdDocument(req.file.buffer, req.file.mimetype);
+        if (!inspection.ok) {
+            console.log('🚫 ID rejected automatically:', inspection.reason);
+            return res.status(422).json({ error: inspection.reason, status: 'rejected' });
+        }
+        if (inspection.skipped) {
+            console.log('⚠️ ID accepted without machine checks:', inspection.skipped);
+        }
 
         let idDocumentPath = null;
         let idDocumentBase64 = null;
@@ -8636,7 +8756,12 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                     id_document_mimetype: req.file.mimetype,
                     original_filename: req.file.originalname,
                     file_size: req.file.size,
-                    uploaded_at: new Date().toISOString()
+                    uploaded_at: new Date().toISOString(),
+                    // What the machine read off it. The reviewer compares this
+                    // against the image and the account rather than starting
+                    // from nothing.
+                    machine_check: inspection.fields || null,
+                    machine_check_skipped: inspection.skipped || null
                 };
 
                 if (idDocumentPath) {
@@ -8695,6 +8820,12 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
         }
 
         console.log('📸 Processing selfie upload for:', userEmail);
+
+        const selfieCheck = await inspectSelfie(req.file.buffer);
+        if (!selfieCheck.ok) {
+            console.log('🚫 Selfie rejected automatically:', selfieCheck.reason);
+            return res.status(422).json({ error: selfieCheck.reason, status: 'rejected' });
+        }
 
         if (!supabase) {
             return res.status(503).json({ error: 'Database service not available' });
