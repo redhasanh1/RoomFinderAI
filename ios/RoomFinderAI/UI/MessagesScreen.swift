@@ -21,7 +21,7 @@ struct MessagesScreen: View {
     @State private var askingAboutNotifications = false
     @ObservedObject private var push = PushService.shared
     @StateObject private var messaging = MessagingService()
-    @StateObject private var chat = NegotiationService()
+    @ObservedObject private var chat = NegotiationService.shared
     @ObservedObject private var campaign = NegotiationCampaign.shared
 
     var body: some View {

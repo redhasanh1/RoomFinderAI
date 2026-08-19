@@ -28,9 +28,26 @@ struct NegotiationMessage: Identifiable, Hashable {
         }
     }
 
+    /// A message announcing a closed deal reads differently from a reply: it is
+    /// the outcome the whole conversation was for, so it gets its own shape in
+    /// the transcript rather than being one more grey bubble to scroll past.
+    struct Deal: Hashable {
+        let room: String
+        let price: Int?
+        let asking: Int?
+        let viewing: String?
+
+        var savedPerMonth: Int? {
+            guard let price, let asking, asking > price else { return nil }
+            return asking - price
+        }
+    }
+
     let id = UUID()
     let author: Author
     let text: String
+    /// Set when this message is the announcement of a landlord agreeing.
+    var deal: Deal?
     /// Rooms the AI found for this turn, shown as cards under its reply.
     var listings: [Listing] = []
     let sentAt: Date

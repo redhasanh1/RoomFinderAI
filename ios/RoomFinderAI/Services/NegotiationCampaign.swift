@@ -353,6 +353,14 @@ final class NegotiationCampaign: ObservableObject {
                 viewing: viewing
             )
             celebration = deal
+            // The chat is the tenant's negotiator. It is the thing that should
+            // be telling them it won, not a card sitting above it.
+            NegotiationService.shared.announce(.init(
+                room: deal.room,
+                price: deal.price,
+                asking: deal.asking,
+                viewing: deal.viewing
+            ))
             LocalNotifier.dealAgreed(headline: deal.headline, detail: deal.detail)
         }
     }

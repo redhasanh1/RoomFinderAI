@@ -14,6 +14,10 @@ import Foundation
 @MainActor
 final class NegotiationService: ObservableObject {
 
+    /// Shared, because a landlord can agree while the tenant is on any tab and
+    /// the news has to land in this transcript wherever they are.
+    static let shared = NegotiationService()
+
     @Published private(set) var messages: [NegotiationMessage] = []
     @Published private(set) var isThinking = false
     @Published var errorMessage: String?
@@ -23,6 +27,27 @@ final class NegotiationService: ObservableObject {
     var goals: NegotiationGoals { NegotiationCampaign.shared.goals }
 
     var hasStarted: Bool { !messages.isEmpty }
+
+    /// Says it in the chat, which is where the tenant asked for this in the
+    /// first place.
+    func announce(_ deal: NegotiationMessage.Deal) {
+        var line = deal.price.map { "Good news, I secured it at $\($0) a month." }
+            ?? "Good news, the landlord agreed."
+        line += " That's \(deal.room)."
+        if let saved = deal.savedPerMonth {
+            line += " I got $\(saved) a month off the asking price, about $\(saved * 12) over a year."
+        }
+        if let viewing = deal.viewing {
+            line += " Your viewing is booked for \(viewing). Go and look it over, and only sign if you are happy."
+        }
+
+        messages.append(NegotiationMessage(
+            author: .negotiator,
+            text: line,
+            deal: deal,
+            sentAt: Date()
+        ))
+    }
 
     func reset() {
         messages.removeAll()

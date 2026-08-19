@@ -167,6 +167,50 @@ private struct MessageRow: View {
     private var isTenant: Bool { message.author == .you }
 
     var body: some View {
+        if let deal = message.deal {
+            dealCard(deal)
+        } else {
+            standard
+        }
+    }
+
+    /// The outcome the whole conversation was for, so it does not look like one
+    /// more reply.
+    private func dealCard(_ deal: NegotiationMessage.Deal) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "checkmark.seal.fill").font(.title3)
+                Text(deal.price.map { "We secured it at $\($0)/month" } ?? "We secured it")
+                    .font(.headline)
+            }
+
+            Text(deal.room)
+                .font(.subheadline.weight(.semibold))
+                .opacity(0.95)
+
+            if let saved = deal.savedPerMonth {
+                Text("$\(saved) a month under asking, about $\(saved * 12) over a year.")
+                    .font(.footnote)
+                    .opacity(0.9)
+            }
+            if let viewing = deal.viewing {
+                Text("Viewing booked for \(viewing).")
+                    .font(.footnote)
+                    .opacity(0.9)
+            }
+        }
+        .foregroundStyle(.white)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(
+            LinearGradient(colors: [Color.green, Color.green.opacity(0.78)],
+                           startPoint: .topLeading, endPoint: .bottomTrailing),
+            in: RoundedRectangle(cornerRadius: 18, style: .continuous)
+        )
+        .accessibilityElement(children: .combine)
+    }
+
+    private var standard: some View {
         VStack(alignment: isTenant ? .trailing : .leading, spacing: 6) {
             VStack(alignment: isTenant ? .trailing : .leading, spacing: 3) {
                 Text(message.author.label)

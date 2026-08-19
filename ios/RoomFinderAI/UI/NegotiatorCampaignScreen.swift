@@ -20,10 +20,6 @@ struct NegotiatorCampaignScreen: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            // The win goes first and takes real space. Everything else on this
-            // screen is admin.
-            if !campaign.secured.isEmpty { securedBanner }
-
             goalsBar
 
             if !campaign.active.isEmpty { activeBar }
@@ -50,59 +46,10 @@ struct NegotiatorCampaignScreen: View {
         }
     }
 
-    // MARK: - The win
-
-    private var securedBanner: some View {
-        NavigationLink {
-            NegotiationsListScreen(campaign: campaign)
-        } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.seal.fill")
-                        .font(.title3)
-                    Text(campaign.secured.count == 1
-                         ? "We secured it"
-                         : "We secured \(campaign.secured.count) rooms")
-                        .font(.title3.weight(.bold))
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.footnote.weight(.bold))
-                }
-
-                ForEach(campaign.secured, id: \.listingID) { negotiation in
-                    if case .closed(let price, let viewing) = negotiation.phase {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text(negotiation.listing.title)
-                                .font(.subheadline.weight(.semibold))
-                                .lineLimit(1)
-                            Text(securedLine(price: price, viewing: viewing,
-                                             asking: negotiation.listing.price.map(Int.init)))
-                                .font(.footnote)
-                                .opacity(0.9)
-                        }
-                    }
-                }
-            }
-            .foregroundStyle(.white)
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                LinearGradient(colors: [Color.green, Color.green.opacity(0.75)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing),
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous)
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func securedLine(price: Int?, viewing: String?, asking: Int?) -> String {
-        var parts: [String] = []
-        if let price { parts.append("$\(price) a month") }
-        if let price, let asking, asking > price {
-            parts.append("$\(asking - price) under asking")
-        }
-        if let viewing { parts.append("viewing \(viewing)") }
-        return parts.isEmpty ? "Agreed" : parts.joined(separator: ", ")
-    }
+    // A closed deal is announced by the negotiator in the chat, as a message
+    // from it. It used to be a green card pinned above the chat, which put the
+    // one thing the tenant is waiting for outside the conversation they were
+    // having about it.
 
     // MARK: - Goals
 
