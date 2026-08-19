@@ -126,6 +126,7 @@ export default {
     try {
       const body = await request.json() as {
         image: number[];
+        task?: string;
         location?: {
           city?: string;
           state?: string;
@@ -141,6 +142,18 @@ export default {
           status: 400,
           headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
         });
+      }
+
+      // Identity checks. Same model, different question, so verification stops
+      // depending on a second vendor: the Azure account those ran through sits
+      // on a sign-in nobody has any more, which is not a dependency to keep in
+      // the one flow that decides who is real.
+      //
+      // A filter, never a verdict. A model reading a name off a card cannot
+      // tell you the card is genuine, so anything that passes still goes to a
+      // person.
+      if (body.task === "id-document" || body.task === "selfie") {
+        return await inspectIdentity(env, body.task, image);
       }
 
       // Vision analysis prompt - strict about only visible features
@@ -179,7 +192,10 @@ Be conservative and accurate. Only describe what you actually see.`;
         max_tokens: 800
       }) as { description?: string; response?: string };
 
-      const rawText = response.description || response.response || "";
+      // String(), because the model does not always return one and a raw
+      // .slice() on an object takes the whole request down with a TypeError
+      // that reads like a network fault.
+      const rawText = String(response.description || response.response || "");
 
       if (!rawText) {
         return new Response(JSON.stringify({ success: false, error: "Empty response" }), {
@@ -472,3 +488,116 @@ Be conservative and accurate. Only describe what you actually see.`;
     }
   }
 };
+
+function json(payload: unknown, status = 200): Response {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+  });
+}
+
+/**
+ * Plain questions, not a JSON schema.
+ *
+ * Asking an 11B vision model for strict JSON produced prose about half the
+ * time and nothing parseable the rest. A yes-or-no opener it can manage, and
+ * the details are pulled out of its own sentences afterwards.
+ */
+const ID_PROMPT = [
+  "Look at this image. Is it a government-issued identity document, such as a passport page,",
+  "a driving licence, or a national identity card?",
+  "Answer with YES or NO as the very first word.",
+  "Then say in one sentence what the image actually shows.",
+  "If it is an identity document, also write any name, expiry date and issuing country you can read,",
+  "each on its own line as 'Name: ...', 'Expiry: ...', 'Country: ...'.",
+  "Do not guess. Write 'Name: unknown' if you cannot read it."
+].join(" ");
+
+const SELFIE_PROMPT = [
+  "Look at this image. How many human faces are visible?",
+  "Answer with a single digit as the very first character, then one sentence describing the image.",
+  "Count faces printed on documents as faces."
+].join(" ");
+
+/** Best effort, from the model's own sentences. Missing is fine; wrong is not. */
+function readField(text: string, label: string): string | null {
+  const match = text.match(new RegExp(`${label}\\s*:\\s*([^\\n]+)`, "i"));
+  if (!match) return null;
+  const value = match[1].trim().replace(/[.*]+$/, "").trim();
+  if (!value || /^(unknown|n\/?a|none|not visible|not readable)$/i.test(value)) return null;
+  return value.slice(0, 120);
+}
+
+function toIsoDate(value: string | null): string | null {
+  if (!value) return null;
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed.toISOString().slice(0, 10);
+}
+
+async function inspectIdentity(env: Env, task: string, image: number[]): Promise<Response> {
+  let raw: { description?: string; response?: string };
+  try {
+    raw = await env.AI.run("@cf/meta/llama-3.2-11b-vision-instruct", {
+      image,
+      prompt: task === "selfie" ? SELFIE_PROMPT : ID_PROMPT,
+      max_tokens: 300
+    }) as { description?: string; response?: string };
+  } catch (error) {
+    // The caller sends the upload to human review rather than blocking anyone.
+    return json({ success: false, error: `Model unavailable: ${(error as Error).message}` }, 503);
+  }
+
+  const text = String(raw?.description ?? raw?.response ?? "");
+  if (!text.trim()) return json({ success: false, error: "Empty response from model" }, 502);
+
+  if (task === "selfie") {
+    const digit = text.match(/\d+/);
+    if (!digit) return json({ success: false, error: "No face count in answer", raw: text.slice(0, 300) }, 502);
+    return json({
+      success: true,
+      task,
+      result: {
+        face_count: Number(digit[0]),
+        is_clear: !/blurr|dark|out of frame|obscured/i.test(text),
+        reason: text.trim().slice(0, 220)
+      }
+    });
+  }
+
+  // Rejection needs positive evidence, not a missing yes.
+  //
+  // The model contradicts itself often enough to matter: on a Dutch specimen it
+  // opened with "No" and then described "a Dutch national identity card" in the
+  // same sentence. Trusting the opening word alone threw out a real document.
+  // So a yes counts, and so does naming a document type anywhere in the answer;
+  // only an answer that does neither is a rejection. Wrongly rejecting somebody's
+  // passport is far worse than passing a bad image to the human who reviews it.
+  const namesDocument =
+    /\b(passport|driving licen[cs]e|driver'?s licen[cs]e|identity card|id card|identiteitskaart|residence permit|osobna iskaznica)\b/i
+      .test(text);
+  const isId = /^\s*yes\b/i.test(text) || namesDocument;
+
+  const lower = text.toLowerCase();
+  const documentType =
+    lower.includes("passport") ? "passport"
+    : /driv(ing|er'?s) licen[cs]e/.test(lower) ? "driving licence"
+    : /residence permit/.test(lower) ? "residence permit"
+    : (lower.includes("identity card") || lower.includes("id card")) ? "national id"
+    : isId ? "other" : "none";
+
+  return json({
+    success: true,
+    task,
+    result: {
+      is_id_document: isId,
+      document_type: documentType,
+      shows_face_photo: /photo(graph)? of (a|the) (person|man|woman|face)|portrait|headshot/i.test(text),
+      name: readField(text, "Name"),
+      expiry_date: toIsoDate(readField(text, "Expiry")),
+      country: readField(text, "Country"),
+      confidence: null,
+      reason: text.trim().replace(/\s+/g, " ").slice(0, 220)
+    }
+  });
+}

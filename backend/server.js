@@ -8575,8 +8575,40 @@ function formatTimeAgo(date) {
  * returns ok with `skipped`, because an outage at Microsoft must not mean
  * nobody on the site can get verified.
  */
+async function askWorker(task, buffer) {
+    const workerUrl = process.env.CLOUDFLARE_WORKER_URL;
+    if (!workerUrl) return null;
+
+    const response = await fetch(workerUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ task, image: Array.from(buffer) }),
+        signal: AbortSignal.timeout(45000)
+    });
+    if (!response.ok) throw new Error(`worker returned ${response.status}`);
+
+    const payload = await response.json();
+    if (!payload.success) throw new Error(payload.error || 'worker refused');
+    return payload.result;
+}
+
 async function inspectIdDocument(buffer, mimetype) {
-    if (!documentClient) return { ok: true, skipped: 'azure_not_configured' };
+    // Cloudflare first. It runs on infrastructure that is actually reachable:
+    // Azure's is on a sign-in nobody has any more, so it is a fallback until it
+    // disappears rather than something to build on.
+    //
+    // PDFs go straight to Azure, which reads them; the vision model wants an
+    // image.
+    if (mimetype !== 'application/pdf') {
+        try {
+            const verdict = await askWorker('id-document', buffer);
+            if (verdict) return readIdVerdict(verdict);
+        } catch (error) {
+            console.error('Worker ID check failed, trying Azure:', error.message);
+        }
+    }
+
+    if (!documentClient) return { ok: true, skipped: 'no_checker_available' };
 
     let documents;
     try {
@@ -8640,6 +8672,46 @@ async function inspectIdDocument(buffer, mimetype) {
 }
 
 /**
+ * Turns the vision model's answer into the same verdict shape the Azure path
+ * produces, so callers never need to know which one ran.
+ *
+ * Deliberately lenient about confidence: a model that is unsure about a real
+ * passport must not lock someone out of their own account. It only rejects when
+ * the answer is a clear no, and everything else goes to a person.
+ */
+function readIdVerdict(verdict) {
+    if (verdict.is_id_document === false) {
+        return {
+            ok: false,
+            reason: "We couldn't find a government ID in that photo. Upload a clear picture of your passport or driving licence, with all four corners visible."
+        };
+    }
+
+    const expiry = verdict.expiry_date ? new Date(verdict.expiry_date) : null;
+    if (expiry && !Number.isNaN(expiry.getTime()) && expiry < new Date()) {
+        return {
+            ok: false,
+            reason: `That ID looks like it expired on ${verdict.expiry_date}. Upload one that is still valid.`
+        };
+    }
+
+    return {
+        ok: true,
+        fields: {
+            checkedBy: 'cloudflare',
+            docType: verdict.document_type || null,
+            name: verdict.name || null,
+            showsFacePhoto: verdict.shows_face_photo ?? null,
+            dateOfExpiration: verdict.expiry_date || null,
+            countryRegion: verdict.country || null,
+            confidence: verdict.confidence ?? null,
+            modelNote: verdict.reason || null,
+            checkedAt: new Date().toISOString()
+        }
+    };
+}
+
+/**
  * Checks a selfie has exactly one clear face in it.
  *
  * Not a match against the ID: comparing two faces is a Limited Access feature
@@ -8648,7 +8720,32 @@ async function inspectIdDocument(buffer, mimetype) {
  * group shot, and leaves the comparison to the reviewer who has both images.
  */
 async function inspectSelfie(buffer) {
-    if (!faceClient) return { ok: true, skipped: 'azure_not_configured' };
+    try {
+        const verdict = await askWorker('selfie', buffer);
+        if (verdict) {
+            const count = Number(verdict.face_count);
+            if (count === 0) {
+                return { ok: false, reason: "We couldn't find a face in that photo. Take a clear selfie in good light, looking at the camera." };
+            }
+            if (count > 1) {
+                return { ok: false, reason: `We found ${count} faces in that photo. Send one of just you.` };
+            }
+            return {
+                ok: true,
+                fields: {
+                    checkedBy: 'cloudflare',
+                    faceCount: count,
+                    isClear: verdict.is_clear ?? null,
+                    modelNote: verdict.reason || null,
+                    checkedAt: new Date().toISOString()
+                }
+            };
+        }
+    } catch (error) {
+        console.error('Worker selfie check failed, trying Azure:', error.message);
+    }
+
+    if (!faceClient) return { ok: true, skipped: 'no_checker_available' };
 
     let faces;
     try {
@@ -8825,6 +8922,9 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
         if (!selfieCheck.ok) {
             console.log('🚫 Selfie rejected automatically:', selfieCheck.reason);
             return res.status(422).json({ error: selfieCheck.reason, status: 'rejected' });
+        }
+        if (selfieCheck.skipped) {
+            console.log('⚠️ Selfie accepted without machine checks:', selfieCheck.skipped);
         }
 
         if (!supabase) {

@@ -1250,39 +1250,105 @@
             document.getElementById('step2Section').classList.add('hidden');
             document.getElementById('loadingSection').classList.remove('hidden');
 
+
+        /**
+         * Shrinks a photo before it is uploaded.
+         *
+         * Two reasons. The vision model that checks these rejects anything much
+         * over a couple of megapixels as malformed, so an unresized phone photo
+         * skipped every check. And a 4MB upload over mobile data is a long wait
+         * for a page that looks frozen while it happens.
+         *
+         * PDFs are passed through untouched: a canvas cannot open one, and the
+         * server reads those a different way.
+         */
+        async function shrinkForUpload(file, maxSide = 1600) {
+            if (!file || file.type === 'application/pdf') return file;
+
+            try {
+                const bitmap = await createImageBitmap(file);
+                const scale = Math.min(1, maxSide / Math.max(bitmap.width, bitmap.height));
+                if (scale === 1 && file.size < 1.5 * 1024 * 1024) return file;
+
+                const canvas = document.createElement('canvas');
+                canvas.width = Math.round(bitmap.width * scale);
+                canvas.height = Math.round(bitmap.height * scale);
+                canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+                const blob = await new Promise(resolve =>
+                    canvas.toBlob(resolve, 'image/jpeg', 0.85));
+                if (!blob) return file;
+
+                return new File([blob], (file.name || 'upload').replace(/\.[^.]+$/, '') + '.jpg',
+                                { type: 'image/jpeg' });
+            } catch (e) {
+                // Better to upload the original than to block verification.
+                console.warn('Could not shrink upload, sending as-is:', e);
+                return file;
+            }
+        }
+
+        /**
+         * Says why an upload was turned away, instead of the flow declaring
+         * success regardless. It used to ignore the response entirely, so a
+         * rejected photo still ended on "Complete!" and the person waited for a
+         * review that was never going to happen.
+         */
+        function showVerificationProblem(message) {
+            document.getElementById('loadingSection').classList.add('hidden');
+            document.getElementById('step2Section').classList.remove('hidden');
+            document.getElementById('progressBar').style.width = '0%';
+
+            let banner = document.getElementById('verificationProblem');
+            if (!banner) {
+                banner = document.createElement('div');
+                banner.id = 'verificationProblem';
+                banner.className = 'mb-4 p-4 rounded-xl border border-red-300 bg-red-50 text-red-700 text-sm';
+                document.getElementById('step2Section').prepend(banner);
+            }
+            banner.textContent = message;
+            banner.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
             try {
                 // Upload selfie first
                 document.getElementById('progressText').textContent = 'Uploading selfie...';
                 document.getElementById('progressBar').style.width = '25%';
 
                 const selfieFormData = new FormData();
-                selfieFormData.append('facePhoto', verificationData.selfie);
+                selfieFormData.append('facePhoto', await shrinkForUpload(verificationData.selfie));
                 selfieFormData.append('userEmail', currentUser.email);
 
                 const selfieResponse = await fetch('/api/verify/face-match', {
                     method: 'POST',
                     body: selfieFormData
                 });
+                const selfieResult = await selfieResponse.json();
+                if (!selfieResponse.ok) {
+                    showVerificationProblem(selfieResult.error || 'That selfie could not be accepted.');
+                    return;
+                }
 
                 document.getElementById('progressBar').style.width = '50%';
                 document.getElementById('progressText').textContent = 'Uploading ID document...';
 
                 // Upload ID document
                 const idFormData = new FormData();
-                idFormData.append('idDocument', verificationData.idDocument);
+                idFormData.append('idDocument', await shrinkForUpload(verificationData.idDocument));
                 idFormData.append('userEmail', currentUser.email);
 
                 const idResponse = await fetch('/api/verify/upload-id', {
                     method: 'POST',
                     body: idFormData
                 });
+                const idResult = await idResponse.json();
+                if (!idResponse.ok) {
+                    showVerificationProblem(idResult.error || 'That document could not be accepted.');
+                    return;
+                }
 
                 document.getElementById('progressBar').style.width = '100%';
                 document.getElementById('progressText').textContent = 'Complete!';
-
-                // Check responses
-                const selfieResult = await selfieResponse.json();
-                const idResult = await idResponse.json();
 
                 console.log('Selfie upload result:', selfieResult);
                 console.log('ID upload result:', idResult);
