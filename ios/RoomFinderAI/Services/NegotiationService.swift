@@ -86,6 +86,14 @@ final class NegotiationService: ObservableObject {
 
         messages.append(NegotiationMessage(author: .you, text: trimmed, sentAt: Date()))
 
+        // "How many did we secure?" is a question about state this app holds
+        // and the chat endpoint has never heard of, so asking the model gave a
+        // confident nothing. Answered here, from the negotiations themselves.
+        if let answer = statusAnswer(for: trimmed) {
+            messages.append(NegotiationMessage(author: .negotiator, text: answer, sentAt: Date()))
+            return
+        }
+
         isThinking = true
         errorMessage = nil
         defer { isThinking = false }
@@ -123,9 +131,14 @@ final class NegotiationService: ObservableObject {
 
             let reply = try JSONDecoder().decode(AssistantReply.self, from: data)
 
+            // An empty reply renders as a blank bubble, which reads as the app
+            // breaking rather than the model having nothing to say.
+            let spoken = reply.response.trimmingCharacters(in: .whitespacesAndNewlines)
             var message = NegotiationMessage(
                 author: .negotiator,
-                text: reply.response,
+                text: spoken.isEmpty
+                    ? "Sorry, I didn't catch that. Could you say it another way?"
+                    : spoken,
                 sentAt: Date()
             )
 
@@ -167,6 +180,72 @@ final class NegotiationService: ObservableObject {
                 print("Negotiator failure: \(error)")
             }
         }
+    }
+
+    /// Answers "how's it going" from what is actually happening, or nil when
+    /// the question was about something else.
+    private func statusAnswer(for question: String) -> String? {
+        let text = question.lowercased()
+
+        let asksAboutProgress =
+            text.contains("how many") || text.contains("how much")
+            || text.contains("secure") || text.contains("status")
+            || text.contains("how's it going") || text.contains("hows it going")
+            || text.contains("any offers") || text.contains("any luck")
+            || text.contains("any replies") || text.contains("heard back")
+            || text.contains("what's happening") || text.contains("whats happening")
+            || text.contains("did we get") || text.contains("did you get")
+            || text.contains("update")
+
+        let aboutNegotiations =
+            text.contains("secure") || text.contains("negotiat") || text.contains("landlord")
+            || text.contains("offer") || text.contains("deal") || text.contains("repl")
+            || text.contains("room") || text.contains("place") || text.contains("it going")
+            || text.contains("update") || text.contains("status")
+
+        guard asksAboutProgress, aboutNegotiations else { return nil }
+
+        let campaign = NegotiationCampaign.shared
+        let running = campaign.active
+        guard !running.isEmpty || !campaign.queued.isEmpty else {
+            return "Nothing on the go yet. Tell me what you're looking for, or open a room and tap Negotiate this rent, and I'll start messaging landlords for you."
+        }
+
+        var lines: [String] = []
+
+        let secured = campaign.secured
+        if secured.isEmpty {
+            lines.append(running.count == 1
+                         ? "Nothing agreed yet. I'm negotiating on one room."
+                         : "Nothing agreed yet. I'm negotiating on \(running.count) rooms.")
+        } else {
+            lines.append(secured.count == 1
+                         ? "One secured so far."
+                         : "\(secured.count) secured so far.")
+            for negotiation in secured {
+                guard case .closed(let price, let viewing) = negotiation.phase else { continue }
+                var line = "\(negotiation.listing.title)"
+                if let price { line += ", $\(price) a month" }
+                if let asking = negotiation.listing.price.map(Int.init),
+                   let price, asking > price {
+                    line += " (that's $\(asking - price) under asking)"
+                }
+                if let viewing { line += ", viewing \(viewing)" }
+                lines.append(line + ".")
+            }
+        }
+
+        let waiting = running.filter { $0.phase == .waitingForLandlord }.count
+        if waiting > 0 {
+            lines.append(waiting == 1
+                         ? "One landlord hasn't replied yet."
+                         : "\(waiting) landlords haven't replied yet.")
+        }
+        if !campaign.queued.isEmpty {
+            lines.append("\(campaign.queued.count) more lined up, waiting for you to confirm your goals.")
+        }
+
+        return lines.joined(separator: " ")
     }
 
     /// Hands what the chat found to the campaign and says what happened.

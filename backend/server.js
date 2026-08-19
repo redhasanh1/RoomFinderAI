@@ -5490,6 +5490,13 @@ Fill criteria from the conversation. intent: "search", "negotiate", or "chat".`;
                 // to do with whether it should be shown to anyone.
                 aiResponse = fullResponse.replace(/###CRITERIA###.+?###END###/s, '').trim();
 
+                // A model that answered with nothing but the criteria block
+                // leaves an empty string here, which the clients render as a
+                // blank bubble. Say something rather than nothing.
+                if (!aiResponse) {
+                    aiResponse = "Sorry, I lost my train of thought there. Could you say that again?";
+                }
+
                 // Then repair the usual ways a language model breaks JSON while
                 // writing about money: a currency symbol before the number,
                 // thousands separators inside it, a trailing comma.
