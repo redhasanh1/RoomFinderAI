@@ -9144,24 +9144,29 @@ app.get('/api/verify/status/:email', async (req, res) => {
             return res.status(500).json({ error: 'Failed to fetch verification status' });
         }
 
-        // is_verified on `users` is the actual gate the rest of the app should
-        // check (e.g. listing creation, messaging) -- user_verifications only
-        // tracks the underlying per-check (ID/face/phone) progress.
+        // Verified means user_verifications says so.
+        //
+        // This used to read `users.is_verified`, but real accounts are not in
+        // `users` — that table holds one row, and everybody actually lives in
+        // `profiles`. So the profile badge was decided by a lookup that never
+        // matched anyone, while listings decided it from user_verifications.
+        // One source, the one that has the data.
+        const approved = verification?.id_verification_status === 'verified';
+
         const { data: userRow } = await supabase
             .from('users')
             .select('is_verified, verification_badge_earned_at')
             .eq('email', email)
             .maybeSingle();
 
-        // Manual review system - no Azure needed
         res.json({
             verification: verification || {
                 user_email: email,
                 id_verification_status: 'not_submitted',
                 face_verification_status: 'not_submitted'
             },
-            isVerified: !!userRow?.is_verified,
-            verifiedAt: userRow?.verification_badge_earned_at || null,
+            isVerified: approved || !!userRow?.is_verified,
+            verifiedAt: verification?.reviewed_at || userRow?.verification_badge_earned_at || null,
             // Manual review mode - no external services needed
             verificationMode: 'manual_review'
         });
