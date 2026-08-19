@@ -8873,20 +8873,28 @@ app.post('/api/verify/upload-id', upload.single('idDocument'), async (req, res) 
                     verificationData.storage_method = 'base64';
                 }
 
+                // `updated_at`, not `submitted_at`: that column has never
+                // existed on this table, so every insert failed, the error was
+                // logged and swallowed, and the endpoint still told people
+                // their ID was submitted. Nothing was ever stored, and nothing
+                // was ever reviewed.
                 const { error: verificationError } = await supabase
                     .from('user_verifications')
                     .upsert({
                         user_email: userEmail,
                         id_verification_status: 'pending_review',
                         id_verification_data: verificationData,
-                        submitted_at: new Date().toISOString()
-                    });
+                        updated_at: new Date().toISOString()
+                    }, { onConflict: 'user_email' });
 
-                if (verificationError) {
-                    console.error('Error storing verification:', verificationError);
-                }
+                if (verificationError) throw verificationError;
             } catch (dbError) {
-                console.error('Database error:', dbError);
+                // Saying "submitted" when nothing was saved leaves someone
+                // waiting for a review that cannot happen.
+                console.error('Could not store verification:', dbError.message || dbError);
+                return res.status(500).json({
+                    error: "We couldn't save your document. Please try again in a moment."
+                });
             }
         }
 
@@ -8963,18 +8971,36 @@ app.post('/api/verify/face-match', upload.single('facePhoto'), async (req, res) 
                 console.error('Selfie upload error:', uploadError);
             }
 
-            // Update verification record with selfie info
-            await supabase
+            // Upsert, and only into columns this table actually has. The old
+            // update wrote `selfie_submitted_at`, which does not exist, so the
+            // selfie was uploaded to storage and then never recorded against
+            // anyone.
+            const selfieData = {
+                face_photo_path: fileName,
+                machine_check: selfieCheck.fields || null,
+                machine_check_skipped: selfieCheck.skipped || null,
+                uploaded_at: new Date().toISOString()
+            };
+
+            const { error: selfieError } = await supabase
                 .from('user_verifications')
-                .update({
+                .upsert({
+                    user_email: userEmail,
                     face_verification_status: 'pending_review',
-                    face_photo_path: fileName,
-                    selfie_submitted_at: new Date().toISOString()
-                })
-                .eq('user_email', userEmail);
+                    // Its own column. Writing this into id_verification_data
+                    // would overwrite whatever the ID upload put there, and the
+                    // two are uploaded one after the other.
+                    face_verification_data: selfieData,
+                    updated_at: new Date().toISOString()
+                }, { onConflict: 'user_email' });
+
+            if (selfieError) throw selfieError;
 
         } catch (storageError) {
-            console.error('Storage error:', storageError);
+            console.error('Could not store selfie:', storageError.message || storageError);
+            return res.status(500).json({
+                error: "We couldn't save your photo. Please try again in a moment."
+            });
         }
 
         await logUserActivity(userEmail, 'selfie_submitted', 'Selfie photo submitted for review');
@@ -9060,7 +9086,7 @@ app.get('/api/admin/pending-verifications', async (req, res) => {
             .from('user_verifications')
             .select('*')
             .in('id_verification_status', ['pending_review', 'pending'])
-            .order('submitted_at', { ascending: false });
+            .order('updated_at', { ascending: false });
 
         if (error) {
             return res.status(500).json({ error: 'Failed to fetch verifications' });
