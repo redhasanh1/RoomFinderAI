@@ -17,6 +17,14 @@ struct NegotiationRoomScreen: View {
         _negotiation = StateObject(wrappedValue: LandlordNegotiationService(listing: listing))
     }
 
+    /// Opens a negotiation the campaign is already running, rather than a
+    /// second one about the same room. Two engines on one thread would answer
+    /// the landlord twice.
+    init(negotiation: LandlordNegotiationService) {
+        self.listing = negotiation.listing
+        _negotiation = StateObject(wrappedValue: negotiation)
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             statusBar

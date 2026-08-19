@@ -64,6 +64,17 @@ final class ListingsService: ObservableObject {
         }
     }
 
+    /// A plain search with no published state attached.
+    ///
+    /// The instance method above drives a screen: it cancels the previous
+    /// search, flips loading flags and swallows errors into a message. A caller
+    /// that just wants the rows — the negotiation campaign looking for every
+    /// room inside a budget — needs none of that and does need to know when it
+    /// failed.
+    static func search(query: String = "", maxPrice: Double? = nil, bedrooms: Int? = nil) async throws -> [Listing] {
+        try await ListingsService().fetch(query: query, maxPrice: maxPrice, bedrooms: bedrooms)
+    }
+
     private func fetch(query: String, maxPrice: Double?, bedrooms: Int?) async throws -> [Listing] {
         var components = URLComponents(
             url: AppConfig.url("api/listings/search"),

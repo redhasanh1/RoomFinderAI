@@ -17,8 +17,10 @@ struct MessagesScreen: View {
     @EnvironmentObject private var state: AppState
     @State private var section: Section = .negotiator
     @State private var showingGoals = false
+    @State private var confirmingReset = false
     @StateObject private var messaging = MessagingService()
-    @StateObject private var negotiation = NegotiationService()
+    @StateObject private var chat = NegotiationService()
+    @ObservedObject private var campaign = NegotiationCampaign.shared
 
     var body: some View {
         // One navigation stack for the whole hub. Each section used to bring
@@ -35,54 +37,44 @@ struct MessagesScreen: View {
 
                 switch section {
                 case .negotiator:
-                    NegotiatorScreen(service: negotiation, showingGoals: $showingGoals)
+                    NegotiatorCampaignScreen(campaign: campaign, chat: chat, showingGoals: $showingGoals)
                 case .inbox:
                     InboxList(messaging: messaging)
                 }
             }
-            // A room arrived from "Negotiate this rent". Open on the negotiator
-            // and brief it about that specific room, rather than dropping the
-            // user on a blank chat that has no idea what they just tapped.
-            .task(id: state.pendingNegotiationListing?.id) {
-                guard let listing = state.pendingNegotiationListing else { return }
+            // A room just arrived from "Negotiate this rent". Show the
+            // negotiator half, and the first time round open the goals form —
+            // nothing is sent to a landlord until those are confirmed, so
+            // landing on a screen with a disabled button and no explanation
+            // would read as broken.
+            .onChange(of: state.justQueuedNegotiation) { _, queued in
+                guard queued else { return }
                 section = .negotiator
-
-                // Clear it *after* the work, not before.
-                //
-                // This task is keyed on that listing's id, so clearing it first
-                // changed the key and SwiftUI cancelled the task mid-flight —
-                // taking the request with it. The negotiator reported -999,
-                // NSURLErrorCancelled, and looked like a network fault when it
-                // was this view tearing down its own call.
-                //
-                // Clearing afterwards still stops a stale negotiation reopening
-                // later, and the cancellation it triggers lands on work that has
-                // already finished.
-                await negotiation.start(about: listing)
-                state.pendingNegotiationListing = nil
+                // Always, not only the first time. The form arrives filled in
+                // from the room just chosen, and confirming it is what starts
+                // the messaging — so this is the whole flow in one glance
+                // rather than a queue the tenant has to go and find a button
+                // for. Cancelling leaves the room lined up to start later.
+                showingGoals = true
+                state.justQueuedNegotiation = false
             }
             .navigationTitle("Messages")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                if section == .negotiator {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button {
-                            Haptics.impact(.light)
-                            showingGoals = true
-                        } label: {
-                            Image(systemName: "target")
-                        }
-                        .accessibilityLabel("Your goals")
-                    }
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     MoreMenu {
                         if section == .negotiator {
+                            Button {
+                                Haptics.impact(.light)
+                                chat.reset()
+                            } label: {
+                                Label("Clear chat", systemImage: "eraser")
+                            }
                             Button(role: .destructive) {
                                 Haptics.impact(.medium)
-                                negotiation.reset()
+                                confirmingReset = true
                             } label: {
-                                Label("Start over", systemImage: "arrow.counterclockwise")
+                                Label("Reset negotiations", systemImage: "arrow.counterclockwise")
                             }
                         } else {
                             Button {
@@ -95,8 +87,35 @@ struct MessagesScreen: View {
                     }
                 }
             }
+            // A full page, not the small card a form sheet defaults to on
+            // iPad: this is a screenful of fields and it was being shown in a
+            // window smaller than the keyboard.
+            // Reset deletes the conversations themselves, so it asks first.
+            // The website's does the same, and it is not recoverable.
+            .confirmationDialog("Reset negotiations?",
+                                isPresented: $confirmingReset, titleVisibility: .visible) {
+                Button("Delete all negotiations", role: .destructive) {
+                    Task { await campaign.resetEverything() }
+                }
+                Button("Keep them", role: .cancel) { }
+            } message: {
+                Text("This deletes every negotiation and the messages in them. It can't be undone.")
+            }
             .sheet(isPresented: $showingGoals) {
-                NegotiationGoalsSheet(goals: $negotiation.goals)
+                NegotiationGoalsSheet(
+                    goals: $campaign.goals,
+                    queuedCount: campaign.queued.count,
+                    onConfirm: {
+                        campaign.confirmGoals()
+                        // Confirming is the go-ahead. Anything already lined up
+                        // starts now, and the negotiations appear above.
+                        if !campaign.queued.isEmpty {
+                            Task { await campaign.start() }
+                        }
+                    }
+                )
+                .presentationDetents([.large])
+                .fullPagePresentation()
             }
         }
     }

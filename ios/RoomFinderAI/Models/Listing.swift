@@ -1,7 +1,10 @@
 import Foundation
 
 /// A room or apartment as returned by `/api/listings`.
-struct Listing: Identifiable, Decodable, Hashable {
+/// Encodable as well as decodable: the negotiation campaign keeps the rooms it
+/// is pursuing on disk, so closing the app does not lose track of who is being
+/// negotiated with.
+struct Listing: Identifiable, Codable, Hashable {
     let id: String
     let title: String
     let description: String?

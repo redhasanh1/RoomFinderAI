@@ -17,6 +17,36 @@ struct ListingDetailScreen: View {
     @State private var isViewingPhotos = false
     /// Filled only when the API sent fewer photos than the listing has.
     @State private var extraPhotos: [URL] = []
+
+    /// Watched so this room's line updates as its negotiation moves, without
+    /// the tenant having to go to Messages to find out whether anything is
+    /// happening.
+    @ObservedObject private var campaign = NegotiationCampaign.shared
+
+    /// Where this room stands, or nil when nothing has been started for it.
+    private var negotiationStatus: (text: String, symbol: String, tint: Color)? {
+        if let running = campaign.active.first(where: { $0.listingID == listing.id }) {
+            switch running.phase {
+            case .idle, .starting:
+                return ("Your AI is messaging the landlord now", "paperplane.fill", .secondary)
+            case .waitingForLandlord:
+                return ("Sent — waiting for the landlord to reply", "clock.fill", .secondary)
+            case .replying:
+                return ("The landlord replied. Your AI is answering", "pencil", .secondary)
+            case .closed(let price, _):
+                return (price.map { "The landlord agreed to $\($0) a month" } ?? "The landlord agreed",
+                        "checkmark.seal.fill", .green)
+            case .failed(let message):
+                return (message, "exclamationmark.triangle.fill", .orange)
+            }
+        }
+        if campaign.queued.contains(where: { $0.id == listing.id }) {
+            return ("Ready to go — confirm your goals to send the first message",
+                    "hand.raised.fill", .secondary)
+        }
+        return nil
+    }
+
     private let gallery = ListingGalleryService()
 
     var body: some View {
@@ -200,8 +230,14 @@ struct ListingDetailScreen: View {
             // long enough to look frozen. The thread with the landlord is now
             // native, so the messages are visible and nothing has to load a
             // page to get here.
-            NavigationLink {
-                NegotiationRoomScreen(listing: listing)
+            // Adds the room to the negotiation queue and hands over to
+            // Messages. It used to push straight into a thread with this one
+            // landlord, which meant a tenant chasing four rooms ran four
+            // separate negotiations with no way to see them together — and
+            // confirmed no goals before the first message went out.
+            Button {
+                Haptics.impact(.medium)
+                state.queueForNegotiation(listing)
             } label: {
                 Label("Negotiate this rent", systemImage: "bubble.left.and.text.bubble.right.fill")
                     .font(.headline)
@@ -209,6 +245,19 @@ struct ListingDetailScreen: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 15)
                     .background(Theme.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            }
+
+            // Says where this room stands without changing what the button
+            // says. Tapping again is always fine; it just takes you to the
+            // conversation.
+            if let status = negotiationStatus {
+                HStack(spacing: 6) {
+                    Image(systemName: status.symbol)
+                    Text(status.text)
+                }
+                .font(.caption)
+                .foregroundStyle(status.tint)
+                .frame(maxWidth: .infinity, alignment: .center)
             }
 
             // Pushed rather than routed to a tab: messaging needs the site's

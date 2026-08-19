@@ -31,8 +31,13 @@ final class LandlordNegotiationService: ObservableObject {
     /// argues to the same limits the website would.
     var goals = NegotiationGoals()
 
-    private let listing: Listing
+    /// Held across suspension points so two callers cannot answer at once.
+    private var isReplying = false
+
+    let listing: Listing
     private var landlordEmail: String?
+
+    var listingID: String { listing.id }
 
     init(listing: Listing) {
         self.listing = listing
@@ -137,6 +142,13 @@ final class LandlordNegotiationService: ObservableObject {
     /// closed needs push, and this at least means opening the screen catches up.
     func refresh() async {
         guard let me = CurrentUser.shared.email, let conversationID else { return }
+
+        // The campaign polls every open negotiation and the open screen polls
+        // this one. Without this, both would compose a reply to the same
+        // landlord message and send it twice.
+        guard !isReplying else { return }
+        isReplying = true
+        defer { isReplying = false }
 
         await loadMessages()
         if case .closed = phase { return }

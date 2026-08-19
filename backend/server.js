@@ -5283,7 +5283,7 @@ app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
 
         console.log('✅ AI negotiation assistant response generated successfully');
         res.json({
-            response: aiResponse,
+            response: withoutEmDashes(aiResponse),
             tokensUsed,
             provider: aiResult.provider
         });
@@ -5523,7 +5523,7 @@ Fill criteria from the conversation. intent: "search", "negotiate", or "chat".`;
         }
 
         res.json({
-            response: aiResponse,
+            response: withoutEmDashes(aiResponse),
             criteria: extractedCriteria,
             tokensUsed: result.tokensUsed || 0,
             provider: result.provider,
@@ -7155,12 +7155,7 @@ Write your next message.`;
         // to a lot of people, and they can arrive from the model OR from any of
         // the rewrite templates above, so stripping them at the single exit
         // point is the only way to be sure none slip through.
-        out.message = String(out.message || '')
-            .replace(/\s*[—–]\s*/g, ', ')   // "yes — see you" -> "yes, see you"
-            .replace(/,\s*,/g, ',')          // collapse any doubled commas
-            .replace(/,\s*([.!?])/g, '$1')   // ", ." -> "."
-            .replace(/\s{2,}/g, ' ')
-            .trim();
+        out.message = withoutEmDashes(out.message);
 
         // Tell the caller when the negotiation is actually finished, so the UI can
         // celebrate instead of the tenant having to read the thread and work it
@@ -7183,6 +7178,24 @@ Write your next message.`;
         res.status(500).json({ error: 'Reply generation failed', detail: error.message });
     }
 });
+
+/**
+ * Strips em and en dashes out of anything a person will read.
+ *
+ * Models reach for them constantly and they read as machine-written to a lot of
+ * people. `/api/negotiate/reply` has stripped them at its exit point for a
+ * while; the assistant chat did not, which is why they kept appearing there
+ * however firmly the prompt asked it not to. Prompt instructions are a request,
+ * this is the guarantee.
+ */
+function withoutEmDashes(text) {
+    return String(text || '')
+        .replace(/\s*[\u2014\u2013]\s*/g, ', ')   // "yes - see you" -> "yes, see you"
+        .replace(/,\s*,/g, ',')                     // collapse any doubled commas
+        .replace(/,\s*([.!?])/g, '$1')              // ", ." -> "."
+        .replace(/\s{2,}/g, ' ')
+        .trim();
+}
 
 // POST /api/negotiate/reset - delete a tenant's negotiation threads.
 //

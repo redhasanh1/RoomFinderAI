@@ -18,7 +18,9 @@ final class NegotiationService: ObservableObject {
     @Published private(set) var isThinking = false
     @Published var errorMessage: String?
 
-    var goals = NegotiationGoals()
+    /// The campaign owns the goals: the tenant confirms them in one place and
+    /// both the chat and every landlord thread argue to the same numbers.
+    var goals: NegotiationGoals { NegotiationCampaign.shared.goals }
 
     var hasStarted: Bool { !messages.isEmpty }
 
@@ -33,24 +35,13 @@ final class NegotiationService: ObservableObject {
     /// switch to this tab and nothing more, so the negotiator sat on its empty
     /// opening screen and the tap looked like it had failed.
     ///
-    /// The room's own numbers seed the goals — its price becomes the ceiling,
-    /// because agreeing at or above the asking price is not a negotiation — and
-    /// the first message is sent as if the tenant had typed it, so the AI
-    /// answers about that room straight away.
+    /// The first message is sent as if the tenant had typed it, so the AI
+    /// answers about that room straight away. The room's own numbers seed the
+    /// goals too, but that happens in the campaign, which owns them.
     func start(about listing: Listing) async {
         // Returning to this listing should not stack a second conversation on
         // the first.
         reset()
-
-        if let price = listing.price, price > 0 {
-            goals.maxRent = price
-            // A first ask a little under asking. Opening at the asking price
-            // concedes the whole negotiation before it starts.
-            goals.targetRent = (price * 0.9).rounded()
-        }
-        if let city = listing.location?.nilIfEmpty {
-            goals.city = city
-        }
 
         var opener = "I'm interested in \(listing.title)"
         if let city = listing.location?.nilIfEmpty { opener += " in \(city)" }
@@ -117,7 +108,15 @@ final class NegotiationService: ObservableObject {
             // saying "let me find those" followed by nothing is the single
             // most annoying thing an assistant can do.
             if let criteria = reply.criteria, criteria.wantsSearch {
-                message.listings = await searchRooms(criteria)
+                let found = await searchRooms(criteria)
+                message.listings = found
+                messages.append(message)
+
+                // Finding rooms and waiting to be told to act on them is the
+                // tenant doing the work again. Everything that fits gets
+                // contacted, which is the whole promise of a negotiator.
+                await pursue(found)
+                return
             }
 
             messages.append(message)
@@ -143,6 +142,40 @@ final class NegotiationService: ObservableObject {
                 print("Negotiator failure: \(error)")
             }
         }
+    }
+
+    /// Hands what the chat found to the campaign and says what happened.
+    ///
+    /// Gated on confirmed goals: those numbers are what the AI argues to, and
+    /// several landlords would be messaged on them at once. If they are not
+    /// confirmed the chat asks rather than silently doing nothing, because a
+    /// negotiator that finds rooms and then goes quiet reads as broken.
+    private func pursue(_ found: [Listing]) async {
+        guard !found.isEmpty else { return }
+
+        let campaign = NegotiationCampaign.shared
+        let fresh = found.filter { !campaign.isTaken($0.id) }
+        guard !fresh.isEmpty else { return }
+
+        guard campaign.goals.isConfirmed, campaign.goals.isUsable else {
+            messages.append(NegotiationMessage(
+                author: .negotiator,
+                text: "I can start negotiating on \(fresh.count == 1 ? "this one" : "all \(fresh.count) of these") right now — check your goals at the top of this screen and tap \u{201C}These are right\u{201D} first, so I know what I'm allowed to agree to.",
+                sentAt: Date()
+            ))
+            return
+        }
+
+        let started = await campaign.queueAndStart(fresh)
+        guard started > 0 else { return }
+
+        messages.append(NegotiationMessage(
+            author: .negotiator,
+            text: started == 1
+                ? "I've messaged that landlord. You'll see the whole conversation under Negotiating above — I'll keep answering them for you."
+                : "I've messaged all \(started) landlords. You'll see each conversation under Negotiating above — I'll keep answering them for you and tell you who agrees.",
+            sentAt: Date()
+        ))
     }
 
     /// Runs the search the AI asked for. Failures are quiet on purpose: the

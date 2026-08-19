@@ -37,6 +37,22 @@ final class AppState: ObservableObject {
     /// native negotiation loop would use this again.
     @Published var pendingNegotiationListing: Listing?
 
+    /// Set when a room has just been queued, so Messages can open the goals
+    /// form the first time rather than leaving the tenant to find it.
+    @Published var justQueuedNegotiation = false
+
+    /// Lines a room up for negotiation and shows the tenant where it went.
+    ///
+    /// The queue lives in the campaign; this only handles the navigation, so
+    /// tapping "Negotiate this rent" always lands somewhere visible instead of
+    /// silently adding to a list on another tab.
+    func queueForNegotiation(_ listing: Listing) {
+        let campaign = NegotiationCampaign.shared
+        campaign.queue(listing)
+        justQueuedNegotiation = true
+        selectedTab = .messages
+    }
+
     private static let tabKey = "lastSelectedTab"
 
     private static func restoredTab() -> AppTab {
