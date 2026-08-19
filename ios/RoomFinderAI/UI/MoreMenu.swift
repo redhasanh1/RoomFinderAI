@@ -52,17 +52,24 @@ struct MoreMenu<Extra: View>: View {
                 }
             }
         } label: {
-            // Three lines, not three dots. An ellipsis is the vaguest control
-            // in the language — it says "something else exists" without saying
-            // what. A menu glyph says it is a menu, and it is a bigger target.
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(Theme.brand)
-                .frame(width: 34, height: 34)
-                .background(
-                    Circle().fill(Theme.brand.opacity(0.12))
-                )
+            MoreMenuLabel()
         }
         .accessibilityLabel("Menu")
+    }
+}
+
+/// The menu button, so every screen shows the same one.
+///
+/// Three lines, not three dots: an ellipsis is the vaguest control in the
+/// language, saying "something else exists" without saying what. It also lived
+/// in two places, so changing it on the native screens left the web-backed
+/// tabs still showing the old glyph.
+struct MoreMenuLabel: View {
+    var body: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 17, weight: .semibold))
+            .foregroundStyle(Theme.brand)
+            .frame(width: 34, height: 34)
+            .background(Circle().fill(Theme.brand.opacity(0.12)))
     }
 }

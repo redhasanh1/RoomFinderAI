@@ -115,9 +115,9 @@ struct RoommateDetailScreen: View {
                         if isOpeningThread {
                             ProgressView().controlSize(.small).tint(.white)
                         } else {
-                            Image(systemName: "envelope.fill")
+                            Image(systemName: "bubble.left.and.bubble.right.fill")
                         }
-                        Text(isOpeningThread ? "Opening…" : "Get in touch")
+                        Text(isOpeningThread ? "Opening…" : "Message them")
                     }
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -152,7 +152,7 @@ struct RoommateDetailScreen: View {
                         Label("Report this profile", systemImage: "flag")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    MoreMenuLabel()
                 }
                 .accessibilityLabel("More options")
             }

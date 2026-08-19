@@ -157,7 +157,7 @@ struct ListingDetailScreen: View {
                         Label("Report this listing", systemImage: "flag")
                     }
                 } label: {
-                    Image(systemName: "ellipsis.circle")
+                    MoreMenuLabel()
                 }
                 .accessibilityLabel("More options")
             }
@@ -339,9 +339,11 @@ struct ListingDetailScreen: View {
                     if isOpeningThread {
                         ProgressView().controlSize(.small)
                     } else {
-                        Image(systemName: "envelope.fill")
+                        Image(systemName: "bubble.left.and.bubble.right.fill")
                     }
-                    Text(isOpeningThread ? "Opening…" : "Contact host")
+                    // "Message", not "Contact host": it opens a chat, and an
+                    // envelope promised email.
+                    Text(isOpeningThread ? "Opening…" : "Message host")
                 }
                 .font(.headline)
                 .foregroundStyle(Theme.brand)

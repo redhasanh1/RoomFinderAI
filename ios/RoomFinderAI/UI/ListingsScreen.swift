@@ -86,10 +86,15 @@ struct ListingsScreen: View {
             .navigationDestination(for: Listing.self) { ListingDetailScreen(listing: $0) }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $query, prompt: "Search by city or neighbourhood")
+            // Search and filters sit at the bottom, in reach of a thumb.
+            //
+            // `.searchable` puts them in the navigation bar, which on a phone
+            // is the far corner of the screen and on an iPad is nowhere near
+            // where the hand already is. This is the one control people use
+            // constantly on this screen.
+            .safeAreaInset(edge: .bottom) { searchBar }
             .onChange(of: query) { _, _ in scheduleSearch() }
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { filterMenu }
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
             .refreshable { await reloadAsync() }
@@ -266,6 +271,52 @@ struct ListingsScreen: View {
             }
             .padding(.horizontal, 16)
         }
+    }
+
+    /// The search field and the filters, pinned above the tab bar.
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundStyle(.secondary)
+
+                TextField("Search by city or neighbourhood", text: $query)
+                    .textFieldStyle(.plain)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.words)
+                    .submitLabel(.search)
+                    .accessibilityIdentifier("listingSearchField")
+
+                if !query.isEmpty {
+                    Button {
+                        Haptics.impact(.light)
+                        query = ""
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundStyle(.secondary)
+                    }
+                    .accessibilityLabel("Clear search")
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .background(
+                Capsule().fill(Color(.secondarySystemBackground))
+            )
+
+            filterMenu
+                .padding(10)
+                .background(
+                    Circle().fill(hasActiveFilters
+                                  ? AnyShapeStyle(Theme.gradient)
+                                  : AnyShapeStyle(Color(.secondarySystemBackground)))
+                )
+                .foregroundStyle(hasActiveFilters ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.brand))
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .padding(.bottom, 6)
+        .background(.bar)
     }
 
     private var filterMenu: some View {

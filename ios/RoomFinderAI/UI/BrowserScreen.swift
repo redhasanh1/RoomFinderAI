@@ -130,9 +130,9 @@ struct BrowserScreen: View {
                     Label("Open in Safari", systemImage: "safari")
                 }
             } label: {
-                Image(systemName: "ellipsis.circle")
+                MoreMenuLabel()
             }
-            .accessibilityLabel("More")
+            .accessibilityLabel("Menu")
         }
     }
 }
