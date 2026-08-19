@@ -51,7 +51,9 @@ export default {
         house_type = "Townhouse";
       }
 
-      var bedrooms = 2;
+      // null, not 2. A default bedroom count is indistinguishable from a real
+      // reading once it reaches the form, and it was wrong on most photos.
+      var bedrooms = null;
       var bedMatch = text.match(/(\d+)\s*(bed|bedroom|br)/i);
       if (bedMatch) bedrooms = Math.min(10, Math.max(1, parseInt(bedMatch[1])));
 
@@ -182,24 +184,15 @@ export default {
         }
       }
 
-      // Fallback: guess based on architectural style if no city mentioned
+      // No architectural guessing, and no default city.
+      //
+      // This used to fall through a chain of style guesses to Chicago, so every
+      // analysis carried a confident city that came from nowhere. Three
+      // unrelated photos - an apartment interior, a suburban exterior and a log
+      // cabin - all came back "Los Angeles". A blank field the host fills in is
+      // worth more than a fabricated one they might not notice.
       if (!estimatedLocation) {
-        if (lower.includes("spanish") || lower.includes("mediterranean") || lower.includes("stucco") || lower.includes("palm")) {
-          estimatedLocation = { city: "Los Angeles", state: "CA", zip: "90001", country: "USA", source: "ai_estimate" };
-        } else if (lower.includes("brownstone") || lower.includes("row house")) {
-          estimatedLocation = { city: "New York", state: "NY", zip: "10001", country: "USA", source: "ai_estimate" };
-        } else if (lower.includes("victorian") || lower.includes("painted ladies")) {
-          estimatedLocation = { city: "San Francisco", state: "CA", zip: "94102", country: "USA", source: "ai_estimate" };
-        } else if (lower.includes("colonial") || lower.includes("brick")) {
-          estimatedLocation = { city: "Boston", state: "MA", zip: "02101", country: "USA", source: "ai_estimate" };
-        } else if (lower.includes("modern") || lower.includes("glass") || lower.includes("contemporary")) {
-          estimatedLocation = { city: "Seattle", state: "WA", zip: "98101", country: "USA", source: "ai_estimate" };
-        } else if (lower.includes("ranch") || lower.includes("suburban")) {
-          estimatedLocation = { city: "Dallas", state: "TX", zip: "75201", country: "USA", source: "ai_estimate" };
-        } else {
-          // Default fallback
-          estimatedLocation = { city: "Chicago", state: "IL", zip: "60601", country: "USA", source: "ai_estimate" };
-        }
+        estimatedLocation = null;
       }
 
       // Use EXIF location if provided, otherwise use AI estimate
@@ -252,8 +245,12 @@ export default {
       var locStr = "";
       if (finalLocation && finalLocation.city) locStr = " in " + finalLocation.city;
 
-      var title = label + " " + bedrooms + "-Bedroom " + house_type + locStr;
-      var description = vibeKeywords[0] + " " + house_type.toLowerCase() + " perfect for " + targetDemo.toLowerCase() + ". This " + bedrooms + "-bedroom property features " + featureText + ". " + fomoLines[0];
+      // The title only states what was actually read from the photo, so it
+      // never invents a bedroom count or a city.
+      var sizeLabel = bedrooms ? " " + bedrooms + "-Bedroom " : " ";
+      var title = label + sizeLabel + house_type + locStr;
+      var sizePhrase = bedrooms ? "This " + bedrooms + "-bedroom property features " : "This property features ";
+      var description = vibeKeywords[0] + " " + house_type.toLowerCase() + " perfect for " + targetDemo.toLowerCase() + ". " + sizePhrase + featureText + ". " + fomoLines[0];
 
       var confidence = 0.65 + (moneyFeatures.length * 0.05) + (luxuryScore > 5 ? 0.1 : 0);
       if (confidence > 0.95) confidence = 0.95;
