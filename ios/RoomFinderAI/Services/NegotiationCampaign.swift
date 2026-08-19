@@ -72,7 +72,18 @@ final class NegotiationCampaign: ObservableObject {
 
     /// Deals already announced, so reopening the screen does not re-celebrate
     /// one from an hour ago.
-    private var announced: Set<String> = []
+    ///
+    /// Kept on disk. Held only in memory it started empty on every launch, so
+    /// every deal already struck was announced again — a notification and an
+    /// alert about the same agreement every single time the app opened.
+    private var announced: Set<String> {
+        get { Set(UserDefaults.standard.stringArray(forKey: Self.announcedKey) ?? []) }
+        set { UserDefaults.standard.set(Array(newValue), forKey: Self.announcedKey) }
+    }
+
+    private static var announcedKey: String {
+        "negotiationsAnnounced.\((CurrentUser.shared.email ?? "anonymous").lowercased())"
+    }
 
     private var forwarding: [AnyCancellable] = []
     private var pollTask: Task<Void, Never>?
@@ -406,6 +417,7 @@ final class NegotiationCampaign: ObservableObject {
         active = []
         queued = []
         announced = []
+        UserDefaults.standard.removeObject(forKey: Self.announcedKey)
         celebration = nil
         errorMessage = nil
         lastMatchCount = nil
