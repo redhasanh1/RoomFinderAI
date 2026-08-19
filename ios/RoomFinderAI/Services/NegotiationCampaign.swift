@@ -162,7 +162,7 @@ final class NegotiationCampaign: ObservableObject {
     func queue(_ listing: Listing) -> Bool {
         guard !isTaken(listing.id) else { return false }
         guard queued.count + active.count < Self.maxTargets else {
-            errorMessage = "That's \(Self.maxTargets) rooms already — as many landlords as this will message at once."
+            errorMessage = "That's \(Self.maxTargets) rooms already, as many landlords as this will message at once."
             return false
         }
         queued.append(listing)
@@ -277,7 +277,7 @@ final class NegotiationCampaign: ObservableObject {
             if added == 0 {
                 errorMessage = found.isEmpty
                     ? "No rooms matched those goals. Try a higher budget or a different city."
-                    : "Nothing new to add — those rooms are already lined up."
+                    : "Nothing new to add. Those rooms are already lined up."
             }
         } catch {
             errorMessage = "Couldn't search for rooms. Check your connection and try again."
@@ -289,11 +289,11 @@ final class NegotiationCampaign: ObservableObject {
     /// Contacts every queued landlord, then keeps answering all of them.
     func start() async {
         guard goals.isConfirmed, goals.isUsable else {
-            errorMessage = "Confirm your goals first — that's what it argues from."
+            errorMessage = "Confirm your goals first. That's what it argues from."
             return
         }
         guard CurrentUser.shared.email != nil else {
-            errorMessage = "Sign in on the Profile tab first — messaging a landlord needs an account."
+            errorMessage = "Sign in on the Profile tab first. Messaging a landlord needs an account."
             return
         }
 

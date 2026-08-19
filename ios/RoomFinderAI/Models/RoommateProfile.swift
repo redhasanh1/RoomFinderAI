@@ -75,7 +75,7 @@ struct RoommateProfile: Identifiable, Decodable, Hashable {
             if let high = budgetMax, high > 0, high < 20_000 { return "Up to $\(high)/mo" }
             return "Budget not set"
         }
-        return "$\(low)–$\(high)/mo"
+        return "$\(low) to $\(high)/mo"
     }
 
     var locationText: String {

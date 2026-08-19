@@ -284,8 +284,8 @@ final class NegotiationService: ObservableObject {
         messages.append(NegotiationMessage(
             author: .negotiator,
             text: started == 1
-                ? "I've messaged that landlord. You'll see the whole conversation under Negotiating above — I'll keep answering them for you."
-                : "I've messaged all \(started) landlords. You'll see each conversation under Negotiating above — I'll keep answering them for you and tell you who agrees.",
+                ? "I've messaged that landlord. You'll see the whole conversation under Negotiating above, and I'll keep answering them for you."
+                : "I've messaged all \(started) landlords. You'll see each conversation under Negotiating above. I'll keep answering them for you and tell you who agrees.",
             sentAt: Date()
         ))
     }

@@ -150,7 +150,7 @@ struct NegotiatorCampaignScreen: View {
 
     private var summaryLine: String {
         let agreed = campaign.closedCount
-        if agreed > 0 { return "\(agreed) agreed — tap to see the offers" }
+        if agreed > 0 { return "\(agreed) agreed, tap to see the offers" }
         return "Tap to read every message"
     }
 

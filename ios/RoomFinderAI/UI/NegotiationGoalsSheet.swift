@@ -105,7 +105,7 @@ struct NegotiationGoalsSheet: View {
                 } header: {
                     Text("Worth asking for")
                 } footer: {
-                    Text("Used when the landlord won't move on rent — a smaller deposit is often easier for them to say yes to.")
+                    Text("Used when the landlord won't move on rent. A smaller deposit is often easier for them to say yes to.")
                 }
 
                 Section {
@@ -175,7 +175,7 @@ struct NegotiationGoalsSheet: View {
 
             Text(isUsable
                  ? "It will never agree above $\(maxRentText)/month."
-                 : "Fill in the most you'll pay — that's the limit it argues to.")
+                 : "Fill in the most you'll pay. That's the limit it argues to.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
@@ -191,8 +191,8 @@ struct NegotiationGoalsSheet: View {
     private var confirmTitle: String {
         switch queuedCount {
         case 0:  return "These are right"
-        case 1:  return "These are right — start negotiating"
-        default: return "These are right — message \(queuedCount) landlords"
+        case 1:  return "These are right, start negotiating"
+        default: return "These are right, message \(queuedCount) landlords"
         }
     }
 

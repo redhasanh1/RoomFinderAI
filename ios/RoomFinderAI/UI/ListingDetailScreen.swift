@@ -90,7 +90,7 @@ struct ListingDetailScreen: View {
             case .idle, .starting:
                 return ("Your AI is messaging the landlord now", "paperplane.fill", .secondary)
             case .waitingForLandlord:
-                return ("Sent — waiting for the landlord to reply", "clock.fill", .secondary)
+                return ("Sent. Waiting for the landlord to reply", "clock.fill", .secondary)
             case .replying:
                 return ("The landlord replied. Your AI is answering", "pencil", .secondary)
             case .closed(let price, _):
@@ -101,7 +101,7 @@ struct ListingDetailScreen: View {
             }
         }
         if campaign.queued.contains(where: { $0.id == listing.id }) {
-            return ("Ready to go — confirm your goals to send the first message",
+            return ("Ready to go. Confirm your goals to send the first message",
                     "hand.raised.fill", .secondary)
         }
         return nil

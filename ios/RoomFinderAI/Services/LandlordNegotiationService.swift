@@ -62,7 +62,7 @@ final class LandlordNegotiationService: ObservableObject {
     /// Opens the thread and sends first contact.
     func start() async {
         guard let me = CurrentUser.shared.email else {
-            phase = .failed("Sign in on the Profile tab first — messaging a landlord needs an account.")
+            phase = .failed("Sign in on the Profile tab first. Messaging a landlord needs an account.")
             return
         }
 

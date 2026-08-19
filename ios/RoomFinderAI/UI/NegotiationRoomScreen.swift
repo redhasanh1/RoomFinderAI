@@ -99,7 +99,7 @@ struct NegotiationRoomScreen: View {
                 let asking = Int(listing.price ?? 0)
                 let saved = max(0, asking - price)
                 Text(saved > 0
-                     ? "$\(price)/month — $\(saved)/month under asking, about $\(saved * 12) a year."
+                     ? "$\(price)/month, $\(saved)/month under asking, about $\(saved * 12) a year."
                      : "$\(price)/month.")
                     .font(.footnote)
             }
@@ -209,7 +209,7 @@ struct NegotiationRoomScreen: View {
                         await negotiation.refresh()
                         isRefreshing = false
                     }
-                    Text("Checking every few seconds. Your AI answers the landlord for you — you can close the app.")
+                    Text("Checking every few seconds. Your AI answers the landlord for you, so you can close the app.")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
