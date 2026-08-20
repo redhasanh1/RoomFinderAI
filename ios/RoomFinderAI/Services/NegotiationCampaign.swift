@@ -76,9 +76,22 @@ final class NegotiationCampaign: ObservableObject {
     /// Kept on disk. Held only in memory it started empty on every launch, so
     /// every deal already struck was announced again — a notification and an
     /// alert about the same agreement every single time the app opened.
+    /// Cached in memory, written through to disk. Every read used to hit
+    /// UserDefaults and allocate a fresh Set, in a loop over every open
+    /// negotiation, on a six second timer.
+    private var announcedCache: Set<String>?
+
     private var announced: Set<String> {
-        get { Set(UserDefaults.standard.stringArray(forKey: Self.announcedKey) ?? []) }
-        set { UserDefaults.standard.set(Array(newValue), forKey: Self.announcedKey) }
+        get {
+            if let announcedCache { return announcedCache }
+            let stored = Set(UserDefaults.standard.stringArray(forKey: Self.announcedKey) ?? [])
+            announcedCache = stored
+            return stored
+        }
+        set {
+            announcedCache = newValue
+            UserDefaults.standard.set(Array(newValue), forKey: Self.announcedKey)
+        }
     }
 
     private static var announcedKey: String {
@@ -327,6 +340,12 @@ final class NegotiationCampaign: ObservableObject {
     func beginPolling() {
         guard pollTask == nil else { return }
         pollTask = Task { [weak self] in
+            // Cleared on every exit, not just cancellation. Without this the
+            // handle stayed non-nil after the loop returned, and the guard
+            // above then refused to ever start polling again — so a
+            // negotiation opened later sat there never refreshing.
+            defer { Task { @MainActor in self?.pollTask = nil } }
+
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(6))
                 guard let self, !Task.isCancelled else { return }
@@ -339,8 +358,13 @@ final class NegotiationCampaign: ObservableObject {
                 for negotiation in waiting {
                     if Task.isCancelled { return }
                     await negotiation.refresh()
-                    await self.announceAnyNewDeal()
                 }
+                // Once per round, not once per landlord. Five open
+                // negotiations meant five passes over the same list every six
+                // seconds, each one reading and rewriting the announced set on
+                // disk, and each one republishing state the whole screen lays
+                // out again from.
+                await self.announceAnyNewDeal()
             }
         }
     }
@@ -404,6 +428,49 @@ final class NegotiationCampaign: ObservableObject {
         negotiation.objectWillChange
             .sink { [weak self] _ in self?.objectWillChange.send() }
             .store(in: &forwarding)
+    }
+
+    // MARK: - Stopping
+
+    /// Calls one negotiation off.
+    ///
+    /// The AI answers landlords from this app, so dropping a negotiation here
+    /// is what actually stops it: nothing keeps replying on a thread that is no
+    /// longer in the list. The conversation itself is left alone and stays
+    /// readable under Direct Messages, because the landlord is a person who was
+    /// mid-conversation and deleting their side of it is not a cancellation, it
+    /// is a disappearance.
+    @discardableResult
+    func stop(listingID: String) -> String? {
+        let name = active.first { $0.listingID == listingID }?.listing.title
+            ?? queued.first { $0.id == listingID }?.title
+
+        active.removeAll { $0.listingID == listingID }
+        queued.removeAll { $0.id == listingID }
+
+        // Dropped subscriptions are rebuilt from what is left, so a stopped
+        // negotiation stops driving this object's updates too.
+        forwarding = []
+        active.forEach { adopt($0) }
+
+        if active.isEmpty { stopPolling() }
+        persist()
+        return name
+    }
+
+    /// Calls every negotiation off at once.
+    @discardableResult
+    func stopAll() -> Int {
+        let count = active.count + queued.count
+        guard count > 0 else { return 0 }
+
+        stopPolling()
+        forwarding = []
+        active = []
+        queued = []
+        celebration = nil
+        persist()
+        return count
     }
 
     /// Clears the negotiations, and deletes the threads behind them.

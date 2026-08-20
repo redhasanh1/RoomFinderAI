@@ -3,7 +3,8 @@ import SwiftUI
 struct RootTabView: View {
 
     @EnvironmentObject private var state: AppState
-    @State private var isPosting = false
+    /// Where Cancel goes back to.
+    @State private var returnTab: AppTab = .home
 
     var body: some View {
         TabView(selection: selection) {
@@ -20,11 +21,7 @@ struct RootTabView: View {
                     case .messages:   MessagesScreen()
                     case .sublease:   SubleaseScreen()
                     case .profile:    BrowserScreen(tab: tab, store: state.store(for: tab))
-                    case .post:
-                        // Never actually shown — selecting this slot opens the
-                        // sheet and bounces the selection back. It exists so
-                        // the tab bar has a middle item, the way it did before.
-                        Color.clear
+                    case .post:       postPage
                     }
                 }
                 .tabItem { Label(tab.title, systemImage: tab.symbol) }
@@ -32,27 +29,10 @@ struct RootTabView: View {
             }
         }
         .tint(Theme.brand)
-        // Full screen, not a sheet. Posting is a job with several steps, not a
-        // glance at something: a card hovering over the tab bar with the old
-        // screen showing at the edges reads as temporary, and invites the swipe
-        // down that throws the whole form away.
-        .fullScreenCover(isPresented: $isPosting) {
-            // On the People tab the plus means the thing that tab is about.
-            // Handing someone a room-listing form because they tapped plus
-            // while reading subleases is the wrong form entirely.
-            if state.selectedTab == .people {
-                if state.peopleShowsRoommates {
-                    PostRoommateSheet()
-                } else {
-                    PostSubleaseSheet()
-                }
-            } else {
-                PostListingSheet()
-            }
-        }
         .onChange(of: state.wantsToPost) { _, wants in
             guard wants else { return }
-            isPosting = true
+            if state.selectedTab != .post { returnTab = state.selectedTab }
+            state.selectedTab = .post
             state.wantsToPost = false
         }
         // Menu pages open over the app with their own Done button, so you come
@@ -69,20 +49,37 @@ struct RootTabView: View {
         }
     }
 
-    /// Intercepts selection for two things: tapping the tab you are already on
-    /// returns to its root, and tapping Post opens the sheet instead of
-    /// navigating anywhere.
+    /// Which form, decided by where you were standing when you tapped plus.
+    /// Handing someone a room listing form because they tapped plus while
+    /// reading subleases is the wrong form entirely.
+    @ViewBuilder
+    private var postPage: some View {
+        if returnTab == .people && state.peopleShowsRoommates {
+            PostRoommateSheet(onClose: goBack)
+        } else if returnTab == .people {
+            PostSubleaseSheet(onClose: goBack)
+        } else {
+            PostListingSheet(onClose: goBack)
+        }
+    }
+
+    private func goBack() {
+        // Never back to Post itself. If the app was launched straight onto this
+        // page there is no tab behind it, and going "back" to where you already
+        // are looks exactly like Cancel being broken.
+        state.selectedTab = returnTab == .post ? .home : returnTab
+    }
+
+    /// Intercepts selection for one thing: tapping the tab you are already on
+    /// returns to its root.
     private var selection: Binding<AppTab> {
         Binding(
             get: { state.selectedTab },
             set: { newValue in
-                guard newValue != .post else {
-                    Haptics.impact(.medium)
-                    isPosting = true
-                    // Deliberately does NOT assign selectedTab: the user stays
-                    // where they were, so dismissing the sheet puts them back
-                    // rather than on a blank screen.
-                    return
+                if newValue == .post, state.selectedTab != .post {
+                    // Remembered so Cancel can put you back where you were
+                    // rather than on Home.
+                    returnTab = state.selectedTab
                 }
 
                 if newValue == state.selectedTab {

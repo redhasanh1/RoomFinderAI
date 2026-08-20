@@ -13,6 +13,12 @@ struct PostRoommateSheet: View {
     var onPosted: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+
+    /// How to leave. Supplied when this is a tab's own page, where there is no
+    /// presentation to dismiss and closing means going back to the tab you came
+    /// from. Nil when it is presented, and then the environment's dismiss is
+    /// the right thing.
+    var onClose: (() -> Void)?
     @ObservedObject private var user = CurrentUser.shared
 
     @State private var kind: RoommateProfile.Kind = .seeking
@@ -137,7 +143,7 @@ struct PostRoommateSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }.disabled(isPosting)
+                    Button("Cancel") { close() }.disabled(isPosting)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if isPosting {
@@ -296,7 +302,7 @@ struct PostRoommateSheet: View {
 
             Haptics.impact(.medium)
             onPosted()
-            dismiss()
+            close()
         } catch let failure as PostRoommateError {
             errorMessage = failure.message
         } catch {
@@ -304,6 +310,10 @@ struct PostRoommateSheet: View {
         }
         progressNote = nil
         isPosting = false
+    }
+
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
     }
 
     private func upload(_ payloads: [Data], email: String) async throws -> [String] {

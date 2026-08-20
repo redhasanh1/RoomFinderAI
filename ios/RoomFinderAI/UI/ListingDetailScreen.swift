@@ -341,9 +341,11 @@ struct ListingDetailScreen: View {
                     } else {
                         Image(systemName: "bubble.left.and.bubble.right.fill")
                     }
-                    // "Message", not "Contact host": it opens a chat, and an
-                    // envelope promised email.
-                    Text(isOpeningThread ? "Opening…" : "Message host")
+                    // "Direct message": this is the button that puts you in a
+                    // thread with the person yourself, as opposed to the one
+                    // above it that hands the whole conversation to the AI.
+                    // "Message host" did not draw that line clearly enough.
+                    Text(isOpeningThread ? "Opening…" : "Direct message")
                 }
                 .font(.headline)
                 .foregroundStyle(Theme.brand)

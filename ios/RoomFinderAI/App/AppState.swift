@@ -93,7 +93,10 @@ final class AppState: ObservableObject {
         }
         guard let raw = UserDefaults.standard.string(forKey: tabKey),
               let tab = AppTab(rawValue: raw) else { return .home }
-        return tab
+        // Never reopen onto the post form. Closing the app halfway through
+        // writing a listing and coming back to a half-filled form you did not
+        // ask for is not where anyone wants to land.
+        return tab == .post ? .home : tab
     }
 
     private var stores: [AppTab: WebViewStore] = [:]

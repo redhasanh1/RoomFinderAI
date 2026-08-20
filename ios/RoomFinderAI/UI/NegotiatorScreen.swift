@@ -122,14 +122,32 @@ struct NegotiatorScreen: View {
     private var composer: some View {
         VStack(spacing: 0) {
             Divider()
-            HStack(alignment: .bottom, spacing: 10) {
+            // Centre aligned, and the field's growth is capped by a plain
+            // upper bound rather than a range.
+            //
+            // A vertical-axis TextField with a range line limit, bottom
+            // aligned against fixed-height siblings, resolves circularly: the
+            // field's height depends on the width the stack offers, the stack's
+            // baseline depends on that height, and each pass re-measures the
+            // text. TextKit then ran flat out for as long as this screen
+            // existed — and because every tab stays alive, the whole app sat at
+            // 95% CPU whichever screen was showing.
+            HStack(alignment: .center, spacing: 10) {
                 // Talking beats typing a paragraph about what you want on a
                 // phone keyboard, and it is the first thing anyone does here.
                 DictationButton(text: $draft, isDisabled: service.isThinking)
 
-                TextField("Tell me what you're looking for…", text: $draft, axis: .vertical)
-                    .lineLimit(1...5)
+                // Deliberately not a growing field.
+                //
+                // axis: .vertical measures its own height from the width it is
+                // offered, and in a row with flexible siblings that never
+                // settles: TextKit re-measured forever and pinned the whole app
+                // at 95% CPU, on every tab, because a TabView keeps them all
+                // alive. Long text still fits, it scrolls instead of growing,
+                // and the height is fixed so there is nothing to converge on.
+                TextField("Tell me what you're looking for…", text: $draft)
                     .textFieldStyle(.plain)
+                    .frame(height: 22)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(Color(.secondarySystemBackground),

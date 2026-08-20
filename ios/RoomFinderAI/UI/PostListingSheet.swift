@@ -11,6 +11,12 @@ import SwiftUI
 struct PostListingSheet: View {
 
     @Environment(\.dismiss) private var dismiss
+
+    /// How to leave. Supplied when this is a tab's own page, where there is no
+    /// presentation to dismiss and closing means going back to the tab you came
+    /// from. Nil when it is presented, and then the environment's dismiss is
+    /// the right thing.
+    var onClose: (() -> Void)?
     @ObservedObject private var user = CurrentUser.shared
 
     @State private var title = ""
@@ -93,7 +99,7 @@ struct PostListingSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(didPost ? "Done" : "Cancel") { dismiss() }
+                    Button(didPost ? "Done" : "Cancel") { close() }
                 }
                 if !didPost, step == .details {
                     ToolbarItem(placement: .topBarTrailing) {
@@ -686,6 +692,10 @@ struct PostListingSheet: View {
 
         struct UploadResponse: Decodable { let urls: [String]? }
         return (try? JSONDecoder().decode(UploadResponse.self, from: data))?.urls ?? []
+    }
+
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
     }
 
     private func createListing(media: [String]) async throws {

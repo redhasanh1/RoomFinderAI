@@ -18,6 +18,12 @@ struct PostSubleaseSheet: View {
     var onPosted: () -> Void = {}
 
     @Environment(\.dismiss) private var dismiss
+
+    /// How to leave. Supplied when this is a tab's own page, where there is no
+    /// presentation to dismiss and closing means going back to the tab you came
+    /// from. Nil when it is presented, and then the environment's dismiss is
+    /// the right thing.
+    var onClose: (() -> Void)?
     @ObservedObject private var user = CurrentUser.shared
 
     @State private var kind: SubleaseRequest.Kind = .transfer
@@ -181,7 +187,7 @@ struct PostSubleaseSheet: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                    Button("Cancel") { close() }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if isPosting {
@@ -259,13 +265,17 @@ struct PostSubleaseSheet: View {
 
             Haptics.impact(.medium)
             onPosted()
-            dismiss()
+            close()
         } catch let failure as PostSubleaseError {
             errorMessage = failure.message
         } catch {
             errorMessage = "Couldn't reach the server. Check your connection."
         }
         isPosting = false
+    }
+
+    private func close() {
+        if let onClose { onClose() } else { dismiss() }
     }
 
     private func months(from: Date, to: Date) -> Int {

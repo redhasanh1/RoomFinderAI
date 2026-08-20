@@ -18,6 +18,10 @@ struct NegotiatorCampaignScreen: View {
     @ObservedObject private var push = PushService.shared
     @Binding var showingGoals: Bool
 
+    /// Which stop is being confirmed. Calling landlords off is not undoable, so
+    /// neither X does it on the first tap.
+    @State private var confirmingStopAll = false
+
     var body: some View {
         VStack(spacing: 10) {
             goalsBar
@@ -86,6 +90,11 @@ struct NegotiatorCampaignScreen: View {
                     // sitting greyed out with no explanation.
                     if campaign.goals.isUsable {
                         campaign.confirmGoals()
+                        // Confirming was the last thing standing between the
+                        // rooms already on screen and their landlords. Saying
+                        // "these are right" and watching nothing happen is the
+                        // app asking for permission it then does not use.
+                        Task { await chat.startPending() }
                     } else {
                         showingGoals = true
                     }
@@ -140,12 +149,39 @@ struct NegotiatorCampaignScreen: View {
                     .font(.caption2.weight(.semibold))
                     .foregroundStyle(.tertiary)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 9)
-            .background(Color(.secondarySystemBackground),
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .trailing) { stopAllButton }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .background(Color(.secondarySystemBackground),
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .alert("Stop all negotiations?", isPresented: $confirmingStopAll) {
+            Button("Stop all", role: .destructive) {
+                Haptics.impact(.medium)
+                campaign.stopAll()
+            }
+            Button("Keep going", role: .cancel) { }
+        } message: {
+            Text("The AI stops replying to every landlord. The conversations stay under Direct Messages, so you can take any of them over yourself.")
+        }
+    }
+
+    /// Sits over the chevron's right edge rather than in the row, because the
+    /// row is one big link: a button inside it would push the list as well.
+    private var stopAllButton: some View {
+        Button {
+            Haptics.impact(.light)
+            confirmingStopAll = true
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .font(.system(size: 17))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 14)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Stop all negotiations")
     }
 
     private var summaryLine: String {
@@ -195,24 +231,85 @@ struct NegotiationsListScreen: View {
 
     @ObservedObject var campaign: NegotiationCampaign
 
+    /// The room a stop is being confirmed for, and the all-at-once one.
+    @State private var stopping: String?
+    @State private var confirmingStopAll = false
+
     var body: some View {
         List {
             ForEach(campaign.active, id: \.listingID) { negotiation in
                 NavigationLink {
                     NegotiationRoomScreen(negotiation: negotiation)
                 } label: {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(negotiation.listing.title)
-                            .font(.subheadline)
-                            .lineLimit(1)
-                        status(for: negotiation.phase)
+                    HStack(spacing: 10) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(negotiation.listing.title)
+                                .font(.subheadline)
+                                .lineLimit(1)
+                            status(for: negotiation.phase)
+                        }
+                        Spacer(minLength: 0)
+
+                        // Visible, not only on a swipe. Stopping a negotiation
+                        // is the thing people come to this screen in a hurry to
+                        // do, and a gesture with nothing on screen to suggest it
+                        // is not a control.
+                        Button {
+                            Haptics.impact(.light)
+                            stopping = negotiation.listingID
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 18))
+                                .foregroundStyle(.secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("Stop negotiating on \(negotiation.listing.title)")
                     }
                     .padding(.vertical, 2)
+                }
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        stopping = negotiation.listingID
+                    } label: {
+                        Label("Stop", systemImage: "xmark")
+                    }
                 }
             }
         }
         .navigationTitle("Negotiations")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if !campaign.active.isEmpty {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button("Stop all", role: .destructive) {
+                        Haptics.impact(.light)
+                        confirmingStopAll = true
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+            }
+        }
+        .alert("Stop this negotiation?",
+               isPresented: Binding(get: { stopping != nil },
+                                    set: { if !$0 { stopping = nil } })) {
+            Button("Stop", role: .destructive) {
+                Haptics.impact(.medium)
+                if let stopping { campaign.stop(listingID: stopping) }
+                stopping = nil
+            }
+            Button("Keep going", role: .cancel) { stopping = nil }
+        } message: {
+            Text("The AI stops replying to this landlord. The conversation stays under Direct Messages, so you can take it over yourself.")
+        }
+        .alert("Stop all negotiations?", isPresented: $confirmingStopAll) {
+            Button("Stop all", role: .destructive) {
+                Haptics.impact(.medium)
+                campaign.stopAll()
+            }
+            Button("Keep going", role: .cancel) { }
+        } message: {
+            Text("The AI stops replying to every landlord. The conversations stay under Direct Messages.")
+        }
         .overlay {
             if campaign.active.isEmpty {
                 ContentUnavailableView(

@@ -6134,7 +6134,25 @@ async function callOpenAI({ messages, model = 'gpt-4', maxTokens = 300, temperat
 const openAiRateLimitStore = new Map();
 const OPENAI_HOURLY_LIMIT = 100;
 const OPENAI_DAILY_LIMIT = 500;
-const FREE_AI_MONTHLY_LIMIT = 20;
+// Counted per request, despite the name. One back and forth with the
+// negotiator is six or eight of these, so twenty meant a free account got two
+// conversations a month and then met an upgrade prompt. The hourly and daily
+// ceilings above are what actually protect the spend.
+const FREE_AI_MONTHLY_LIMIT = Number(process.env.FREE_AI_MONTHLY_LIMIT) || 200;
+
+/**
+ * Accounts that skip the free-plan ceiling without being marked Pro.
+ *
+ * For our own testing accounts, so demoing the negotiator does not burn a real
+ * plan limit. Set AI_UNLIMITED_EMAILS to a comma separated list; kept in the
+ * environment rather than in the repo so the addresses are not published.
+ */
+const AI_UNLIMITED_EMAILS = new Set(
+    (process.env.AI_UNLIMITED_EMAILS || '')
+        .split(',')
+        .map((entry) => entry.trim().toLowerCase())
+        .filter(Boolean)
+);
 
 function getHourKey() {
     const now = new Date();
@@ -6163,7 +6181,8 @@ async function isUserProByEmail(email) {
 function openAiRateLimitMiddleware(req, res, next) {
     (async () => {
         const userEmail = req.body?.userEmail || req.headers['user-email'];
-        const isPro = userEmail ? await isUserProByEmail(userEmail) : false;
+        const allowlisted = !!userEmail && AI_UNLIMITED_EMAILS.has(String(userEmail).toLowerCase());
+        const isPro = allowlisted || (userEmail ? await isUserProByEmail(userEmail) : false);
 
         if (isPro) {
             req.aiRateLimitInfo = { isPro: true, unlimited: true };

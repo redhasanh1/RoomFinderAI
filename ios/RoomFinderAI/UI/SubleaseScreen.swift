@@ -15,6 +15,109 @@ struct SubleaseScreen: View {
         var id: String { rawValue }
     }
 
+    /// Everything beyond which direction a request points in.
+    ///
+    /// Offering and Looking is the only split this screen had, which is a
+    /// coarse question: it cannot say a price, a size, whether the place comes
+    /// furnished, or when it is free. Rooms and roommates both got this and
+    /// subleases were left with a three-way switch.
+    struct Filters: Equatable {
+        var minPrice: Int?
+        var maxPrice: Int?
+        var bedrooms: Int?
+        var propertyType: String?
+        /// Nothing that starts later than this.
+        var availableBy: Date?
+        var furnished = false
+        var utilitiesIncluded = false
+        var petFriendly = false
+        var urgentOnly = false
+        var sort: Sort = .newest
+
+        enum Sort: String, CaseIterable, Identifiable {
+            case newest   = "Newest first"
+            case cheapest = "Cheapest first"
+            case dearest  = "Most expensive first"
+            case soonest  = "Available soonest"
+
+            var id: String { rawValue }
+
+            var symbol: String {
+                switch self {
+                case .newest:   return "clock"
+                case .cheapest: return "arrow.down.right"
+                case .dearest:  return "arrow.up.right"
+                case .soonest:  return "calendar"
+                }
+            }
+        }
+
+        var isNarrowing: Bool {
+            minPrice != nil || maxPrice != nil || bedrooms != nil || propertyType != nil
+                || availableBy != nil || furnished || utilitiesIncluded || petFriendly || urgentOnly
+        }
+
+        var isActive: Bool { isNarrowing || sort != .newest }
+
+        var count: Int {
+            [minPrice != nil, maxPrice != nil, bedrooms != nil, propertyType != nil,
+             availableBy != nil, furnished, utilitiesIncluded, petFriendly, urgentOnly]
+                .filter { $0 }.count
+        }
+
+        /// One row carries a rent it charges, the other a budget it can pay.
+        /// Comparing the wrong one is how a price filter hides half the board.
+        private func money(for request: SubleaseRequest) -> Int? {
+            if let rent = request.rentAmount, rent > 0 { return Int(rent) }
+            if let high = request.maxBudget, high > 0 { return Int(high) }
+            if let low = request.minBudget, low > 0 { return Int(low) }
+            return nil
+        }
+
+        /// When it starts, whichever of the two date pairs this row uses.
+        private func start(for request: SubleaseRequest) -> Date? {
+            let raw = (request.availableFrom ?? request.preferredMoveIn)?.nilIfEmpty
+            guard let raw else { return nil }
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withFullDate]
+            return iso.date(from: String(raw.prefix(10)))
+        }
+
+        func matches(_ request: SubleaseRequest) -> Bool {
+            if minPrice != nil || maxPrice != nil {
+                guard let amount = money(for: request) else { return false }
+                if let low = minPrice, amount < low { return false }
+                if let high = maxPrice, amount > high { return false }
+            }
+            if let bedrooms, (request.bedrooms ?? 0) < bedrooms { return false }
+            if let propertyType {
+                guard let type = request.propertyType?.lowercased(),
+                      type.contains(propertyType.lowercased()) else { return false }
+            }
+            if let availableBy {
+                guard let date = start(for: request), date <= availableBy else { return false }
+            }
+            if furnished, request.furnished != true { return false }
+            if utilitiesIncluded, request.utilitiesIncluded != true { return false }
+            if petFriendly, request.petFriendly != true { return false }
+            if urgentOnly, !request.isUrgent { return false }
+            return true
+        }
+
+        func sorted(_ rows: [SubleaseRequest]) -> [SubleaseRequest] {
+            switch sort {
+            case .newest:
+                return rows
+            case .cheapest:
+                return rows.sorted { (money(for: $0) ?? .max) < (money(for: $1) ?? .max) }
+            case .dearest:
+                return rows.sorted { (money(for: $0) ?? -1) > (money(for: $1) ?? -1) }
+            case .soonest:
+                return rows.sorted { (start(for: $0) ?? .distantFuture) < (start(for: $1) ?? .distantFuture) }
+            }
+        }
+    }
+
     /// A switcher pinned above the content, supplied by the tab that hosts
     /// both halves of the people side. Nil when this screen stands alone.
     var header: AnyView?
@@ -25,11 +128,17 @@ struct SubleaseScreen: View {
     @State private var isLoading = true
     @State private var errorMessage: String?
     @State private var isPosting = false
+    @State private var filters = Filters()
+    @State private var showingFilters = false
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
             if let header { header }
+            searchRow
+            kindPicker
+                .padding(.horizontal, 16)
+                .padding(.bottom, 10)
 
             Group {
                 if isLoading && requests.isEmpty {
@@ -66,14 +175,17 @@ struct SubleaseScreen: View {
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
             .fullScreenCover(isPresented: $isPosting) {
-                PostSubleaseSheet { Task { await load() } }
+                PostSubleaseSheet(onPosted: { Task { await load() } })
+            }
+            .sheet(isPresented: $showingFilters) {
+                SubleaseFilterSheet(filters: $filters, requests: requests)
             }
         }
         .task { if requests.isEmpty { await load() } }
     }
 
     private var visible: [SubleaseRequest] {
-        requests.filter { request in
+        filters.sorted(requests.filter { request in
             let matchesKind: Bool
             switch filter {
             case .all:      matchesKind = true
@@ -82,30 +194,32 @@ struct SubleaseScreen: View {
             }
 
             guard matchesKind else { return false }
+            guard filters.matches(request) else { return false }
             guard !query.isEmpty else { return true }
 
             let haystack = [request.displayTitle, request.place, request.description ?? ""]
                 .joined(separator: " ").lowercased()
             return haystack.contains(query.lowercased())
-        }
+        })
     }
 
     private var list: some View {
         ScrollView {
             LazyVStack(alignment: .leading, spacing: 14) {
-                searchBar
-                kindPicker
-
                 if visible.isEmpty {
                     VStack(spacing: 14) {
-                        Text(query.isEmpty
-                             ? "Nothing here yet. Post yours and it'll show up for everyone else."
-                             : "Nothing matches \"\(query)\".")
+                        Text(emptyMessage)
                             .font(.subheadline)
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
 
-                        if query.isEmpty {
+                        if filters.isNarrowing {
+                            Button("Clear filters") {
+                                Haptics.impact(.light)
+                                filters = Filters()
+                            }
+                            .font(.subheadline.weight(.semibold))
+                        } else if query.isEmpty {
                             Button {
                                 Haptics.impact(.light)
                                 isPosting = true
@@ -135,6 +249,49 @@ struct SubleaseScreen: View {
         }
         .navigationDestination(for: SubleaseRequest.self) { SubleaseDetailScreen(request: $0) }
         .refreshable { await load() }
+    }
+
+    private var searchRow: some View {
+        HStack(spacing: 10) {
+            searchBar
+
+            Button {
+                Haptics.impact(.light)
+                showingFilters = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 17, weight: .semibold))
+                    if filters.count > 0 {
+                        Text("\(filters.count)").font(.footnote.weight(.bold))
+                    }
+                }
+                .padding(.horizontal, filters.isNarrowing ? 14 : 13)
+                .padding(.vertical, 12)
+                .foregroundStyle(filters.isNarrowing ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.brand))
+                .background(
+                    Capsule().fill(filters.isNarrowing
+                                   ? AnyShapeStyle(Theme.gradient)
+                                   : AnyShapeStyle(Color(.systemBackground)))
+                )
+                .overlay(
+                    Capsule().strokeBorder(
+                        filters.isNarrowing ? Color.clear : Theme.brand.opacity(0.35),
+                        lineWidth: 1.5)
+                )
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Filters")
+        }
+        .padding(.horizontal, 16)
+        .padding(.bottom, 10)
+    }
+
+    private var emptyMessage: String {
+        if filters.isNarrowing { return "Nothing matches those filters. Try a wider price or a later date." }
+        if !query.isEmpty { return "Nothing matches \"\(query)\"." }
+        return "Nothing here yet. Post yours and it'll show up for everyone else."
     }
 
     private var searchBar: some View {

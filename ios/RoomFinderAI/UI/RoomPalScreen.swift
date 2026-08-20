@@ -163,7 +163,7 @@ struct RoomPalScreen: View {
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
             .fullScreenCover(isPresented: $showingPost) {
-                PostRoommateSheet { reload() }
+                PostRoommateSheet(onPosted: { reload() })
             }
             .onChange(of: city) { _, _ in scheduleSearch() }
             .sheet(isPresented: $showingFilters) {

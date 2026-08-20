@@ -89,6 +89,15 @@ final class NegotiationService: ObservableObject {
         // "How many did we secure?" is a question about state this app holds
         // and the chat endpoint has never heard of, so asking the model gave a
         // confident nothing. Answered here, from the negotiations themselves.
+        // Checked first, and answered here rather than by the model. "Stop
+        // messaging them" went to the chat endpoint, which has no power to
+        // stop anything, so it replied agreeably and the AI carried on
+        // arguing with landlords — the worst possible answer to that sentence.
+        if let answer = stopAnswer(for: trimmed) {
+            messages.append(NegotiationMessage(author: .negotiator, text: answer, sentAt: Date()))
+            return
+        }
+
         if let answer = statusAnswer(for: trimmed) {
             messages.append(NegotiationMessage(author: .negotiator, text: answer, sentAt: Date()))
             return
@@ -122,10 +131,16 @@ final class NegotiationService: ObservableObject {
 
             guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
             guard (200..<300).contains(http.statusCode) else {
-                // These routes are rate limited; saying so beats "went wrong".
-                errorMessage = http.statusCode == 429
-                    ? "That's a lot of questions at once. Give it a moment and try again."
-                    : "The negotiator couldn't reply (error \(http.statusCode))."
+                // The server says which limit was hit and whether waiting will
+                // help. Flattening every 429 into "give it a moment" told
+                // people to wait out a cap that resets next month.
+                struct Refusal: Decodable { let message: String?; let error: String? }
+                let stated = (try? JSONDecoder().decode(Refusal.self, from: data))?.message
+
+                errorMessage = stated
+                    ?? (http.statusCode == 429
+                        ? "That's a lot of questions at once. Give it a moment and try again."
+                        : "The negotiator couldn't reply (error \(http.statusCode)).")
                 return
             }
 
@@ -152,7 +167,7 @@ final class NegotiationService: ObservableObject {
             // both again is the app asking twice for the same thing. The purple
             // button is there to confirm, not to collect.
             if let criteria = reply.criteria {
-                applyToGoals(criteria)
+                applyToGoals(criteria, saidBy: trimmed)
             }
 
             if let criteria = reply.criteria, criteria.wantsSearch {
@@ -163,7 +178,7 @@ final class NegotiationService: ObservableObject {
                 // Finding rooms and waiting to be told to act on them is the
                 // tenant doing the work again. Everything that fits gets
                 // contacted, which is the whole promise of a negotiator.
-                await pursue(found)
+                await propose(found)
                 return
             }
 
@@ -190,6 +205,93 @@ final class NegotiationService: ObservableObject {
                 print("Negotiator failure: \(error)")
             }
         }
+    }
+
+    /// Calls the negotiations off when asked to, or nil when that was not the
+    /// ask.
+    ///
+    /// Deliberately narrow. "Stop" has to mean stop, but "don't stop until you
+    /// get a good price" must not, so a negative in front of the verb rules the
+    /// whole sentence out.
+    private func stopAnswer(for question: String) -> String? {
+        let text = question.lowercased()
+
+        let saysStop = ["stop", "cancel", "call it off", "abort", "quit",
+                        "give up", "leave it", "forget it", "never mind",
+                        "nevermind", "pull out", "back off", "hold off",
+                        "stand down"].contains { text.contains($0) }
+        guard saysStop else { return nil }
+
+        // "don't stop", "no need to cancel", "why did you stop"
+        let negated = ["don't stop", "dont stop", "do not stop", "never stop",
+                       "don't cancel", "dont cancel", "no need to stop",
+                       "why did you stop", "did you stop", "why stop",
+                       "shouldn't stop", "keep going"].contains { text.contains($0) }
+        guard !negated else { return nil }
+
+        let campaign = NegotiationCampaign.shared
+        let running = campaign.active
+        guard !running.isEmpty || !campaign.queued.isEmpty else {
+            awaitingConfirmation = []
+            return "Nothing is running, so there's nothing to stop. Tell me when you want me to start again."
+        }
+
+        // Naming one of them. "Stop only the first one" used to fall through to
+        // the chat endpoint, which cannot stop anything, so it sat thinking and
+        // then answered agreeably while every negotiation carried on.
+        if let picked = Self.singledOut(in: text, from: running) {
+            campaign.stop(listingID: picked.listingID)
+            return "Stopped. I won't reply to \(picked.listing.title) again. The others are still going, and that conversation is still under Direct Messages if you want to take it over."
+        }
+
+        let meansEverything = ["all", "everything", "every", "both", "them all",
+                               "the lot", "each"].contains { text.contains($0) }
+
+        // One running and no room named: they can only have meant that one.
+        if !meansEverything, running.count > 1, Self.namesSomeSubset(text) {
+            let list = running.enumerated()
+                .map { "\($0.offset + 1). \($0.element.listing.title)" }
+                .joined(separator: "\n")
+            return "Which one? Say the number or the name and I'll stop just that one, or say stop all.\n\n\(list)"
+        }
+
+        let stopped = campaign.stopAll()
+        awaitingConfirmation = []
+        return stopped == 1
+            ? "Stopped. I won't reply to that landlord again. The conversation is still there under Direct Messages if you want to take it over yourself."
+            : "Stopped all \(stopped). I won't reply to any of those landlords again. The conversations are still there under Direct Messages if you want to take any of them over yourself."
+    }
+
+    /// The one negotiation a sentence points at, by position or by name.
+    private static func singledOut(in text: String,
+                                   from running: [LandlordNegotiationService]) -> LandlordNegotiationService? {
+        guard !running.isEmpty else { return nil }
+
+        let positions: [(String, Int)] = [
+            ("first", 0), ("1st", 0), ("number 1", 0), ("number one", 0),
+            ("second", 1), ("2nd", 1), ("number 2", 1), ("number two", 1),
+            ("third", 2), ("3rd", 2), ("number 3", 2), ("number three", 2),
+            ("fourth", 3), ("4th", 3), ("fifth", 4), ("5th", 4)
+        ]
+        for (word, index) in positions where text.contains(word) {
+            return index < running.count ? running[index] : nil
+        }
+        if text.contains("last") { return running.last }
+
+        // By name. Longest title first, so "Bright 1 Bed" cannot swallow a
+        // match for "Bright 1 Bed on College St".
+        let byLength = running.sorted { $0.listing.title.count > $1.listing.title.count }
+        for negotiation in byLength {
+            let title = negotiation.listing.title.lowercased()
+            if !title.isEmpty, text.contains(title) { return negotiation }
+        }
+        return nil
+    }
+
+    /// Words that say "not all of them" without saying which.
+    private static func namesSomeSubset(_ text: String) -> Bool {
+        ["only", "just", "one of", "that one", "this one", "the other"]
+            .contains { text.contains($0) }
     }
 
     /// Answers "how's it going" from what is actually happening, or nil when
@@ -264,12 +366,17 @@ final class NegotiationService: ObservableObject {
     /// confirmed before anything goes out on it. Saying a lower number and
     /// having the AI keep arguing to the old one is the worst thing this could
     /// do.
-    private func applyToGoals(_ criteria: AssistantReply.Criteria) {
+    private func applyToGoals(_ criteria: AssistantReply.Criteria, saidBy text: String) {
         let campaign = NegotiationCampaign.shared
         var goals = campaign.goals
         let before = goals
 
-        if let price = criteria.price, price > 0 {
+        // The model is the first source and the sentence itself is the second.
+        // It reads "Toronto" reliably and drops the number often enough that
+        // people were told their goals had been filled in from what they said
+        // while the bar above still read "No budget set yet" — the app calling
+        // itself a liar in two lines of the same screen.
+        if let price = criteria.price ?? Self.budget(in: text), price > 0 {
             goals.maxRent = price
             // A first ask under the ceiling. Opening at the limit concedes the
             // negotiation before it starts.
@@ -288,35 +395,132 @@ final class NegotiationService: ObservableObject {
         campaign.saveGoals()
     }
 
+    /// Rooms the chat found and could not contact yet, because the goals were
+    /// still waiting to be confirmed. Held so that tapping "These are right"
+    /// finishes the job instead of leaving three rooms sitting on screen with
+    /// nothing happening to them.
+    private var awaitingConfirmation: [Listing] = []
+
+    /// Called the moment the goals are confirmed.
+    func startPending() async {
+        let rooms = awaitingConfirmation
+        awaitingConfirmation = []
+        guard !rooms.isEmpty else { return }
+        await contact(rooms)
+    }
+
+    /// A rent out of a sentence someone typed.
+    ///
+    /// Handles "$2,200", "under 2200" and "2.2k". Numbers attached to rooms
+    /// are skipped: "2 bed" is not a budget, and reading it as one sets a
+    /// ceiling of two dollars.
+    static func budget(in text: String) -> Double? {
+        let lowered = text.lowercased()
+        let pattern = #"\$?\s?(\d{1,3}(?:,\d{3})+|\d+(?:\.\d+)?)\s?(k\b)?"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+
+        let range = NSRange(lowered.startIndex..., in: lowered)
+        var best: Double?
+
+        for match in regex.matches(in: lowered, range: range) {
+            guard let digits = Range(match.range(at: 1), in: lowered) else { continue }
+
+            var value = Double(lowered[digits].replacingOccurrences(of: ",", with: "")) ?? 0
+            if match.range(at: 2).location != NSNotFound { value *= 1000 }
+
+            // What follows decides whether this was money at all.
+            if let whole = Range(match.range, in: lowered) {
+                let rest = lowered[whole.upperBound...].prefix(12)
+                let noise = ["bed", "br", "bath", "room", "person", "people", "month", "week", "am", "pm"]
+                if noise.contains(where: { rest.trimmingCharacters(in: .whitespaces).hasPrefix($0) }) { continue }
+            }
+
+            // A plausible monthly rent. Below this it is a bedroom count or a
+            // date; above it, a salary or a phone number.
+            guard value >= 300, value <= 20_000 else { continue }
+            best = max(best ?? 0, value)
+        }
+        return best
+    }
+
     /// Hands what the chat found to the campaign and says what happened.
     ///
     /// Gated on confirmed goals: those numbers are what the AI argues to, and
     /// several landlords would be messaged on them at once. If they are not
     /// confirmed the chat asks rather than silently doing nothing, because a
     /// negotiator that finds rooms and then goes quiet reads as broken.
-    private func pursue(_ found: [Listing]) async {
+    /// Shows what was found and asks before contacting anyone.
+    ///
+    /// It used to message every landlord the moment the goals happened to be
+    /// confirmed — and a confirmation from an earlier round counted, so a new
+    /// search contacted strangers with no tap at all. Messaging a landlord is
+    /// not undoable and it goes out under the tenant's name, so every batch is
+    /// asked about on its own.
+    private func propose(_ found: [Listing]) async {
         guard !found.isEmpty else { return }
 
         let campaign = NegotiationCampaign.shared
-        let fresh = found.filter { !campaign.isTaken($0.id) }
-        guard !fresh.isEmpty else { return }
+        let me = (CurrentUser.shared.email ?? "").lowercased()
 
-        guard campaign.goals.isConfirmed, campaign.goals.isUsable else {
-            // Name the button that will actually work. Telling someone to tap
-            // "These are right" when no budget is set sends them to a control
-            // that can only open the form, which reads as the app ignoring them.
-            let howMany = fresh.count == 1 ? "this one" : "all \(fresh.count) of these"
-            let whatToDo = "check the goals at the top of this screen, I've filled them in from what you said, and tap \u{201C}These are right\u{201D}"
+        // Three reasons a found room cannot be acted on, and each one used to
+        // end in the same silence: rooms appeared in the chat and nothing was
+        // ever said about them again. Silence reads as the app ignoring you.
+        let mine = found.filter { ($0.userEmail ?? "").lowercased() == me }
+        let running = found.filter { campaign.isTaken($0.id) }
+        let fresh = found.filter {
+            !campaign.isTaken($0.id) && ($0.userEmail ?? "").lowercased() != me
+        }
 
-            messages.append(NegotiationMessage(
-                author: .negotiator,
-                text: "I can start negotiating on \(howMany) right now. First, \(whatToDo), so I know what I'm allowed to agree to.",
-                sentAt: Date()
-            ))
+        guard !fresh.isEmpty else {
+            let reason: String
+            if !running.isEmpty && mine.isEmpty {
+                reason = running.count == 1
+                    ? "I'm already negotiating on that one. You can read it under Negotiating above."
+                    : "I'm already negotiating on all \(running.count) of those. You can read them under Negotiating above."
+            } else if !mine.isEmpty && running.isEmpty {
+                reason = mine.count == 1
+                    ? "That one is your own listing, so there's nobody for me to message."
+                    : "Those are your own listings, so there's nobody for me to message."
+            } else {
+                reason = "There's nothing new for me to do with those: some I'm already negotiating on, and the rest are your own listings."
+            }
+            messages.append(NegotiationMessage(author: .negotiator, text: reason, sentAt: Date()))
             return
         }
 
-        let started = await campaign.queueAndStart(fresh)
+        // Nothing said a number, but they are looking at rooms with prices on
+        // them. Proposing the dearest as the ceiling gives them something to
+        // check and agree to, which is the whole job of the purple button: it
+        // confirms, it does not collect.
+        var goals = campaign.goals
+        if !goals.isUsable, let proposed = Self.ceiling(from: fresh) {
+            goals.maxRent = proposed
+            goals.targetRent = (proposed * 0.9).rounded()
+        }
+        // This batch gets its own yes. Whatever was agreed to last time was
+        // agreed to about different rooms.
+        goals.confirmedAt = nil
+        campaign.goals = goals
+        campaign.saveGoals()
+
+        awaitingConfirmation = fresh
+
+        let howMany = fresh.count == 1 ? "this one" : "all \(fresh.count) of these"
+        let whatToDo = campaign.goals.isUsable
+            ? "check the goals at the top of this screen, I've filled them in from what you said, and tap \u{201C}These are right\u{201D}"
+            : "tap \u{201C}Set your budget\u{201D} at the top and tell me your ceiling"
+
+        messages.append(NegotiationMessage(
+            author: .negotiator,
+            text: "I can start negotiating on \(howMany) as soon as you say go. First, \(whatToDo), and I'll message them.",
+            sentAt: Date()
+        ))
+    }
+
+    /// Actually contacts them. Only ever reached from the confirm button.
+    private func contact(_ rooms: [Listing]) async {
+        let campaign = NegotiationCampaign.shared
+        let started = await campaign.queueAndStart(rooms)
         guard started > 0 else { return }
 
         messages.append(NegotiationMessage(
@@ -326,6 +530,18 @@ final class NegotiationService: ObservableObject {
                 : "I've messaged all \(started) landlords. You'll see each conversation under Negotiating above. I'll keep answering them for you and tell you who agrees.",
             sentAt: Date()
         ))
+    }
+
+    /// A ceiling worth proposing, from rooms already on screen.
+    ///
+    /// The dearest of them, because they asked to negotiate on all of them and
+    /// a ceiling under the most expensive one rules it out before anyone has
+    /// said a word. Rounded up so the number reads like a decision rather than
+    /// a scrape.
+    private static func ceiling(from rooms: [Listing]) -> Double? {
+        let prices = rooms.compactMap { $0.price }.filter { $0 > 0 }
+        guard let dearest = prices.max() else { return nil }
+        return (dearest / 50).rounded(.up) * 50
     }
 
     /// Runs the search the AI asked for. Failures are quiet on purpose: the
