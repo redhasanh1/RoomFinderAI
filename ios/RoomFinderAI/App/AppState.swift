@@ -41,6 +41,11 @@ final class AppState: ObservableObject {
     /// shell can open the sheet.
     @Published var wantsToPost = false
 
+    /// Which half of the People tab is showing. Subleases and roommates share
+    /// a slot, so a link to either one has to say which it meant, and the plus
+    /// in the tab bar has to know which form to open.
+    @Published var peopleShowsRoommates = false
+
     /// A site page opened from the menu, shown over whatever tab you were on.
     ///
     /// These used to be routed to a tab. Sublease pointed at a tab that is no
@@ -112,6 +117,9 @@ final class AppState: ObservableObject {
 
     /// Send a URL to the tab that owns it and bring that tab forward.
     func route(to tab: AppTab, url: URL) {
+        if tab == .people {
+            peopleShowsRoommates = url.path.contains("roommate")
+        }
         guard webCapableTabs.contains(tab) else {
             // Selecting the native tab is the whole action; it fetches its own
             // data and has nothing to navigate to.

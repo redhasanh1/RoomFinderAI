@@ -1376,6 +1376,124 @@ app.get('/api/roommate-profiles', async (req, res) => {
     }
 });
 
+/**
+ * Create or replace the signed-in person's roommate profile.
+ *
+ * The website writes these straight to Supabase with the anon key, so this
+ * endpoint never existed and the app could only ever read the marketplace —
+ * you could scroll a hundred strangers and never appear in it yourself.
+ *
+ * Two things it does that a direct insert does not: it links the row to an
+ * account, and it keeps one profile per person. Without the link,
+ * POST /api/roommate-conversations cannot resolve an address and answers
+ * "isn't linked to an account yet" to everyone who tries to message you, which
+ * is a profile that exists only to waste people's time. Without the second, a
+ * person who edits their details three times appears in the list three times.
+ */
+app.post('/api/roommate-profiles', async (req, res) => {
+    try {
+        if (!supabase) {
+            return res.status(503).json({ success: false, message: 'Database not connected' });
+        }
+
+        const email = String(req.body.userEmail || '').trim().toLowerCase();
+        if (!email) {
+            return res.status(400).json({ success: false, message: 'You have to be signed in to post a profile' });
+        }
+
+        const name = String(req.body.name || '').trim();
+        if (!name) {
+            return res.status(400).json({ success: false, message: 'A name is required' });
+        }
+
+        const userType = req.body.userType === 'has_spot' ? 'has_spot' : 'seeking';
+
+        // Upsert rather than select: someone can be signed in on a device
+        // without ever having had a profiles row written for them, and finding
+        // that out at message time is too late.
+        const { data: account, error: accountError } = await supabase
+            .from('profiles')
+            .upsert({ email }, { onConflict: 'email' })
+            .select('id')
+            .single();
+
+        if (accountError || !account?.id) {
+            console.error('Roommate profile: could not resolve account:', accountError?.message);
+            return res.status(500).json({ success: false, message: 'Could not link that profile to your account' });
+        }
+
+        const number = (value) => {
+            const parsed = parseInt(value, 10);
+            return Number.isNaN(parsed) || parsed <= 0 ? null : parsed;
+        };
+        const text = (value) => {
+            const trimmed = String(value ?? '').trim();
+            return trimmed.length ? trimmed : null;
+        };
+        const list = (value) => (Array.isArray(value) ? value.filter((entry) => typeof entry === 'string' && entry.trim()) : []);
+
+        const row = {
+            user_id: account.id,
+            name,
+            user_type: userType,
+            bio: text(req.body.bio),
+            avatar_url: text(req.body.avatarUrl),
+            move_in_date: text(req.body.moveInDate),
+            preferred_areas: list(req.body.preferredAreas),
+            is_active: true
+        };
+
+        // The two sides carry different money and different detail. Writing
+        // both sets would give somebody looking for a room a rent they are
+        // supposedly charging.
+        if (userType === 'has_spot') {
+            row.room_rent = number(req.body.roomRent);
+            row.room_location = text(req.body.roomLocation);
+            row.room_description = text(req.body.roomDescription);
+            row.room_photos = list(req.body.roomPhotos);
+            row.budget_min = null;
+            row.budget_max = null;
+        } else {
+            row.budget_min = number(req.body.budgetMin);
+            row.budget_max = number(req.body.budgetMax);
+            row.room_rent = null;
+            row.room_location = null;
+            row.room_description = null;
+            row.room_photos = [];
+        }
+
+        const { data: existing } = await supabase
+            .from('roommate_profiles')
+            .select('id')
+            .eq('user_id', account.id)
+            .maybeSingle();
+
+        const write = existing?.id
+            ? supabase.from('roommate_profiles').update(row).eq('id', existing.id).select('id').single()
+            : supabase.from('roommate_profiles').insert(row).select('id').single();
+
+        const { data: saved, error } = await write;
+
+        if (error) {
+            console.error('Roommate profile save failed:', error.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Could not save your profile',
+                details: error.message
+            });
+        }
+
+        res.json({
+            success: true,
+            data: { id: saved.id, replaced: !!existing?.id },
+            message: existing?.id ? 'Profile updated' : 'Profile created'
+        });
+    } catch (error) {
+        console.error('Roommate profile endpoint failed:', error);
+        res.status(500).json({ success: false, message: 'Could not save your profile' });
+    }
+});
+
 app.get('/api/listings', async (req, res) => {
     try {
         console.log('🔍 DEBUG /api/listings: Request received');

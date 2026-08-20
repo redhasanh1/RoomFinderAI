@@ -15,14 +15,22 @@ struct SubleaseScreen: View {
         var id: String { rawValue }
     }
 
+    /// A switcher pinned above the content, supplied by the tab that hosts
+    /// both halves of the people side. Nil when this screen stands alone.
+    var header: AnyView?
+
     @State private var requests: [SubleaseRequest] = []
     @State private var filter: Filter = .all
     @State private var query = ""
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var isPosting = false
 
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
+            if let header { header }
+
             Group {
                 if isLoading && requests.isEmpty {
                     ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -38,10 +46,27 @@ struct SubleaseScreen: View {
                     list
                 }
             }
+            }
             .navigationTitle("Sublease")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Haptics.impact(.light)
+                        isPosting = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(Theme.brand)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Theme.brand.opacity(0.12)))
+                    }
+                    .accessibilityLabel("Post a sublease")
+                }
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
+            }
+            .fullScreenCover(isPresented: $isPosting) {
+                PostSubleaseSheet { Task { await load() } }
             }
         }
         .task { if requests.isEmpty { await load() } }
@@ -72,13 +97,31 @@ struct SubleaseScreen: View {
                 kindPicker
 
                 if visible.isEmpty {
-                    Text(query.isEmpty
-                         ? "Nothing here yet. Post yours and it'll show up for everyone else."
-                         : "Nothing matches \"\(query)\".")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 40)
+                    VStack(spacing: 14) {
+                        Text(query.isEmpty
+                             ? "Nothing here yet. Post yours and it'll show up for everyone else."
+                             : "Nothing matches \"\(query)\".")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+
+                        if query.isEmpty {
+                            Button {
+                                Haptics.impact(.light)
+                                isPosting = true
+                            } label: {
+                                Text("Post a sublease")
+                                    .font(.subheadline.weight(.semibold))
+                                    .padding(.horizontal, 20)
+                                    .padding(.vertical, 11)
+                                    .background(Capsule().fill(Theme.gradient))
+                                    .foregroundStyle(.white)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 40)
                 } else {
                     ForEach(visible) { request in
                         NavigationLink(value: request) {

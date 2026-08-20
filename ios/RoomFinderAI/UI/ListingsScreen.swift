@@ -20,8 +20,8 @@ struct ListingsScreen: View {
     @StateObject private var service = ListingsService()
 
     @State private var query = ""
-    @State private var maxPrice: Double?
-    @State private var bedrooms: Int?
+    @State private var filters = Filters()
+    @State private var showingFilters = false
     @State private var category: Category = .all
     @State private var searchTask: Task<Void, Never>?
 
@@ -52,6 +52,86 @@ struct ListingsScreen: View {
             guard self != .all else { return true }
             guard let type = listing.propertyType?.lowercased() else { return false }
             return type.contains(rawValue.lowercased())
+        }
+    }
+
+    /// Everything the browse screen can narrow or reorder by.
+    ///
+    /// One value rather than a scatter of flags: the sheet edits a copy and
+    /// only assigns it back when someone taps Show, so a half-set price range
+    /// never reloads the list out from under the person setting it.
+    struct Filters: Equatable {
+        var minPrice: Double?
+        var maxPrice: Double?
+        /// Both are minimums. Asking for 2 bedrooms and being shown only
+        /// two-bedroom places hides every three-bedroom that would also do.
+        var bedrooms: Int?
+        var bathrooms: Int?
+        var verifiedOnly = false
+        var withPhotos = false
+        var sort: Sort = .newest
+
+        enum Sort: String, CaseIterable, Identifiable {
+            case newest       = "Newest first"
+            case priceLow     = "Cheapest first"
+            case priceHigh    = "Most expensive first"
+            case mostBedrooms = "Most bedrooms"
+
+            var id: String { rawValue }
+
+            var symbol: String {
+                switch self {
+                case .newest:       return "clock"
+                case .priceLow:     return "arrow.down.right"
+                case .priceHigh:    return "arrow.up.right"
+                case .mostBedrooms: return "bed.double"
+                }
+            }
+        }
+
+        /// Sorting reorders, it does not remove anything, so it is not what
+        /// "clear filters" is offering to undo.
+        var isNarrowing: Bool {
+            minPrice != nil || maxPrice != nil || bedrooms != nil
+                || bathrooms != nil || verifiedOnly || withPhotos
+        }
+
+        var isActive: Bool { isNarrowing || sort != .newest }
+
+        /// What the badge on the button counts.
+        var count: Int {
+            [minPrice != nil, maxPrice != nil, bedrooms != nil,
+             bathrooms != nil, verifiedOnly, withPhotos].filter { $0 }.count
+        }
+
+        func matches(_ listing: Listing) -> Bool {
+            if let minPrice {
+                guard let price = listing.price, price >= minPrice else { return false }
+            }
+            if let maxPrice {
+                guard let price = listing.price, price <= maxPrice else { return false }
+            }
+            if let bedrooms, (listing.bedrooms ?? 0) < bedrooms { return false }
+            if let bathrooms, (listing.bathrooms ?? 0) < bathrooms { return false }
+            if verifiedOnly, listing.userVerified != true { return false }
+            if withPhotos, listing.galleryURLs.isEmpty { return false }
+            return true
+        }
+
+        /// Newest is the order the API already returns, so it reorders nothing.
+        /// A room with no price sinks either way rather than pretending to be
+        /// free or priceless.
+        func sorted(_ rooms: [Listing]) -> [Listing] {
+            switch sort {
+            case .newest:
+                return rooms
+            case .priceLow:
+                return rooms.sorted { ($0.price ?? .greatestFiniteMagnitude) < ($1.price ?? .greatestFiniteMagnitude) }
+            case .priceHigh:
+                return rooms.sorted { ($0.price ?? -1) > ($1.price ?? -1) }
+            case .mostBedrooms:
+                return rooms.sorted { ($0.bedrooms ?? 0) > ($1.bedrooms ?? 0) }
+            }
         }
     }
 
@@ -95,6 +175,11 @@ struct ListingsScreen: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
+            .sheet(isPresented: $showingFilters) {
+                FilterSheet(filters: $filters,
+                            category: $category,
+                            rooms: service.listings)
+            }
             .refreshable { await reloadAsync() }
         }
         .task {
@@ -132,7 +217,7 @@ struct ListingsScreen: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Spacer()
-                        if hasActiveFilters || category != .all {
+                        if filters.isActive || category != .all {
                             Button("Clear filters", action: clearFilters)
                                 .font(.footnote.weight(.semibold))
                         }
@@ -155,6 +240,17 @@ struct ListingsScreen: View {
     private var sections: [Section] {
         let rooms = visibleListings
         guard !rooms.isEmpty else { return [] }
+
+        // Once someone has narrowed or reordered the list, curated rows are in
+        // the way: they asked for particular rooms in a particular order, and
+        // a "Featured" carousel above them answers a question nobody asked.
+        if filters.isActive {
+            return [Section(id: "all",
+                            title: rooms.count == 1 ? "1 room" : "\(rooms.count) rooms",
+                            subtitle: activeFilterSummary,
+                            style: .list,
+                            listings: rooms)]
+        }
 
         var result: [Section] = []
 
@@ -314,7 +410,7 @@ struct ListingsScreen: View {
             )
             .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
 
-            filterMenu
+            filterButton
                 .padding(.horizontal, hasActiveFilters ? 14 : 13)
                 .padding(.vertical, 12)
                 .foregroundStyle(hasActiveFilters ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.brand))
@@ -334,59 +430,42 @@ struct ListingsScreen: View {
         .padding(.bottom, 12)
     }
 
-    private var filterMenu: some View {
-        Menu {
-            Menu("Max rent") {
-                ForEach([800, 1200, 1600, 2000, 3000], id: \.self) { limit in
-                    Button {
-                        Haptics.select()
-                        maxPrice = Double(limit)
-                        reload()
-                    } label: {
-                        Label("Under $\(limit)", systemImage: maxPrice == Double(limit) ? "checkmark" : "")
-                    }
-                }
-            }
-            Menu("Bedrooms") {
-                ForEach(1...4, id: \.self) { count in
-                    Button {
-                        Haptics.select()
-                        bedrooms = count
-                        reload()
-                    } label: {
-                        Label("\(count)+ bedrooms", systemImage: bedrooms == count ? "checkmark" : "")
-                    }
-                }
-            }
-            if hasActiveFilters || category != .all {
-                Divider()
-                Button(role: .destructive, action: clearFilters) {
-                    Label("Clear filters", systemImage: "xmark.circle")
-                }
-            }
+    /// Opens the sheet. A menu held two filters; it could not hold a price
+    /// range, bathrooms, verification and sorting without becoming a menu of
+    /// menus nobody opens.
+    private var filterButton: some View {
+        Button {
+            Haptics.impact(.light)
+            showingFilters = true
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "slider.horizontal.3")
                     .font(.system(size: 17, weight: .semibold))
-                // Says which filters are on rather than only that some are, so
-                // a list that looks short has a visible reason.
-                if let summary = activeFilterSummary {
-                    Text(summary)
-                        .font(.footnote.weight(.semibold))
-                        .lineLimit(1)
+                // How many are on, so a short list has a visible reason.
+                if filters.count > 0 {
+                    Text("\(filters.count)")
+                        .font(.footnote.weight(.bold))
                 }
             }
         }
         .accessibilityLabel(activeFilterSummary.map { "Filters, \($0)" } ?? "Filters")
     }
 
-    private var hasActiveFilters: Bool { maxPrice != nil || bedrooms != nil }
+    private var hasActiveFilters: Bool { filters.isNarrowing }
 
     /// The filters currently on, in the fewest words that still say which.
     private var activeFilterSummary: String? {
         var parts: [String] = []
-        if let maxPrice { parts.append("under $\(Int(maxPrice))") }
-        if let bedrooms { parts.append("\(bedrooms)+ bed") }
+        switch (filters.minPrice, filters.maxPrice) {
+        case let (low?, high?): parts.append("$\(Int(low)) to $\(Int(high))")
+        case let (nil, high?):  parts.append("under $\(Int(high))")
+        case let (low?, nil):   parts.append("$\(Int(low)) and up")
+        default: break
+        }
+        if let beds = filters.bedrooms { parts.append("\(beds)+ bed") }
+        if let baths = filters.bathrooms { parts.append("\(baths)+ bath") }
+        if filters.verifiedOnly { parts.append("verified") }
+        if filters.withPhotos { parts.append("with photos") }
         return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
@@ -400,11 +479,13 @@ struct ListingsScreen: View {
     /// people's rooms are filtered out here rather than only being flagged.
     private var visibleListings: [Listing] {
         let blocked = moderation.blockedEmails
-        return service.listings.filter { listing in
+        let rooms = service.listings.filter { listing in
             guard category.matches(listing) else { return false }
+            guard filters.matches(listing) else { return false }
             guard let author = listing.userEmail?.lowercased() else { return true }
             return !blocked.contains(author)
         }
+        return filters.sorted(rooms)
     }
 
     /// Debounced: typing a city name should not fire a request per keystroke.
@@ -413,12 +494,17 @@ struct ListingsScreen: View {
         searchTask = Task {
             try? await Task.sleep(for: .milliseconds(350))
             guard !Task.isCancelled else { return }
-            service.load(query: query, maxPrice: maxPrice, bedrooms: bedrooms)
+            service.load(query: query)
         }
     }
 
+    /// Only the search term goes to the server. Its numeric filters are
+    /// ignored whenever the query is blank, and it matches bedrooms exactly
+    /// rather than as a minimum, so "under $1,200" did nothing at all on the
+    /// screen people actually land on. Narrowing is done here, over rows that
+    /// are already in memory, which also makes it instant.
     private func reload() {
-        service.load(query: query, maxPrice: maxPrice, bedrooms: bedrooms)
+        service.load(query: query)
     }
 
     private func reloadAsync() async {
@@ -431,8 +517,7 @@ struct ListingsScreen: View {
 
     private func clearFilters() {
         Haptics.impact(.light)
-        maxPrice = nil
-        bedrooms = nil
+        filters = Filters()
         category = .all
         query = ""
         service.load()

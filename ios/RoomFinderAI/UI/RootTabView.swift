@@ -14,6 +14,7 @@ struct RootTabView: View {
                     // and duplicating that is how auth bugs are born.
                     switch tab {
                     case .home:       ListingsScreen(showsHero: true, title: "Home")
+                    case .people:     PeopleScreen()
                     case .roompal:    RoomPalScreen()
                     case .listings:   ListingsScreen()
                     case .messages:   MessagesScreen()
@@ -31,8 +32,23 @@ struct RootTabView: View {
             }
         }
         .tint(Theme.brand)
-        .sheet(isPresented: $isPosting) {
-            PostListingSheet()
+        // Full screen, not a sheet. Posting is a job with several steps, not a
+        // glance at something: a card hovering over the tab bar with the old
+        // screen showing at the edges reads as temporary, and invites the swipe
+        // down that throws the whole form away.
+        .fullScreenCover(isPresented: $isPosting) {
+            // On the People tab the plus means the thing that tab is about.
+            // Handing someone a room-listing form because they tapped plus
+            // while reading subleases is the wrong form entirely.
+            if state.selectedTab == .people {
+                if state.peopleShowsRoommates {
+                    PostRoommateSheet()
+                } else {
+                    PostSubleaseSheet()
+                }
+            } else {
+                PostListingSheet()
+            }
         }
         .onChange(of: state.wantsToPost) { _, wants in
             guard wants else { return }

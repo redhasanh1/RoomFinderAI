@@ -10,6 +10,9 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// Both kinds of conversation: the AI negotiator, and real threads with
     /// landlords and roommates. Named after what the website calls it.
     case messages
+    /// Subleases and roommates, sharing one slot. The two halves still exist
+    /// as their own cases below so a deep link can name either one.
+    case people
     case roompal
     case sublease
     /// An action, not a place. Selecting it opens the post sheet and hands the
@@ -31,7 +34,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
     /// and the whole thing read as cramped. Listings and Sublease are in the
     /// menu instead, which is what the site's own "More" does with its
     /// overflow.
-    static let tabBar: [AppTab] = [.home, .sublease, .post, .messages, .profile]
+    static let tabBar: [AppTab] = [.home, .people, .post, .messages, .profile]
 
     var id: String { rawValue }
 
@@ -40,6 +43,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "Home"
         case .listings:   return "Listings"
         case .roompal:    return "RoomPal"
+        case .people:     return "People"
         case .sublease:   return "Sublease"
         // iPad's floating tab bar draws labels and no icons at all, on any
         // tab, so the symbol below is never seen there. The plus has to be in
@@ -63,6 +67,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "house.fill"
         case .listings:   return "building.2.fill"
         case .roompal:    return "person.2.fill"
+        case .people:     return "person.2.fill"
         case .sublease:   return "calendar.badge.clock"
         // A square plus, not a circle. The bar is otherwise all circles and
         // rounded glyphs, so the one action among five places has to differ in
@@ -78,6 +83,7 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         case .home:       return "index.html"
         case .listings:   return "listings.html"
         case .roompal:    return "roommate-matching.html"
+        case .people:     return "sublease.html"
         case .sublease:   return "sublease.html"
         case .post:       return "listings.html"
         case .messages:   return "ai-negotiator.html"
@@ -99,8 +105,8 @@ enum AppTab: String, CaseIterable, Identifiable, Codable {
         // favorites.html are left unowned so they open in a web-capable tab.
         case "listings.html":                   return .listings
         case "ai-negotiator.html":              return .messages  // native; selecting it is the whole action
-        case "roommate-matching.html":          return .roompal
-        case "sublease.html":                   return .sublease
+        case "roommate-matching.html":          return .people
+        case "sublease.html":                   return .people
         case "profile.html", "login.html", "signup.html", "forgot-password.html": return .profile
         default:                                return nil
         }
@@ -118,7 +124,6 @@ struct MoreDestination: Identifiable, Hashable {
 
     static let all: [MoreDestination] = [
         .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
-        .init(title: "Listings",      symbol: "building.2.fill",      path: "listings.html"),
         .init(title: "Legal Help",    symbol: "checkmark.shield.fill", path: "legal.html"),
         // No Pricing entry. The Pro plan is sold through Stripe on the website,
         // and App Store guideline 3.1.1 requires anything unlocking in-app

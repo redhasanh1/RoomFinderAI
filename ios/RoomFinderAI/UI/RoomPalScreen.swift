@@ -12,45 +12,111 @@ struct RoomPalScreen: View {
     @ObservedObject private var moderation = ModerationService.shared
     @StateObject private var service = RoommateService()
 
+    /// A switcher pinned above the content, supplied by the tab that hosts
+    /// both halves of the people side. Nil when this screen stands alone.
+    var header: AnyView?
+
     @State private var kind: RoommateProfile.Kind = .seeking
     @State private var city = ""
-    @State private var budget: Budget = .any
+    @State private var filters = Filters()
+    @State private var showingFilters = false
+    @State private var showingPost = false
     @State private var searchTask: Task<Void, Never>?
 
-    /// Budget bands, applied to what is already loaded. Scrolling a flat list
-    /// of strangers is the slowest possible way to find someone you could
-    /// actually live with.
-    enum Budget: String, CaseIterable, Identifiable {
-        case any = "Any budget"
-        case under800 = "Under $800"
-        case under1200 = "Under $1,200"
-        case under1800 = "Under $1,800"
+    /// Everything the people list can be narrowed or reordered by.
+    ///
+    /// This was one row of budget chips, which could say "under $1,200" and
+    /// nothing else — not when someone is free to move, not whether they had
+    /// bothered to write anything about themselves, not what order to read
+    /// them in. Scrolling a flat list of strangers is the slowest possible way
+    /// to find someone you could actually live with.
+    struct Filters: Equatable {
+        var minBudget: Int?
+        var maxBudget: Int?
+        /// Nobody useful is moving after this.
+        var moveInBy: Date?
+        var withPhoto = false
+        var withBio = false
+        var sort: Sort = .newest
 
-        var id: String { rawValue }
+        enum Sort: String, CaseIterable, Identifiable {
+            case newest    = "Newest first"
+            case cheapest  = "Lowest budget first"
+            case highest   = "Highest budget first"
 
-        var ceiling: Int? {
-            switch self {
-            case .any:       return nil
-            case .under800:  return 800
-            case .under1200: return 1200
-            case .under1800: return 1800
+            var id: String { rawValue }
+
+            var symbol: String {
+                switch self {
+                case .newest:   return "clock"
+                case .cheapest: return "arrow.down.right"
+                case .highest:  return "arrow.up.right"
+                }
             }
         }
 
+        var isNarrowing: Bool {
+            minBudget != nil || maxBudget != nil || moveInBy != nil || withPhoto || withBio
+        }
+
+        var isActive: Bool { isNarrowing || sort != .newest }
+
+        var count: Int {
+            [minBudget != nil, maxBudget != nil, moveInBy != nil, withPhoto, withBio]
+                .filter { $0 }.count
+        }
+
+        /// The number to compare against depends on which side someone is on:
+        /// a person offering a room has a rent, a person looking has a range
+        /// they can stretch to. Comparing a seeker's floor to a ceiling filter
+        /// is what makes "under $800" hide everybody who could afford $800.
+        private func money(for profile: RoommateProfile) -> Int? {
+            if profile.kind == .hasSpot, let rent = profile.roomRent, rent > 0 { return rent }
+            if let low = profile.budgetMin, low > 0 { return low }
+            if let high = profile.budgetMax, high > 0 { return high }
+            return nil
+        }
+
         func matches(_ profile: RoommateProfile) -> Bool {
-            guard let ceiling else { return true }
-            // The floor of what they expect to pay: someone whose minimum is
-            // above the band is priced out of it.
-            let floor = profile.roomRent ?? profile.budgetMin ?? 0
-            return floor > 0 && floor <= ceiling
+            if minBudget != nil || maxBudget != nil {
+                guard let amount = money(for: profile) else { return false }
+                if let low = minBudget, amount < low { return false }
+                if let high = maxBudget, amount > high { return false }
+            }
+            if let moveInBy {
+                guard let raw = profile.moveInDate, let date = Self.date(from: raw) else { return false }
+                if date > moveInBy { return false }
+            }
+            if withPhoto, profile.avatarURL == nil { return false }
+            if withBio, profile.cleanBio == nil { return false }
+            return true
+        }
+
+        /// Newest is the order the API already returns.
+        func sorted(_ people: [RoommateProfile]) -> [RoommateProfile] {
+            switch sort {
+            case .newest:
+                return people
+            case .cheapest:
+                return people.sorted { (money(for: $0) ?? .max) < (money(for: $1) ?? .max) }
+            case .highest:
+                return people.sorted { (money(for: $0) ?? -1) > (money(for: $1) ?? -1) }
+            }
+        }
+
+        static func date(from raw: String) -> Date? {
+            let iso = ISO8601DateFormatter()
+            iso.formatOptions = [.withFullDate]
+            return iso.date(from: String(raw.prefix(10)))
         }
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                if let header { header }
+                searchRow
                 picker
-                budgetChips
 
                 Group {
                     if service.isLoading && service.profiles.isEmpty {
@@ -67,11 +133,11 @@ struct RoomPalScreen: View {
                         StatusScreen(
                             symbol: "person.2.slash",
                             title: emptyTitle,
-                            message: (city.isEmpty && budget == .any)
+                            message: (city.isEmpty && !filters.isNarrowing)
                                 ? "Nobody has posted here yet. Check back soon."
                                 : "Nobody matches those filters. Try a wider budget or another city.",
-                            actionTitle: (city.isEmpty && budget == .any) ? "Refresh" : "Clear filters",
-                            action: { city = ""; budget = .any; reload() }
+                            actionTitle: (city.isEmpty && !filters.isNarrowing) ? "Refresh" : "Clear filters",
+                            action: { city = ""; filters = Filters(); reload() }
                         )
                     } else {
                         people
@@ -81,10 +147,28 @@ struct RoomPalScreen: View {
             .navigationTitle("RoomPal")
             .navigationBarTitleDisplayMode(.large)
             .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        Haptics.impact(.light)
+                        showingPost = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundStyle(Theme.brand)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Theme.brand.opacity(0.12)))
+                    }
+                    .accessibilityLabel("Post your profile")
+                }
                 ToolbarItem(placement: .topBarTrailing) { MoreMenu() }
             }
-            .searchable(text: $city, prompt: "Filter by city")
+            .fullScreenCover(isPresented: $showingPost) {
+                PostRoommateSheet { reload() }
+            }
             .onChange(of: city) { _, _ in scheduleSearch() }
+            .sheet(isPresented: $showingFilters) {
+                RoommateFilterSheet(filters: $filters, people: visibleProfiles)
+            }
             .refreshable { await reloadAsync() }
         }
         .task {
@@ -112,31 +196,71 @@ struct RoomPalScreen: View {
         }
     }
 
-    private var budgetChips: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(Budget.allCases) { option in
-                    let selected = option == budget
+    /// Search and filters on one line, the same shape as the rooms tab. A
+    /// system search bar sat above the section switcher while everything else
+    /// sat below it, so the page had a control in a different place depending
+    /// on which half you were reading.
+    private var searchRow: some View {
+        HStack(spacing: 10) {
+            HStack(spacing: 9) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Theme.brand)
+
+                TextField("Search by city", text: $city)
+                    .textFieldStyle(.plain)
+                    .font(.callout)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.words)
+
+                if !city.isEmpty {
                     Button {
-                        Haptics.select()
-                        budget = option
+                        Haptics.impact(.light)
+                        city = ""
                     } label: {
-                        Text(option.rawValue)
-                            .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 9)
-                            .background(
-                                Capsule().fill(selected
-                                               ? AnyShapeStyle(Theme.gradient)
-                                               : AnyShapeStyle(Color(.secondarySystemBackground)))
-                            )
-                            .foregroundStyle(selected ? .white : .primary)
+                        Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
+                    .accessibilityLabel("Clear search")
                 }
+
+                DictationButton(text: $city, size: 24)
             }
-            .padding(.horizontal, 16)
+            .padding(.horizontal, 15)
+            .padding(.vertical, 12)
+            .background(Capsule().fill(Color(.systemBackground)))
+            .overlay(Capsule().strokeBorder(Theme.brand.opacity(0.35), lineWidth: 1.5))
+            .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+
+            Button {
+                Haptics.impact(.light)
+                showingFilters = true
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.system(size: 17, weight: .semibold))
+                    if filters.count > 0 {
+                        Text("\(filters.count)").font(.footnote.weight(.bold))
+                    }
+                }
+                .padding(.horizontal, filters.isNarrowing ? 14 : 13)
+                .padding(.vertical, 12)
+                .foregroundStyle(filters.isNarrowing ? AnyShapeStyle(.white) : AnyShapeStyle(Theme.brand))
+                .background(
+                    Capsule().fill(filters.isNarrowing
+                                   ? AnyShapeStyle(Theme.gradient)
+                                   : AnyShapeStyle(Color(.systemBackground)))
+                )
+                .overlay(
+                    Capsule().strokeBorder(
+                        filters.isNarrowing ? Color.clear : Theme.brand.opacity(0.35),
+                        lineWidth: 1.5)
+                )
+                .shadow(color: .black.opacity(0.08), radius: 6, y: 2)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Filters")
         }
+        .padding(.horizontal, 16)
         .padding(.bottom, 10)
     }
 
@@ -181,7 +305,7 @@ struct RoomPalScreen: View {
 
     /// What is actually shown: block list, then the budget band.
     private var shownProfiles: [RoommateProfile] {
-        visibleProfiles.filter { budget.matches($0) }
+        filters.sorted(visibleProfiles.filter { filters.matches($0) })
     }
 
     private func scheduleSearch() {
