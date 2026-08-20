@@ -368,7 +368,10 @@ private struct RoommateCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .accessibilityElement(children: .combine)
+        // Spelled out rather than combined: .combine walks the subtree and
+        // forces it to lay out, which on a card in a lazy list never settles.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(profile.displayName), \(profile.locationText), \(profile.budgetText)")
         .accessibilityHint("Opens this profile")
     }
 }

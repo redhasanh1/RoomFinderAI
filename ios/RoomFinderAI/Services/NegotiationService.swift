@@ -98,6 +98,15 @@ final class NegotiationService: ObservableObject {
             return
         }
 
+        // Picking from what was just offered. "Only the top one" went to the
+        // chat endpoint, which cannot narrow anything, and the model answered
+        // "I will start negotiating on the top rental for you" — a promise it
+        // had no way to keep. Nothing was messaged and nothing was chosen.
+        if let answer = narrowAnswer(for: trimmed) {
+            messages.append(NegotiationMessage(author: .negotiator, text: answer, sentAt: Date()))
+            return
+        }
+
         if let answer = statusAnswer(for: trimmed) {
             messages.append(NegotiationMessage(author: .negotiator, text: answer, sentAt: Date()))
             return
@@ -260,6 +269,69 @@ final class NegotiationService: ObservableObject {
         return stopped == 1
             ? "Stopped. I won't reply to that landlord again. The conversation is still there under Direct Messages if you want to take it over yourself."
             : "Stopped all \(stopped). I won't reply to any of those landlords again. The conversations are still there under Direct Messages if you want to take any of them over yourself."
+    }
+
+    /// Narrows what is waiting on a yes, when someone says which of them they
+    /// meant. Nil when they were talking about something else.
+    private func narrowAnswer(for question: String) -> String? {
+        guard awaitingConfirmation.count > 1 else { return nil }
+        let text = question.lowercased()
+
+        let picksSome = ["only", "just", "top one", "first one", "that one",
+                         "this one", "cheapest", "cheaper", "dearest",
+                         "most expensive", "pick", "choose", "instead of"]
+            .contains { text.contains($0) }
+        let picksAll = ["all of them", "both", "everything", "all three",
+                        "all of these", "keep both", "keep all"]
+            .contains { text.contains($0) }
+        guard picksSome || picksAll else { return nil }
+
+        if picksAll, !picksSome {
+            let count = awaitingConfirmation.count
+            return "All \(count) then. Tap \u{201C}These are right\u{201D} at the top and I'll message every one of them."
+        }
+
+        guard let chosen = pickedRoom(in: text) else {
+            let list = awaitingConfirmation.enumerated()
+                .map { "\($0.offset + 1). \($0.element.title) \u{2014} \($0.element.priceText)" }
+                .joined(separator: "\n")
+            return "Which one? Say the number or the name.\n\n\(list)"
+        }
+
+        awaitingConfirmation = [chosen]
+        return "Just \(chosen.title) then, at \(chosen.priceText). Tap \u{201C}These are right\u{201D} at the top and I'll message them. I won't contact the others."
+    }
+
+    /// The room a sentence points at: by position, by price, or by name.
+    private func pickedRoom(in text: String) -> Listing? {
+        let rooms = awaitingConfirmation
+        guard !rooms.isEmpty else { return nil }
+
+        // "Top" means the one at the top of the list they are looking at, which
+        // is the first, not the dearest.
+        let positions: [(String, Int)] = [
+            ("top", 0), ("first", 0), ("1st", 0), ("number 1", 0), ("number one", 0),
+            ("second", 1), ("2nd", 1), ("number 2", 1), ("number two", 1),
+            ("third", 2), ("3rd", 2), ("number 3", 2), ("number three", 2)
+        ]
+        for (word, index) in positions where text.contains(word) {
+            return index < rooms.count ? rooms[index] : nil
+        }
+        if text.contains("last") || text.contains("bottom") { return rooms.last }
+
+        if text.contains("cheapest") || text.contains("cheaper") {
+            return rooms.min { ($0.price ?? .greatestFiniteMagnitude) < ($1.price ?? .greatestFiniteMagnitude) }
+        }
+        if text.contains("dearest") || text.contains("most expensive") {
+            return rooms.max { ($0.price ?? -1) < ($1.price ?? -1) }
+        }
+
+        // Longest title first, so a short one cannot swallow a longer match.
+        for room in rooms.sorted(by: { $0.title.count > $1.title.count }) {
+            let title = room.title.lowercased()
+            if !title.isEmpty, text.contains(title) { return room }
+        }
+        return nil
     }
 
     /// The one negotiation a sentence points at, by position or by name.

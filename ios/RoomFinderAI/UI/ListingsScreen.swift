@@ -334,7 +334,8 @@ struct ListingsScreen: View {
             Haptics.impact(.medium)
             state.selectedTab = .messages
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Let the AI negotiate. We argue the rent down for you.")
         .accessibilityAddTraits(.isButton)
     }
 
@@ -529,6 +530,13 @@ struct ListingsScreen: View {
 struct ListingCard: View {
     let listing: Listing
 
+    /// Everything the card shows, in one sentence.
+    var accessibilityLabel: String {
+        [listing.title, listing.displayLocation, listing.priceText, listing.summaryLine]
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
@@ -581,9 +589,14 @@ struct ListingCard: View {
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
         .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 4)
-        // One element per card. VoiceOver otherwise reads the badge, title,
-        // city, price and summary as five separate stops per room.
-        .accessibilityElement(children: .combine)
+        // One element per card, spelled out rather than combined.
+        //
+        // VoiceOver otherwise reads the badge, title, city, price and summary
+        // as five separate stops per room. .combine would do that too, but it
+        // walks the subtree and forces it to lay out, and on a card inside a
+        // lazy grid that never settles: it held the app at 100% CPU.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens this room")
     }
 }
@@ -742,6 +755,13 @@ private struct ListingSection: View {
 private struct ShelfCard: View {
     let listing: Listing
 
+    /// Everything the card shows, in one sentence.
+    var accessibilityLabel: String {
+        [listing.title, listing.displayLocation, listing.priceText]
+            .filter { !$0.isEmpty }
+            .joined(separator: ", ")
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             ZStack(alignment: .topTrailing) {
@@ -787,7 +807,8 @@ private struct ShelfCard: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(accessibilityLabel)
         .accessibilityHint("Opens this room")
     }
 }

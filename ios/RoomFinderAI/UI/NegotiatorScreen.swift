@@ -38,34 +38,33 @@ struct NegotiatorScreen: View {
     }
 
     private var transcript: some View {
-        ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(spacing: 14) {
-                    if !service.hasStarted { primer }
+        // No ScrollViewReader, deliberately.
+        //
+        // Following the newest line used to mean proxy.scrollTo(lastID) on
+        // every new message, inside withAnimation. Resolving an id inside a
+        // LazyVStack forces the stack to build and measure every row it has not
+        // built yet — which defeats the laziness and, once the conversation was
+        // a few rooms long, never settled: three cards sat at 0% CPU and six
+        // pinned the whole app at 100%. A bottom scroll anchor does the same job
+        // in the scroll view itself, with nothing to resolve.
+        ScrollView {
+            LazyVStack(spacing: 14) {
+                if !service.hasStarted { primer }
 
-                    ForEach(service.messages) { message in
-                        MessageRow(message: message)
-                            .id(message.id)
-                    }
+                ForEach(service.messages) { message in
+                    MessageRow(message: message)
+                        .id(message.id)
+                }
 
-                    if service.isThinking {
-                        TypingIndicator().id("typing")
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-            }
-            // Follows the newest line without the user chasing it.
-            .onChange(of: service.messages.count) { _, _ in
-                withAnimation(.easeOut(duration: 0.25)) {
-                    proxy.scrollTo(service.messages.last?.id, anchor: .bottom)
+                if service.isThinking {
+                    TypingIndicator().id("typing")
                 }
             }
-            .onChange(of: service.isThinking) { _, thinking in
-                guard thinking else { return }
-                withAnimation { proxy.scrollTo("typing", anchor: .bottom) }
-            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 14)
         }
+        .defaultScrollAnchor(.bottom)
+        .navigationDestination(for: Listing.self) { ListingDetailScreen(listing: $0) }
     }
 
     private var primer: some View {
@@ -229,41 +228,65 @@ private struct MessageRow: View {
                            startPoint: .topLeading, endPoint: .bottomTrailing),
             in: RoundedRectangle(cornerRadius: 18, style: .continuous)
         )
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(deal.price.map { "We secured it at $\($0) a month, \(deal.room)" }
+                            ?? "We secured \(deal.room)")
+    }
+
+    /// Sizes itself to its text rather than to the row, so the spacer beside
+    /// it decides which side it sits on.
+    private var bubble: some View {
+        VStack(alignment: isTenant ? .trailing : .leading, spacing: 3) {
+            Text(message.author.label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+
+            Text(message.text)
+                .foregroundStyle(isTenant ? .white : .primary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background {
+                    if isTenant {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.gradient)
+                    } else {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color(.secondarySystemBackground))
+                    }
+                }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(message.author.label): \(message.text)")
     }
 
     private var standard: some View {
-        VStack(alignment: isTenant ? .trailing : .leading, spacing: 6) {
-            VStack(alignment: isTenant ? .trailing : .leading, spacing: 3) {
-                Text(message.author.label)
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal, 6)
-
-                Text(message.text)
-                    .foregroundStyle(isTenant ? .white : .primary)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background {
-                        if isTenant {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.gradient)
-                        } else {
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .fill(Color(.secondarySystemBackground))
-                        }
-                    }
+        // Sided with a spacer, not with an alignment guide.
+        //
+        // This was a VStack whose alignment flipped per author, wrapping a
+        // child stretched to maxWidth: .infinity with its own alignment. Inside
+        // a LazyVStack those two resolve circularly — the child's alignment
+        // needs the width the stack offers, the stack's explicit alignment
+        // needs the child — and SwiftUI re-ran alignment forever at 100% CPU.
+        // A spacer pushing a self-sized bubble has nothing to converge on.
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 0) {
+                if isTenant { Spacer(minLength: 40) }
+                bubble
+                if !isTenant { Spacer(minLength: 40) }
             }
-            .frame(maxWidth: .infinity, alignment: isTenant ? .trailing : .leading)
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(message.author.label): \(message.text)")
 
             // Rooms the AI found for this turn, tappable straight through to
             // the same native detail screen the Listings tab uses.
             if !message.listings.isEmpty {
                 ForEach(message.listings) { listing in
-                    NavigationLink {
-                        ListingDetailScreen(listing: listing)
-                    } label: {
+                    // Value based, not a closure.
+                    //
+                    // NavigationLink { ListingDetailScreen(...) } builds its
+                    // destination up front for every link on screen. Four rooms
+                    // in a chat meant four full detail screens — gallery, map,
+                    // the lot — being laid out over and over behind a card
+                    // 84 points tall, which is what pinned the app at 100% CPU.
+                    NavigationLink(value: listing) {
                         ChatListingCard(listing: listing)
                     }
                     .buttonStyle(.plain)
@@ -314,7 +337,14 @@ private struct ChatListingCard: View {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(Color.primary.opacity(0.06), lineWidth: 1)
         )
-        .accessibilityElement(children: .combine)
+        // No accessibilityElement wrapper here, deliberately.
+        //
+        // Grouping this card as one element — .combine or .ignore, either one —
+        // makes SwiftUI resolve an accessibility container around a subtree
+        // inside a lazy scrolling stack, and that never settles: four rooms in
+        // a chat held the whole app at 100% CPU, on every tab, for as long as
+        // the messages existed. The labels below are attached to the individual
+        // views instead, so VoiceOver still reads the room properly.
         .accessibilityHint("Opens this room")
     }
 }

@@ -308,7 +308,10 @@ private struct ConversationRow: View {
             }
         }
         .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
+        // Spelled out rather than combined: .combine walks the subtree and
+        // forces it to lay out, which on a row in a lazy list never settles.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(conversation.displayName), \(conversation.source.label), \(conversation.preview)")
     }
 }
 
