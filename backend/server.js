@@ -11123,15 +11123,28 @@ function generateSupplyIndicators() {
 
 // API: Get Turnstile site key
 app.get('/api/turnstile-key', (req, res) => {
-    // Use test key if production key looks invalid
-    let siteKey = config.TURNSTILE_SITE_KEY || '1x00000000000000000000AA';
-    
-    // If the key starts with 0x4AAA, it might be invalid - use test key
-    if (siteKey.startsWith('0x4AAA')) {
-        console.log('Using Cloudflare test key for development');
-        siteKey = '1x00000000000000000000AA'; // Always passes test key
+    // The real key, whenever there is one.
+    //
+    // This used to throw it away: any key beginning 0x4AAA was treated as
+    // suspect and swapped for Cloudflare's test key, on the reasoning that it
+    // "might be invalid". Every genuine Turnstile site key begins 0x4AAA, so
+    // the condition matched the real key and only the real key. Password reset
+    // and ID verification therefore ran on 1x00000000000000000000AA, which is
+    // the key documented to pass every challenge without checking anything, and
+    // which draws a "For testing only. If seen, report to site owner" banner
+    // across the widget for every visitor.
+    //
+    // So there was no bot protection on either page, and both said so on screen.
+    const siteKey = config.TURNSTILE_SITE_KEY;
+
+    if (!siteKey) {
+        // Only when none is configured, which is a local checkout rather than
+        // production. Said out loud, because silently serving a key that
+        // accepts everything is how this went unnoticed.
+        console.warn('⚠️ TURNSTILE_SITE_KEY is not set - serving the Cloudflare test key, which accepts every challenge.');
+        return res.json({ siteKey: '1x00000000000000000000AA', testing: true });
     }
-    
+
     res.json({ siteKey });
 });
 
