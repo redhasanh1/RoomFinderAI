@@ -8,7 +8,8 @@ const { sendInjectedHtml, createHtmlInjectionMiddleware } = require('./html-inje
 const { verifyAppleIdentityToken } = require('./apple-auth');
 const { registerComplianceRoutes } = require('./account-compliance');
 const { registerMessagingRoutes } = require('./messaging');
-const { registerPushRoutes } = require('./push');
+const { registerPushRoutes, notifyNewMessage } = require('./push');
+const { startNegotiatorDaemon } = require('./negotiator-daemon');
 const { registerProfileRoutes } = require('./profiles');
 const { validatePropertyPhoto } = require('./photo-validation');
 const { callAI, getAIStatus } = require('./ai-providers');
@@ -774,6 +775,15 @@ registerComplianceRoutes(app, () => supabase);
 // rather than trusting the client to only ask for its own threads.
 registerMessagingRoutes(app, () => supabase);
 registerPushRoutes(app, () => supabase);
+
+// Keeps negotiating when the app is closed. Without this the AI only answers
+// landlords while someone has the app open and on screen, which is the one
+// thing the product is for.
+startNegotiatorDaemon({
+    getSupabase: () => supabase,
+    baseUrl: process.env.SELF_BASE_URL?.trim() || `http://127.0.0.1:${process.env.PORT || 3000}`,
+    notifyNewMessage
+});
 registerProfileRoutes(app, () => supabase);
 
 // Universal links: iOS fetches this file to decide whether tapping a

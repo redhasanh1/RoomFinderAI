@@ -41,6 +41,12 @@ final class AppState: ObservableObject {
     /// shell can open the sheet.
     @Published var wantsToPost = false
 
+    /// Legal help, opened from the overflow menu. Held here rather than in the
+    /// menu itself: the menu appears on screens the legal screen can lead back
+    /// to, so owning the sheet there made the view type recursive and the app
+    /// crashed on launch walking it.
+    @Published var showingLegal = false
+
     /// Which half of the People tab is showing. Subleases and roommates share
     /// a slot, so a link to either one has to say which it meant, and the plus
     /// in the tab bar has to know which form to open.

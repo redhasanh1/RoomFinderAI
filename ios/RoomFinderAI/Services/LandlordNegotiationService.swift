@@ -137,15 +137,12 @@ final class LandlordNegotiationService: ObservableObject {
 
     /// Re-reads the thread and answers if the landlord has said something.
     ///
-    /// Pull-driven rather than a live subscription: the website keeps a socket
-    /// open because its tab is already there, but an app that negotiates while
-    /// closed needs push, and this at least means opening the screen catches up.
+    /// Re-reads the thread. The answering happens on the server.
     func refresh() async {
-        guard let me = CurrentUser.shared.email, let conversationID else { return }
+        guard CurrentUser.shared.email != nil, conversationID != nil else { return }
 
-        // The campaign polls every open negotiation and the open screen polls
-        // this one. Without this, both would compose a reply to the same
-        // landlord message and send it twice.
+        // Two pollers watch the same thread — the campaign and whichever screen
+        // is open — and one read at a time is enough.
         guard !isReplying else { return }
         isReplying = true
         defer { isReplying = false }
@@ -153,27 +150,20 @@ final class LandlordNegotiationService: ObservableObject {
         await loadMessages()
         if case .closed = phase { return }
 
-        guard awaitingOurReply, let landlordLine = messages.last?.content else {
+        // Replying is the server's job now.
+        //
+        // This used to compose and send the answer itself, which meant the
+        // negotiation only moved while the app was open and on this screen:
+        // lock the phone and the landlord's message sat there until you came
+        // back. The server answers on a timer whether the app is running or
+        // not, so this only reads the thread and reports where it got to.
+        // Answering here as well would send two different replies to the same
+        // landlord message.
+        guard awaitingOurReply else {
             phase = .waitingForLandlord
             return
         }
-
         phase = .replying
-        do {
-            let reply = try await composeReply(to: landlordLine)
-            try await send(reply.message, as: me)
-            await loadMessages()
-
-            if reply.dealClosed {
-                phase = .closed(price: reply.agreedPrice, viewing: reply.viewingWhen)
-                Self.remember(price: reply.agreedPrice, viewing: reply.viewingWhen,
-                              for: conversationID)
-            } else {
-                phase = .waitingForLandlord
-            }
-        } catch {
-            phase = .failed(readable(error))
-        }
     }
 
     // MARK: - Pieces
@@ -194,7 +184,11 @@ final class LandlordNegotiationService: ObservableObject {
             // Marks the thread as one the AI runs, so the server stops pushing
             // the tenant about replies their negotiator answers by itself.
             // "Message host" leaves this off and keeps its notifications.
-            "managedByAI": true
+            "managedByAI": true,
+            // Sent once, kept with the conversation. The server answers
+            // landlords while this app is closed, and it cannot argue to a
+            // ceiling it was never told.
+            "goals": goals.negotiationPayload
         ])
 
         let (data, response) = try await URLSession.shared.data(for: request)

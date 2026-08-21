@@ -28,6 +28,18 @@ struct MoreMenu<Extra: View>: View {
 
             if !(Extra.self == EmptyView.self) { Divider() }
 
+            // Native, not a web page. The site's Legal Center is a desktop
+            // layout with its own header and its own scrolling, which inside an
+            // app reads as a bookmark rather than a screen — and is the kind of
+            // thing App Review rejects for.
+            Button {
+                Haptics.select()
+                state.showingLegal = true
+            } label: {
+                Label("Legal", systemImage: "checkmark.shield.fill")
+            }
+            .accessibilityIdentifier("more-Legal")
+
             ForEach(MoreDestination.all) { destination in
                 Button {
                     Haptics.select()

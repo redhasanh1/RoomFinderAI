@@ -124,7 +124,6 @@ struct MoreDestination: Identifiable, Hashable {
 
     static let all: [MoreDestination] = [
         .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
-        .init(title: "Legal Help",    symbol: "checkmark.shield.fill", path: "legal.html"),
         // No Pricing entry. The Pro plan is sold through Stripe on the website,
         // and App Store guideline 3.1.1 requires anything unlocking in-app
         // features to go through In-App Purchase. See AppConfig.blocksPurchasing,

@@ -37,6 +37,7 @@ struct RootTabView: View {
         }
         // Menu pages open over the app with their own Done button, so you come
         // back to the tab you were on rather than being left somewhere else.
+        .sheet(isPresented: $state.showingLegal) { LegalScreen() }
         .sheet(item: $state.presentedPage) { page in
             NavigationStack {
                 WebPageScreen(url: page.url, title: page.title)

@@ -139,7 +139,7 @@ function registerMessagingRoutes(app, getSupabase) {
         const supabase = getSupabase();
         if (!supabase) return res.status(503).json({ success: false, message: 'Database not connected' });
 
-        const { listingId, userEmail, managedByAI } = req.body || {};
+        const { listingId, userEmail, managedByAI, goals } = req.body || {};
         if (!listingId || !userEmail) {
             return res.status(400).json({ success: false, message: 'listingId and userEmail are required' });
         }
@@ -189,6 +189,22 @@ function registerMessagingRoutes(app, getSupabase) {
             })
             .select('id')
             .single();
+
+        // What the tenant is willing to agree to, kept with the conversation.
+        //
+        // The goals lived only on the phone, so the server had no idea what it
+        // was allowed to offer and the whole negotiation had to be driven by
+        // the app. Stored as a hidden message rather than a column because the
+        // schema is applied by hand and this needs to work today; it is
+        // filtered out of every message list below.
+        if (!error && created?.id && managedByAI && goals && typeof goals === 'object') {
+            await supabase.from('messages').insert({
+                conversation_id: created.id,
+                sender_email: me,
+                message_type: 'ai_goals',
+                content: JSON.stringify(goals)
+            });
+        }
 
         if (error) {
             console.error('Failed to create conversation:', error.message);
@@ -300,8 +316,9 @@ function registerMessagingRoutes(app, getSupabase) {
 
         const { data, error } = await supabase
             .from('messages')
-            .select('id, sender_email, content, created_at')
+            .select('id, sender_email, content, created_at, message_type')
             .eq('conversation_id', conversationId)
+            .or('message_type.is.null,message_type.neq.ai_goals')
             .order('created_at', { ascending: true })
             .limit(500);
 
