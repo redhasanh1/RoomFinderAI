@@ -12,9 +12,11 @@ struct RootTabView: View {
         TabView(selection: selection) {
             ForEach(AppTab.tabBar) { tab in
                 Group {
-                    // Four of the five are native. Profile stays on the site:
-                    // it is login, billing, verification and account deletion,
-                    // and duplicating that is how auth bugs are born.
+                    // All of them, now including Profile. It was the last one
+                    // left on the site, and being a web page is what made
+                    // sign-in unreachable to VoiceOver, invisible to the app's
+                    // own tests, and unable to tell the rest of the app who was
+                    // signed in without a bridge posting it back.
                     switch tab {
                     case .home:       ListingsScreen(showsHero: true, title: "Home")
                     case .people:     PeopleScreen()
@@ -22,7 +24,7 @@ struct RootTabView: View {
                     case .listings:   ListingsScreen()
                     case .messages:   MessagesScreen()
                     case .sublease:   SubleaseScreen()
-                    case .profile:    BrowserScreen(tab: tab, store: state.store(for: tab))
+                    case .profile:    ProfileScreen()
                     case .post:       postPage
                     }
                 }
