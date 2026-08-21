@@ -16,19 +16,24 @@
 // take long enough that the negotiation reads as broken, and the tick is a
 // cheap query against a short list of conversations — the model call only
 // happens when there is actually something to answer.
+const { sendToUser } = require('./push');
+
 const TICK_MS = Number(process.env.NEGOTIATOR_TICK_MS) || 6000;
 /// A negotiation that has gone this many rounds is not converging, and every
 /// round costs a model call. Someone can always take it over by hand.
 const MAX_AI_MESSAGES = Number(process.env.NEGOTIATOR_MAX_MESSAGES) || 14;
 /// Hidden row that carries what the tenant is willing to agree to.
 const GOALS_TYPE = 'ai_goals';
+/// Hidden row written once a landlord has agreed, so the good news is told
+/// exactly once however many times this loop runs afterwards.
+const DEAL_TYPE = 'ai_deal';
 
 /// Conversations answered in this process, so two ticks cannot both reply to
 /// the same landlord message while the first is still writing.
 const inFlight = new Set();
 
 function lastLandlordSpoke(messages, tenantEmail) {
-    const visible = messages.filter(m => m.message_type !== GOALS_TYPE);
+    const visible = messages.filter(m => m.message_type !== GOALS_TYPE && m.message_type !== DEAL_TYPE);
     if (!visible.length) return null;
     const last = visible[visible.length - 1];
     return (last.sender_email || '').toLowerCase() === tenantEmail ? null : last;
@@ -51,8 +56,13 @@ async function replyFor(supabase, baseUrl, conversation, notifyNewMessage) {
     const landlordTurn = lastLandlordSpoke(messages, tenant);
     if (!landlordTurn) return;
 
+    // Already agreed. Nothing left to argue about, and re-announcing it every
+    // few seconds would be its own bug.
+    if (messages.some(m => m.message_type === DEAL_TYPE)) return;
+
     const ours = messages.filter(m =>
-        (m.sender_email || '').toLowerCase() === tenant && m.message_type !== GOALS_TYPE);
+        (m.sender_email || '').toLowerCase() === tenant
+        && m.message_type !== GOALS_TYPE && m.message_type !== DEAL_TYPE);
     if (ours.length >= MAX_AI_MESSAGES) return;
 
     // What the tenant told the app they wanted, stored when the negotiation
@@ -75,7 +85,7 @@ async function replyFor(supabase, baseUrl, conversation, notifyNewMessage) {
     }
 
     const history = messages
-        .filter(m => m.message_type !== GOALS_TYPE)
+        .filter(m => m.message_type !== GOALS_TYPE && m.message_type !== DEAL_TYPE)
         .map(m => ({
             sender: (m.sender_email || '').toLowerCase() === tenant ? 'ai' : 'landlord',
             content: m.content || ''
@@ -115,6 +125,53 @@ async function replyFor(supabase, baseUrl, conversation, notifyNewMessage) {
     console.log(`🤝 negotiator answered ${conversation.id} on behalf of ${tenant}`);
     // The landlord is a person waiting on an answer, so they still get told.
     try { await notifyNewMessage(supabase, conversation.id, tenant); } catch (_) { /* push is optional */ }
+
+    // The whole point of walking away. Detecting the agreement used to happen
+    // on the phone, in the same call that wrote the reply — so moving the
+    // arguing to the server quietly took the good news with it, and a landlord
+    // could agree while the tenant was told nothing at all.
+    if (body?.dealClosed) {
+        await announceDeal(supabase, conversation, tenant, listing, body);
+    }
+}
+
+async function announceDeal(supabase, conversation, tenant, listing, outcome) {
+    const price = Number(outcome.agreedPrice) || null;
+    const viewing = outcome.viewingWhen || null;
+    const saved = Number(outcome.savedVsAsking) || 0;
+
+    // Written first, so a failed push cannot cause it to be announced twice.
+    await supabase.from('messages').insert({
+        conversation_id: conversation.id,
+        sender_email: tenant,
+        message_type: DEAL_TYPE,
+        content: JSON.stringify({
+            room: listing?.title || 'the room',
+            price,
+            viewing,
+            savedPerMonth: saved || null,
+            agreedAt: new Date().toISOString()
+        })
+    });
+
+    const room = listing?.title || 'the room';
+    const title = price ? `Agreed at $${price}/mo` : 'The landlord agreed';
+    const body = [
+        room,
+        saved ? `$${saved} a month under asking` : null,
+        viewing ? `Viewing ${viewing}` : null
+    ].filter(Boolean).join(' · ');
+
+    console.log(`🎉 negotiator closed ${conversation.id}: ${title} — ${body}`);
+    try {
+        await sendToUser(supabase, tenant, {
+            title,
+            body,
+            url: `ai-negotiator.html?conversation=${conversation.id}`
+        });
+    } catch (e) {
+        console.warn('🎉 could not push the agreement:', e.message);
+    }
 }
 
 async function tick(supabase, baseUrl, notifyNewMessage) {
@@ -159,4 +216,4 @@ function startNegotiatorDaemon({ getSupabase, baseUrl, notifyNewMessage }) {
     }, TICK_MS);
 }
 
-module.exports = { startNegotiatorDaemon, GOALS_TYPE };
+module.exports = { startNegotiatorDaemon, GOALS_TYPE, DEAL_TYPE };

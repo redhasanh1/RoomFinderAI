@@ -318,7 +318,9 @@ function registerMessagingRoutes(app, getSupabase) {
             .from('messages')
             .select('id, sender_email, content, created_at, message_type')
             .eq('conversation_id', conversationId)
-            .or('message_type.is.null,message_type.neq.ai_goals')
+            // NULL is what an ordinary message carries, and `not in (...)` drops NULLs
+            // rather than keeping them, which would hide every real message.
+            .or('message_type.is.null,and(message_type.neq.ai_goals,message_type.neq.ai_deal)')
             .order('created_at', { ascending: true })
             .limit(500);
 
