@@ -158,9 +158,34 @@ async function testBrevoApiKey() {
 // Test API key after a short delay to let server start
 setTimeout(testBrevoApiKey, 2000);
 
-async function verifyTurnstileToken(token) {
+/**
+ * True when the request came from inside the iOS app's web view.
+ *
+ * The app appends its own marker to the stock user agent (see
+ * WebViewStore's applicationNameForUserAgent), so this identifies app traffic
+ * without the app pretending to be Safari.
+ */
+function isAppRequest(req) {
+    return /RoomFinderAI\/[\d.]+ iOS/.test(req?.headers?.['user-agent'] || '');
+}
+
+/**
+ * @param {string} token
+ * @param {object} [req]  when the request came from the iOS app the check is
+ *   skipped, because it cannot be completed there.
+ *
+ * Cloudflare Turnstile runs in an iframe that needs third-party storage, and
+ * WKWebView refuses it. The widget therefore never solves inside the app: the
+ * Send Reset Code button stayed disabled forever and people could not reset
+ * their password at all. Rate limiting still applies to these routes, and the
+ * reset itself needs a six digit code delivered to the address being reset, so
+ * the worst a forged app user agent buys is a rate limited email to somebody
+ * who owns that inbox.
+ */
+async function verifyTurnstileToken(token, req) {
     const secret = process.env.TURNSTILE_SECRET_KEY?.trim();
     if (!secret) return { ok: true, skipped: true };
+    if (req && isAppRequest(req)) return { ok: true, skipped: 'ios-app' };
     if (!token) return { ok: false, error: 'Bot verification required' };
     try {
         const params = new URLSearchParams();
@@ -4272,7 +4297,7 @@ app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
         console.log('📧 Received password reset request for:', req.body.email);
         const { email, turnstileToken } = req.body;
 
-        const turnstile = await verifyTurnstileToken(turnstileToken);
+        const turnstile = await verifyTurnstileToken(turnstileToken, req);
         if (!turnstile.ok) {
             return res.status(400).json({ error: turnstile.error || 'Bot verification failed' });
         }
