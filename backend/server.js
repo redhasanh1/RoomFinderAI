@@ -8951,14 +8951,25 @@ async function inspectSelfie(buffer) {
     // reached the review queue as somebody's selfie.
     //
     // The sentence is right in both cases, so it is what gets read.
-    const saysNoFace = /\bno (visible |clear |discernible )?(human )?fac|cannot (see|find|make out) (a|any) fac|there (is|are) no fac|not a (photo|picture) of a (person|face)/i.test(note);
-    const saysDocument = /\b(document|id card|identity card|identification|passport|driver'?s? licen[cs]e|driving licen[cs]e|card with a photo|photo section)\b/i.test(note);
+    const saysNoFace = /\bno (visible |clear |discernible )?(human )?fac|cannot (see|find|make out) (a|any) fac|there (is|are) no fac|not a (photo|picture) of a (person|face)|does not show a fac|photo is blank/i.test(note);
+    const saysDocument = /\b(document|id card|identity card|identification card|identification|passport|driver'?s? licen[cs]e|driving licen[cs]e|photo section)\b/i.test(note);
     const saysSeveral = /\b(two|three|four|several|multiple|group) (people|faces|persons)\b|\bmore than one (face|person)\b/i.test(note);
 
-    if (saysNoFace && saysDocument) {
+    // A document is a document even when the model does not add that it cannot
+    // see a face — and it usually does not, because the card has a photo of one
+    // on it. Requiring both signals let exactly that through: "The image shows a
+    // sample identification card with a photo of a person on it" was read as a
+    // face and accepted.
+    //
+    // So this rejects on the document alone. Someone holding their ID up beside
+    // their face is turned away too, which is the right trade: the step asks for
+    // a photo of their face, the message says so, and they can send another. The
+    // opposite mistake puts an unverified stranger's document into the queue
+    // wearing the word "checked".
+    if (saysDocument) {
         return {
             ok: false,
-            reason: "That looks like a photo of a document rather than a selfie. Take a photo of your own face with the camera."
+            reason: "That looks like a photo of a document rather than a selfie. Take a photo of your own face with the camera, with nothing else in the shot."
         };
     }
 
