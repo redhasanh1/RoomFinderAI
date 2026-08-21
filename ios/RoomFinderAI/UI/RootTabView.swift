@@ -6,6 +6,8 @@ struct RootTabView: View {
     /// Where Cancel goes back to.
     @State private var returnTab: AppTab = .home
 
+    @ObservedObject private var push = PushService.shared
+
     var body: some View {
         TabView(selection: selection) {
             ForEach(AppTab.tabBar) { tab in
@@ -38,6 +40,19 @@ struct RootTabView: View {
         // Menu pages open over the app with their own Done button, so you come
         // back to the tab you were on rather than being left somewhere else.
         .sheet(isPresented: $state.showingLegal) { LegalScreen() }
+        .task {
+            // Asked once, shortly after the app is up.
+            //
+            // The prompt only appeared if somebody happened to tap "Yes, notify
+            // me" inside Messages, so most people never saw it — and the one
+            // thing this app exists to tell you, that a landlord agreed, could
+            // not reach them. Delayed a moment so the first screen has drawn:
+            // a permission sheet over a blank app is what gets refused.
+            guard push.authorizationStatus == .notDetermined else { return }
+            try? await Task.sleep(for: .seconds(2))
+            guard push.authorizationStatus == .notDetermined else { return }
+            push.requestAuthorization()
+        }
         .sheet(item: $state.presentedPage) { page in
             NavigationStack {
                 WebPageScreen(url: page.url, title: page.title)

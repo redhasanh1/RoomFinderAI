@@ -225,6 +225,43 @@ function registerMessagingRoutes(app, getSupabase) {
      * Most seeded profiles have no account behind them. That is answered
      * plainly rather than by opening a thread nobody will ever read.
      */
+    /**
+     * Whether a negotiation has been agreed, and on what.
+     *
+     * The app used to work this out itself, because the same call that wrote
+     * each reply also said whether the landlord had agreed. Moving the arguing
+     * to the server took that with it: the deal was struck, the row was
+     * written, and the app had no way to know. This is how it finds out.
+     */
+    app.get('/api/negotiate/outcome', async (req, res) => {
+        const supabase = getSupabase();
+        if (!supabase) return res.status(503).json({ success: false, message: 'Database not connected' });
+
+        const conversationId = req.query.conversationId;
+        if (!conversationId) {
+            return res.status(400).json({ success: false, message: 'conversationId is required' });
+        }
+
+        const { data, error } = await supabase
+            .from('messages')
+            .select('content, created_at')
+            .eq('conversation_id', conversationId)
+            .eq('message_type', 'ai_deal')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        if (error) {
+            console.error('Outcome lookup failed:', error.message);
+            return res.status(500).json({ success: false, message: 'Could not read that negotiation' });
+        }
+        if (!data) return res.json({ success: true, data: null });
+
+        let outcome = null;
+        try { outcome = JSON.parse(data.content); } catch (_) { /* not json */ }
+        res.json({ success: true, data: outcome });
+    });
+
     app.post('/api/roommate-conversations', async (req, res) => {
         const supabase = getSupabase();
         if (!supabase) return res.status(503).json({ success: false, message: 'Database not connected' });

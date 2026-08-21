@@ -139,7 +139,7 @@ final class LandlordNegotiationService: ObservableObject {
     ///
     /// Re-reads the thread. The answering happens on the server.
     func refresh() async {
-        guard CurrentUser.shared.email != nil, conversationID != nil else { return }
+        guard CurrentUser.shared.email != nil, let conversationID else { return }
 
         // Two pollers watch the same thread — the campaign and whichever screen
         // is open — and one read at a time is enough.
@@ -149,6 +149,18 @@ final class LandlordNegotiationService: ObservableObject {
 
         await loadMessages()
         if case .closed = phase { return }
+
+        // Whether it is already won is the server's answer too.
+        //
+        // The reply call used to say so, because the same request that wrote
+        // each message also reported the agreement. Now that the arguing runs
+        // on the server, this is how the phone finds out — and without it a
+        // landlord could agree while the app sat showing "waiting".
+        if let outcome = await fetchOutcome() {
+            phase = .closed(price: outcome.price, viewing: outcome.viewing)
+            Self.remember(price: outcome.price, viewing: outcome.viewing, for: conversationID)
+            return
+        }
 
         // Replying is the server's job now.
         //
@@ -164,6 +176,33 @@ final class LandlordNegotiationService: ObservableObject {
             return
         }
         phase = .replying
+    }
+
+    /// What the server recorded when the landlord agreed, or nil while the
+    /// negotiation is still running.
+    private func fetchOutcome() async -> (price: Int?, viewing: String?)? {
+        guard let conversationID else { return nil }
+
+        var components = URLComponents(url: AppConfig.url("api/negotiate/outcome"),
+                                       resolvingAgainstBaseURL: false)!
+        components.queryItems = [.init(name: "conversationId", value: conversationID)]
+
+        struct Envelope: Decodable {
+            struct Deal: Decodable {
+                let price: Int?
+                let viewing: String?
+            }
+            let data: Deal?
+        }
+
+        var request = URLRequest(url: components.url!)
+        request.timeoutInterval = 20
+        guard let (data, response) = try? await URLSession.shared.data(for: request),
+              let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode),
+              let decoded = try? JSONDecoder().decode(Envelope.self, from: data),
+              let deal = decoded.data else { return nil }
+
+        return (deal.price, deal.viewing)
     }
 
     // MARK: - Pieces
