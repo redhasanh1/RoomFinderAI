@@ -109,6 +109,8 @@ struct ListingDetailScreen: View {
 
     private let gallery = ListingGalleryService()
 
+    @State private var showingVerifiedNote = false
+
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
@@ -139,6 +141,11 @@ struct ListingDetailScreen: View {
         // old edge-to-edge crop. Now that it is fitted rather than filled, the
         // top of the room was simply hidden behind the menu. Nothing on this
         // screen should sit under the bar.
+        .alert("Verified landlord", isPresented: $showingVerifiedNote) {
+            Button("Got it", role: .cancel) { }
+        } message: {
+            Text("We checked this person's government ID against a selfie before they could post. It does not mean we have inspected the room or vouch for the price.")
+        }
         .navigationTitle(listing.title)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -271,9 +278,19 @@ struct ListingDetailScreen: View {
                     .foregroundStyle(Theme.brand)
 
                 if listing.userVerified == true {
-                    Label("Verified", systemImage: "checkmark.seal.fill")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.green)
+                    // Tappable, because a badge nobody can question is just
+                    // decoration: people want to know what was actually checked
+                    // before they message a stranger about money.
+                    Button {
+                        Haptics.impact(.light)
+                        showingVerifiedNote = true
+                    } label: {
+                        Label("Verified", systemImage: "checkmark.seal.fill")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.green)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Verified landlord. Tap to find out what that means.")
                 }
             }
 

@@ -283,6 +283,26 @@
                 return;
             }
 
+
+        /** True when this account has passed ID verification. */
+        async function isOwnerVerified(supabase, email) {
+            if (!email) return false;
+            try {
+                const { data } = await supabase
+                    .from('user_verifications')
+                    .select('status')
+                    .eq('user_email', email)
+                    .maybeSingle();
+                return data?.status === 'verified';
+            } catch (e) {
+                return false;
+            }
+        }
+
+        function showVerifiedNote() {
+            alert("Verified landlord\n\nWe checked this person's government ID against a selfie before they could post. It does not mean we have inspected the room or vouch for the price.");
+        }
+
             try {
                 const { data: listing, error } = await supabase
                     .from('listings')
@@ -296,6 +316,11 @@
                     return;
                 }
 
+                // Whether the person behind this room had their ID checked.
+                // The listings table does not carry it, so it is looked up by
+                // owner — a badge on the card that disappears on the page the
+                // decision is actually made on is worse than no badge at all.
+                listing.user_verified = await isOwnerVerified(supabase, listing.user_email);
                 renderListing(listing);
             } catch (error) {
                 console.error('Error:', error);
@@ -389,6 +414,13 @@
                         <div class="glass-card p-6 mb-6">
                             <div class="text-3xl font-bold text-green-600 mb-2">$${listing.price.toLocaleString()}<span class="text-lg text-gray-500 font-normal">/mo</span></div>
                             <h1 class="text-xl font-bold text-gray-800 mb-3">${listing.title}</h1>
+                            ${listing.user_verified ? `
+                            <button type="button" onclick="showVerifiedNote()"
+                                    class="inline-flex items-center gap-1.5 mb-3 px-3 py-1 rounded-full bg-green-50 border border-green-300 text-green-700 text-sm font-semibold hover:bg-green-100 transition"
+                                    title="What does verified mean?">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                Verified landlord
+                            </button>` : ''}
 
                             <!-- Location -->
                             <div class="flex items-start gap-2 text-gray-600 mb-4">
