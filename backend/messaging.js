@@ -96,10 +96,15 @@ async function deriveOutcome(supabase, conversationId) {
         }
     }
 
+    // Read out of lowercased text, so the day comes back as "saturday". It is
+    // shown to a person on a card announcing their new flat.
+    const dayName = day[0].charAt(0).toUpperCase() + day[0].slice(1).toLowerCase();
+    const when = time[0].replace(/\s+/g, '').toLowerCase();
+
     return {
         room,
         price,
-        viewing: `${day[0]} at ${time[0]}`,
+        viewing: `${dayName} at ${when}`,
         savedPerMonth: asking && price < asking ? asking - price : null
     };
 }
