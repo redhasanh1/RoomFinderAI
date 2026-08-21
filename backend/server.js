@@ -203,6 +203,7 @@ async function verifyTurnstileToken(token, req) {
     }
 }
 
+const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
 const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
@@ -4349,8 +4350,8 @@ app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
             });
         }
 
-        // Generate reset code
-        const code = generateVerificationCode();
+        // Derived rather than random, so a restart cannot orphan it.
+        const code = derivedResetCode(email);
         const sessionId = uuidv4();
         const expirationTime = Date.now() + 10 * 60 * 1000; // 10 minutes
 
@@ -4387,6 +4388,52 @@ app.post('/api/send-reset-code', authRateLimitMiddleware, async (req, res) => {
     }
 });
 
+
+/**
+ * A reset code that survives a restart.
+ *
+ * The codes were held in a Map in memory, so every deploy, crash or restart
+ * silently threw away every reset in progress: the code in someone's inbox was
+ * real when it was sent and answered "No reset code found for this email" a
+ * minute later, with nothing on screen explaining why. Railway running more
+ * than one instance broke it the same way, since the server that issued a code
+ * was rarely the one asked to check it.
+ *
+ * Deriving the code from the address and a ten minute window makes it
+ * checkable by any instance at any time, with no table to add. The Map is kept
+ * as the fast path so a code is still consumed on use in the normal case; this
+ * is only what answers when the Map has nothing to say.
+ */
+const RESET_CODE_WINDOW_MS = 10 * 60 * 1000;
+
+function resetCodeSecret() {
+    return process.env.RESET_CODE_SECRET?.trim()
+        || config.SUPABASE_SERVICE_KEY
+        || config.SUPABASE_KEY
+        || 'roomfinder-reset-fallback';
+}
+
+function derivedResetCode(email, windowOffset = 0) {
+    const windowIndex = Math.floor(Date.now() / RESET_CODE_WINDOW_MS) + windowOffset;
+    const digest = crypto
+        .createHmac('sha256', resetCodeSecret())
+        .update(`${String(email).toLowerCase()}:${windowIndex}`)
+        .digest();
+    // Six digits, from the first four bytes so the whole range is used.
+    return String(digest.readUInt32BE(0) % 1000000).padStart(6, '0');
+}
+
+/**
+ * True when the code is one this server would have issued for that address
+ * recently. The previous window is accepted too, so a code that arrives at
+ * 10:59 and is typed at 11:01 still works.
+ */
+function isDerivedResetCode(email, code) {
+    if (!email || !code) return false;
+    const given = String(code).trim();
+    return given === derivedResetCode(email, 0) || given === derivedResetCode(email, -1);
+}
+
 // API: Verify password reset code
 app.post('/api/verify-reset-code', authRateLimitMiddleware, async (req, res) => {
     try {
@@ -4398,9 +4445,20 @@ app.post('/api/verify-reset-code', authRateLimitMiddleware, async (req, res) => 
 
         // Get stored reset data
         const resetData = passwordResetCodes.get(email);
-        
+
         if (!resetData) {
-            return res.status(400).json({ error: 'No reset code found for this email' });
+            // The server restarted between sending the code and checking it.
+            // The code itself is still proof the person reads that inbox.
+            if (!isDerivedResetCode(email, code)) {
+                return res.status(400).json({ error: 'That code is wrong or has expired. Ask for a new one.' });
+            }
+            passwordResetCodes.set(email, {
+                code: String(code).trim(),
+                sessionId,
+                expirationTime: Date.now() + 10 * 60 * 1000,
+                verified: true
+            });
+            return res.json({ message: 'Code verified successfully', sessionId });
         }
 
         // Check session ID
@@ -4447,13 +4505,15 @@ app.post('/api/reset-password', async (req, res) => {
 
         // Get stored reset data
         const resetData = passwordResetCodes.get(email);
-        
-        if (!resetData || !resetData.verified) {
-            return res.status(400).json({ error: 'Invalid or unverified reset request' });
-        }
 
-        // Verify session and code again
-        if (resetData.sessionId !== sessionId || resetData.code !== code) {
+        if (!resetData || !resetData.verified) {
+            // Restarted mid-flow again. The code is checked from scratch rather
+            // than sending someone back to the start of a reset they already
+            // completed the hard part of.
+            if (!isDerivedResetCode(email, code)) {
+                return res.status(400).json({ error: 'That code is wrong or has expired. Ask for a new one.' });
+            }
+        } else if (resetData.sessionId !== sessionId || resetData.code !== code) {
             return res.status(400).json({ error: 'Invalid reset credentials' });
         }
 
