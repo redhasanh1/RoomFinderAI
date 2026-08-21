@@ -40,6 +40,8 @@ struct RootTabView: View {
         // Menu pages open over the app with their own Done button, so you come
         // back to the tab you were on rather than being left somewhere else.
         .sheet(isPresented: $state.showingLegal) { LegalScreen() }
+        .sheet(isPresented: $state.showingSaved) { SavedScreen() }
+        .sheet(isPresented: $state.showingSupport) { SupportScreen() }
         .task {
             // Asked once, shortly after the app is up.
             //

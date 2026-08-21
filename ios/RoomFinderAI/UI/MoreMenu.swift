@@ -34,11 +34,27 @@ struct MoreMenu<Extra: View>: View {
             // thing App Review rejects for.
             Button {
                 Haptics.select()
+                state.showingSaved = true
+            } label: {
+                Label("Saved", systemImage: "heart.fill")
+            }
+            .accessibilityIdentifier("more-Saved")
+
+            Button {
+                Haptics.select()
                 state.showingLegal = true
             } label: {
                 Label("Legal", systemImage: "checkmark.shield.fill")
             }
             .accessibilityIdentifier("more-Legal")
+
+            Button {
+                Haptics.select()
+                state.showingSupport = true
+            } label: {
+                Label("Support", systemImage: "lifepreserver.fill")
+            }
+            .accessibilityIdentifier("more-Support")
 
             ForEach(MoreDestination.all) { destination in
                 Button {

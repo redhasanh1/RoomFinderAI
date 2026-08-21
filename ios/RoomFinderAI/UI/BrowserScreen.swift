@@ -83,7 +83,12 @@ struct BrowserScreen: View {
         }
 
         ToolbarItem(placement: .topBarTrailing) {
-            Menu {
+            // MoreMenu, not a second copy of it. This screen used to build its
+            // own list of the same items, so everything added to the shared
+            // menu was missing here: on the Profile tab, the one tab this
+            // screen still backs, Legal never appeared at all. Only the three
+            // items that need a live web view are its own.
+            MoreMenu {
                 Button {
                     guard let url = store.currentURL, let presenter = store.presenter else { return }
                     ShareService.present(url: url, title: store.pageTitle, from: presenter)
@@ -98,41 +103,13 @@ struct BrowserScreen: View {
                     Label("Refresh", systemImage: "arrow.clockwise")
                 }
 
-                Divider()
-
-                ForEach(MoreDestination.all) { destination in
-                    Button {
-                        Haptics.select()
-                        state.present(destination)
-                    } label: {
-                        Label(destination.title, systemImage: destination.symbol)
-                    }
-                }
-
-                // Only offered while iOS would still show the system prompt.
-                // Once it has been answered this button could do nothing at
-                // all, which is worse than not being there.
-                if push.authorizationStatus == .notDetermined {
-                    Divider()
-                    Button {
-                        push.requestAuthorization()
-                    } label: {
-                        Label("Turn On Notifications", systemImage: "bell.badge")
-                    }
-                }
-
-                Divider()
-
                 Button {
                     guard let url = store.currentURL else { return }
                     UIApplication.shared.open(url)
                 } label: {
                     Label("Open in Safari", systemImage: "safari")
                 }
-            } label: {
-                MoreMenuLabel()
             }
-            .accessibilityLabel("Menu")
         }
     }
 }

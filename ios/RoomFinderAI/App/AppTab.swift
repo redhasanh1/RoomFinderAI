@@ -122,13 +122,19 @@ struct MoreDestination: Identifiable, Hashable {
     let symbol: String
     let path: String
 
+    /// Only the two Apple expects to be reachable as documents.
+    ///
+    /// Saved and Support used to be here as web pages and are now native
+    /// screens — see AppState.showingSaved and .showingSupport. The policy and
+    /// the terms stay as pages on purpose: they are legal text that has to
+    /// match the website's word for word, and re-typing them into Swift means
+    /// they can drift apart. Apple asks for a URL for both.
+    ///
+    /// No Pricing entry. The Pro plan is sold through Stripe on the website,
+    /// and App Store guideline 3.1.1 requires anything unlocking in-app
+    /// features to go through In-App Purchase. See AppConfig.blocksPurchasing,
+    /// which closes the route rather than just hiding this row.
     static let all: [MoreDestination] = [
-        .init(title: "Saved",         symbol: "heart.fill",           path: "favorites.html"),
-        // No Pricing entry. The Pro plan is sold through Stripe on the website,
-        // and App Store guideline 3.1.1 requires anything unlocking in-app
-        // features to go through In-App Purchase. See AppConfig.blocksPurchasing,
-        // which closes the route rather than just hiding this row.
-        .init(title: "Support",       symbol: "lifepreserver.fill",   path: "support.html"),
         .init(title: "Privacy Policy", symbol: "hand.raised.fill",    path: "privacy-policy.html"),
         .init(title: "Terms of Service", symbol: "doc.text.fill",     path: "terms-of-service.html")
     ]

@@ -47,6 +47,16 @@ final class AppState: ObservableObject {
     /// crashed on launch walking it.
     @Published var showingLegal = false
 
+    /// Saved rooms and Support, held here for the same reason Legal is: both
+    /// are reachable from the menu, and that menu is drawn on screens they can
+    /// lead back to.
+    ///
+    /// Both were site pages until now. A page of ours inside our own app is the
+    /// thing App Review calls out, and it also loses everything native: pull to
+    /// refresh, swipe actions, VoiceOver, and an error you can actually read.
+    @Published var showingSaved = false
+    @Published var showingSupport = false
+
     /// Which half of the People tab is showing. Subleases and roommates share
     /// a slot, so a link to either one has to say which it meant, and the plus
     /// in the tab bar has to know which form to open.
