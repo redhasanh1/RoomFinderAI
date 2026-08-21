@@ -23,6 +23,9 @@ class AIChatHandler {
         
         // Track active conversation contexts
         this.activeConversations = new Map();
+        /// Ids already drawn in this page, so a message can be recognised
+        /// rather than guessed at from who sent it.
+        this.renderedMessageIds = new Set();
         this.pendingUserResponse = null;
 
         // Requirements collection state - must collect ALL before searching
@@ -169,9 +172,14 @@ class AIChatHandler {
                     try {
                         const newMessage = payload.new;
 
-                        // Skip messages sent by the current user
-                        if (newMessage.sender_email === this.currentUser.email) {
-                            console.log('📭 Own message, skipping');
+                        // Not skipped for being "ours" any more.
+                        //
+                        // The AI negotiator sends under the tenant's own
+                        // address, so dropping every message from the current
+                        // user threw away the negotiator's replies — the whole
+                        // reason the page had to be reloaded to see them.
+                        // What matters is whether it is already on screen.
+                        if (newMessage.id && this.renderedMessageIds.has(newMessage.id)) {
                             return;
                         }
 
@@ -208,14 +216,60 @@ class AIChatHandler {
                 .subscribe();
 
             console.log('✅ messages subscription established');
+            this.startConversationPolling();
 
         } catch (error) {
             console.error('❌ Failed to setup real-time subscriptions:', error);
         }
     }
 
+    /**
+     * Reads the open thread on a timer as well as over the socket.
+     *
+     * Realtime was the only thing bringing new messages to this page, so when
+     * it did not fire the negotiation simply looked frozen and the only way to
+     * see what the landlord said was to reload. A chat that has to be refreshed
+     * is not a chat.
+     */
+    startConversationPolling() {
+        if (this._conversationPoll) clearInterval(this._conversationPoll);
+
+        this._conversationPoll = setInterval(async () => {
+            const conversationId = this.activeConversationId;
+            if (!conversationId || !this.supabase) return;
+            if (typeof document !== 'undefined' && document.hidden) return;
+            if (this._pollInFlight) return;
+
+            this._pollInFlight = true;
+            try {
+                const { data, error } = await this.supabase
+                    .from('messages')
+                    .select('id, conversation_id, sender_email, content, created_at')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: false })
+                    .limit(8);
+
+                if (error || !data) return;
+
+                // Oldest first, so a burst arrives in the order it was written.
+                for (const message of data.slice().reverse()) {
+                    if (this.renderedMessageIds.has(message.id)) continue;
+                    this.displayIncomingMessage(message, { id: conversationId });
+                }
+            } catch (e) {
+                // The next tick is five seconds away; nothing worth saying.
+            } finally {
+                this._pollInFlight = false;
+            }
+        }, 5000);
+    }
+
     // Display incoming message from messages table
     displayIncomingMessage(message, conversation) {
+        if (message?.id) {
+            if (this.renderedMessageIds.has(message.id)) return;
+            this.renderedMessageIds.add(message.id);
+        }
         try {
             // Who actually sent this?
             //
@@ -389,6 +443,9 @@ class AIChatHandler {
 
         // Store user message
         this.appendMessage('You', message, 'right');
+        // Drawn optimistically. The insert comes back on the socket and on the
+        // poll, and both need to know it is already here.
+        if (this._lastSentContent !== undefined) this._lastSentContent = message;
         this.conversationHistory.push({ role: 'user', content: message });
         this.saveConversationHistory();
 

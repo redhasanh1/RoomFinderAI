@@ -811,7 +811,7 @@ class ChatSystem {
     startMessagePolling() {
         this.stopMessagePolling();
 
-        const every = this.config?.pollingInterval || 3000;
+        const every = this.options?.pollingInterval || 3000;
         this.messagePollTimer = setInterval(async () => {
             if (!this.currentConversationId) return;
             // Nothing to update while nobody is looking, and this is what stops
