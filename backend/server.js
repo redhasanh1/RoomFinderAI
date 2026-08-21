@@ -7299,22 +7299,33 @@ Write your next message.`;
         // number is plainly theirs and not ours: quoting their price back, or
         // rejecting it. Anything the exceptions do not cover fails safe into
         // the guard, which rewrites the line rather than sending it.
+        // Per sentence, because one message routinely does both: "$1850 is
+        // over what I can manage, I can do $1750."
+        //
+        // Hoisted out of the ceiling check so the self-bidding guard below can
+        // use the same test. It could not, and so counted a price the landlord
+        // had named — their own asking price, quoted back when they asked what
+        // the listing was at — as us raising our offer. Every reply that
+        // answered that question was thrown away and replaced with the canned
+        // "I'd still be looking at $X" line, so a landlord who asked twice got
+        // the identical sentence twice, and one who kept asking got it forever.
+        const notOurs = /\b(you (said|offered|mentioned|quoted|asked for|are asking)|your (asking|listed|price|offer)|the listing (says|is|has|was)|(original|originally) (listed|asking|at)|asking price|list price|listed (at|for)|advertised at)\b/i;
+        const rejecting = /\b(can'?t|cannot|can not|couldn'?t|unable to|won'?t|no way i can)\b|\b(is|are|that'?s|thats) (over|above|beyond|too (much|high)|more than|outside|out of)\b|\b(over|above|beyond|more than|outside|out of) (what|my|our) \b/i;
+
+        /// Figures this message is actually putting on the table, ignoring the
+        /// ones it is only quoting back or turning down.
+        const figuresWeAreOffering = (text) => String(text || '')
+            .split(/(?<=[.!?])\s+/)
+            .flatMap(sentence => {
+                if (notOurs.test(sentence) || rejecting.test(sentence)) return [];
+                return (sentence.match(/\$\s?\d{3,5}(?:\.\d{2})?/g) || [])
+                    .map(s => Number(s.replace(/[^\d.]/g, '')))
+                    .filter(n => n >= 300);
+            });
+
         let textOffer = null;
         if (hasCeiling) {
-            // Per sentence, because one message routinely does both: "$1850 is
-            // over what I can manage, I can do $1750."
-            const notOurs = /\b(you (said|offered|mentioned|quoted|asked for|are asking)|your (asking|listed|price|offer)|the listing (says|is|has)|asking price|list price|advertised at)\b/i;
-            const rejecting = /\b(can'?t|cannot|can not|couldn'?t|unable to|won'?t|no way i can)\b|\b(is|are|that'?s|thats) (over|above|beyond|too (much|high)|more than|outside|out of)\b|\b(over|above|beyond|more than|outside|out of) (what|my|our) \b/i;
-
-            const offered = String(out.message || '')
-                .split(/(?<=[.!?])\s+/)
-                .flatMap(sentence => {
-                    if (notOurs.test(sentence) || rejecting.test(sentence)) return [];
-                    return (sentence.match(/\$\s?\d{3,5}(?:\.\d{2})?/g) || [])
-                        .map(s => Number(s.replace(/[^\d.]/g, '')))
-                        .filter(n => n >= 300 && n > ceiling);
-                });
-
+            const offered = figuresWeAreOffering(out.message).filter(n => n > ceiling);
             if (offered.length) textOffer = Math.max.apply(null, offered);
         }
 
@@ -7347,15 +7358,37 @@ Write your next message.`;
             .filter(n => n >= 300 && n <= 20000);
         const bestOffer = ourPastOffers.length ? Math.min(...ourPastOffers) : null;
         if (bestOffer) {
-            const newOffer = (String(out.message || '').match(/\$\s?\d{3,5}/g) || [])
-                .map(x => Number(x.replace(/[^\d]/g, '')))
-                .filter(n => n >= 300 && n <= 20000)
+            // Only figures we are actually offering count. Matching every "$"
+            // in the message meant answering "what was the listing at?" with
+            // their own number tripped the guard.
+            const newOffer = figuresWeAreOffering(out.message)
+                .filter(n => n <= 20000)
                 .find(n => n > bestOffer);
             if (newOffer && !priceSettled) {
                 console.warn(`🛡️ Blocked self-bidding: $${newOffer} is above our own earlier $${bestOffer}.`);
                 out.message = `I'd still be looking at $${bestOffer}. Can you make that work?`;
                 out.agreeing_to_price = null;
             }
+        }
+
+        // Never send the same sentence twice.
+        //
+        // Every guard above rewrites out.message to a fixed line, so whenever
+        // one of them fires on consecutive turns the landlord sees one sentence
+        // repeated word for word — the single clearest way to look like a bot
+        // and the fastest way to get a human to stop replying. If we have
+        // already said this, say the next thing instead: hand it to a person
+        // rather than repeat ourselves.
+        const normalise = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const saidBefore = ourLines.some(l => normalise(l) === normalise(out.message));
+        if (saidBefore && normalise(out.message)) {
+            console.warn('🛡️ Suppressed a repeat of our own last message.');
+            out.message = priceSettled
+                ? `Just confirming we're set at $${settledPrice}. Anything else you need from me?`
+                : bestOffer
+                    ? `I don't want to go round in circles — $${bestOffer} is where I am. If that doesn't work for you, no hard feelings and thanks for your time.`
+                    : `Happy to keep this simple — what would work on your end?`;
+            out.agreeing_to_price = priceSettled ? settledPrice : null;
         }
 
         // Deterministic settled-topic guard. The prompt already forbids
