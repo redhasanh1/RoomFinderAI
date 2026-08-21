@@ -26,6 +26,17 @@ final class AuthService: ObservableObject {
         var isPro: Bool?
         var userId: String?
 
+        /// Whether a real name has ever been set. The login endpoint answers
+        /// with the placeholder "User Name" for accounts that have not, so the
+        /// presence of a value is not enough to go on.
+        var hasName: Bool {
+            let joined = [firstName, lastName]
+                .map { $0.trimmingCharacters(in: .whitespaces) }
+                .filter { !$0.isEmpty }
+                .joined(separator: " ")
+            return !joined.isEmpty && joined.caseInsensitiveCompare("User Name") != .orderedSame
+        }
+
         var displayName: String {
             let joined = [firstName, lastName]
                 .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -137,8 +148,12 @@ final class AuthService: ObservableObject {
               let decoded = try? JSONDecoder().decode(Response.self, from: data) else { return }
 
         var updated = profile!
-        updated.firstName = decoded.firstName ?? updated.firstName
-        updated.lastName = decoded.lastName ?? updated.lastName
+        // An empty string is not a name. The profile endpoint returns "" for
+        // someone who has never set one, and `??` only steps aside for nil — so
+        // refreshing replaced the name the login response had just given us with
+        // nothing, and the header fell back to showing the raw email address.
+        updated.firstName = decoded.firstName?.nilIfEmpty ?? updated.firstName
+        updated.lastName = decoded.lastName?.nilIfEmpty ?? updated.lastName
         updated.profileImage = decoded.profileImage
         updated.plan = decoded.plan
         updated.isPro = decoded.isPro

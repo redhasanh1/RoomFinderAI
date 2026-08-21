@@ -133,8 +133,23 @@ struct ProfileScreen: View {
             avatar
 
             VStack(alignment: .leading, spacing: 3) {
-                Text(auth.profile?.displayName ?? "")
-                    .font(.headline)
+                // Without a name this used to print the address as the heading
+                // and again underneath it, so the one line was the email
+                // wrapped mid-word and the other was the same email. Say what
+                // is missing instead, since it is a thing they can fix.
+                if auth.profile?.hasName == true {
+                    Text(auth.profile?.displayName ?? "")
+                        .font(.headline)
+                } else {
+                    Button {
+                        showingEditName = true
+                    } label: {
+                        Text("Add your name")
+                            .font(.headline)
+                            .foregroundStyle(Theme.brand)
+                    }
+                }
+
                 Text(auth.profile?.email ?? "")
                     .font(.caption)
                     .foregroundStyle(.secondary)
