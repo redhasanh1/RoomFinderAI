@@ -2384,6 +2384,62 @@
             setupChat();
         };
 
+        /**
+         * Reads the open conversation every few seconds.
+         *
+         * Realtime cannot be the only path: the channel can sit in "joined"
+         * and deliver nothing, and when that happens the chat looks frozen and
+         * reloading is the only way to see a reply. This used to be created
+         * once during page setup, which returns early often enough that it was
+         * frequently never alive at all — the safety net was missing exactly
+         * when it was needed. Bounded by the watermark, so a poll with nothing
+         * new is one query returning zero rows.
+         */
+        function startMessageDeltaPoll() {
+            if (messagePollInterval) return;
+            messagePollInterval = setInterval(async () => {
+                    if (document.hidden) return;
+                    if (!currentConversationId) return;
+                    // No watermark yet means realtime has never delivered
+                    // anything. That is precisely when this poll matters, so
+                    // it starts from a minute ago rather than giving up.
+                    if (!lastSeenMessageAt) {
+                        lastSeenMessageAt = new Date(Date.now() - 60000).toISOString();
+                    }
+                    try {
+                        const { data, error } = await supabase
+                            .from('messages')
+                            .select('*')
+                            .eq('conversation_id', currentConversationId)
+                            .gt('created_at', lastSeenMessageAt)
+                            .order('created_at', { ascending: true });
+                        if (error || !data || data.length === 0) return;
+                        const container = document.getElementById('chatMessages');
+                        if (!container) return;
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        const myEmailLower = currentUser?.email?.toLowerCase();
+                        for (const msg of data) {
+                            if (msg.created_at > lastSeenMessageAt) lastSeenMessageAt = msg.created_at;
+                            // Own messages are appended optimistically on send — skip echoes.
+                            if (msg.sender_email?.toLowerCase() === myEmailLower) continue;
+                            const msgEl = document.createElement('div');
+                            msgEl.className = 'message received';
+                            const msgP = document.createElement('p');
+                            msgP.textContent = msg.content || '';
+                            const timeDiv = document.createElement('div');
+                            timeDiv.className = 'message-timestamp';
+                            timeDiv.textContent = new Date(msg.created_at).toLocaleTimeString();
+                            msgEl.appendChild(msgP);
+                            msgEl.appendChild(timeDiv);
+                            container.appendChild(msgEl);
+                        }
+                        container.scrollTop = container.scrollHeight;
+                    } catch (e) {
+                        console.warn('Message delta-poll error:', e);
+                    }
+                }, 5000);
+        }
+
         function setupChat() {
             if (!supabase || typeof supabase.channel !== 'function') {
                 console.warn('🔧 Supabase client not ready, deferring chat setup.');
@@ -2805,43 +2861,7 @@
             // delivers first, and lastSeenMessageAt prevents double-rendering. The
             // query is bounded by `created_at > lastSeenMessageAt`, so 99% of polls
             // touch zero rows and cost almost nothing. Skipped while tab is hidden.
-            if (!messagePollInterval) {
-                messagePollInterval = setInterval(async () => {
-                    if (document.hidden) return;
-                    if (!currentConversationId || !lastSeenMessageAt) return;
-                    try {
-                        const { data, error } = await supabase
-                            .from('messages')
-                            .select('*')
-                            .eq('conversation_id', currentConversationId)
-                            .gt('created_at', lastSeenMessageAt)
-                            .order('created_at', { ascending: true });
-                        if (error || !data || data.length === 0) return;
-                        const container = document.getElementById('chatMessages');
-                        if (!container) return;
-                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
-                        const myEmailLower = currentUser?.email?.toLowerCase();
-                        for (const msg of data) {
-                            if (msg.created_at > lastSeenMessageAt) lastSeenMessageAt = msg.created_at;
-                            // Own messages are appended optimistically on send — skip echoes.
-                            if (msg.sender_email?.toLowerCase() === myEmailLower) continue;
-                            const msgEl = document.createElement('div');
-                            msgEl.className = 'message received';
-                            const msgP = document.createElement('p');
-                            msgP.textContent = msg.content || '';
-                            const timeDiv = document.createElement('div');
-                            timeDiv.className = 'message-timestamp';
-                            timeDiv.textContent = new Date(msg.created_at).toLocaleTimeString();
-                            msgEl.appendChild(msgP);
-                            msgEl.appendChild(timeDiv);
-                            container.appendChild(msgEl);
-                        }
-                        container.scrollTop = container.scrollHeight;
-                    } catch (e) {
-                        console.warn('Message delta-poll error:', e);
-                    }
-                }, 5000);
-            }
+            startMessageDeltaPoll();
 
             // Mark chat system as successfully initialized
             chatSystemStatus.isInitialized = true;
@@ -3518,7 +3538,21 @@
                 // Seed the delta-poll watermark from the newest message just rendered.
                 if (messages.length > 0) {
                     lastSeenMessageAt = messages[messages.length - 1].created_at;
+                } else if (!lastSeenMessageAt) {
+                    // An empty thread still needs a floor, or the poll below
+                    // has nothing to compare against and never runs.
+                    lastSeenMessageAt = new Date(Date.now() - 60000).toISOString();
                 }
+
+                // Started here, not only in setupChat.
+                //
+                // The poll was created once during page setup, and setupChat
+                // returns early often enough that it frequently never ran at
+                // all: the realtime channel reported "joined" while delivering
+                // nothing, and the fallback meant to cover exactly that was
+                // never alive. Opening a conversation is the moment it is
+                // actually needed.
+                startMessageDeltaPoll();
                 console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
                 
             } catch (error) {
