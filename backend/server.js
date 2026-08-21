@@ -7371,26 +7371,6 @@ Write your next message.`;
             }
         }
 
-        // Never send the same sentence twice.
-        //
-        // Every guard above rewrites out.message to a fixed line, so whenever
-        // one of them fires on consecutive turns the landlord sees one sentence
-        // repeated word for word — the single clearest way to look like a bot
-        // and the fastest way to get a human to stop replying. If we have
-        // already said this, say the next thing instead: hand it to a person
-        // rather than repeat ourselves.
-        const normalise = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-        const saidBefore = ourLines.some(l => normalise(l) === normalise(out.message));
-        if (saidBefore && normalise(out.message)) {
-            console.warn('🛡️ Suppressed a repeat of our own last message.');
-            out.message = priceSettled
-                ? `Just confirming we're set at $${settledPrice}. Anything else you need from me?`
-                : bestOffer
-                    ? `I don't want to go round in circles — $${bestOffer} is where I am. If that doesn't work for you, no hard feelings and thanks for your time.`
-                    : `Happy to keep this simple — what would work on your end?`;
-            out.agreeing_to_price = priceSettled ? settledPrice : null;
-        }
-
         // Deterministic settled-topic guard. The prompt already forbids
         // reopening an agreed rent or a booked viewing, but gpt-3.5 drifts back
         // to them under pressure — in a real transcript it asked "so what's the
@@ -7423,6 +7403,29 @@ Write your next message.`;
                 ? `Hold on, the listing says $${asking}, so $${bad} is above asking. I can do $${Math.round(ceiling)}. Does that work?`
                 : `That's over what I can manage. I can do $${Math.round(ceiling)}. Would that work?`;
             out.agreeing_to_price = null;
+        }
+
+        // Never send the same sentence twice.
+        //
+        // Every guard above rewrites out.message to one of six fixed lines, so
+        // any guard firing on two turns running sends a landlord the identical
+        // sentence word for word. That is the clearest possible tell that they
+        // are talking to a machine, and the fastest way to make them stop
+        // replying. The individual repetitions were each fixed as they turned
+        // up; this is the check none of them had.
+        //
+        // At the single exit point, for the same reason the dash scrub below is
+        // here: a repeat can come from the model or from any of those
+        // templates, and the last one to run is the one that gets sent.
+        const normalise = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        if (normalise(out.message) && ourLines.some(l => normalise(l) === normalise(out.message))) {
+            console.warn('🛡️ Suppressed a repeat of something we already said.');
+            out.message = priceSettled
+                ? `Just confirming we're set at $${settledPrice}. Anything else you need from me?`
+                : bestOffer
+                    ? `I don't want to go round in circles. $${bestOffer} is where I am, so if that doesn't work for you, no hard feelings and thanks for your time.`
+                    : `Happy to keep this simple. What would work on your end?`;
+            out.agreeing_to_price = priceSettled ? settledPrice : null;
         }
 
         // Final scrub on everything we send. Em/en dashes read as machine-written
