@@ -12,7 +12,11 @@
  * whose last word came from the landlord, and answers them.
  */
 
-const TICK_MS = Number(process.env.NEGOTIATOR_TICK_MS) || 20000;
+// Six seconds, not twenty. A landlord typing in real time watches the reply
+// take long enough that the negotiation reads as broken, and the tick is a
+// cheap query against a short list of conversations — the model call only
+// happens when there is actually something to answer.
+const TICK_MS = Number(process.env.NEGOTIATOR_TICK_MS) || 6000;
 /// A negotiation that has gone this many rounds is not converging, and every
 /// round costs a model call. Someone can always take it over by hand.
 const MAX_AI_MESSAGES = Number(process.env.NEGOTIATOR_MAX_MESSAGES) || 14;
