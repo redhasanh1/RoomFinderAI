@@ -184,6 +184,8 @@ class ChatSystem {
 
         // Setup real-time subscription
         this.setupRealtimeSubscription();
+        // Backs it up, because realtime is not guaranteed to fire.
+        this.startMessagePolling();
 
         // Mark chat system as successfully initialized
         this.chatSystemStatus.isInitialized = true;
@@ -576,6 +578,10 @@ class ChatSystem {
             });
 
             chatMessagesContainer.scrollTop = chatMessagesContainer.scrollHeight;
+            // What the poll below compares against, so it only redraws when
+            // something actually arrived.
+            this.renderedMessageCount = messages.length;
+            this.renderedLastMessageId = messages.length ? messages[messages.length - 1].id : null;
             console.log('✅ Messages loaded successfully:', messages.length, 'messages displayed');
             
         } catch (error) {
@@ -789,6 +795,71 @@ class ChatSystem {
     /**
      * Setup real-time subscription for messages
      */
+    /**
+     * Checks for new messages on a timer, as well as over the realtime socket.
+     *
+     * Realtime was the only way a new message reached the page, so whenever the
+     * socket did not fire — the table missing from the publication, a dropped
+     * connection, a laptop coming back from sleep — messages simply did not
+     * appear and the only way to see them was to reload the page. A chat you
+     * have to refresh is not a chat.
+     *
+     * The check is deliberately cheap: one row, id only. Redrawing costs a full
+     * rebuild of the message list, so it only happens when the newest message
+     * is not the one already on screen.
+     */
+    startMessagePolling() {
+        this.stopMessagePolling();
+
+        const every = this.config?.pollingInterval || 3000;
+        this.messagePollTimer = setInterval(async () => {
+            if (!this.currentConversationId) return;
+            // Nothing to update while nobody is looking, and this is what stops
+            // a backgrounded tab polling all night.
+            if (typeof document !== 'undefined' && document.hidden) return;
+            if (this.messagePollInFlight) return;
+
+            this.messagePollInFlight = true;
+            try {
+                const table = this.mode === 'roommate' ? 'roommate_messages' : 'messages';
+                const { data, error } = await this.supabase
+                    .from(table)
+                    .select('id')
+                    .eq('conversation_id', this.currentConversationId)
+                    .order('created_at', { ascending: false })
+                    .limit(1);
+
+                if (error) return;
+                const newest = data && data.length ? data[0].id : null;
+                if (newest && newest !== this.renderedLastMessageId) {
+                    await this.loadMessages(this.currentConversationId);
+                }
+            } catch (e) {
+                // A failed poll is not worth telling anyone about; the next one
+                // is three seconds away.
+            } finally {
+                this.messagePollInFlight = false;
+            }
+        }, every);
+
+        // Coming back to the tab should not wait out the interval.
+        if (typeof document !== 'undefined' && !this._visibilityHooked) {
+            this._visibilityHooked = true;
+            document.addEventListener('visibilitychange', () => {
+                if (!document.hidden && this.currentConversationId) {
+                    this.loadMessages(this.currentConversationId).catch(() => {});
+                }
+            });
+        }
+    }
+
+    stopMessagePolling() {
+        if (this.messagePollTimer) {
+            clearInterval(this.messagePollTimer);
+            this.messagePollTimer = null;
+        }
+    }
+
     setupRealtimeSubscription() {
         // Validate supabase client
         if (!this.supabase) {
@@ -1555,6 +1626,8 @@ class ChatSystem {
         // Remove event listeners
         window.removeEventListener('online', this.handleOnline);
         window.removeEventListener('offline', this.handleOffline);
+
+        this.stopMessagePolling();
 
         // Unsubscribe from channels
         if (this.messageChannel) {
