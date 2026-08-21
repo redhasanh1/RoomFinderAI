@@ -40,6 +40,70 @@ function isParticipant(conversation, email) {
         .some((address) => address.toLowerCase() === me);
 }
 
+
+/**
+ * Whether a conversation reached an agreement, read from what was said.
+ *
+ * Deliberately the same two tests the negotiator itself uses: a rent both
+ * sides landed on, and a day with a time on it.
+ */
+async function deriveOutcome(supabase, conversationId) {
+    const { data: rows } = await supabase
+        .from('messages')
+        .select('sender_email, content, message_type')
+        .eq('conversation_id', conversationId)
+        .order('created_at', { ascending: true })
+        .limit(80);
+
+    if (!rows?.length) return null;
+
+    const { data: conversation } = await supabase
+        .from('conversations')
+        .select('listing_id, sender_email')
+        .eq('id', conversationId)
+        .maybeSingle();
+    if (!conversation) return null;
+
+    const tenant = (conversation.sender_email || '').toLowerCase();
+    const said = rows.filter(r => r.message_type !== 'ai_goals' && r.message_type !== 'ai_deal');
+    const allText = said.map(r => r.content || '').join(' ').toLowerCase();
+    const landlordText = said
+        .filter(r => (r.sender_email || '').toLowerCase() !== tenant)
+        .map(r => r.content || '').join(' ').toLowerCase();
+
+    const landlordAgreed = /\b(ok|okay|fine|deal|agreed|sure|yes|done|works|sounds good|it is)\b/.test(landlordText);
+    const figures = (allText.match(/\$?\s?\b(\d{3,5})\b/g) || [])
+        .map(x => Number(String(x).replace(/[^\d]/g, '')))
+        .filter(n => n >= 300 && n <= 20000);
+    const price = figures.length ? figures[figures.length - 1] : null;
+    if (!price || !landlordAgreed) return null;
+
+    const day = allText.match(/\b(saturday|sunday|monday|tuesday|wednesday|thursday|friday|tomorrow|tonight)\b/i);
+    const time = allText.match(/\b(\d{1,2})(:\d{2})?\s?(am|pm)\b/i);
+    if (!day || !time) return null;
+
+    let room = 'the room';
+    let asking = null;
+    if (conversation.listing_id) {
+        const { data: listing } = await supabase
+            .from('listings')
+            .select('title, price')
+            .eq('id', conversation.listing_id)
+            .maybeSingle();
+        if (listing) {
+            room = listing.title || room;
+            asking = Number(listing.price) || null;
+        }
+    }
+
+    return {
+        room,
+        price,
+        viewing: `${day[0]} at ${time[0]}`,
+        savedPerMonth: asking && price < asking ? asking - price : null
+    };
+}
+
 function registerMessagingRoutes(app, getSupabase) {
     /**
      * Every thread this person is in, newest activity first, with enough
@@ -255,7 +319,17 @@ function registerMessagingRoutes(app, getSupabase) {
             console.error('Outcome lookup failed:', error.message);
             return res.status(500).json({ success: false, message: 'Could not read that negotiation' });
         }
-        if (!data) return res.json({ success: true, data: null });
+        if (!data) {
+            // Worked out from the transcript instead.
+            //
+            // The daemon writes this row on the turn it sees the agreement, and
+            // that is one chance: if the reply that closed the deal happened on
+            // a tick that failed, or before this was deployed, the negotiation
+            // is settled and the app is told nothing forever. Reading the
+            // transcript answers the same question at any point afterwards.
+            const derived = await deriveOutcome(supabase, conversationId);
+            return res.json({ success: true, data: derived });
+        }
 
         let outcome = null;
         try { outcome = JSON.parse(data.content); } catch (_) { /* not json */ }
