@@ -353,7 +353,14 @@ final class NegotiationCampaign: ObservableObject {
                 let running = await self.active
                 if running.isEmpty { return }
 
-                let waiting = running.filter { $0.phase == .waitingForLandlord }
+                // A negotiation the server is answering is still moving, so
+                // it has to keep being read. Filtering to waiting only meant
+                // one stuck on "Writing a reply…" was never refreshed again.
+                let waiting = running.filter {
+                    if case .waitingForLandlord = $0.phase { return true }
+                    if case .replying = $0.phase { return true }
+                    return false
+                }
                 if waiting.isEmpty, await self.allSettled { return }
                 for negotiation in waiting {
                     if Task.isCancelled { return }

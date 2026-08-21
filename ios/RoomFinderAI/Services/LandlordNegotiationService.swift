@@ -129,7 +129,15 @@ final class LandlordNegotiationService: ObservableObject {
             try? await Task.sleep(for: .seconds(5))
             if Task.isCancelled { return }
             if case .closed = phase { return }
-            if case .waitingForLandlord = phase { await refresh() }
+            // Both states, not just waiting.
+            //
+            // Replying now means the server is writing, not this app, so
+            // stopping here left the screen on "Writing a reply…" for good:
+            // nothing re-read the thread, so nothing ever saw the answer land.
+            switch phase {
+            case .waitingForLandlord, .replying: await refresh()
+            default: break
+            }
         }
     }
 

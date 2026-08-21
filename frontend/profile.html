@@ -1311,9 +1311,33 @@
         }
 
             try {
-                // Upload selfie first
-                document.getElementById('progressText').textContent = 'Uploading selfie...';
+                // The document goes first, whatever order they were captured in.
+                //
+                // The selfie endpoint refuses to accept anything until a
+                // verification row exists, and only the document creates one —
+                // so uploading the selfie first answered every single attempt
+                // with "Please submit your ID document first before uploading a
+                // selfie", which is impossible to act on when the page has just
+                // asked for the selfie. Nobody could finish verifying.
+                document.getElementById('progressText').textContent = 'Uploading ID document...';
                 document.getElementById('progressBar').style.width = '25%';
+
+                const idFormData = new FormData();
+                idFormData.append('idDocument', await shrinkForUpload(verificationData.idDocument));
+                idFormData.append('userEmail', currentUser.email);
+
+                const idResponse = await fetch('/api/verify/upload-id', {
+                    method: 'POST',
+                    body: idFormData
+                });
+                const idResult = await idResponse.json();
+                if (!idResponse.ok) {
+                    showVerificationProblem(idResult.error || 'That document could not be accepted.');
+                    return;
+                }
+
+                document.getElementById('progressBar').style.width = '50%';
+                document.getElementById('progressText').textContent = 'Uploading selfie...';
 
                 const selfieFormData = new FormData();
                 selfieFormData.append('facePhoto', await shrinkForUpload(verificationData.selfie));
@@ -1326,24 +1350,6 @@
                 const selfieResult = await selfieResponse.json();
                 if (!selfieResponse.ok) {
                     showVerificationProblem(selfieResult.error || 'That selfie could not be accepted.');
-                    return;
-                }
-
-                document.getElementById('progressBar').style.width = '50%';
-                document.getElementById('progressText').textContent = 'Uploading ID document...';
-
-                // Upload ID document
-                const idFormData = new FormData();
-                idFormData.append('idDocument', await shrinkForUpload(verificationData.idDocument));
-                idFormData.append('userEmail', currentUser.email);
-
-                const idResponse = await fetch('/api/verify/upload-id', {
-                    method: 'POST',
-                    body: idFormData
-                });
-                const idResult = await idResponse.json();
-                if (!idResponse.ok) {
-                    showVerificationProblem(idResult.error || 'That document could not be accepted.');
                     return;
                 }
 
