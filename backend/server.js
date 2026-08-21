@@ -207,9 +207,6 @@ async function verifyTurnstileToken(token, req) {
 const crypto = require('crypto');
 const { createClient } = require('@supabase/supabase-js');
 const multer = require('multer');
-const { DocumentAnalysisClient, AzureKeyCredential } = require('@azure/ai-form-recognizer');
-const { FaceClient } = require('@azure/cognitiveservices-face');
-const { CognitiveServicesCredentials } = require('@azure/ms-rest-azure-js');
 // FormData and fetch are available globally in Node.js 18+
 
 const app = express();
@@ -370,58 +367,10 @@ try {
     console.log('❌ Supabase initialization failed:', error.message);
 }
 
-// Initialize Azure Document Intelligence client
-let documentClient;
-try {
-    console.log('🔍 Azure Document Intelligence Config Check:');
-    console.log('- KEY exists:', !!config.AZURE_DOCUMENT_INTELLIGENCE_KEY);
-    console.log('- ENDPOINT exists:', !!config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT);
-    console.log('- KEY length:', config.AZURE_DOCUMENT_INTELLIGENCE_KEY?.length || 0);
-    console.log('- ENDPOINT value:', config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'undefined');
-    
-    if (config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
-        documentClient = new DocumentAnalysisClient(
-            config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
-            new AzureKeyCredential(config.AZURE_DOCUMENT_INTELLIGENCE_KEY)
-        );
-        serviceStatus.azure.documentIntelligence = true;
-        console.log('✅ Azure Document Analysis initialized successfully');
-    } else {
-        console.log('⚠️ Azure Document Intelligence not initialized - missing credentials');
-        console.log('  - KEY missing:', !config.AZURE_DOCUMENT_INTELLIGENCE_KEY);
-        console.log('  - ENDPOINT missing:', !config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT);
-    }
-} catch (error) {
-    console.log('❌ Azure Document Intelligence initialization failed:', error.message);
-    console.log('⚠️ Server will continue without Azure Document Intelligence');
-    documentClient = null;
-}
-
-// Initialize Azure Face client
-let faceClient;
-try {
-    console.log('🔍 Azure Face API Config Check:');
-    console.log('- KEY exists:', !!config.AZURE_FACE_KEY);
-    console.log('- ENDPOINT exists:', !!config.AZURE_FACE_ENDPOINT);
-    console.log('- KEY length:', config.AZURE_FACE_KEY?.length || 0);
-    console.log('- ENDPOINT value:', config.AZURE_FACE_ENDPOINT || 'undefined');
-    
-    if (config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT) {
-        const credentials = new CognitiveServicesCredentials(config.AZURE_FACE_KEY);
-        faceClient = new FaceClient(credentials, config.AZURE_FACE_ENDPOINT);
-        serviceStatus.azure.face = true;
-        console.log('✅ Azure Face API initialized successfully');
-    } else {
-        console.log('⚠️ Azure Face API not initialized - missing credentials');
-        console.log('  - KEY missing:', !config.AZURE_FACE_KEY);
-        console.log('  - ENDPOINT missing:', !config.AZURE_FACE_ENDPOINT);
-    }
-} catch (error) {
-    console.log('❌ Azure Face API initialization failed:', error.message);
-    console.log('⚠️ Server will continue without Azure Face API');
-    faceClient = null;
-}
-
+// ID and selfie checks run on Cloudflare Workers AI. Azure used to sit behind
+// them as a fallback and has been removed: its Face API errored on every call,
+// and because an errored check returned "ok", a document uploaded into the
+// selfie slot was accepted with no check having run at all.
 // Configure multer for file uploads
 const upload = multer({
     storage: multer.memoryStorage(),
@@ -8853,96 +8802,80 @@ async function askWorker(task, buffer) {
     const workerUrl = process.env.CLOUDFLARE_ID_WORKER_URL;
     if (!workerUrl) return null;
 
-    const response = await fetch(workerUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ task, image: Array.from(buffer) }),
-        signal: AbortSignal.timeout(45000)
-    });
-    if (!response.ok) throw new Error(`worker returned ${response.status}`);
+    // Retried, because the common failure is temporary and used to be treated
+    // as permanent. Workers AI answers "3040: Capacity temporarily exceeded"
+    // under load; one attempt then meant no check ran, and a check that did not
+    // run was counted as a check that passed.
+    const attempts = 4;
+    let lastError;
 
-    const payload = await response.json();
-    if (!payload.success) throw new Error(payload.error || 'worker refused');
-    return payload.result;
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            const response = await fetch(workerUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ task, image: Array.from(buffer) }),
+                signal: AbortSignal.timeout(45000)
+            });
+
+            const payload = await response.json().catch(() => null);
+
+            if (response.ok && payload?.success) return payload.result;
+
+            const stated = payload?.error || `worker returned ${response.status}`;
+            lastError = new Error(stated);
+
+            // Only wait and try again when the model said it was busy or the
+            // edge returned a 5xx. A malformed image fails the same way every
+            // time, and retrying it just delays telling the person.
+            const busy = /capacity|temporarily|3040|rate limit|too many/i.test(stated)
+                || response.status >= 500;
+            if (!busy || attempt === attempts) throw lastError;
+
+            const backoff = 400 * Math.pow(2, attempt - 1);
+            console.warn(`🧠 ${task} check busy (attempt ${attempt}/${attempts}), retrying in ${backoff}ms: ${stated}`);
+            await new Promise(resolve => setTimeout(resolve, backoff));
+        } catch (error) {
+            lastError = error;
+            if (attempt === attempts) throw lastError;
+            // A timeout or a dropped connection is worth the same second try.
+            await new Promise(resolve => setTimeout(resolve, 400 * Math.pow(2, attempt - 1)));
+        }
+    }
+
+    throw lastError;
 }
 
 async function inspectIdDocument(buffer, mimetype) {
-    // Cloudflare first. It runs on infrastructure that is actually reachable:
-    // Azure's is on a sign-in nobody has any more, so it is a fallback until it
-    // disappears rather than something to build on.
+    // Cloudflare Workers AI, and nothing behind it.
     //
-    // PDFs go straight to Azure, which reads them; the vision model wants an
-    // image.
-    if (mimetype !== 'application/pdf') {
-        try {
-            const verdict = await askWorker('id-document', buffer);
-            if (verdict) return readIdVerdict(verdict);
-        } catch (error) {
-            console.error('Worker ID check failed, trying Azure:', error.message);
-        }
+    // Azure used to be the fallback. Its Document Intelligence call worked, but
+    // pairing it with a Face API that errored on every request produced the
+    // worst possible outcome: a failed check returned `ok: true`, so an upload
+    // nobody had looked at was indistinguishable from one that passed.
+    //
+    // PDFs are refused rather than waved through. Azure read them and the
+    // vision model does not, and "we cannot read this" must not keep meaning
+    // "fine".
+    if (mimetype === 'application/pdf') {
+        return {
+            ok: false,
+            reason: "We can't read PDFs. Take a photo of your ID instead, with all four corners visible."
+        };
     }
 
-    if (!documentClient) return { ok: true, skipped: 'no_checker_available' };
-
-    let documents;
+    let verdict;
     try {
-        const poller = await documentClient.beginAnalyzeDocument('prebuilt-idDocument', buffer, {
-            contentType: mimetype === 'application/pdf' ? 'application/pdf' : undefined
-        });
-        ({ documents } = await poller.pollUntilDone());
+        verdict = await askWorker('id-document', buffer);
     } catch (error) {
-        console.error('ID inspection failed, falling back to manual review:', error.message);
-        return { ok: true, skipped: 'azure_error' };
+        console.error('ID check could not run:', error.message);
+        // Held for a person rather than accepted. The admin queue shows why,
+        // and `ok` stays true only so the upload is stored for them to look at.
+        return { ok: true, skipped: `check_unavailable: ${error.message}` };
     }
 
-    const document = (documents || [])[0];
-    if (!document) {
-        return {
-            ok: false,
-            reason: "We couldn't find a government ID in that photo. Upload a clear picture of your passport or driving licence, with all four corners visible."
-        };
-    }
-
-    const field = (name) => document.fields?.[name];
-    const text = (name) => {
-        const value = field(name);
-        if (!value) return null;
-        return (typeof value.value === 'string' ? value.value : value.content) || null;
-    };
-    const date = (name) => {
-        const value = field(name);
-        if (!value?.value) return null;
-        const parsed = value.value instanceof Date ? value.value : new Date(value.value);
-        return Number.isNaN(parsed.getTime()) ? null : parsed;
-    };
-
-    const expiry = date('DateOfExpiration');
-    if (expiry && expiry < new Date()) {
-        return {
-            ok: false,
-            reason: `That ID expired on ${expiry.toISOString().slice(0, 10)}. Upload one that is still valid.`
-        };
-    }
-
-    // Only the number's last four is kept. Manual review needs enough to match
-    // the document in front of them, not a full identifier sitting in a table.
-    const number = text('DocumentNumber');
-
-    return {
-        ok: true,
-        fields: {
-            docType: document.docType || null,
-            firstName: text('FirstName'),
-            lastName: text('LastName'),
-            documentNumberLast4: number ? String(number).slice(-4) : null,
-            dateOfBirth: date('DateOfBirth')?.toISOString().slice(0, 10) || null,
-            dateOfExpiration: expiry?.toISOString().slice(0, 10) || null,
-            countryRegion: text('CountryRegion'),
-            region: text('Region'),
-            confidence: document.confidence ?? null,
-            checkedAt: new Date().toISOString()
-        }
-    };
+    if (!verdict) return { ok: true, skipped: 'no_checker_configured' };
+    return readIdVerdict(verdict);
 }
 
 /**
@@ -8986,57 +8919,73 @@ function readIdVerdict(verdict) {
 }
 
 /**
- * Checks a selfie has exactly one clear face in it.
+ * Checks a selfie is a photo of one person's face.
  *
  * Not a match against the ID: comparing two faces is a Limited Access feature
- * that Microsoft gates behind an application, and getting it wrong is worse
- * than not doing it. This only rules out the obvious, a photo of a wall or a
- * group shot, and leaves the comparison to the reviewer who has both images.
+ * behind an application, and getting it wrong is worse than not doing it. This
+ * rules out the obvious — a photo of a wall, a group shot, or a picture of a
+ * document sent as a selfie — and leaves the comparison to the reviewer, who
+ * has both images in front of them.
  */
 async function inspectSelfie(buffer) {
+    let verdict;
     try {
-        const verdict = await askWorker('selfie', buffer);
-        if (verdict) {
-            const count = Number(verdict.face_count);
-            if (count === 0) {
-                return { ok: false, reason: "We couldn't find a face in that photo. Take a clear selfie in good light, looking at the camera." };
-            }
-            if (count > 1) {
-                return { ok: false, reason: `We found ${count} faces in that photo. Send one of just you.` };
-            }
-            return {
-                ok: true,
-                fields: {
-                    checkedBy: 'cloudflare',
-                    faceCount: count,
-                    isClear: verdict.is_clear ?? null,
-                    modelNote: verdict.reason || null,
-                    checkedAt: new Date().toISOString()
-                }
-            };
+        verdict = await askWorker('selfie', buffer);
+    } catch (error) {
+        console.error('Selfie check could not run:', error.message);
+        return { ok: true, skipped: `check_unavailable: ${error.message}` };
+    }
+
+    if (!verdict) return { ok: true, skipped: 'no_checker_configured' };
+
+    const count = Number(verdict.face_count);
+    const note = String(verdict.reason || '');
+
+    // What the model wrote, not the number it reported.
+    //
+    // `face_count` cannot be trusted: the worker takes it from the front of the
+    // model's own prose, and the model numbers its answers. A real selfie comes
+    // back "1 There is a man with short hair…" and a photo of an ID card comes
+    // back "1. The image shows a document with a photo section, but there is no
+    // visible human face." — both counted as one face. That is how a document
+    // reached the review queue as somebody's selfie.
+    //
+    // The sentence is right in both cases, so it is what gets read.
+    const saysNoFace = /\bno (visible |clear |discernible )?(human )?fac|cannot (see|find|make out) (a|any) fac|there (is|are) no fac|not a (photo|picture) of a (person|face)/i.test(note);
+    const saysDocument = /\b(document|id card|identity card|identification|passport|driver'?s? licen[cs]e|driving licen[cs]e|card with a photo|photo section)\b/i.test(note);
+    const saysSeveral = /\b(two|three|four|several|multiple|group) (people|faces|persons)\b|\bmore than one (face|person)\b/i.test(note);
+
+    if (saysNoFace && saysDocument) {
+        return {
+            ok: false,
+            reason: "That looks like a photo of a document rather than a selfie. Take a photo of your own face with the camera."
+        };
+    }
+
+    if (saysNoFace || count === 0) {
+        return {
+            ok: false,
+            reason: "We couldn't find a face in that photo. Take a clear selfie in good light, looking at the camera."
+        };
+    }
+
+    if (saysSeveral || (Number.isFinite(count) && count > 1)) {
+        return { ok: false, reason: "We found more than one face in that photo. Send one of just you." };
+    }
+
+    return {
+        ok: true,
+        fields: {
+            checkedBy: 'cloudflare',
+            // Reported as what it is. Recording the worker's number as a face
+            // count is what made the queue look like it had checked something.
+            faceCountReported: Number.isFinite(count) ? count : null,
+            faceCountTrusted: false,
+            isClear: verdict.is_clear ?? null,
+            modelNote: note || null,
+            checkedAt: new Date().toISOString()
         }
-    } catch (error) {
-        console.error('Worker selfie check failed, trying Azure:', error.message);
-    }
-
-    if (!faceClient) return { ok: true, skipped: 'no_checker_available' };
-
-    let faces;
-    try {
-        faces = await faceClient.face.detectWithStream(buffer, { detectionModel: 'detection_03' });
-    } catch (error) {
-        console.error('Selfie inspection failed, falling back to manual review:', error.message);
-        return { ok: true, skipped: 'azure_error' };
-    }
-
-    if (!faces || faces.length === 0) {
-        return { ok: false, reason: "We couldn't find a face in that photo. Take a clear selfie in good light, looking at the camera." };
-    }
-    if (faces.length > 1) {
-        return { ok: false, reason: `We found ${faces.length} faces in that photo. Send one of just you.` };
-    }
-
-    return { ok: true, fields: { faceCount: 1, checkedAt: new Date().toISOString() } };
+    };
 }
 
 // API: Upload government ID. Machine-checked, then reviewed by a person.
@@ -9579,81 +9528,26 @@ app.post('/api/admin/clear-data', async (req, res) => {
 });
 
 // Function to reinitialize Azure clients if they failed initially
-function reinitializeAzureClients() {
-    console.log('🔄 Attempting Azure client reinitialization...');
-    
-    // Force reload config from environment variables
-    const currentConfig = {
-        AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY?.trim(),
-        AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT?.trim(),
-        AZURE_FACE_KEY: process.env.AZURE_FACE_KEY?.trim(),
-        AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT?.trim()
-    };
-    
-    console.log('🔍 Current environment variables:');
-    console.log('- AZURE_DOCUMENT_INTELLIGENCE_KEY:', currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT:', currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING');
-    console.log('- AZURE_FACE_KEY:', currentConfig.AZURE_FACE_KEY ? `Present (${currentConfig.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING');
-    console.log('- AZURE_FACE_ENDPOINT:', currentConfig.AZURE_FACE_ENDPOINT || 'MISSING');
-    
-    // Update global config with fresh environment variables
-    config.AZURE_DOCUMENT_INTELLIGENCE_KEY = currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY;
-    config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT = currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT;
-    config.AZURE_FACE_KEY = currentConfig.AZURE_FACE_KEY;
-    config.AZURE_FACE_ENDPOINT = currentConfig.AZURE_FACE_ENDPOINT;
-    
-    // Try to reinitialize Document Intelligence if it's not available
-    if (!documentClient && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY && currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT) {
-        try {
-            documentClient = new DocumentAnalysisClient(
-                currentConfig.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT,
-                new AzureKeyCredential(currentConfig.AZURE_DOCUMENT_INTELLIGENCE_KEY)
-            );
-            console.log('✅ Azure Document Analysis reinitialized successfully');
-        } catch (error) {
-            console.log('❌ Azure Document Intelligence reinitialization failed:', error.message);
-            console.log('❌ Full error details:', error);
-        }
-    }
-    
-    // Try to reinitialize Face API if it's not available
-    if (!faceClient && currentConfig.AZURE_FACE_KEY && currentConfig.AZURE_FACE_ENDPOINT) {
-        try {
-            const credentials = new CognitiveServicesCredentials(currentConfig.AZURE_FACE_KEY);
-            faceClient = new FaceClient(credentials, currentConfig.AZURE_FACE_ENDPOINT);
-            console.log('✅ Azure Face API reinitialized successfully');
-        } catch (error) {
-            console.log('❌ Azure Face API reinitialization failed:', error.message);
-            console.log('❌ Full error details:', error);
-        }
-    }
-    
-    // Log final status
-    console.log('🏁 Reinitialization complete:');
-    console.log('- Document Intelligence available:', !!documentClient);
-    console.log('- Face API available:', !!faceClient);
-}
+// Azure is gone. The three callers below are left calling this rather than
+// being torn out one by one, because it is the seam where the checks were
+// swapped and it should stay obvious that nothing is being reinitialised.
+function reinitializeAzureClients() { /* no Azure clients to reinitialise */ }
 
 // API: Check verification services availability
 app.get('/api/verify/service-status', (req, res) => {
-    // Try to reinitialize Azure clients if they're not available
-    reinitializeAzureClients();
-    
-    const status = {
-        documentIntelligence: {
-            available: !!documentClient,
-            configured: !!(config.AZURE_DOCUMENT_INTELLIGENCE_KEY && config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT),
-            message: documentClient ? 'Service is available' : 'Service not configured - Azure Document Intelligence credentials missing'
-        },
-        faceAPI: {
-            available: !!faceClient,
-            configured: !!(config.AZURE_FACE_KEY && config.AZURE_FACE_ENDPOINT),
-            message: faceClient ? 'Service is available' : 'Service not configured - Azure Face API credentials missing'
-        },
-        overallStatus: !!(documentClient && faceClient)
-    };
-    
-    res.json(status);
+    // One checker now: Cloudflare Workers AI. It reports configured/unavailable
+    // honestly rather than claiming a service is "available" when every call to
+    // it fails, which is how a broken Face API went unnoticed for so long.
+    const configured = !!process.env.CLOUDFLARE_ID_WORKER_URL;
+
+    res.json({
+        checker: 'cloudflare-workers-ai',
+        configured,
+        message: configured
+            ? 'ID and selfie checks run on Cloudflare Workers AI'
+            : 'CLOUDFLARE_ID_WORKER_URL is not set, so uploads go straight to manual review',
+        overallStatus: configured
+    });
 });
 
 // API endpoint to serve client-safe configuration
@@ -9675,44 +9569,14 @@ app.get('/api/config', (req, res) => {
         GOOGLE_NATIVE_REDIRECT_URI: GOOGLE_NATIVE_REDIRECT_URI,
         TURNSTILE_SITE_KEY: config.TURNSTILE_SITE_KEY,
         platforms: PLATFORM_STATUS.platforms,
-        azureServicesAvailable: {
-            documentIntelligence: !!documentClient,
-            faceAPI: !!faceClient
-        }
+        // Was azureServicesAvailable, naming two services that no longer
+        // exist here. Both checks run on Cloudflare Workers AI.
+        verificationChecksAvailable: !!process.env.CLOUDFLARE_ID_WORKER_URL
     };
     
     res.json(configData);
 });
 
-// Debug endpoint to check Azure configuration status
-app.get('/api/debug/azure', blockInProduction, (req, res) => {
-    console.log('🔍 Azure debug endpoint called');
-    
-    // Force reinitialization
-    reinitializeAzureClients();
-    
-    const azureStatus = {
-        environmentVariables: {
-            AZURE_DOCUMENT_INTELLIGENCE_KEY: process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${process.env.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING',
-            AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: process.env.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING',
-            AZURE_FACE_KEY: process.env.AZURE_FACE_KEY ? `Present (${process.env.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING',
-            AZURE_FACE_ENDPOINT: process.env.AZURE_FACE_ENDPOINT || 'MISSING'
-        },
-        configObject: {
-            AZURE_DOCUMENT_INTELLIGENCE_KEY: config.AZURE_DOCUMENT_INTELLIGENCE_KEY ? `Present (${config.AZURE_DOCUMENT_INTELLIGENCE_KEY.substring(0, 10)}...)` : 'MISSING',
-            AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: config.AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT || 'MISSING',
-            AZURE_FACE_KEY: config.AZURE_FACE_KEY ? `Present (${config.AZURE_FACE_KEY.substring(0, 10)}...)` : 'MISSING',
-            AZURE_FACE_ENDPOINT: config.AZURE_FACE_ENDPOINT || 'MISSING'
-        },
-        clients: {
-            documentClient: !!documentClient,
-            faceClient: !!faceClient
-        },
-        ready: !!documentClient && !!faceClient
-    };
-    
-    res.json(azureStatus);
-});
 
 // Simple route to serve house model images
 app.get('/house-models/:filename', (req, res) => {
