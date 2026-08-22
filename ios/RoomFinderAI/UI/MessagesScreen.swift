@@ -243,7 +243,11 @@ private struct InboxList: View {
     private var list: some View {
         List(messaging.conversations) { conversation in
             NavigationLink {
+                // Opening a thread marks it read on the server, so the badge
+                // should stop claiming otherwise without waiting for the next
+                // poll to come round.
                 ConversationScreen(conversation: conversation, messaging: messaging)
+                    .onAppear { UnreadCounter.shared.refreshSoon() }
             } label: {
                 ConversationRow(conversation: conversation)
             }

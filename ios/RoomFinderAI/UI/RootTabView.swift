@@ -7,6 +7,7 @@ struct RootTabView: View {
     @State private var returnTab: AppTab = .home
 
     @ObservedObject private var push = PushService.shared
+    @ObservedObject private var unread = UnreadCounter.shared
 
     var body: some View {
         TabView(selection: selection) {
@@ -29,6 +30,11 @@ struct RootTabView: View {
                     }
                 }
                 .tabItem { Label(tab.title, systemImage: tab.symbol) }
+                // The red number every other app puts here. Without it a reply
+                // that arrived while the app was closed left the tab looking
+                // exactly as it does when there is nothing waiting, so there
+                // was nothing to tell somebody where to tap.
+                .badge(tab == .messages && unread.count > 0 ? unread.count : 0)
                 .tag(tab)
             }
         }
@@ -44,6 +50,16 @@ struct RootTabView: View {
         .sheet(isPresented: $state.showingLegal) { LegalScreen() }
         .sheet(isPresented: $state.showingSaved) { SavedScreen() }
         .sheet(isPresented: $state.showingSupport) { SupportScreen() }
+        .task {
+            // Touching AuthService is what restores the saved session: its
+            // init reads the stored profile and tells CurrentUser who is signed
+            // in. Nothing at launch referenced it, so until somebody opened the
+            // Profile tab the app believed nobody was signed in — which left
+            // the unread count at zero and the badge absent for a signed-in
+            // person with messages waiting.
+            _ = AuthService.shared
+            UnreadCounter.shared.start()
+        }
         .task {
             // Asked once, shortly after the app is up.
             //
