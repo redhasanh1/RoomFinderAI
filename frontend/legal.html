@@ -14,7 +14,36 @@
     <script src="/js/site-nav.js?v=20260809e" defer></script>
     <script src="/js/site-bootstrap.js" defer></script>
     
+
+    <style>
+      /* Icons sit on the text baseline and take the colour of the text around
+         them, so a heading and its symbol always match. */
+      .ic { width: 1em; height: 1em; display: inline-block; vertical-align: -0.125em;
+            stroke: currentColor; fill: none; stroke-width: 2;
+            stroke-linecap: round; stroke-linejoin: round; flex: none; }
+      .ic-lg { width: 1.5rem; height: 1.5rem; }
+      h2 .ic, h3 .ic, h6 .ic { margin-right: 0.5rem; opacity: 0.75; }
+    </style>
 </head>
+
+<!-- Icon set. Inline rather than a font: this page loads neither Font Awesome
+     nor Lucide, and an icon that fails to load leaves a box where a symbol
+     should be. Stroke icons inherit the surrounding colour and size. -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true">
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+  <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-landmark" viewBox="0 0 24 24"><line x1="3" y1="22" x2="21" y2="22"/><line x1="6" y1="18" x2="6" y2="11"/><line x1="10" y1="18" x2="10" y2="11"/><line x1="14" y1="18" x2="14" y2="11"/><line x1="18" y1="18" x2="18" y2="11"/><polygon points="12 2 20 7 4 7"/></symbol>
+  <symbol id="i-calculator" viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="18"/><line x1="8" y1="18" x2="12" y2="18"/></symbol>
+  <symbol id="i-scale" viewBox="0 0 24 24"><path d="M12 3v18"/><path d="M5 7h14"/><path d="M6.5 7 3 14h7z"/><path d="M17.5 7 14 14h7z"/><path d="M8 21h8"/></symbol>
+  <symbol id="i-news" viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9h4"/><line x1="10" y1="7" x2="18" y2="7"/><line x1="10" y1="11" x2="18" y2="11"/><line x1="10" y1="15" x2="14" y2="15"/></symbol>
+</svg>
 <body class="bg-white site-has-header">
     <header id="header" class="fixed top-0 w-full premium-header z-50"></header>
 
@@ -88,7 +117,7 @@
             
             <!-- Quick Start Buttons -->
             <div class="bg-white p-6 rounded-2xl border border-blue-200 shadow-lg">
-                <h3 class="text-xl font-semibold text-gray-800 mb-6 text-center">🚀 Quick Start - Common Situations</h3>
+                <h3 class="text-xl font-semibold text-gray-800 mb-6 text-center"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg>Quick Start - Common Situations</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <button onclick="quickStartScenario('security-deposit')" class="p-4 bg-red-50 border border-red-200 rounded-xl hover:bg-red-100 transition-colors">
                         <div class="font-medium text-red-800 mb-1">Security Deposit Issue</div>
@@ -147,7 +176,7 @@
             <!-- AI Recommendation Tab -->
             <div id="recommendation-tab" class="tab-content active">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🤖 Not Sure Where to Start?</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>Not Sure Where to Start?</h2>
                     <p class="text-xl text-gray-600 mb-8 text-center max-w-3xl mx-auto">
                         Answer a few quick questions and we'll recommend the best tool for your situation
                     </p>
@@ -157,19 +186,19 @@
                             <h3 class="text-xl font-semibold text-gray-800 mb-6 text-center">What best describes your situation?</h3>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <button onclick="selectRecommendation('problem')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
-                                    <div class="font-semibold text-gray-800 mb-2">🚨 I have a problem that needs solving</div>
+                                    <div class="font-semibold text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>I have a problem that needs solving</div>
                                     <div class="text-gray-600">Something has gone wrong and I need help</div>
                                 </button>
                                 <button onclick="selectRecommendation('document')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
-                                    <div class="font-semibold text-gray-800 mb-2">📄 I need to create a document</div>
+                                    <div class="font-semibold text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>I need to create a document</div>
                                     <div class="text-gray-600">I need forms, agreements, or notices</div>
                                 </button>
                                 <button onclick="selectRecommendation('rights')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
-                                    <div class="font-semibold text-gray-800 mb-2">📚 I want to learn my rights</div>
+                                    <div class="font-semibold text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>I want to learn my rights</div>
                                     <div class="text-gray-600">I need to understand what I'm entitled to</div>
                                 </button>
                                 <button onclick="selectRecommendation('prevention')" class="recommendation-option p-6 bg-white border-2 border-gray-200 rounded-2xl hover:border-green-500 transition-colors text-left">
-                                    <div class="font-semibold text-gray-800 mb-2">🛡️ I want to prevent problems</div>
+                                    <div class="font-semibold text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>I want to prevent problems</div>
                                     <div class="text-gray-600">I want to be prepared and avoid issues</div>
                                 </button>
                             </div>
@@ -194,7 +223,7 @@
             <!-- Document Generator Tab -->
             <div id="documents-tab" class="tab-content">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📄 AI Legal Document Generator</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>AI Legal Document Generator</h2>
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div class="space-y-6">
@@ -236,7 +265,7 @@
                             </div>
                             
                             <button onclick="generateDocument()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
-                                ✨ Generate Document
+                                Generate Document
                             </button>
                         </div>
                         
@@ -246,10 +275,10 @@
                                     <h3 class="text-lg font-semibold text-gray-800">Document Preview</h3>
                                     <div class="space-x-2">
                                         <button onclick="copyDocument()" class="text-sm bg-gray-200 text-gray-700 px-3 py-1 rounded-lg hover:bg-gray-300 transition-colors">
-                                            📋 Copy
+                                            <svg class="ic" aria-hidden="true"><use href="#i-copy"/></svg>Copy
                                         </button>
                                         <button onclick="downloadDocument()" class="text-sm bg-blue-600 text-white px-3 py-1 rounded-lg hover:bg-blue-700 transition-colors">
-                                            📥 Download Text
+                                            <svg class="ic" aria-hidden="true"><use href="#i-download"/></svg>Download Text
                                         </button>
                                     </div>
                                 </div>
@@ -265,7 +294,7 @@
             <!-- Lease Review Tab -->
             <div id="lease-review-tab" class="tab-content">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-4 text-center">🔍 AI Lease Review</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-4 text-center"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>AI Lease Review</h2>
                     <p class="text-center text-gray-600 mb-8 max-w-2xl mx-auto">Paste your lease text and our AI will flag red flags, unusual clauses, and negotiation points.</p>
                     <div class="grid lg:grid-cols-2 gap-8">
                         <div>
@@ -285,7 +314,7 @@
             <!-- Know Your Rights Tab -->
             <div id="rights-tab" class="tab-content">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🛡️ Know Your Rights</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Know Your Rights</h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                         <div class="legal-feature-card text-center">
@@ -386,12 +415,12 @@
             <!-- Legal Resources Tab -->
             <div id="resources-tab" class="tab-content">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">📚 Legal Resources</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Legal Resources</h2>
                     
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <!-- Free Legal Forms -->
                         <div class="legal-feature-card">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">📄 Free Legal Forms</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>Free Legal Forms</h3>
                             <ul class="space-y-2 text-gray-600 mb-6">
                                 <li>• Lease Agreement Templates</li>
                                 <li>• Security Deposit Receipts</li>
@@ -406,7 +435,7 @@
                         
                         <!-- State Law Guides -->
                         <div class="legal-feature-card">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">🏛️ State Law Guides</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4"><svg class="ic" aria-hidden="true"><use href="#i-landmark"/></svg>State Law Guides</h3>
                             <ul class="space-y-2 text-gray-600 mb-6">
                                 <li>• Tenant Rights by State</li>
                                 <li>• Security Deposit Laws</li>
@@ -421,7 +450,7 @@
                         
                         <!-- Legal Calculators -->
                         <div class="legal-feature-card">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">🧮 Legal Calculators</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4"><svg class="ic" aria-hidden="true"><use href="#i-calculator"/></svg>Legal Calculators</h3>
                             <ul class="space-y-2 text-gray-600 mb-6">
                                 <li>• Security Deposit Calculator</li>
                                 <li>• Prorated Rent Calculator</li>
@@ -436,7 +465,7 @@
                         
                         <!-- Attorney Directory -->
                         <div class="legal-feature-card">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">👨‍⚖️ Attorney Directory</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4"><svg class="ic" aria-hidden="true"><use href="#i-scale"/></svg>Attorney Directory</h3>
                             <ul class="space-y-2 text-gray-600 mb-6">
                                 <li>• Tenant Rights Attorneys</li>
                                 <li>• Housing Law Specialists</li>
@@ -451,7 +480,7 @@
                         
                         <!-- Legal News -->
                         <div class="legal-feature-card">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">📰 Legal News</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4"><svg class="ic" aria-hidden="true"><use href="#i-news"/></svg>Legal News</h3>
                             <ul class="space-y-2 text-gray-600 mb-6">
                                 <li>• New Housing Laws</li>
                                 <li>• Court Decisions</li>
@@ -466,7 +495,7 @@
                         
                         <!-- FAQ Section -->
                         <div class="legal-feature-card">
-                            <h3 class="text-xl font-bold text-gray-900 mb-4">❓ FAQ</h3>
+                            <h3 class="text-xl font-bold text-gray-900 mb-4"><svg class="ic" aria-hidden="true"><use href="#i-help"/></svg>FAQ</h3>
                             <ul class="space-y-2 text-gray-600 mb-6">
                                 <li>• Common Questions</li>
                                 <li>• Quick Answers</li>
@@ -516,7 +545,7 @@
             <!-- Legal Calculator Tab -->
             <div id="calculator-tab" class="tab-content">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">🧮 Legal Calculator</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center"><svg class="ic" aria-hidden="true"><use href="#i-calculator"/></svg>Legal Calculator</h2>
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
@@ -585,7 +614,7 @@
                                 </div>
                                 
                                 <button onclick="calculateLegal()" class="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-purple-700 hover:to-indigo-700 transition-all">
-                                    📊 Calculate
+                                    <svg class="ic" aria-hidden="true"><use href="#i-calculator"/></svg>Calculate
                                 </button>
                             </div>
                         </div>
@@ -605,7 +634,7 @@
             <!-- Find Attorney Tab -->
             <div id="attorney-tab" class="tab-content">
                 <div class="glass-card p-8">
-                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center">👨‍⚖️ Find an Attorney</h2>
+                    <h2 class="text-3xl font-bold text-gray-900 mb-8 text-center"><svg class="ic" aria-hidden="true"><use href="#i-scale"/></svg>Find an Attorney</h2>
                     
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div>
@@ -640,7 +669,7 @@
                                 </div>
                                 
                                 <button onclick="searchAttorneys()" class="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-4 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all">
-                                    🔍 Find Attorneys
+                                    <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>Find Attorneys
                                 </button>
                             </div>
                         </div>
@@ -659,56 +688,13 @@
         </div>
     </section>
 
-    <!-- Success Stories Section -->
-    <section class="py-16 bg-gradient-to-r from-yellow-50 to-amber-50">
-        <div class="w-[90%] max-w-7xl mx-auto px-4">
-            <h2 class="text-3xl font-bold text-gray-800 mb-12 text-center">🌟 Success Stories</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div class="bg-white p-6 rounded-2xl border border-yellow-200 shadow-lg">
-                    <div class="flex items-start space-x-4">
-                        <div class="w-3 h-3 bg-green-500 rounded-full mt-2"></div>
-                        <div>
-                            <h3 class="font-semibold text-gray-800 mb-2">Maria S. - Los Angeles</h3>
-                            <p class="text-gray-600 mb-3">"The document generator helped me create a professional demand letter. Got my $2,400 security deposit back within 2 weeks!"</p>
-                            <span class="text-sm text-green-600 font-medium">💰 $2,400 recovered</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-2xl border border-yellow-200 shadow-lg">
-                    <div class="flex items-start space-x-4">
-                        <div class="w-3 h-3 bg-blue-500 rounded-full mt-2"></div>
-                        <div>
-                            <h3 class="font-semibold text-gray-800 mb-2">James R. - New York</h3>
-                            <p class="text-gray-600 mb-3">"The rights checker showed me my landlord's rent increase was illegal. Saved me $300/month with their guidance!"</p>
-                            <span class="text-sm text-blue-600 font-medium">💰 $3,600/year saved</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-2xl border border-yellow-200 shadow-lg">
-                    <div class="flex items-start space-x-4">
-                        <div class="w-3 h-3 bg-purple-500 rounded-full mt-2"></div>
-                        <div>
-                            <h3 class="font-semibold text-gray-800 mb-2">Sarah K. - Chicago</h3>
-                            <p class="text-gray-600 mb-3">"Found an affordable attorney through their directory. Successfully fought an unfair eviction and stayed in my home!"</p>
-                            <span class="text-sm text-purple-600 font-medium">🏠 Housing secured</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="mt-12 text-center">
-                <p class="text-gray-600 mb-4">Over 100,000+ tenants have resolved their legal issues using our platform</p>
-                <div class="flex justify-center space-x-6">
-                    <span class="text-sm bg-white px-4 py-2 rounded-full border border-yellow-300">⭐⭐⭐⭐⭐ 4.9/5 Rating</span>
-                    <span class="text-sm bg-white px-4 py-2 rounded-full border border-yellow-300">🔒 Confidential & Secure</span>
-                    <span class="text-sm bg-white px-4 py-2 rounded-full border border-yellow-300">📞 Expert Support</span>
-                </div>
-            </div>
-        </div>
-    </section>
+    <!-- The success stories that were here were invented: named people who do
+     not exist, amounts they did not recover, "Over 100,000+ tenants" and a
+     4.9/5 rating nobody gave. Presenting made-up testimonials as real is
+     deceptive anywhere, and on a page people come to for legal help it is the
+     worst place to do it. Real ones can go here, with permission and with the
+     numbers that actually happened. -->
+
 
     <!-- Footer CTA -->
     <section class="py-16 bg-gray-900 text-white">
@@ -778,7 +764,7 @@
                         <div class="space-y-4">
                             <h5 class="font-semibold text-gray-800">We recommend starting with:</h5>
                             <div class="bg-white p-4 rounded-lg border border-green-200">
-                                <h6 class="font-medium text-gray-800 mb-2">🚨 Problem Solver Tool</h6>
+                                <h6 class="font-medium text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>Problem Solver Tool</h6>
                                 <p class="text-sm text-gray-600 mb-3">Get step-by-step guidance for your specific issue</p>
                                 <button onclick="showTab('recommendation')" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm">
                                     Start Problem Solver
@@ -792,7 +778,7 @@
                         <div class="space-y-4">
                             <h5 class="font-semibold text-gray-800">We recommend:</h5>
                             <div class="bg-white p-4 rounded-lg border border-green-200">
-                                <h6 class="font-medium text-gray-800 mb-2">📄 Document Generator</h6>
+                                <h6 class="font-medium text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-file"/></svg>Document Generator</h6>
                                 <p class="text-sm text-gray-600 mb-3">Create professional legal documents instantly</p>
                                 <button onclick="showTab('documents')" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm">
                                     Generate Documents
@@ -806,7 +792,7 @@
                         <div class="space-y-4">
                             <h5 class="font-semibold text-gray-800">Perfect! You should explore:</h5>
                             <div class="bg-white p-4 rounded-lg border border-green-200">
-                                <h6 class="font-medium text-gray-800 mb-2">🛡️ Rights Center</h6>
+                                <h6 class="font-medium text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Rights Center</h6>
                                 <p class="text-sm text-gray-600 mb-3">Learn about your tenant rights by topic</p>
                                 <button onclick="showTab('rights')" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm">
                                     Know Your Rights
@@ -820,7 +806,7 @@
                         <div class="space-y-4">
                             <h5 class="font-semibold text-gray-800">Great thinking! Check out:</h5>
                             <div class="bg-white p-4 rounded-lg border border-green-200">
-                                <h6 class="font-medium text-gray-800 mb-2">📚 Legal Resources</h6>
+                                <h6 class="font-medium text-gray-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg>Legal Resources</h6>
                                 <p class="text-sm text-gray-600 mb-3">Preventive guides, forms, and tools</p>
                                 <button onclick="showTab('resources')" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm">
                                     Browse Resources
@@ -903,7 +889,7 @@
 
                 lastGeneratedDocument = data.response || '';
                 preview.innerHTML = `<div class="whitespace-pre-wrap text-sm text-gray-800">${escapeHtml(lastGeneratedDocument)}</div>
-                    <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded">⚠️ AI-generated draft — not legal advice. Have an attorney review before signing.</p>`;
+                    <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>AI-generated draft — not legal advice. Have an attorney review before signing.</p>`;
             } catch (err) {
                 preview.innerHTML = `<p class="text-red-600">Failed to generate: ${escapeHtml(err.message)}. Ensure OPENAI_API_KEY or GROQ_API_KEY is set on Railway.</p>`;
             }
@@ -1088,7 +1074,7 @@
                         </div>
                         ${typeof maxDeposit === 'number' ? `
                         <div class="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                            <h5 class="font-medium text-blue-800 mb-2">💡 Know Your Rights</h5>
+                            <h5 class="font-medium text-blue-800 mb-2"><svg class="ic" aria-hidden="true"><use href="#i-shield"/></svg>Know Your Rights</h5>
                             <p class="text-sm text-blue-700">If your landlord charged more than $${maxDeposit.toLocaleString()}, this may be illegal in ${state}.</p>
                         </div>
                         ` : ''}
@@ -1166,7 +1152,7 @@
                     <div class="space-y-4">
                         <h4 class="font-semibold text-gray-800">Legal help options in ${escapeHtml(location)}</h4>
                         <div class="whitespace-pre-wrap text-sm text-gray-800 bg-white p-4 rounded-lg border">${escapeHtml(data.response || '')}</div>
-                        <p class="text-xs text-amber-700 p-2 bg-amber-50 rounded">⚠️ Educational guidance only — verify all contacts independently. RoomFinderAI does not endorse specific attorneys.</p>
+                        <p class="text-xs text-amber-700 p-2 bg-amber-50 rounded"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>Educational guidance only — verify all contacts independently. RoomFinderAI does not endorse specific attorneys.</p>
                     </div>`;
             } catch (err) {
                 resultsDiv.innerHTML = `<p class="text-red-600">${escapeHtml(err.message)}</p>`;
@@ -1190,7 +1176,7 @@
                 panel.innerHTML = `
                     <h3 class="text-xl font-bold mb-4">${escapeHtml(title)}</h3>
                     <div class="whitespace-pre-wrap text-sm text-gray-800">${escapeHtml(data.response || '')}</div>
-                    <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded">⚠️ General information only — not legal advice. Consult a licensed attorney for your situation.</p>`;
+                    <p class="text-xs text-amber-700 mt-4 p-2 bg-amber-50 rounded"><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg>General information only — not legal advice. Consult a licensed attorney for your situation.</p>`;
             } catch (err) {
                 panel.innerHTML = `<p class="text-red-600">${escapeHtml(err.message)}</p>`;
             }
