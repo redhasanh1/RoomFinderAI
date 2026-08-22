@@ -1709,6 +1709,32 @@ function clearLandingFilters() {
     }
 }
 
+/**
+ * Takes the hero's search box down to the people it searches.
+ *
+ * Instant, not smooth: something on this page cancels a smooth scroll outright
+ * - measured, an instant scroll to 900 arrives and a smooth one to the same
+ * place ends back at 0 - so the button filtered the list and then appeared to
+ * do nothing at all.
+ */
+function jumpToBrowse() {
+    var hero = document.getElementById('heroPeopleSearch');
+    var field = document.getElementById('landingSearchFilter');
+
+    if (hero && field) {
+        field.value = hero.value;
+        applyLandingFilters();
+    }
+
+    var target = document.getElementById('landingProfilesGrid')
+        || document.getElementById('landingResultsCount');
+    if (target) {
+        // The header is fixed, so scrollIntoView alone puts the first row under it.
+        var top = target.getBoundingClientRect().top + window.pageYOffset - 140;
+        window.scrollTo({ top: top, behavior: 'auto' });
+    }
+}
+
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
