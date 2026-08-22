@@ -125,14 +125,34 @@ class RoomPalApp {
                 : '';
         }
 
+        // The five questions are selects on this form now, not buttons in a
+        // modal, so editing sets their values directly. selectOption and
+        // selectScore drove the old modal's buttons and had nothing to act on
+        // here, which would have reset somebody's answers every time they
+        // edited anything else.
+        const setSelect = (name, value) => {
+            if (value == null || value === '') return;
+            const el = form.querySelector(`[name="${name}"]`);
+            if (el) el.value = value;
+        };
+
         if (p.lifestyle) {
-            if (p.lifestyle.sleepSchedule) this.selectOption('sleep', p.lifestyle.sleepSchedule);
-            if (p.lifestyle.smoking) this.selectOption('smoking', p.lifestyle.smoking);
-            if (p.lifestyle.pets) this.selectOption('pets', p.lifestyle.pets);
+            setSelect('sleepSchedule', p.lifestyle.sleepSchedule);
+            setSelect('smoking', p.lifestyle.smoking);
+            setSelect('pets', p.lifestyle.pets);
         }
-        if (p.compatibility_scores) {
-            if (p.compatibility_scores.cleanliness != null) this.selectScore('cleanliness', p.compatibility_scores.cleanliness);
-            if (p.compatibility_scores.socialLevel != null) this.selectScore('social', p.compatibility_scores.socialLevel);
+
+        // Back from the numbers matching stores to the words the form shows.
+        const scores = p.compatibility_scores || {};
+        const nearest = (value, table) => {
+            if (value == null) return null;
+            return Object.keys(table).reduce((best, key) =>
+                Math.abs(table[key] - value) < Math.abs(table[best] - value) ? key : best);
+        };
+        setSelect('cleanliness', nearest(scores.cleanliness, { 'very-clean': 9, 'clean': 7, 'relaxed': 4 }));
+        setSelect('socialLevel', nearest(scores.socialLevel, { 'social': 8, 'balanced': 5, 'quiet': 2 }));
+        if (!p.lifestyle?.sleepSchedule) {
+            setSelect('sleepSchedule', nearest(scores.sleepSchedule, { 'early': 2, 'moderate': 5, 'night-owl': 8 }));
         }
 
         const submitBtn = form.querySelector('button[type="submit"]');
@@ -1540,17 +1560,26 @@ class RoomPalApp {
             move_in_date: formData.get('move_in_date') || null,
             bio: formData.get('bio') || '',
             avatar_url: this.uploadedPhoto || null,
+            // Read straight off the form, which now carries these questions
+            // itself. They used to come from this.profileFormData, filled by a
+            // separate modal that never saved anything — and under different
+            // keys than the ones read here (`sleep` vs `sleepSchedule`,
+            // `social` vs `socialLevel`), so two of the five arrived undefined
+            // even when the modal had been filled in.
             lifestyle: {
-                sleepSchedule: this.profileFormData.sleep,
-                smoking: this.profileFormData.smoking,
-                pets: this.profileFormData.pets,
-                petsOk: this.profileFormData.pets === 'Pets OK' || this.profileFormData.pets === 'Have Pets',
-                hasPets: this.profileFormData.pets === 'Have Pets'
+                sleepSchedule: formData.get('sleepSchedule') || null,
+                smoking: formData.get('smoking') || null,
+                pets: formData.get('pets') || null,
+                petsOk: ['love', 'ok', 'have'].includes(formData.get('pets')),
+                hasPets: formData.get('pets') === 'have'
             },
+            // Numbers, because matching compares them. The words on the form
+            // are what a person says; these are what the comparison needs.
             compatibility_scores: {
-                cleanliness: this.profileFormData.cleanliness,
-                socialLevel: this.profileFormData.social,
-                petPolicy: this.profileFormData.pets === 'No Pets' ? 1 : (this.profileFormData.pets === 'Pets OK' || this.profileFormData.pets === 'Have Pets' ? 8 : 5)
+                cleanliness: ({ 'very-clean': 9, 'clean': 7, 'relaxed': 4 })[formData.get('cleanliness')] ?? null,
+                socialLevel: ({ 'social': 8, 'balanced': 5, 'quiet': 2 })[formData.get('socialLevel')] ?? null,
+                sleepSchedule: ({ 'early': 2, 'moderate': 5, 'night-owl': 8 })[formData.get('sleepSchedule')] ?? null,
+                petPolicy: formData.get('pets') === 'no' ? 1 : (['love', 'ok', 'have'].includes(formData.get('pets')) ? 8 : 5)
             }
         };
 
