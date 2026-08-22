@@ -148,7 +148,27 @@
             '#rf-msg-launcher-count[hidden]{display:none}',
             /* Out of the way while the drawer it opens is on screen. */
             'body.rf-drawer-open #rf-msg-launcher{opacity:0;pointer-events:none}',
-            '@media (max-width:640px){#rf-msg-launcher{right:16px;bottom:16px;width:50px;height:50px}}'
+            '@media (max-width:640px){#rf-msg-launcher{right:16px;bottom:16px;width:50px;height:50px}}',
+            /* Notifications popover under the bell. */
+            '#rf-note-pop{position:fixed;z-index:99999;background:#fff;border:1px solid #e5e7eb;',
+            '  border-radius:14px;box-shadow:0 18px 44px rgba(15,23,42,.18);overflow:hidden}',
+            '#rf-note-pop[hidden]{display:none}',
+            '#rf-note-head{padding:11px 14px;font-size:13px;font-weight:700;color:#111827;',
+            '  border-bottom:1px solid #f3f4f6}',
+            '#rf-note-body{max-height:min(60vh,380px);overflow-y:auto}',
+            '.rf-note-empty{padding:22px 16px;text-align:center;font-size:13px;color:#6b7280}',
+            '.rf-note-row{display:flex;gap:10px;width:100%;text-align:left;background:none;border:none;',
+            '  padding:11px 14px;cursor:pointer;border-bottom:1px solid #f9fafb;font:inherit}',
+            '.rf-note-row:hover{background:#f9fafb}',
+            '.rf-note-pip{width:8px;height:8px;border-radius:999px;flex:none;margin-top:5px}',
+            '.rf-note-main{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1}',
+            '.rf-note-title{font-size:13px;font-weight:600;color:#111827}',
+            '.rf-note-meta{display:flex;align-items:center;gap:7px}',
+            '.rf-note-when{font-size:11px;color:#9ca3af}',
+            '.rf-note-preview{font-size:12px;color:#6b7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
+            '#rf-note-all{width:100%;border:none;border-top:1px solid #f3f4f6;background:#fff;color:#4f46e5;',
+            '  font:inherit;font-size:12px;font-weight:600;padding:10px;cursor:pointer}',
+            '#rf-note-all:hover{background:#f5f3ff}'
         ].join('\n');
         document.head.appendChild(style);
     }
@@ -203,20 +223,152 @@
         document.body.appendChild(b);
     }
 
+    /**
+     * The bell in the header.
+     *
+     * A bell, not an envelope: this is the place people look for "has anything
+     * happened", and what appears under it is a list of things that happened -
+     * new messages today, more later - not a mailbox. The mailbox is the drawer
+     * at the bottom right.
+     */
     function buildButton() {
 
         var btn = document.createElement('button');
         btn.id = 'rf-msg-btn';
         btn.type = 'button';
-        btn.title = 'Messages';
-        btn.setAttribute('aria-label', 'Messages');
+        btn.title = 'Notifications';
+        btn.setAttribute('aria-label', 'Notifications');
         btn.innerHTML =
             '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
             ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
-            '<path d="M4 4h16v12H5.17L4 17.17z"/><path d="M7 8h10M7 12h6"/></svg>' +
+            '<path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/>' +
+            '<path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>' +
             '<span id="rf-msg-count" hidden>0</span>';
-        btn.addEventListener('click', toggle);
+        btn.addEventListener('click', toggleNotifications);
         return btn;
+    }
+
+    /* ---------------------------------------------------------------
+       Notifications
+       ---------------------------------------------------------------
+       The bell answers "has anything happened while I was away". Right
+       now the only thing that happens is a message arriving, so each
+       unread thread becomes one notification line, tagged with the part
+       of the site it came from. Tapping one opens that thread in the
+       drawer, which is where replying lives.
+    */
+
+    function unreadThreads() {
+        return state.conversations.filter(function (c) { return c.unreadCount > 0; });
+    }
+
+    function injectNotifications() {
+        if (document.getElementById('rf-note-pop')) return;
+        var pop = document.createElement('div');
+        pop.id = 'rf-note-pop';
+        pop.setAttribute('role', 'dialog');
+        pop.setAttribute('aria-label', 'Notifications');
+        pop.hidden = true;
+        pop.innerHTML =
+            '<div id="rf-note-head">Notifications</div>' +
+            '<div id="rf-note-body"></div>' +
+            '<button type="button" id="rf-note-all">Open all messages</button>';
+        document.body.appendChild(pop);
+
+        document.getElementById('rf-note-all').addEventListener('click', function () {
+            closeNotifications();
+            open();
+        });
+
+        // Anywhere else dismisses it, the way every other dropdown behaves.
+        document.addEventListener('click', function (e) {
+            var btn = document.getElementById('rf-msg-btn');
+            if (pop.hidden) return;
+            if (pop.contains(e.target) || (btn && btn.contains(e.target))) return;
+            closeNotifications();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') closeNotifications();
+        });
+    }
+
+    function renderNotifications() {
+        var body = document.getElementById('rf-note-body');
+        if (!body) return;
+
+        if (!state.email) {
+            body.innerHTML = '<div class="rf-note-empty">Sign in to see your notifications.</div>';
+            return;
+        }
+
+        var threads = unreadThreads();
+        if (!threads.length) {
+            body.innerHTML = '<div class="rf-note-empty">You are all caught up.</div>';
+            return;
+        }
+
+        body.innerHTML = threads.map(function (c) {
+            var source = sourceOf(c);
+            var who = c.otherParty || 'Someone';
+            var count = c.unreadCount;
+            return '<button type="button" class="rf-note-row" data-id="' + esc(c.id) + '">' +
+                '<span class="rf-note-pip" style="background:' + source.color + '"></span>' +
+                '<span class="rf-note-main">' +
+                    '<span class="rf-note-title">' + count + ' new message' + (count === 1 ? '' : 's') +
+                        ' from ' + esc(who) + '</span>' +
+                    '<span class="rf-note-meta">' +
+                        '<span class="rf-msg-tag" style="color:' + source.color +
+                            ';background:' + source.color + '1f">' + esc(source.label) + '</span>' +
+                        '<span class="rf-note-when">' + esc(timeAgo(c.lastMessageAt)) + '</span>' +
+                    '</span>' +
+                    '<span class="rf-note-preview">' + esc(c.lastMessage || '') + '</span>' +
+                '</span>' +
+            '</button>';
+        }).join('');
+
+        Array.prototype.forEach.call(body.querySelectorAll('.rf-note-row'), function (row) {
+            row.addEventListener('click', function () {
+                var id = row.getAttribute('data-id');
+                closeNotifications();
+                open();
+                openThread(id);
+            });
+        });
+    }
+
+    function toggleNotifications(e) {
+        if (e) e.stopPropagation();
+        var pop = document.getElementById('rf-note-pop');
+        if (!pop) return;
+        if (pop.hidden) {
+            // Refresh on open so the list is what is true now, not what was
+            // true up to fifteen seconds ago.
+            refreshUnread();
+            renderNotifications();
+            positionNotifications();
+            pop.hidden = false;
+        } else {
+            closeNotifications();
+        }
+    }
+
+    function closeNotifications() {
+        var pop = document.getElementById('rf-note-pop');
+        if (pop) pop.hidden = true;
+    }
+
+    /** Under the bell, and never off the side of a narrow screen. */
+    function positionNotifications() {
+        var pop = document.getElementById('rf-note-pop');
+        var btn = document.getElementById('rf-msg-btn');
+        if (!pop || !btn) return;
+        var box = btn.getBoundingClientRect();
+        var width = Math.min(340, window.innerWidth - 24);
+        var left = Math.min(Math.max(12, box.left + box.width / 2 - width / 2),
+                            window.innerWidth - width - 12);
+        pop.style.width = width + 'px';
+        pop.style.top = (box.bottom + 10) + 'px';
+        pop.style.left = left + 'px';
     }
 
     function injectDrawer() {
@@ -279,6 +431,11 @@
                 }, 0);
                 paintCount();
                 if (state.open && !state.activeId) renderList();
+                // Keep an open bell list honest while it sits there: a message
+                // arriving during the poll should appear, and one that has been
+                // read elsewhere should drop off.
+                var pop = document.getElementById('rf-note-pop');
+                if (pop && !pop.hidden) renderNotifications();
             })
             .catch(function () { /* a badge that fails to update must not break the page */ });
     }
@@ -457,8 +614,10 @@
         state.email = currentEmail();
         injectStyles();
         injectDrawer();
+        injectNotifications();
         injectLauncher();
         hideLegacyPanel();
+        window.addEventListener('resize', positionNotifications);
 
         injectButton();
 
@@ -473,6 +632,7 @@
                 if (!document.getElementById('rf-msg-btn')) injectButton();
                 if (!document.getElementById('rf-msg-launcher')) injectLauncher();
                 hideLegacyPanel();
+        window.addEventListener('resize', positionNotifications);
             });
             watcher.observe(document.body, { childList: true, subtree: true });
         }
