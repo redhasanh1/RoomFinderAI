@@ -127,7 +127,24 @@
             '#rf-msg-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15)}',
             '#rf-msg-send{border:none;background:#6366f1;color:#fff;border-radius:999px;width:38px;height:38px;',
             '  cursor:pointer;flex:none;font-size:15px}',
-            '#rf-msg-send:disabled{opacity:.45;cursor:not-allowed}'
+            '#rf-msg-send:disabled{opacity:.45;cursor:not-allowed}',
+            /* The launcher. Always on screen, on every page, because the
+               header button kept being wiped out: site-nav.js rebuilds the nav
+               after this script inserts into it, so on listings.html there was
+               no way into messages at all. This one hangs off <body>, which
+               nothing else rewrites. */
+            '#rf-msg-launcher{position:fixed;right:20px;bottom:20px;width:54px;height:54px;border-radius:999px;',
+            '  border:none;cursor:pointer;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;',
+            '  box-shadow:0 6px 22px rgba(79,70,229,.42);z-index:99998;display:flex;align-items:center;',
+            '  justify-content:center;transition:transform .15s ease,box-shadow .15s ease}',
+            '#rf-msg-launcher:hover{transform:scale(1.07);box-shadow:0 8px 28px rgba(79,70,229,.55)}',
+            '#rf-msg-launcher-count{position:absolute;top:-2px;right:-2px;min-width:20px;height:20px;padding:0 5px;',
+            '  border-radius:999px;background:#ef4444;color:#fff;font-size:11px;font-weight:700;line-height:20px;',
+            '  text-align:center;box-shadow:0 0 0 2px #fff}',
+            '#rf-msg-launcher-count[hidden]{display:none}',
+            /* Out of the way while the drawer it opens is on screen. */
+            'body.rf-drawer-open #rf-msg-launcher{opacity:0;pointer-events:none}',
+            '@media (max-width:640px){#rf-msg-launcher{right:16px;bottom:16px;width:50px;height:50px}}'
         ].join('\n');
         document.head.appendChild(style);
     }
@@ -157,6 +174,29 @@
             return true;
         }
         return false;
+    }
+
+    /**
+     * The permanent way in, bottom right of every page.
+     *
+     * Appended to <body> rather than the header on purpose: the header button
+     * is inserted into a nav that site-nav.js rebuilds a moment later, which
+     * silently removed it and left listings.html with no entry point at all.
+     */
+    function injectLauncher() {
+        if (document.getElementById('rf-msg-launcher')) return;
+        var b = document.createElement('button');
+        b.id = 'rf-msg-launcher';
+        b.type = 'button';
+        b.title = 'Messages';
+        b.setAttribute('aria-label', 'Messages');
+        b.innerHTML =
+            '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"' +
+            ' stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+            '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' +
+            '<span id="rf-msg-launcher-count" hidden>0</span>';
+        b.addEventListener('click', toggle);
+        document.body.appendChild(b);
     }
 
     function buildButton() {
@@ -240,14 +280,19 @@
     }
 
     function paintCount() {
-        var el = document.getElementById('rf-msg-count');
-        if (!el) return;
-        if (state.unread > 0) {
-            el.textContent = state.unread > 99 ? '99+' : String(state.unread);
-            el.hidden = false;
-        } else {
-            el.hidden = true;
-        }
+        var text = state.unread > 99 ? '99+' : String(state.unread);
+        // Both carry it: the launcher is the way in, the header one is the
+        // notification you notice without looking down.
+        ['rf-msg-count', 'rf-msg-launcher-count'].forEach(function (id) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            if (state.unread > 0) {
+                el.textContent = text;
+                el.hidden = false;
+            } else {
+                el.hidden = true;
+            }
+        });
     }
 
     // --------------------------------------------------------------- rendering
@@ -384,6 +429,7 @@
         var drawer = document.getElementById('rf-msg-drawer');
         if (!drawer) return;
         state.open = true;
+        document.body.classList.add('rf-drawer-open');
         drawer.classList.add('rf-open');
         showList();
         refreshUnread();
@@ -395,6 +441,7 @@
         state.open = false;
         state.activeId = null;
         clearInterval(state.threadTimer);
+        document.body.classList.remove('rf-drawer-open');
         drawer.classList.remove('rf-open');
     }
 
@@ -406,14 +453,24 @@
         state.email = currentEmail();
         injectStyles();
         injectDrawer();
+        injectLauncher();
         hideLegacyPanel();
 
-        // The header is built by site-nav.js, which may not have run yet.
-        if (!injectButton()) {
-            var tries = 0;
-            var wait = setInterval(function () {
-                if (injectButton() || ++tries > 40) clearInterval(wait);
-            }, 150);
+        injectButton();
+
+        // Put it back when the header is rebuilt.
+        //
+        // site-nav.js writes the nav's contents after this script has already
+        // inserted into it, so the button was there and then gone, leaving no
+        // header entry point on the pages that rebuild — listings.html among
+        // them. Watching is more reliable than guessing how long to wait.
+        if (document.body) {
+            var watcher = new MutationObserver(function () {
+                if (!document.getElementById('rf-msg-btn')) injectButton();
+                if (!document.getElementById('rf-msg-launcher')) injectLauncher();
+                hideLegacyPanel();
+            });
+            watcher.observe(document.body, { childList: true, subtree: true });
         }
 
         if (state.email) {
