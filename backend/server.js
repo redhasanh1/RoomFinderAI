@@ -1459,28 +1459,18 @@ app.get('/api/roommate-profiles', async (req, res) => {
             if (!Number.isNaN(ceiling)) query = query.lte('budget_min', ceiling);
         }
 
-        // Free text, a word at a time across the fields a person would search
-        // by. Without this the only way to find someone was to scroll.
-        if (q && q.trim()) {
-            const words = String(q).toLowerCase()
-                .split(/[\s,()"'*%]+/)
-                .filter(w => w.length >= 2)
-                .slice(0, 4);
-            for (const word of words) {
-                query = query.or([
-                    `name.ilike.%${word}%`,
-                    `bio.ilike.%${word}%`,
-                    `room_location.ilike.%${word}%`,
-                    `room_description.ilike.%${word}%`
-                ].join(','));
-            }
-        }
+
 
         // City is matched in code below because it can live in an array column
         // OR a scalar one, so when a city is given the page has to be taken
         // after filtering rather than by the database.
         const cityGiven = !!(city && city.trim());
-        if (cityGiven) {
+        const queryGiven = !!(q && q.trim());
+        // Both of these are matched in code, so both have to take their page
+        // after filtering rather than from the database.
+        const filterInCode = cityGiven || queryGiven;
+
+        if (filterInCode) {
             // Bounded anyway. Dropping the range here without a cap would ask
             // for every active profile on the site to filter four dozen out of.
             query = query.limit(500);
@@ -1500,15 +1490,40 @@ app.get('/api/roommate-profiles', async (req, res) => {
         // City is matched here rather than in the query: it can live in
         // preferred_areas (an array) OR room_location, and PostgREST cannot
         // express that as a single OR across a scalar and an array column.
-        if (city && city.trim()) {
-            const needle = city.trim().toLowerCase();
-            profiles = profiles.filter((p) => {
-                const areas = Array.isArray(p.preferred_areas) ? p.preferred_areas.join(' ') : '';
-                return `${areas} ${p.room_location || ''}`.toLowerCase().includes(needle);
-            });
-        }
+        /// Everything about a person that is worth matching text against,
+        /// including preferred_areas — which is a text array, and the field
+        /// most people's city actually lives in. PostgREST cannot ILIKE an
+        /// array, which is why this is done here: searching "toronto" found
+        /// nobody while three profiles listed Toronto.
+        const haystack = (p) => [
+            p.name,
+            p.bio,
+            p.room_location,
+            p.room_description,
+            Array.isArray(p.preferred_areas) ? p.preferred_areas.join(' ') : p.preferred_areas
+        ].filter(Boolean).join(' ').toLowerCase();
 
         if (cityGiven) {
+            const needle = city.trim().toLowerCase();
+            profiles = profiles.filter((p) => haystack(p).includes(needle));
+        }
+
+        if (queryGiven) {
+            // Every word has to appear somewhere, so "toronto student" narrows
+            // rather than widens.
+            const words = String(q).toLowerCase()
+                .split(/[\s,()"'*%]+/)
+                .filter(w => w.length >= 2)
+                .slice(0, 4);
+            if (words.length) {
+                profiles = profiles.filter((p) => {
+                    const hay = haystack(p);
+                    return words.every(w => hay.includes(w));
+                });
+            }
+        }
+
+        if (filterInCode) {
             total = profiles.length;
             profiles = profiles.slice(offset, offset + limit);
         }
