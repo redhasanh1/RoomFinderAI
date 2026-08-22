@@ -27,6 +27,17 @@ struct ListingDetailScreen: View {
     @State private var isOpeningThread = false
     @State private var threadProblem: String?
 
+    /// Whether this room belongs to the person looking at it.
+    ///
+    /// Both the negotiate button and the message button are pointless on your
+    /// own listing, and offering them is what led somebody to queue a
+    /// negotiation against themselves.
+    private var isMyListing: Bool {
+        guard let me = CurrentUser.shared.email?.lowercased(),
+              let owner = listing.userEmail?.lowercased(), !owner.isEmpty else { return false }
+        return owner == me
+    }
+
     /// Finds or starts the thread with this room's owner, then opens it.
     ///
     /// Idempotent server-side, so tapping twice does not produce two threads —
@@ -317,16 +328,29 @@ struct ListingDetailScreen: View {
             // landlord, which meant a tenant chasing four rooms ran four
             // separate negotiations with no way to see them together — and
             // confirmed no goals before the first message went out.
-            Button {
-                Haptics.impact(.medium)
-                state.queueForNegotiation(listing)
-            } label: {
-                Label("Negotiate this rent", systemImage: "bubble.left.and.text.bubble.right.fill")
-                    .font(.headline)
-                    .foregroundStyle(.white)
+            // Not offered on your own room. Refusing the tap afterwards is a
+            // worse way to say it than not offering it: the button is the
+            // thing that suggested the idea.
+            if isMyListing {
+                Label("This is your listing", systemImage: "person.crop.circle.badge.checkmark")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 15)
-                    .background(Theme.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .padding(.vertical, 14)
+                    .background(Color(.secondarySystemBackground),
+                                in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            } else {
+                Button {
+                    Haptics.impact(.medium)
+                    state.queueForNegotiation(listing)
+                } label: {
+                    Label("Negotiate this rent", systemImage: "bubble.left.and.text.bubble.right.fill")
+                        .font(.headline)
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(Theme.gradient, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
             }
 
             // Says where this room stands without changing what the button
@@ -348,6 +372,10 @@ struct ListingDetailScreen: View {
             // the person to find the contact form inside it — a browser, in an
             // app, to send a message the app can already send. The thread it
             // opens is the same one the negotiator and the inbox use.
+            // Hidden on your own room for the same reason as the negotiate
+            // button: the server refuses it anyway, and an error after the tap
+            // is a worse explanation than never offering it.
+            if !isMyListing {
             Button {
                 Haptics.impact(.light)
                 Task { await openThread() }
@@ -374,6 +402,7 @@ struct ListingDetailScreen: View {
                 )
             }
             .disabled(isOpeningThread)
+            }
 
             if let threadProblem {
                 Text(threadProblem)

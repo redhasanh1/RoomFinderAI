@@ -173,6 +173,20 @@ final class NegotiationCampaign: ObservableObject {
     /// the same room does not line it up to be messaged twice.
     @discardableResult
     func queue(_ listing: Listing) -> Bool {
+        // Not your own room.
+        //
+        // The two loops that pick rooms automatically have always skipped the
+        // tenant's own listings, but this is the one a person taps, and it had
+        // no such check — so tapping "Negotiate this rent" on a room you posted
+        // queued you to haggle with yourself. The server refuses the
+        // conversation, so nothing was ever sent, but the room sat in the
+        // campaign looking like a negotiation that had stalled.
+        if let me = CurrentUser.shared.email?.lowercased(),
+           (listing.userEmail ?? "").lowercased() == me {
+            errorMessage = "That's your own listing, so there's nobody to negotiate with."
+            return false
+        }
+
         guard !isTaken(listing.id) else { return false }
         guard queued.count + active.count < Self.maxTargets else {
             errorMessage = "That's \(Self.maxTargets) rooms already, as many landlords as this will message at once."
