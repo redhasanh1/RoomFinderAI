@@ -1432,32 +1432,70 @@ app.get('/api/roommate-profiles', async (req, res) => {
             return res.status(503).json({ success: false, data: null, message: 'Database not connected' });
         }
 
-        const { userType, city, maxBudget } = req.query;
+        const { userType, city, maxBudget, q } = req.query;
+
+        // Paged, because this used to take the newest 200 and stop. With more
+        // people than that on the site the rest were unreachable: no search, no
+        // way to page past them, and nothing on screen saying they existed.
+        const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 24, 1), 100);
+        const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
         let query = supabase
             .from('roommate_profiles')
-            .select('id, name, user_type, budget_min, budget_max, preferred_areas, move_in_date, bio, avatar_url, room_rent, room_location, room_description, room_photos, created_at')
+            // count:'exact' so the page can say how many there really are
+            // rather than how many it happened to receive.
+            .select('id, name, user_type, budget_min, budget_max, preferred_areas, move_in_date, bio, avatar_url, room_rent, room_location, room_description, room_photos, created_at',
+                    { count: 'exact' })
             .eq('is_active', true)
-            .order('created_at', { ascending: false })
-            .limit(200);
+            .order('created_at', { ascending: false });
 
         if (userType === 'seeking' || userType === 'has_spot') {
             query = query.eq('user_type', userType);
         }
         if (maxBudget) {
-            const limit = parseInt(maxBudget, 10);
+            const ceiling = parseInt(maxBudget, 10);
             // Matches anyone whose floor is within budget; budget_min is the
             // least they expect to pay, so a higher floor prices them out.
-            if (!Number.isNaN(limit)) query = query.lte('budget_min', limit);
+            if (!Number.isNaN(ceiling)) query = query.lte('budget_min', ceiling);
         }
 
-        const { data, error } = await query;
+        // Free text, a word at a time across the fields a person would search
+        // by. Without this the only way to find someone was to scroll.
+        if (q && q.trim()) {
+            const words = String(q).toLowerCase()
+                .split(/[\s,()"'*%]+/)
+                .filter(w => w.length >= 2)
+                .slice(0, 4);
+            for (const word of words) {
+                query = query.or([
+                    `name.ilike.%${word}%`,
+                    `bio.ilike.%${word}%`,
+                    `room_location.ilike.%${word}%`,
+                    `room_description.ilike.%${word}%`
+                ].join(','));
+            }
+        }
+
+        // City is matched in code below because it can live in an array column
+        // OR a scalar one, so when a city is given the page has to be taken
+        // after filtering rather than by the database.
+        const cityGiven = !!(city && city.trim());
+        if (cityGiven) {
+            // Bounded anyway. Dropping the range here without a cap would ask
+            // for every active profile on the site to filter four dozen out of.
+            query = query.limit(500);
+        } else {
+            query = query.range(offset, offset + limit - 1);
+        }
+
+        const { data, error, count } = await query;
         if (error) {
             console.error('Error fetching roommate profiles:', error.message);
             return res.status(500).json({ success: false, data: null, message: 'Failed to fetch roommate profiles' });
         }
 
         let profiles = data || [];
+        let total = count ?? profiles.length;
 
         // City is matched here rather than in the query: it can live in
         // preferred_areas (an array) OR room_location, and PostgREST cannot
@@ -1470,7 +1508,21 @@ app.get('/api/roommate-profiles', async (req, res) => {
             });
         }
 
-        res.json({ success: true, data: profiles });
+        if (cityGiven) {
+            total = profiles.length;
+            profiles = profiles.slice(offset, offset + limit);
+        }
+
+        res.json({
+            success: true,
+            data: profiles,
+            total,
+            offset,
+            limit,
+            // So the page knows whether to offer more rather than guessing from
+            // how full the last batch looked.
+            hasMore: offset + profiles.length < total
+        });
     } catch (error) {
         console.error('Roommate profiles endpoint failed:', error);
         res.status(500).json({ success: false, data: null, message: 'Failed to fetch roommate profiles' });
