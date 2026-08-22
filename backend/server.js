@@ -1341,7 +1341,10 @@ async function fetchVerificationMap(supabase, emails) {
  * (word1 anywhere) AND (word2 anywhere).
  */
 function applyListingTextSearch(dbQuery, rawText) {
-    const FIELDS = ['title', 'description', 'city', 'street', 'house_type', 'postal_code'];
+    // 'postalCode' is camelCase in this table, unlike every neighbour. Spelling
+    // it postal_code made PostgREST reject the whole query, which returned no
+    // rooms for any search at all rather than merely missing postcode matches.
+    const FIELDS = ['title', 'description', 'city', 'street', 'house_type', 'location', 'postalCode'];
 
     const words = String(rawText || '')
         .toLowerCase()
@@ -1736,7 +1739,7 @@ app.get('/api/listings/search', async (req, res) => {
             const locationTerm = location.toLowerCase().trim();
             // Same word-by-word treatment, so "Los Angeles" as a location works.
             for (const word of String(locationTerm).toLowerCase().split(/[\s,()"'*%]+/).filter(w => w.length >= 2).slice(0, 4)) {
-                dbQuery = dbQuery.or(`city.ilike.%${word}%,street.ilike.%${word}%,postal_code.ilike.%${word}%`);
+                dbQuery = dbQuery.or(`city.ilike.%${word}%,street.ilike.%${word}%,postalCode.ilike.%${word}%`);
             }
         }
         
