@@ -177,15 +177,28 @@
     function injectButton() {
         if (document.getElementById('rf-msg-btn')) return true;
 
-        // Next to the profile link or the login button, which is where someone
-        // looks for anything to do with their own account. Several pages build
-        // their header at runtime, so this is retried until one appears.
-        var anchor = document.querySelector('#navProfileLink')
-            || document.querySelector('.login-register-btn')
+        // Into the auth cluster on the right, immediately before the
+        // Login/Profile button.
+        //
+        // This used to anchor on #navProfileLink, which is NOT in that cluster:
+        // it sits in the left-hand nav list beside Home and Listings, and it is
+        // display:none while signed out. So the bell was being planted among
+        // the nav links on the far left instead of beside the profile control.
+        var authSection = document.querySelector('#authSection');
+        if (authSection && authSection.parentNode) {
+            authSection.parentNode.insertBefore(buildButton(), authSection);
+            hideDecorativeBell();
+            return true;
+        }
+
+        // Pages that predate the shared nav: sit beside whichever auth control
+        // they do have. Still the right-hand side, never the nav list.
+        var anchor = document.querySelector('.login-register-btn')
             || document.querySelector('.auth-link');
 
         if (anchor && anchor.parentNode) {
             anchor.parentNode.insertBefore(buildButton(), anchor);
+            hideDecorativeBell();
             return true;
         }
 
@@ -369,6 +382,16 @@
         pop.style.width = width + 'px';
         pop.style.top = (box.bottom + 10) + 'px';
         pop.style.left = left + 'px';
+    }
+
+    /**
+     * The shared nav ships its own bell, which only does anything on
+     * ai-negotiator.html. Two bells side by side, one of them inert, is worse
+     * than either alone.
+     */
+    function hideDecorativeBell() {
+        var decorative = document.getElementById('notificationBell');
+        if (decorative) decorative.style.display = 'none';
     }
 
     function injectDrawer() {
