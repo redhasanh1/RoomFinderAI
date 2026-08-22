@@ -7566,9 +7566,22 @@ app.post('/api/negotiate/reset', async (req, res) => {
         if (!supabase) return res.status(503).json({ error: 'Database unavailable' });
 
         // Only ever threads this tenant is part of — never anyone else's.
+        // Only the AI's own threads.
+        //
+        // This used to take every conversation the person was part of and
+        // delete it, along with every message in it — so "reset negotiations"
+        // also erased their real conversations with landlords and roommates.
+        // Somebody clearing out a few stalled negotiations lost the thread they
+        // had been having with an actual person, with no warning and no way
+        // back.
+        //
+        // ai_managed is set when a negotiation thread is created and is what
+        // the negotiator daemon itself selects on, so it is the same definition
+        // of "a negotiation" the rest of the system uses.
         let q = supabase
             .from('conversations')
             .select('id')
+            .eq('ai_managed', true)
             .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`);
         if (listingId) q = q.eq('listing_id', listingId);
 
@@ -7577,7 +7590,7 @@ app.post('/api/negotiate/reset', async (req, res) => {
 
         const ids = (convos || []).map(c => c.id);
         if (!ids.length) {
-            return res.json({ conversationsDeleted: 0, messagesDeleted: 0, note: 'No threads found.' });
+            return res.json({ conversationsDeleted: 0, messagesDeleted: 0, note: 'No AI negotiations to reset.' });
         }
 
         // Count first so we can report honestly, then delete messages before
