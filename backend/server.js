@@ -1324,6 +1324,48 @@ async function fetchVerificationMap(supabase, emails) {
     return map;
 }
 
+
+/**
+ * Narrows a listings query by free text, a word at a time.
+ *
+ * It used to match the whole box against each field on its own:
+ * `title ILIKE %<everything typed>%` OR city ILIKE ... and so on. So anything
+ * spanning two fields found nothing. "101st Los Angeles" is a street in one
+ * column and a city in another, "Toronto apartment" is a city and a property
+ * type, and pasting an address - which is exactly what someone does when they
+ * are looking for one room they have already seen - matched nothing at all.
+ * Postal codes were not searched under any spelling.
+ *
+ * Each word now has to appear in some field, but not the same field for every
+ * word: PostgREST ANDs successive .or() calls together, so this builds
+ * (word1 anywhere) AND (word2 anywhere).
+ */
+function applyListingTextSearch(dbQuery, rawText) {
+    const FIELDS = ['title', 'description', 'city', 'street', 'house_type', 'postal_code'];
+
+    const words = String(rawText || '')
+        .toLowerCase()
+        // Commas, brackets and quotes are PostgREST's own syntax inside or(),
+        // and an address is full of commas, so they are separators here rather
+        // than something to escape.
+        .split(/[\s,()"'*%]+/)
+        .map(w => w.trim())
+        .filter(w => w.length >= 2)
+        // A handful of words that appear in almost every listing and only widen
+        // the result set.
+        .filter(w => !['the', 'and', 'for', 'with', 'near', 'in', 'at', 'a', 'an'].includes(w))
+        // Bounded: each word is another AND, and a pasted paragraph should not
+        // become a fifty-clause query.
+        .slice(0, 6);
+
+    if (!words.length) return dbQuery;
+
+    for (const word of words) {
+        dbQuery = dbQuery.or(FIELDS.map(f => `${f}.ilike.%${word}%`).join(','));
+    }
+    return dbQuery;
+}
+
 function transformListingForAndroid(listing, verificationMap = {}) {
     // Every photo, not just the first.
     //
@@ -1678,7 +1720,7 @@ app.get('/api/listings/search', async (req, res) => {
             .select('*');
             
         // Apply search term filter
-        dbQuery = dbQuery.or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,street.ilike.%${searchTerm}%,house_type.ilike.%${searchTerm}%`);
+        dbQuery = applyListingTextSearch(dbQuery, searchTerm);
         
         // Apply additional filters if provided
         if (min_price && !isNaN(parseFloat(min_price))) {
@@ -1692,7 +1734,10 @@ app.get('/api/listings/search', async (req, res) => {
         }
         if (location && location.trim()) {
             const locationTerm = location.toLowerCase().trim();
-            dbQuery = dbQuery.or(`city.ilike.%${locationTerm}%,street.ilike.%${locationTerm}%`);
+            // Same word-by-word treatment, so "Los Angeles" as a location works.
+            for (const word of String(locationTerm).toLowerCase().split(/[\s,()"'*%]+/).filter(w => w.length >= 2).slice(0, 4)) {
+                dbQuery = dbQuery.or(`city.ilike.%${word}%,street.ilike.%${word}%,postal_code.ilike.%${word}%`);
+            }
         }
         
         dbQuery = dbQuery.order('created_at', { ascending: false });
@@ -1985,12 +2030,12 @@ app.post('/api/listings/search', async (req, res) => {
 
         const searchTerm = query.toLowerCase().trim();
 
-        // Use Supabase full-text search or ILIKE for searching
-        const { data: dbListings, error } = await supabase
-            .from('listings')
-            .select('*')
-            .or(`title.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%,street.ilike.%${searchTerm}%,house_type.ilike.%${searchTerm}%`)
-            .order('created_at', { ascending: false });
+        // Word by word, same as the other search route. Matching the whole
+        // box against one field at a time meant anything spanning two fields
+        // found nothing.
+        const { data: dbListings, error } = await applyListingTextSearch(
+            supabase.from('listings').select('*'), searchTerm
+        ).order('created_at', { ascending: false });
 
         if (error) {
             console.error('Error searching listings:', error);
