@@ -866,7 +866,7 @@
     </script>
 
     <!-- Floating Messages Panel (Facebook-style) -->
-    <div id="floatingMessenger" class="fixed bottom-6 right-6 z-50">
+    <div id="floatingMessenger" class="hidden" aria-hidden="true">
         <!-- Toggle Button -->
         <button id="messengerToggle" onclick="toggleMessenger()" class="w-14 h-14 bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:shadow-xl hover:scale-110 transition-all duration-300 flex items-center justify-center relative">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1059,27 +1059,52 @@
         // page -- opens the floating messenger directly on the conversation
         // with that person, creating it if it doesn't exist yet. Replaces the
         // old one-shot #messageModal (which had no way to see replies).
-        window.startFloatingChatWith = async function(otherUserId, otherUserName) {
+        // Messaging goes through the one drawer the whole site shares.
+        //
+        // This page used to open its own floating messenger, so contacting a
+        // roommate looked and behaved differently from contacting a landlord on
+        // listings, and the thread it created did not show up labelled in the
+        // shared inbox. The drawer (js/site-messages.js) is on every page, so
+        // there is now one messaging UI everywhere.
+        //
+        // `profileId` is the roommate_profiles row id: the server resolves that
+        // to the owner's account and tags the thread context 'roommate', which
+        // is what makes it read "RoomPal" in the inbox.
+        window.startFloatingChatWith = async function(profileId, otherUserName) {
             const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-            if (!currentUser) {
+            if (!currentUser?.email) {
                 alert('Please log in to connect with people.');
                 window.location.href = 'login.html';
                 return;
             }
-            if (!window.roommateAPI || !window.roommateAPI.initialized) {
-                alert('Messaging is not available right now. Please try again in a moment.');
-                return;
-            }
 
-            messengerOpen = true;
-            document.getElementById('messengerPanel').classList.remove('hidden');
+            try {
+                const response = await fetch('/api/roommate-conversations', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ profileId: profileId, userEmail: currentUser.email })
+                });
+                const result = await response.json();
 
-            const conversation = await window.roommateAPI.getOrCreateConversation(otherUserId);
-            if (!conversation) {
-                alert('Could not start conversation. Please try again.');
-                return;
+                if (!response.ok || !result.data) {
+                    // The server explains itself well here - "isn't linked to an
+                    // account yet", "that's your own profile" - so show its
+                    // words rather than a generic failure.
+                    alert(result.message || 'Could not start that conversation.');
+                    return;
+                }
+
+                if (window.RoomFinderMessages) {
+                    window.RoomFinderMessages.openConversation(result.data.id);
+                } else {
+                    // The drawer is injected on every page; if it somehow is not
+                    // here, the thread still exists and is reachable.
+                    alert('Conversation started with ' + (otherUserName || 'them') + '. Open Messages to reply.');
+                }
+            } catch (error) {
+                console.error('Could not open roommate conversation:', error);
+                alert('Could not reach the server. Please try again.');
             }
-            await openFloatingChat(conversation.id, otherUserId, otherUserName || 'Roommate');
         };
 
         async function sendQuickReply(e) {

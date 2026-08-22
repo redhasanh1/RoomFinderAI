@@ -561,7 +561,7 @@ class RoomPalApp {
                         ? `<span class="inline-block w-full text-center py-2.5 text-amber-600 bg-amber-50 rounded-xl text-sm font-medium">Demo Profile</span>`
                         : `<div class="flex gap-2">
                             <button type="button" onclick="roomPalApp.showRoommateDetail('${person.user_id || person.id}')" class="flex-1 border border-indigo-300 text-indigo-700 py-2.5 rounded-xl font-semibold hover:bg-indigo-50 transition-all">View</button>
-                            <button type="button" onclick="roomPalApp.openPersonContact('${person.user_id || person.id}', '${name.replace(/'/g, "\\'")}')" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">Connect</button>
+                            <button type="button" onclick="roomPalApp.openPersonContact('${person.id || person.user_id}', '${name.replace(/'/g, "\\'")}')" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2.5 rounded-xl font-semibold hover:from-indigo-600 hover:to-purple-700 transition-all">Connect</button>
                            </div>`
                     }
                 </div>
@@ -843,7 +843,7 @@ class RoomPalApp {
                 <li><strong>Areas:</strong> ${(person.preferred_areas || []).join(', ') || 'Flexible'}</li>
                 <li><strong>Move-in:</strong> ${person.move_in_date ? this.formatDate(person.move_in_date) : 'Flexible'}</li>
             </ul>
-            <button type="button" class="btn-primary w-full mt-6" onclick="roomPalApp.openPersonContact('${person.user_id || person.id}', '${name.replace(/'/g, "\\'")}'); roomPalApp.closeRoommateDetail();">Message</button>
+            <button type="button" class="btn-primary w-full mt-6" onclick="roomPalApp.openPersonContact('${person.id || person.user_id}', '${name.replace(/'/g, "\\'")}'); roomPalApp.closeRoommateDetail();">Message</button>
         `;
         modal.classList.remove('hidden');
         modal.classList.add('flex');
@@ -1042,7 +1042,7 @@ class RoomPalApp {
                     <p class="room-description mb-4">${description}</p>
                     ${isOwnRoom
                         ? `<span class="inline-block w-full text-center py-2 text-gray-500 bg-gray-100 rounded-lg">Your Listing</span>`
-                        : `<button onclick="roomPalApp.openContact('${room.user_id}', '${hostName}')" class="btn-primary w-full">Contact ${hostName}</button>`
+                        : `<button onclick="roomPalApp.openContact('${room.id || room.user_id}', '${hostName}')" class="btn-primary w-full">Contact ${hostName}</button>`
                     }
                 </div>
             </div>
@@ -1196,7 +1196,7 @@ class RoomPalApp {
                     <p class="person-bio">${truncatedBio}</p>
                     ${this.currentUser && person.user_id === this.currentUser.id
                         ? `<span class="inline-block w-full text-center py-2 text-gray-500 bg-gray-100 rounded-lg text-sm">Your Profile</span>`
-                        : `<button onclick="roomPalApp.openPersonContact('${person.user_id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">Connect</button>`
+                        : `<button onclick="roomPalApp.openPersonContact('${person.id || person.user_id}', '${name.replace(/'/g, "\\'")}')" class="btn-connect">Connect</button>`
                     }
                 </div>
             </div>

@@ -15,6 +15,24 @@
 (function () {
     'use strict';
 
+    /**
+     * Where a thread came from, and the colour it wears.
+     *
+     * An inbox mixing a landlord, a sublease and a roommate is three identical
+     * rows otherwise: same avatar, same name shape, no way to tell which part
+     * of the site you were in when it started. `context` is set on the
+     * conversation when it is created, and the server hands it back here.
+     */
+    var SOURCES = {
+        listing:  { label: 'Listings', color: '#667eea' },
+        sublease: { label: 'Sublease', color: '#0ea5e9' },
+        roommate: { label: 'RoomPal',  color: '#10b981' }
+    };
+
+    function sourceOf(conversation) {
+        return SOURCES[conversation && conversation.context] || SOURCES.listing;
+    }
+
     var POLL_MS = 15000;       // how often the unread count refreshes
     var THREAD_POLL_MS = 5000; // faster while a thread is actually open
 
@@ -94,6 +112,7 @@
             '  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex:none}',
             '.rf-msg-who{font-size:13px;font-weight:600;color:#111827;display:flex;justify-content:space-between;gap:8px}',
             '.rf-msg-when{font-size:11px;color:#9ca3af;font-weight:400;flex:none}',
+            '.rf-msg-tag{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.02em;padding:2px 7px;border-radius:999px;margin:2px 0 3px}',
             '.rf-msg-sub{font-size:11px;color:#6b7280;margin-top:1px}',
             '.rf-msg-last{font-size:12px;color:#4b5563;margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}',
             '.rf-msg-dot{width:8px;height:8px;border-radius:999px;background:#6366f1;flex:none;align-self:center}',
@@ -255,11 +274,14 @@
         body.innerHTML = state.conversations.map(function (c) {
             var who = c.otherParty || 'Someone';
             var initial = esc(who.charAt(0).toUpperCase());
+            var source = sourceOf(c);
             return '<div class="rf-msg-row" data-id="' + esc(c.id) + '">' +
-                '<div class="rf-msg-av">' + initial + '</div>' +
+                '<div class="rf-msg-av" style="background:' + source.color + '">' + initial + '</div>' +
                 '<div style="flex:1;min-width:0">' +
                   '<div class="rf-msg-who"><span>' + esc(who) + '</span>' +
                     '<span class="rf-msg-when">' + esc(timeAgo(c.lastMessageAt)) + '</span></div>' +
+                  '<div><span class="rf-msg-tag" style="color:' + source.color +
+                    ';background:' + source.color + '1f">' + esc(source.label) + '</span></div>' +
                   (c.subject ? '<div class="rf-msg-sub">' + esc(c.subject) + '</div>' : '') +
                   '<div class="rf-msg-last">' + esc(c.lastMessage || 'No messages yet') + '</div>' +
                 '</div>' +
