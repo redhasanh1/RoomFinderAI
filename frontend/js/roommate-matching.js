@@ -696,6 +696,7 @@ class RoomPalApp {
     }
 
     applyLandingFilters() {
+        const textFilter = (document.getElementById('landingSearchFilter')?.value || '').trim().toLowerCase();
         const cityFilter = document.getElementById('landingCityFilter')?.value || '';
         const budgetFilter = document.getElementById('landingBudgetFilter')?.value || '';
         const lifestyleFilter = document.getElementById('landingLifestyleFilter')?.value || '';
@@ -706,6 +707,21 @@ class RoomPalApp {
 
         // Filter
         this.landingProfiles = this.landingProfiles.filter(person => {
+            // Free text first, across everything worth matching on. The city
+            // box below only looks at areas and room location, so a name or a
+            // word from someone's bio could not be searched at all.
+            if (textFilter) {
+                const words = textFilter.split(/\s+/).filter(Boolean);
+                const hay = [
+                    person.name,
+                    person.bio,
+                    person.room_location,
+                    person.room_description,
+                    (person.preferred_areas || []).join(' ')
+                ].filter(Boolean).join(' ').toLowerCase();
+                if (!words.every(w => hay.includes(w))) return false;
+            }
+
             // City / area, free text. The old dropdown offered six fixed
             // Canadian cities and only searched preferred_areas, so real entries
             // like "Downtown Toronto" or a room advertised in Vancouver via
@@ -752,6 +768,11 @@ class RoomPalApp {
     }
 
     clearLandingFilters() {
+        const textFilter = document.getElementById('landingSearchFilter');
+        const heroSearch = document.getElementById('heroPeopleSearch');
+        if (textFilter) textFilter.value = '';
+        if (heroSearch) heroSearch.value = '';
+
         const cityFilter = document.getElementById('landingCityFilter');
         const budgetFilter = document.getElementById('landingBudgetFilter');
         const lifestyleFilter = document.getElementById('landingLifestyleFilter');
@@ -1685,6 +1706,32 @@ function applyLandingFilters() {
 function clearLandingFilters() {
     if (window.roomPalApp) {
         window.roomPalApp.clearLandingFilters();
+    }
+}
+
+/**
+ * Takes the hero's search box down to the people it searches.
+ *
+ * Browsing was not offered above the fold at all: both hero cards open the
+ * profile form, and the list of people sat a screen below with nothing saying
+ * it was there.
+ */
+function jumpToBrowse() {
+    var hero = document.getElementById('heroPeopleSearch');
+    var field = document.getElementById('landingSearchFilter');
+
+    if (hero && field) {
+        field.value = hero.value;
+        applyLandingFilters();
+    }
+
+    var target = document.getElementById('landingProfilesGrid')
+        || document.getElementById('landingResultsCount');
+    if (target) {
+        // The header is fixed, so scrollIntoView alone puts the first row
+        // underneath it.
+        var top = target.getBoundingClientRect().top + window.pageYOffset - 140;
+        window.scrollTo({ top: top, behavior: 'smooth' });
     }
 }
 
