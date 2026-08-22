@@ -13,6 +13,7 @@ struct ProfileScreen: View {
 
     @StateObject private var verification = VerificationService()
     @StateObject private var mine = MyListingsService()
+    @ObservedObject private var pro = ProSubscription.shared
 
     @State private var showingVerification = false
     @State private var showingDelete = false
@@ -80,17 +81,52 @@ struct ProfileScreen: View {
             listingsSection
 
             Section {
-                Label(planDescription, systemImage: "star")
-                    .foregroundStyle(.secondary)
+                HStack {
+                    Label(planDescription, systemImage: pro.isPro ? "star.fill" : "star")
+                        .foregroundStyle(pro.isPro ? Color.orange : .secondary)
+                    Spacer()
+                    if pro.isPro {
+                        Text("Active").font(.caption).foregroundStyle(.green)
+                    }
+                }
+
+                // Sold through Apple, not through the website's Stripe
+                // checkout. Guideline 3.1.1 requires anything unlocking
+                // features in the app to go through In-App Purchase, which is
+                // why AppConfig.blocksPurchasing still closes the web route.
+                if !pro.isPro, let product = pro.product {
+                    Button {
+                        Task { await pro.purchase() }
+                    } label: {
+                        HStack {
+                            if pro.isWorking {
+                                ProgressView().controlSize(.small)
+                            }
+                            Text("Upgrade to Pro — \(product.displayPrice)/month")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .disabled(pro.isWorking)
+
+                    // Apple requires this to be reachable without buying
+                    // anything, for a new device or a reinstall.
+                    Button("Restore purchases") {
+                        Task { await pro.restore() }
+                    }
+                    .font(.footnote)
+                    .disabled(pro.isWorking)
+                }
+
+                if let problem = pro.errorMessage {
+                    Text(problem).font(.footnote).foregroundStyle(.red)
+                }
             } header: {
                 Text("Plan")
             } footer: {
-                // No upgrade button. Guideline 3.1.1 requires anything that
-                // unlocks features in the app to go through In-App Purchase,
-                // and the Pro plan is sold through Stripe on the website, so
-                // the app must not route anyone there. See
-                // AppConfig.blocksPurchasing.
-                Text("Manage your plan on the RoomFinderAI website.")
+                Text(pro.isPro
+                     ? "Unlimited AI negotiations and assistant. Manage or cancel in your Apple ID settings."
+                     : "Free includes 200 AI sessions a month. Pro removes the limit.")
             }
 
             Section {
@@ -205,8 +241,12 @@ struct ProfileScreen: View {
         }
     }
 
+    /// What the App Store says first, then what the account says.
+    ///
+    /// Someone can be Pro because they bought it here or because they bought it
+    /// on the website; the app should say Pro either way.
     private var planDescription: String {
-        if auth.profile?.isPro == true { return "Pro" }
+        if pro.isPro || auth.profile?.isPro == true { return "Pro" }
         return (auth.profile?.plan ?? "free").capitalized
     }
 

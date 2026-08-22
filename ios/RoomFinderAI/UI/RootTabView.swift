@@ -59,6 +59,7 @@ struct RootTabView: View {
             // person with messages waiting.
             _ = AuthService.shared
             UnreadCounter.shared.start()
+            ProSubscription.shared.start()
         }
         .task {
             // Asked once, shortly after the app is up.
