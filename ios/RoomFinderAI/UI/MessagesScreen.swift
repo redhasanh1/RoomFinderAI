@@ -398,7 +398,14 @@ struct ConversationScreen: View {
         ScrollViewReader { proxy in
             ScrollView {
                 LazyVStack(spacing: 10) {
-                    ForEach(messages) { message in
+                    ForEach(Array(messages.enumerated()), id: \.element.id) { index, message in
+                        if startsNewDay(message, at: index), let sent = message.sentAt {
+                            Text(dayLabel(sent))
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 6)
+                        }
                         bubble(for: message).id(message.id)
                     }
                 }
@@ -415,20 +422,60 @@ struct ConversationScreen: View {
 
     private func bubble(for message: ChatMessage) -> some View {
         let mine = message.isMine(CurrentUser.shared.email)
-        return Text(message.content ?? "")
-            .foregroundStyle(mine ? .white : .primary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background {
-                if mine {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.gradient)
-                } else {
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color(.secondarySystemBackground))
+        let sent = message.sentAt
+
+        return VStack(alignment: mine ? .trailing : .leading, spacing: 3) {
+            Text(message.content ?? "")
+                .foregroundStyle(mine ? .white : .primary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background {
+                    if mine {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Theme.gradient)
+                    } else {
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(Color(.secondarySystemBackground))
+                    }
                 }
+
+            // When it was sent, under the bubble.
+            //
+            // A thread was a column of text in which a reply from three days
+            // ago looked exactly like one from a minute ago — and how long a
+            // landlord has been quiet is the thing a tenant is reading for.
+            if let sent {
+                Text(sent, format: .dateTime.hour().minute())
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .padding(.horizontal, 4)
             }
-            .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
-            .accessibilityLabel("\(mine ? "You" : conversation.displayName): \(message.content ?? "")")
+        }
+        .frame(maxWidth: .infinity, alignment: mine ? .trailing : .leading)
+        // One label for the whole thing, with the time spoken as part of it
+        // rather than as a stray number after the message.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(
+            [mine ? "You" : conversation.displayName,
+             message.content ?? "",
+             sent.map { $0.formatted(date: .omitted, time: .shortened) } ?? ""]
+                .filter { !$0.isEmpty }
+                .joined(separator: ", ")
+        )
+    }
+
+    /// "Today", "Yesterday", or a date — shown once above the first message of
+    /// each day so a long thread can be read at a glance.
+    private func dayLabel(_ date: Date) -> String {
+        if Calendar.current.isDateInToday(date) { return "Today" }
+        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
+        return date.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
+    }
+
+    /// Whether this message begins a new day in the transcript.
+    private func startsNewDay(_ message: ChatMessage, at index: Int) -> Bool {
+        guard let sent = message.sentAt else { return false }
+        guard index > 0, let previous = messages[index - 1].sentAt else { return true }
+        return !Calendar.current.isDate(sent, inSameDayAs: previous)
     }
 
     private var composer: some View {

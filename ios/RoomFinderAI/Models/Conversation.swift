@@ -111,6 +111,18 @@ struct ChatMessage: Identifiable, Decodable, Hashable {
     }
 }
 
+extension ChatMessage {
+    /// The send time as a date. The server sends ISO 8601, with fractional
+    /// seconds on some rows and not others, so both are tried.
+    var sentAt: Date? {
+        guard let raw = createdAt else { return nil }
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let date = withFraction.date(from: raw) { return date }
+        return ISO8601DateFormatter().date(from: raw)
+    }
+}
+
 struct ChatMessagesResponse: Decodable {
     let success: Bool
     let data: [ChatMessage]?
