@@ -1730,8 +1730,13 @@ function jumpToBrowse() {
     if (target) {
         // The header is fixed, so scrollIntoView alone puts the first row
         // underneath it.
+        //
+        // Instant, not smooth: something on this page cancels a smooth scroll
+        // outright - measured, an instant scroll to 900 arrives and a smooth
+        // one to the same place ends at 0 - so the button appeared to do
+        // nothing at all.
         var top = target.getBoundingClientRect().top + window.pageYOffset - 140;
-        window.scrollTo({ top: top, behavior: 'smooth' });
+        window.scrollTo({ top: top, behavior: 'auto' });
     }
 }
 
