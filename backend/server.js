@@ -340,6 +340,9 @@ try {
 
 // Initialize Supabase client with error handling
 let supabase;
+// Separate client for sign-in only, so a user's session can never attach
+// itself to the client that does the database work. See the note below.
+let supabaseAuth;
 try {
     console.log('🔍 DEBUG: Attempting Supabase initialization...');
     console.log('🔍 DEBUG: config.SUPABASE_URL:', config.SUPABASE_URL ? config.SUPABASE_URL.substring(0, 30) + '...' : 'NOT SET');
@@ -352,9 +355,34 @@ try {
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
         console.log('🔍 DEBUG: SUPABASE_SERVICE_ROLE_KEY exists:', !!process.env.SUPABASE_SERVICE_ROLE_KEY);
         console.log('🔍 DEBUG: Using key type:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SERVICE_ROLE' : 'ANON');
-        supabase = createClient(config.SUPABASE_URL, supabaseKey);
+
+        // Never signs anybody in. supabase-js keeps the session from a
+        // signInWithPassword on the client it was called on and sends that
+        // user's token on every request afterwards — so one login turned this
+        // shared client from the service role into whoever logged in last, and
+        // every write after that ran with their permissions. Row level security
+        // then refused new rows, which is what "We couldn't save your document"
+        // was: an insert running as a tenant who has no right to create a
+        // verification record.
+        //
+        // It restarts clean and breaks after the first login, which is why it
+        // looked intermittent.
+        supabase = createClient(config.SUPABASE_URL, supabaseKey, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+
+        // Signing in happens here instead, on the anon key, which is what an
+        // anon key is for. Whatever session this ends up holding cannot affect
+        // the client above.
+        supabaseAuth = createClient(config.SUPABASE_URL, config.SUPABASE_ANON_KEY, {
+            auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
+        });
+
         serviceStatus.supabase = true;
         console.log('✅ Supabase initialized successfully');
+        if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            console.warn('⚠️ No SUPABASE_SERVICE_ROLE_KEY - writes run as anon and row level security will refuse new rows.');
+        }
     } else {
         console.log('⚠️ Supabase not initialized - missing or default credentials');
         console.log('🔍 DEBUG: URL includes "your-project"?', config.SUPABASE_URL?.includes('your-project'));
@@ -718,7 +746,7 @@ app.use((req, res, next) => {
 // Account deletion, reporting and blocking — App Store guidelines 5.1.1(v)
 // and 1.2. Registered with a getter because `supabase` is assigned during
 // async startup and would still be undefined if captured here by value.
-registerComplianceRoutes(app, () => supabase);
+registerComplianceRoutes(app, () => supabase, () => supabaseAuth);
 
 // Conversations and messages for the iOS app, participant-checked server-side
 // rather than trusting the client to only ask for its own threads.
@@ -2882,7 +2910,7 @@ app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
         if (supabase) {
             try {
                 console.log('🔐 Creating Supabase Auth account for:', email);
-                const { data: authData, error: authError } = await supabase.auth.signUp({
+                const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
                     email: email,
                     password: password
                 });
@@ -2981,7 +3009,7 @@ app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
         if (supabase) {
             try {
                 console.log('🔍 Attempting Supabase Auth login for:', email);
-                const { data, error } = await supabase.auth.signInWithPassword({
+                const { data, error } = await supabaseAuth.auth.signInWithPassword({
                     email: email,
                     password: password
                 });

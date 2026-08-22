@@ -53,7 +53,7 @@ const USER_DATA_TABLES = [
  * account by typing their address, so identity is re-checked here against a
  * password or a live session token.
  */
-async function verifyIdentity(supabase, { email, password, accessToken }) {
+async function verifyIdentity(supabase, { email, password, accessToken }, supabaseAuth = supabase) {
     if (!email) return { ok: false, reason: 'Email is required' };
 
     // A session token proves an active login, which is the only route open to
@@ -68,7 +68,11 @@ async function verifyIdentity(supabase, { email, password, accessToken }) {
 
     if (!password) return { ok: false, reason: 'Password is required to delete your account' };
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    // On the auth client, never the one that does the database work: a
+    // successful sign-in attaches that user's session to whichever client made
+    // the call, and every later query from it would run as them rather than as
+    // the service role.
+    const { error } = await supabaseAuth.auth.signInWithPassword({ email, password });
     if (!error) return { ok: true };
 
     // Same fallback the login route uses: some accounts predate Supabase Auth
@@ -122,7 +126,7 @@ async function deleteAccountData(supabase, email) {
     return failures;
 }
 
-function registerComplianceRoutes(app, getSupabase) {
+function registerComplianceRoutes(app, getSupabase, getSupabaseAuth = getSupabase) {
     /**
      * Guideline 5.1.1(v). Irreversible, and the client says so before calling.
      */
@@ -134,7 +138,7 @@ function registerComplianceRoutes(app, getSupabase) {
 
         const { email, password, accessToken } = req.body || {};
 
-        const identity = await verifyIdentity(supabase, { email, password, accessToken });
+        const identity = await verifyIdentity(supabase, { email, password, accessToken }, getSupabaseAuth());
         if (!identity.ok) {
             return res.status(401).json({ error: identity.reason });
         }
