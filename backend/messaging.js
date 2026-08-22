@@ -123,7 +123,7 @@ function registerMessagingRoutes(app, getSupabase) {
 
         const { data: conversations, error } = await supabase
             .from('conversations')
-            .select('id, listing_id, sender_email, receiver_email, context, last_read_at, created_at')
+            .select('id, listing_id, sender_email, receiver_email, context, last_read_at, sender_last_read_at, receiver_last_read_at, created_at')
             .or(`sender_email.eq.${userEmail},receiver_email.eq.${userEmail}`)
             .limit(200);
 
@@ -151,10 +151,23 @@ function registerMessagingRoutes(app, getSupabase) {
         for (const message of allMessages || []) {
             if (!latest.has(message.conversation_id)) latest.set(message.conversation_id, message);
 
-            // Unread means: sent by the other person, after we last looked.
+            // Unread means: sent by the other person, after WE last looked.
+            //
+            // "We" is the point. There was one last_read_at for the whole
+            // conversation, shared by both people, so whoever opened the thread
+            // marked it read for the other one too — a landlord glancing at a
+            // thread cleared the tenant's unread count, and any badge built on
+            // it vanished for reasons the person holding the phone could not
+            // see. Each side now has its own marker.
             const conversation = rows.find((c) => c.id === message.conversation_id);
             const fromOther = (message.sender_email || '').toLowerCase() !== userEmail.toLowerCase();
-            const seenAt = conversation?.last_read_at ? new Date(conversation.last_read_at) : null;
+            const mine = (conversation?.sender_email || '').toLowerCase() === userEmail.toLowerCase()
+                ? conversation?.sender_last_read_at
+                : conversation?.receiver_last_read_at;
+            // Falls back to the old shared column for threads that predate the
+            // split and have not been opened since.
+            const seenRaw = mine || conversation?.last_read_at;
+            const seenAt = seenRaw ? new Date(seenRaw) : null;
             if (fromOther && (!seenAt || new Date(message.created_at) > seenAt)) {
                 unread.set(message.conversation_id, (unread.get(message.conversation_id) || 0) + 1);
             }
@@ -442,12 +455,17 @@ function registerMessagingRoutes(app, getSupabase) {
 
         if (error) return res.status(500).json({ success: false, message: 'Could not load messages' });
 
-        // Opening a thread marks it read, which is what makes the unread badge
-        // mean anything.
-        await supabase
-            .from('conversations')
-            .update({ last_read_at: new Date().toISOString() })
-            .eq('id', conversationId);
+        // Opening a thread marks it read for the person who opened it, and
+        // only them. Writing the shared column here is what let one person's
+        // reading clear the other person's badge.
+        {
+            const now = new Date().toISOString();
+            const isSender = (conversation.sender_email || '').toLowerCase() === String(userEmail).toLowerCase();
+            await supabase
+                .from('conversations')
+                .update(isSender ? { sender_last_read_at: now } : { receiver_last_read_at: now })
+                .eq('id', conversationId);
+        }
 
         res.json({ success: true, data: data || [] });
     });
