@@ -67,6 +67,27 @@
         }
     }
 
+    /** "Today", "Yesterday", or a date, for the separator between days. */
+    function dayLabel(date) {
+        var today = new Date();
+        var yesterday = new Date();
+        yesterday.setDate(today.getDate() - 1);
+
+        if (date.toDateString() === today.toDateString()) return 'Today';
+        if (date.toDateString() === yesterday.toDateString()) return 'Yesterday';
+
+        var sameYear = date.getFullYear() === today.getFullYear();
+        return date.toLocaleDateString(undefined, sameYear
+            ? { weekday: 'short', day: 'numeric', month: 'short' }
+            : { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+
+    /** The clock time on a single message. Local, and in the reader's own
+     *  12/24 hour convention rather than one hardcoded here. */
+    function clockTime(date) {
+        return date.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    }
+
     function timeAgo(iso) {
         if (!iso) return '';
         var seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
@@ -122,6 +143,14 @@
             '  margin:6px 14px;word-wrap:break-word;white-space:pre-wrap}',
             '.rf-msg-mine{margin-left:auto;background:#6366f1;color:#fff;border-bottom-right-radius:4px}',
             '.rf-msg-theirs{background:#fff;color:#111827;border:1px solid #e5e7eb;border-bottom-left-radius:4px}',
+            /* The time sits inside the bubble, after the words, so it never
+               adds a row of its own to a one-line message. */
+            '.rf-msg-time{display:inline-block;margin-left:8px;font-size:10px;opacity:.62;',
+            '  white-space:nowrap;vertical-align:baseline}',
+            '.rf-msg-mine .rf-msg-time{color:#eef2ff}',
+            '.rf-msg-theirs .rf-msg-time{color:#6b7280}',
+            '.rf-msg-day{text-align:center;font-size:10px;font-weight:600;letter-spacing:.03em;',
+            '  text-transform:uppercase;color:#94a3b8;margin:14px 0 6px}',
             '#rf-msg-compose{display:flex;gap:8px;padding:10px;border-top:1px solid #e5e7eb;background:#fff}',
             /* display:flex beats the hidden attribute, so the composer stayed
                on screen over the conversation list - a box you could type into
@@ -552,10 +581,32 @@
 
                 var atBottom = body.scrollHeight - body.scrollTop - body.clientHeight < 60;
 
+                // Each message says when it was sent, with a date once per day.
+                // Without it a thread is a wall of text where a reply from
+                // three days ago looks exactly like one from a minute ago -
+                // which matters here, because a landlord going quiet for two
+                // days is the thing a tenant is trying to read.
+                var lastDay = null;
                 body.innerHTML = messages.map(function (m) {
                     var mine = String(m.sender_email || '').toLowerCase() === state.email.toLowerCase();
-                    return '<div class="rf-msg-bubble ' + (mine ? 'rf-msg-mine' : 'rf-msg-theirs') + '">' +
-                        esc(m.content) + '</div>';
+                    var when = m.created_at ? new Date(m.created_at) : null;
+                    var out = '';
+
+                    if (when && !isNaN(when)) {
+                        var day = when.toDateString();
+                        if (day !== lastDay) {
+                            lastDay = day;
+                            out += '<div class="rf-msg-day">' + esc(dayLabel(when)) + '</div>';
+                        }
+                    }
+
+                    out += '<div class="rf-msg-bubble ' + (mine ? 'rf-msg-mine' : 'rf-msg-theirs') + '">' +
+                        esc(m.content) +
+                        (when && !isNaN(when)
+                            ? '<span class="rf-msg-time">' + esc(clockTime(when)) + '</span>'
+                            : '') +
+                        '</div>';
+                    return out;
                 }).join('') || '<div class="rf-msg-empty">No messages yet. Say hello.</div>';
 
                 if (scroll || atBottom) body.scrollTop = body.scrollHeight;
