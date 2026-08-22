@@ -285,15 +285,23 @@
 
 
         /** True when this account has passed ID verification. */
-        async function isOwnerVerified(supabase, email) {
+        /**
+         * Asks the server, rather than the database directly.
+         *
+         * This used to select `status` from user_verifications in the browser.
+         * Two things were wrong with that. There is no `status` column - the
+         * statuses are id_verification_status and face_verification_status - and
+         * row level security hides that table from the anon key anyway, so the
+         * query returned an empty result rather than an error and the badge was
+         * simply never shown. The endpoint below already works out both halves.
+         */
+        async function isOwnerVerified(_supabase, email) {
             if (!email) return false;
             try {
-                const { data } = await supabase
-                    .from('user_verifications')
-                    .select('status')
-                    .eq('user_email', email)
-                    .maybeSingle();
-                return data?.status === 'verified';
+                const res = await fetch(`/api/verify/status/${encodeURIComponent(email)}`);
+                if (!res.ok) return false;
+                const data = await res.json();
+                return data?.isVerified === true;
             } catch (e) {
                 return false;
             }

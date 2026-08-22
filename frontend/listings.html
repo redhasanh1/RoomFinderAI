@@ -1982,6 +1982,37 @@
         }
 
         // Display listings
+
+        /**
+         * Marks which of these rooms were posted by a verified lister.
+         *
+         * Rooms are read straight out of Supabase here, and that table carries
+         * no verification column - so listing.user_verified was always
+         * undefined and the badge never rendered, however many people had been
+         * approved. The table itself is hidden from the anon key by row level
+         * security, so the browser cannot look it up either; the server answers
+         * for the whole page in one request.
+         */
+        async function markVerifiedListers(listings) {
+            const emails = (listings || []).map(l => l.user_email).filter(Boolean);
+            if (!emails.length) return;
+            try {
+                const res = await fetch('/api/verify/status-batch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ emails })
+                });
+                if (!res.ok) return;
+                const { verified } = await res.json();
+                const set = new Set(verified || []);
+                listings.forEach(l => { l.user_verified = set.has(l.user_email); });
+            } catch (e) {
+                // A badge that fails to appear is better than a page that fails
+                // to load, so this never rethrows.
+                console.warn('Could not load verified listers:', e);
+            }
+        }
+
         async function displayListings(forceRefresh = false) {
             console.log('🔄 Starting displayListings function', { forceRefresh });
 
@@ -2032,6 +2063,8 @@
 
             // Update listing count with actual data
             updateListingCount(listings.length, false);
+
+            await markVerifiedListers(listings);
 
             listings.forEach(listing => {
                 console.log('Processing listing:', listing.id, listing.title);
@@ -4455,7 +4488,7 @@
         }
 
         // Display search results with proper error handling
-        function displaySearchResults(listings, container) {
+        async function displaySearchResults(listings, container) {
             try {
                 if (!container) {
                     console.error('🔍 No container for search results');
@@ -4488,6 +4521,7 @@
                 }
 
                 // Display listings
+                await markVerifiedListers(listings);
                 listings.forEach(listing => {
                     try {
                         if (typeof displayListingCard === 'function') {

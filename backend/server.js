@@ -9366,6 +9366,34 @@ app.get('/api/admin/pending-verifications', async (req, res) => {
 });
 
 // API: Get user verification status
+/**
+ * Which of a set of accounts are verified.
+ *
+ * The listings page reads rooms straight out of Supabase, which carries no
+ * verification column, and the table itself is hidden from the anon key by row
+ * level security - so a browser has no way to work this out for a page of
+ * cards. Asking per listing would be one request each; this answers for all of
+ * them at once.
+ *
+ * Returns only the addresses that are verified, so it says nothing about
+ * anyone who is not.
+ */
+app.post('/api/verify/status-batch', async (req, res) => {
+    try {
+        const emails = Array.isArray(req.body?.emails) ? req.body.emails : [];
+        // Bounded, because this is public and unauthenticated.
+        const wanted = [...new Set(emails.filter(e => typeof e === 'string' && e.includes('@')))].slice(0, 200);
+        if (!wanted.length) return res.json({ verified: [] });
+        if (!supabase) return res.json({ verified: [] });
+
+        const map = await fetchVerificationMap(supabase, wanted);
+        res.json({ verified: Object.keys(map) });
+    } catch (error) {
+        console.error('status-batch failed:', error.message || error);
+        res.json({ verified: [] });
+    }
+});
+
 app.get('/api/verify/status/:email', async (req, res) => {
     try {
         if (!supabase) {
