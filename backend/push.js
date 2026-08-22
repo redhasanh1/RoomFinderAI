@@ -234,7 +234,42 @@ async function notifyNewMessage(supabase, conversationId, senderEmail) {
             .trim()
             .slice(0, 180);
 
+        // How many are waiting for them in total, so the number on the icon is
+        // right the moment the push lands rather than whenever the app next
+        // polls. Without this the badge only appeared after the app had been
+        // opened and had asked, which is not what "you have a message" should
+        // mean.
+        let badge;
+        try {
+            const { data: theirs } = await supabase
+                .from('conversations')
+                .select('id, sender_email, receiver_email, sender_last_read_at, receiver_last_read_at, last_read_at')
+                .or(`sender_email.eq.${recipient},receiver_email.eq.${recipient}`);
+
+            const ids = (theirs || []).map(c => c.id);
+            if (ids.length) {
+                const { data: msgs } = await supabase
+                    .from('messages')
+                    .select('conversation_id, sender_email, created_at')
+                    .in('conversation_id', ids);
+
+                badge = (msgs || []).filter((m) => {
+                    const c = theirs.find(x => x.id === m.conversation_id);
+                    if (!c) return false;
+                    if ((m.sender_email || '').toLowerCase() === recipient.toLowerCase()) return false;
+                    const seenRaw = (c.sender_email || '').toLowerCase() === recipient.toLowerCase()
+                        ? c.sender_last_read_at : c.receiver_last_read_at;
+                    const seen = seenRaw || c.last_read_at;
+                    return !seen || new Date(m.created_at) > new Date(seen);
+                }).length;
+            }
+        } catch (error) {
+            // A badge that cannot be counted must not stop the notification.
+            console.warn('Could not count unread for badge:', error.message || error);
+        }
+
         return await sendToUser(supabase, recipient, {
+            ...(typeof badge === 'number' ? { badge } : {}),
             title,
             body: preview || 'You have a new message.',
             // `messages.html` has never existed on this site, so tapping a

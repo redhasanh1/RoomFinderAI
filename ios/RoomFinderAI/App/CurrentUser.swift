@@ -24,7 +24,27 @@ final class CurrentUser: ObservableObject {
     @Published private(set) var email: String?
 
     private init() {
-        email = UserDefaults.standard.string(forKey: Self.key)?.nilIfEmpty
+        if let stored = UserDefaults.standard.string(forKey: Self.key)?.nilIfEmpty {
+            email = stored
+            return
+        }
+
+        // Falls back to the saved sign-in.
+        //
+        // This used to depend on AuthService having been created first, since
+        // its init is what calls update() here. Nothing at launch created it,
+        // so the app could hold a perfectly good session — the profile is in
+        // UserDefaults, the Profile tab shows it — while this said nobody was
+        // signed in, and every screen that asks here showed its signed-out
+        // state. Messages said "Sign in to see messages" to someone who was.
+        //
+        // Reading the stored session directly removes the ordering question
+        // rather than moving it somewhere else.
+        struct StoredProfile: Decodable { let email: String }
+        if let data = UserDefaults.standard.data(forKey: "authProfile"),
+           let saved = try? JSONDecoder().decode(StoredProfile.self, from: data) {
+            email = saved.email.nilIfEmpty
+        }
     }
 
     var isSignedIn: Bool { email != nil }

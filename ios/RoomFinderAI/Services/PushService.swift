@@ -117,7 +117,11 @@ extension PushService: UNUserNotificationCenterDelegate {
     /// from a landlord matters whether or not you happen to be on that tab.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .list, .sound, .badge]
+        // The count, the moment the message lands. Polling every thirty seconds
+        // meant the banner arrived and the red number followed up to half a
+        // minute later, which reads as the app not having noticed.
+        await UnreadCounter.shared.refresh()
+        return [.banner, .list, .sound, .badge]
     }
 
     /// Payloads may carry `{"url": "listings.html?id=..."}`.
@@ -130,6 +134,10 @@ extension PushService: UNUserNotificationCenterDelegate {
     /// go regardless.
     func userNotificationCenter(_ center: UNUserNotificationCenter,
                                 didReceive response: UNNotificationResponse) async {
+        // Tapping one means going to read it, so the count is refreshed here
+        // too rather than waiting for the next poll to catch up.
+        await UnreadCounter.shared.refresh()
+
         let info = response.notification.request.content.userInfo
         let raw = (info["url"] as? String) ?? ""
 

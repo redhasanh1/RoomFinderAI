@@ -446,13 +446,19 @@ extension WebViewStore {
             startAppleSignIn()
 
         case "user":
-            // `body["email"]` is NSNull after a sign-out, which must clear the
-            // cached address rather than be ignored.
-            let email = body["email"] as? String
-            let changed = CurrentUser.shared.email != email?.nilIfEmpty
-            CurrentUser.shared.update(email: email)
-            if changed, let email = email?.nilIfEmpty {
-                Task { await ModerationService.shared.refreshBlockList(for: email) }
+            // Can say who is signed in. Cannot say that nobody is.
+            //
+            // Signing in is native now, so a web view has no session of its own
+            // — every page reports "nobody" the moment it loads. This used to
+            // be believed and cleared the session, so opening any web-backed
+            // screen signed the app out of itself and Messages told a signed-in
+            // person to sign in. Signing out goes through AuthService, which
+            // clears this properly.
+            guard let incoming = (body["email"] as? String)?.nilIfEmpty else { break }
+            let changed = CurrentUser.shared.email != incoming
+            CurrentUser.shared.update(email: incoming)
+            if changed {
+                Task { await ModerationService.shared.refreshBlockList(for: incoming) }
             }
 
         case "page":

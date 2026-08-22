@@ -146,6 +146,14 @@ private struct SectionSwitcher: View {
     @Binding var section: MessagesScreen.Section
     @Namespace private var highlight
 
+    /// The same count the tab bar carries.
+    ///
+    /// The badge on the tab told someone a message was waiting and then this
+    /// screen opened on the negotiator, with nothing to say the message was
+    /// behind the other half of the switcher. People went looking and did not
+    /// find it.
+    @ObservedObject private var unread = UnreadCounter.shared
+
     var body: some View {
         HStack(spacing: 6) {
             ForEach(MessagesScreen.Section.allCases, id: \.self) { option in
@@ -158,7 +166,20 @@ private struct SectionSwitcher: View {
                         section = option
                     }
                 } label: {
-                    Text(option.rawValue)
+                    HStack(spacing: 6) {
+                        Text(option.rawValue)
+                        if option == .inbox, unread.count > 0 {
+                            Text(unread.count > 99 ? "99+" : "\(unread.count)")
+                                .font(.caption2.weight(.bold))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.red))
+                                // Announced as part of the button rather than
+                                // as a loose number beside it.
+                                .accessibilityLabel("\(unread.count) unread")
+                        }
+                    }
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(selected ? .white : .primary)
                         .frame(maxWidth: .infinity)
@@ -353,7 +374,24 @@ struct ConversationScreen: View {
         }
         .navigationTitle(conversation.displayName)
         .navigationBarTitleDisplayMode(.inline)
-        .task { await load() }
+        .task {
+            await load()
+
+            // Then keep watching while the thread is open.
+            //
+            // It loaded once and stopped, so a reply that arrived while you
+            // were reading never appeared — you had to back out to the list and
+            // come back in to see it. The notification told you it existed and
+            // the screen showing that conversation did not.
+            //
+            // The task is cancelled when the screen goes away, which ends the
+            // loop; no timer to invalidate.
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(4))
+                if Task.isCancelled { break }
+                await load(quietly: true)
+            }
+        }
     }
 
     private var transcript: some View {
@@ -428,12 +466,27 @@ struct ConversationScreen: View {
         !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isSending
     }
 
-    private func load() async {
-        isLoading = true
-        defer { isLoading = false }
+    /// Fetches the thread.
+    ///
+    /// `quietly` is for the poll: it must not put the spinner back over a
+    /// conversation you are reading, and a failed refresh must not replace the
+    /// messages on screen with an error — the ones already there are still
+    /// perfectly good.
+    private func load(quietly: Bool = false) async {
+        if !quietly { isLoading = true }
+        defer { if !quietly { isLoading = false } }
+
         do {
-            messages = try await messaging.messages(in: conversation.id)
+            let fetched = try await messaging.messages(in: conversation.id)
+            // Only touch the array when something actually changed, so the list
+            // does not rebuild itself every four seconds while being read.
+            if fetched.count != messages.count || fetched.last?.id != messages.last?.id {
+                messages = fetched
+                if quietly { UnreadCounter.shared.refreshSoon() }
+            }
+            errorMessage = nil
         } catch {
+            guard !quietly else { return }
             errorMessage = "Couldn't load this conversation."
         }
     }

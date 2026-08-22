@@ -20,7 +20,11 @@ final class UnreadCounter: ObservableObject {
     /// Polled rather than pushed. A push tells the phone about one message at a
     /// time and can be refused permission entirely; this is what keeps the
     /// number right regardless.
-    private static let interval: TimeInterval = 30
+    /// Ten seconds, not thirty. This is the fallback for when a push does not
+    /// arrive — permission refused, delivery dropped, a message sent from
+    /// another device — and half a minute of a stale count is long enough to
+    /// look broken.
+    private static let interval: TimeInterval = 10
 
     private var timer: Timer?
     private var watching: AnyCancellable?
