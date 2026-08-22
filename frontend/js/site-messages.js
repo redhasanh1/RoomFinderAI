@@ -123,6 +123,10 @@
             '.rf-msg-mine{margin-left:auto;background:#6366f1;color:#fff;border-bottom-right-radius:4px}',
             '.rf-msg-theirs{background:#fff;color:#111827;border:1px solid #e5e7eb;border-bottom-left-radius:4px}',
             '#rf-msg-compose{display:flex;gap:8px;padding:10px;border-top:1px solid #e5e7eb;background:#fff}',
+            /* display:flex beats the hidden attribute, so the composer stayed
+               on screen over the conversation list - a box you could type into
+               that sent nowhere, because there is no thread selected yet. */
+            '#rf-msg-compose[hidden]{display:none}',
             '#rf-msg-input{flex:1;border:1px solid #d1d5db;border-radius:999px;padding:9px 13px;font:inherit;font-size:13px;outline:none}',
             '#rf-msg-input:focus{border-color:#6366f1;box-shadow:0 0 0 3px rgba(99,102,241,.15)}',
             '#rf-msg-send{border:none;background:#6366f1;color:#fff;border-radius:999px;width:38px;height:38px;',
