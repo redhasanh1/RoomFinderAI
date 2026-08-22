@@ -1281,6 +1281,49 @@ app.post('/api/listings', async (req, res) => {
 });
 
 // Transform listing data to match Android model
+
+/**
+ * Which of these accounts are verified, as a map of email to 'verified'.
+ *
+ * Four copies of this query used to read `.select('user_email, status')`.
+ * There is no `status` column on user_verifications - the statuses live in
+ * `id_verification_status` and `face_verification_status` - so every call
+ * failed with "column does not exist", the error was checked but only used to
+ * skip the assignment, and the map came back empty. Every listing was
+ * therefore unverified no matter who posted it, and the badge never appeared
+ * for anybody.
+ *
+ * Both halves have to be verified. Approving in the admin queue sets them
+ * together, but a row part-way through review must not be shown as verified.
+ */
+async function fetchVerificationMap(supabase, emails) {
+    const unique = [...new Set((emails || []).filter(Boolean))];
+    if (!unique.length || !supabase) return {};
+
+    const map = {};
+    try {
+        const { data, error } = await supabase
+            .from('user_verifications')
+            .select('user_email, id_verification_status, face_verification_status')
+            .in('user_email', unique);
+
+        if (error) {
+            // Said out loud. Swallowing this is what let it go unnoticed.
+            console.error('Verification lookup failed, badges will be missing:', error.message);
+            return {};
+        }
+
+        for (const row of data || []) {
+            if (row.id_verification_status === 'verified' && row.face_verification_status === 'verified') {
+                map[row.user_email] = 'verified';
+            }
+        }
+    } catch (err) {
+        console.error('Verification lookup threw, badges will be missing:', err.message || err);
+    }
+    return map;
+}
+
 function transformListingForAndroid(listing, verificationMap = {}) {
     // Every photo, not just the first.
     //
@@ -1563,27 +1606,8 @@ app.get('/api/listings', async (req, res) => {
         }
 
         // Fetch verification status for all users who have listings
-        let verificationMap = {};
-        try {
-            const userEmails = [...new Set((dbListings || [])
-                .map(l => l.user_email || l.userEmail)
-                .filter(email => email))];
-
-            if (userEmails.length > 0) {
-                const { data: verifications, error: verifyError } = await supabase
-                    .from('user_verifications')
-                    .select('user_email, status')
-                    .in('user_email', userEmails);
-
-                if (!verifyError && verifications) {
-                    verifications.forEach(v => {
-                        verificationMap[v.user_email] = v.status;
-                    });
-                }
-            }
-        } catch (verifyErr) {
-            console.log('Could not fetch verification status:', verifyErr.message);
-        }
+        const verificationMap = await fetchVerificationMap(supabase,
+            (dbListings || []).map(l => l.user_email || l.userEmail));
 
         // Transform listings to match Android model
         const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
@@ -1635,21 +1659,8 @@ app.get('/api/listings/search', async (req, res) => {
             }
 
             // Fetch verification status
-            let verificationMap = {};
-            try {
-                const userEmails = [...new Set((dbListings || [])
-                    .map(l => l.user_email || l.userEmail)
-                    .filter(email => email))];
-                if (userEmails.length > 0) {
-                    const { data: verifications } = await supabase
-                        .from('user_verifications')
-                        .select('user_email, status')
-                        .in('user_email', userEmails);
-                    if (verifications) {
-                        verifications.forEach(v => { verificationMap[v.user_email] = v.status; });
-                    }
-                }
-            } catch (e) { /* ignore */ }
+            const verificationMap = await fetchVerificationMap(supabase,
+                (dbListings || []).map(l => l.user_email || l.userEmail));
 
             const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
             return res.json({
@@ -1698,21 +1709,8 @@ app.get('/api/listings/search', async (req, res) => {
         }
 
         // Fetch verification status for search results
-        let verificationMap = {};
-        try {
-            const userEmails = [...new Set((dbListings || [])
-                .map(l => l.user_email || l.userEmail)
-                .filter(email => email))];
-            if (userEmails.length > 0) {
-                const { data: verifications } = await supabase
-                    .from('user_verifications')
-                    .select('user_email, status')
-                    .in('user_email', userEmails);
-                if (verifications) {
-                    verifications.forEach(v => { verificationMap[v.user_email] = v.status; });
-                }
-            }
-        } catch (e) { /* ignore */ }
+        const verificationMap = await fetchVerificationMap(supabase,
+            (dbListings || []).map(l => l.user_email || l.userEmail));
 
         const transformedListings = (dbListings || []).map(l => transformListingForAndroid(l, verificationMap));
 
@@ -1955,21 +1953,8 @@ app.post('/api/listings/search', async (req, res) => {
 
         // Helper function to get verification map
         async function getVerificationMap(dbListings) {
-            let verificationMap = {};
-            try {
-                const userEmails = [...new Set((dbListings || [])
-                    .map(l => l.user_email || l.userEmail)
-                    .filter(email => email))];
-                if (userEmails.length > 0) {
-                    const { data: verifications } = await supabase
-                        .from('user_verifications')
-                        .select('user_email, status')
-                        .in('user_email', userEmails);
-                    if (verifications) {
-                        verifications.forEach(v => { verificationMap[v.user_email] = v.status; });
-                    }
-                }
-            } catch (e) { /* ignore */ }
+            const verificationMap = await fetchVerificationMap(supabase,
+                (dbListings || []).map(l => l.user_email || l.userEmail));
             return verificationMap;
         }
 
