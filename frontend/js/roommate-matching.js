@@ -1709,36 +1709,6 @@ function clearLandingFilters() {
     }
 }
 
-/**
- * Takes the hero's search box down to the people it searches.
- *
- * Browsing was not offered above the fold at all: both hero cards open the
- * profile form, and the list of people sat a screen below with nothing saying
- * it was there.
- */
-function jumpToBrowse() {
-    var hero = document.getElementById('heroPeopleSearch');
-    var field = document.getElementById('landingSearchFilter');
-
-    if (hero && field) {
-        field.value = hero.value;
-        applyLandingFilters();
-    }
-
-    var target = document.getElementById('landingProfilesGrid')
-        || document.getElementById('landingResultsCount');
-    if (target) {
-        // The header is fixed, so scrollIntoView alone puts the first row
-        // underneath it.
-        //
-        // Instant, not smooth: something on this page cancels a smooth scroll
-        // outright - measured, an instant scroll to 900 arrives and a smooth
-        // one to the same place ends at 0 - so the button appeared to do
-        // nothing at all.
-        var top = target.getBoundingClientRect().top + window.pageYOffset - 140;
-        window.scrollTo({ top: top, behavior: 'auto' });
-    }
-}
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
