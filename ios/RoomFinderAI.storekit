@@ -1,0 +1,44 @@
+{
+  "identifier" : "A1F2C3D4",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "6802455334",
+    "_developerTeamID" : "KD3JCFB7N4",
+    "_lastSynchronizedDate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "22328666",
+      "localizations" : [],
+      "name" : "RoomFinderAI Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "9.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6804318390",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Unlimited AI negotiations and assistant",
+              "displayName" : "RoomFinderAI Pro",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.roomfinderai.app.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "RoomFinderAI Pro",
+          "subscriptionGroupID" : "22328666",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
