@@ -86,6 +86,11 @@
             '<button type="button" class="nav-item dropdown-trigger" onclick="toggleDropdown(\'about\')">More <span class="dropdown-arrow">▼</span></button>' +
             '<div class="dropdown-menu" id="about-dropdown">' +
             '<a href="legal.html" class="dropdown-item">Legal Help</a>' +
+            // Disputes were reachable only from a card halfway down the home
+            // page, so anyone already in a disagreement had to go back there to
+            // find it.
+            '<a href="file-dispute.html" class="dropdown-item">File a Dispute</a>' +
+            '<a href="my-disputes.html" class="dropdown-item">My Disputes</a>' +
             '<a href="pricing.html" class="dropdown-item">Pricing</a>' +
             '<a href="support.html" class="dropdown-item">Support</a>' +
             '</div></div>' +
@@ -134,6 +139,8 @@
             '<div class="mobile-section-content" id="tools-section">' +
             '<a href="ai-negotiator.html" class="mobile-menu-item" onclick="closeMobileMenu()">AI Negotiator</a>' +
             '<a href="legal.html" class="mobile-menu-item" onclick="closeMobileMenu()">Legal Help</a>' +
+            '<a href="file-dispute.html" class="mobile-menu-item" onclick="closeMobileMenu()">File a Dispute</a>' +
+            '<a href="my-disputes.html" class="mobile-menu-item" onclick="closeMobileMenu()">My Disputes</a>' +
             '</div></div>' +
             '<div class="mobile-section">' +
             '<button type="button" class="mobile-section-header" onclick="toggleMobileSection(\'about\')">More <span class="mobile-arrow" id="about-arrow">▼</span></button>' +

@@ -135,6 +135,11 @@ struct MoreDestination: Identifiable, Hashable {
     /// features to go through In-App Purchase. See AppConfig.blocksPurchasing,
     /// which closes the route rather than just hiding this row.
     static let all: [MoreDestination] = [
+        // Disputes were reachable only from a card on the website's home page,
+        // which the app never shows, so someone already in a disagreement with
+        // a landlord had nowhere to go from here.
+        .init(title: "File a Dispute", symbol: "exclamationmark.bubble.fill", path: "file-dispute.html"),
+        .init(title: "My Disputes",    symbol: "list.clipboard.fill",         path: "my-disputes.html"),
         .init(title: "Privacy Policy", symbol: "hand.raised.fill",    path: "privacy-policy.html"),
         .init(title: "Terms of Service", symbol: "doc.text.fill",     path: "terms-of-service.html")
     ]
