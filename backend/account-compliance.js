@@ -204,9 +204,43 @@ function registerComplianceRoutes(app, getSupabase, getSupabaseAuth = getSupabas
             return res.status(503).json({ error: 'Database not connected' });
         }
 
-        const { blockerEmail, blockedEmail } = req.body || {};
-        if (!blockerEmail || !blockedEmail) {
-            return res.status(400).json({ error: 'blockerEmail and blockedEmail are required' });
+        const { blockerEmail, blockedProfileId } = req.body || {};
+        let { blockedEmail } = req.body || {};
+        if (!blockerEmail) {
+            return res.status(400).json({ error: 'blockerEmail is required' });
+        }
+
+        // A roommate profile carries no address, and the browse payload
+        // deliberately does not include one — shipping every user's email to
+        // every client so the client could block one of them would be a worse
+        // leak than the problem it solves. So the client names the profile and
+        // the owner is resolved here instead.
+        // Two queries rather than one embed: there is no foreign key between
+        // roommate_profiles and profiles, so PostgREST cannot join them and an
+        // embed comes back as PGRST200.
+        if (!blockedEmail && blockedProfileId) {
+            const { data: profile } = await supabase
+                .from('roommate_profiles')
+                .select('user_id')
+                .eq('id', blockedProfileId)
+                .maybeSingle();
+
+            if (profile?.user_id) {
+                const { data: owner } = await supabase
+                    .from('profiles')
+                    .select('email')
+                    .eq('id', profile.user_id)
+                    .maybeSingle();
+                blockedEmail = owner?.email || null;
+            }
+
+            if (!blockedEmail) {
+                return res.status(404).json({ error: 'That profile no longer exists.' });
+            }
+        }
+
+        if (!blockedEmail) {
+            return res.status(400).json({ error: 'blockedEmail or blockedProfileId is required' });
         }
         if (blockerEmail.toLowerCase() === blockedEmail.toLowerCase()) {
             return res.status(400).json({ error: 'You cannot block yourself' });

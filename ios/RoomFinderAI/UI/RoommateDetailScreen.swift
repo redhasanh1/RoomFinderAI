@@ -11,6 +11,8 @@ struct RoommateDetailScreen: View {
 
     @EnvironmentObject private var state: AppState
     @State private var isReporting = false
+    @State private var confirmingBlock = false
+    @Environment(\.dismiss) private var dismiss
 
     @State private var thread: Conversation?
     @State private var isOpeningThread = false
@@ -145,11 +147,17 @@ struct RoommateDetailScreen: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
-                    Button(role: .destructive) {
+                    Button {
                         Haptics.impact(.light)
                         isReporting = true
                     } label: {
                         Label("Report this profile", systemImage: "flag")
+                    }
+                    Button(role: .destructive) {
+                        Haptics.impact(.medium)
+                        confirmingBlock = true
+                    } label: {
+                        Label("Block this person", systemImage: "hand.raised")
                     }
                 } label: {
                     MoreMenuLabel()
@@ -161,11 +169,16 @@ struct RoommateDetailScreen: View {
             ReportSheet(
                 targetType: .roommateProfile,
                 targetId: profile.id,
-                // Profiles carry no email, so blocking by address is not
-                // offered here; the report still reaches moderation.
+                // Profiles carry no email, so the report form cannot offer its
+                // "also block" toggle. Block is its own item in the menu above
+                // instead, which names the profile and lets the server work out
+                // who owns it.
                 authorEmail: nil
             )
         }
+        .blockAction(.roommateProfile(id: profile.id, name: profile.displayName),
+                     isPresented: $confirmingBlock,
+                     onBlocked: { dismiss() })
     }
 
     private var header: some View {

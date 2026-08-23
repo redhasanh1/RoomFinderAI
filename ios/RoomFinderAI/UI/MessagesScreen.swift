@@ -208,7 +208,19 @@ private struct InboxList: View {
 
     @EnvironmentObject private var state: AppState
     @ObservedObject private var user = CurrentUser.shared
+    @ObservedObject private var moderation = ModerationService.shared
     @ObservedObject var messaging: MessagingService
+
+    /// Blocking someone did nothing to the inbox: their rooms disappeared from
+    /// search while their messages kept arriving, which is the half that
+    /// actually matters when the person is harassing you.
+    private var visibleConversations: [Conversation] {
+        messaging.conversations.filter { !moderation.isBlocked($0.otherParty) }
+    }
+
+    @State private var blockTarget: String?
+    @State private var confirmingBlock = false
+    @State private var reportTarget: Conversation?
 
     var body: some View {
         // Ordered so there is no gap that renders nothing. The previous
@@ -226,7 +238,7 @@ private struct InboxList: View {
             } else if !messaging.hasLoadedOnce {
                 ProgressView("Loading messages…")
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let error = messaging.errorMessage, messaging.conversations.isEmpty {
+            } else if let error = messaging.errorMessage, visibleConversations.isEmpty {
                 // A failed load used to be reported as "no messages yet",
                 // which told the user their inbox was empty when it was not.
                 StatusScreen(
@@ -236,7 +248,7 @@ private struct InboxList: View {
                     actionTitle: "Try Again",
                     action: { Task { await messaging.loadConversations() } }
                 )
-            } else if messaging.conversations.isEmpty {
+            } else if visibleConversations.isEmpty {
                 StatusScreen(
                     symbol: "tray",
                     title: "No messages yet",
@@ -262,7 +274,7 @@ private struct InboxList: View {
     }
 
     private var list: some View {
-        List(messaging.conversations) { conversation in
+        List(visibleConversations) { conversation in
             NavigationLink {
                 // Opening a thread marks it read on the server, so the badge
                 // should stop claiming otherwise without waiting for the next
@@ -272,8 +284,35 @@ private struct InboxList: View {
             } label: {
                 ConversationRow(conversation: conversation)
             }
+            // Reachable without opening the thread. Someone being harassed
+            // should not have to read the next message to get at the controls
+            // that stop it.
+            .swipeActions(edge: .trailing) {
+                if let other = conversation.otherParty?.nilIfEmpty {
+                    Button(role: .destructive) {
+                        blockTarget = other
+                        confirmingBlock = true
+                    } label: {
+                        Label("Block", systemImage: "hand.raised.fill")
+                    }
+                }
+                Button {
+                    reportTarget = conversation
+                } label: {
+                    Label("Report", systemImage: "flag")
+                }
+                .tint(.orange)
+            }
         }
         .listStyle(.plain)
+        .blockAction(.person(email: blockTarget), isPresented: $confirmingBlock)
+        .sheet(item: $reportTarget) { conversation in
+            ReportSheet(
+                targetType: .message,
+                targetId: conversation.id,
+                authorEmail: conversation.otherParty
+            )
+        }
     }
 }
 
@@ -352,6 +391,9 @@ struct ConversationScreen: View {
     @State private var isLoading = true
     @State private var isSending = false
     @State private var errorMessage: String?
+    @State private var isReporting = false
+    @State private var confirmingBlock = false
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(spacing: 0) {
@@ -374,6 +416,46 @@ struct ConversationScreen: View {
         }
         .navigationTitle(conversation.displayName)
         .navigationBarTitleDisplayMode(.inline)
+        // Guideline 1.2 wants reporting and blocking where the content is, and
+        // for a messaging app that is inside the thread. This screen had
+        // neither: the only report buttons in the app were on a listing and on
+        // a roommate profile, so abuse arriving as a message had nowhere to go.
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                MoreMenu {
+                    Button {
+                        Haptics.impact(.light)
+                        isReporting = true
+                    } label: {
+                        Label("Report this conversation", systemImage: "flag")
+                    }
+
+                    if conversation.otherParty?.nilIfEmpty != nil {
+                        Button(role: .destructive) {
+                            Haptics.impact(.medium)
+                            confirmingBlock = true
+                        } label: {
+                            Label("Block this person", systemImage: "hand.raised")
+                        }
+                    }
+                }
+            }
+        }
+        .sheet(isPresented: $isReporting) {
+            ReportSheet(
+                targetType: .message,
+                targetId: conversation.id,
+                authorEmail: conversation.otherParty
+            )
+        }
+        // Leaving the thread afterwards, because staying in a conversation with
+        // somebody you just blocked reads as though the block did not take.
+        .blockAction(.person(email: conversation.otherParty),
+                     isPresented: $confirmingBlock,
+                     onBlocked: {
+                         Task { await messaging.loadConversations() }
+                         dismiss()
+                     })
         .task {
             await load()
 

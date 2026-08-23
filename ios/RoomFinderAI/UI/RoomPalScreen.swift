@@ -9,7 +9,6 @@ struct RoomPalScreen: View {
 
     @EnvironmentObject private var state: AppState
     @ObservedObject private var network = NetworkMonitor.shared
-    @ObservedObject private var moderation = ModerationService.shared
     @StateObject private var service = RoommateService()
 
     /// A switcher pinned above the content, supplied by the tab that hosts
@@ -294,14 +293,16 @@ struct RoomPalScreen: View {
         kind == .seeking ? "No one looking right now" : "No rooms offered yet"
     }
 
-    /// Blocked people are removed here so blocking means something.
-    private var visibleProfiles: [RoommateProfile] {
-        guard !moderation.blockedEmails.isEmpty else { return service.profiles }
-        // Profiles carry no email, so blocking is enforced by id where the
-        // block list holds one; the marketplace still hides them everywhere an
-        // address IS known (listings, messages).
-        return service.profiles.filter { !moderation.blockedEmails.contains($0.id.lowercased()) }
-    }
+    /// Blocked people are already gone by the time this list is loaded.
+    ///
+    /// This used to filter here, comparing each profile's id against the block
+    /// list — but the block list holds email addresses and a profile id is a
+    /// UUID, so the two could never match and blocking somebody on RoomPal did
+    /// nothing at all. The payload carries no address to compare against, and
+    /// adding one would ship every user's email to every client. So the server
+    /// takes the viewer's address and drops the blocked profiles before
+    /// sending; see `/api/roommate-profiles`.
+    private var visibleProfiles: [RoommateProfile] { service.profiles }
 
     /// What is actually shown: block list, then the budget band.
     private var shownProfiles: [RoommateProfile] {

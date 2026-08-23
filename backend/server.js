@@ -1440,6 +1440,30 @@ app.get('/api/roommate-profiles', async (req, res) => {
         const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 24, 1), 100);
         const offset = Math.max(parseInt(req.query.offset, 10) || 0, 0);
 
+        // Blocked people are dropped here rather than by the client. The
+        // browse payload carries no email — on purpose, since sending every
+        // user's address to every visitor so the page could hide one of them
+        // would leak far more than it protects — so the client has nothing to
+        // match a block list against, and its attempt to do so compared a
+        // profile id to an email address and never hid anybody.
+        let blockedUserIds = [];
+        const viewerEmail = String(req.query.userEmail || '').trim().toLowerCase();
+        if (viewerEmail) {
+            const { data: blocks } = await supabase
+                .from('blocked_users')
+                .select('blocked_email')
+                .eq('blocker_email', viewerEmail);
+
+            const blockedEmails = (blocks || []).map((row) => row.blocked_email).filter(Boolean);
+            if (blockedEmails.length) {
+                const { data: blockedProfiles } = await supabase
+                    .from('profiles')
+                    .select('id')
+                    .in('email', blockedEmails);
+                blockedUserIds = (blockedProfiles || []).map((row) => row.id).filter(Boolean);
+            }
+        }
+
         let query = supabase
             .from('roommate_profiles')
             // count:'exact' so the page can say how many there really are
@@ -1448,6 +1472,10 @@ app.get('/api/roommate-profiles', async (req, res) => {
                     { count: 'exact' })
             .eq('is_active', true)
             .order('created_at', { ascending: false });
+
+        if (blockedUserIds.length) {
+            query = query.not('user_id', 'in', `(${blockedUserIds.join(',')})`);
+        }
 
         if (userType === 'seeking' || userType === 'has_spot') {
             query = query.eq('user_type', userType);

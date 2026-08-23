@@ -46,6 +46,12 @@ final class RoommateService: ObservableObject {
         )!
 
         var items: [URLQueryItem] = []
+        // Who is asking, so the server can drop people this account has
+        // blocked. It cannot be done here: the payload carries no email to
+        // match a block list against.
+        if let me = CurrentUser.shared.email?.nilIfEmpty {
+            items.append(.init(name: "userEmail", value: me))
+        }
         if let kind { items.append(.init(name: "userType", value: kind.rawValue)) }
         let trimmedCity = city.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmedCity.isEmpty { items.append(.init(name: "city", value: trimmedCity)) }

@@ -70,6 +70,14 @@ struct ProfileScreen: View {
                 } label: {
                     Label("Saved rooms", systemImage: "heart")
                 }
+
+                // The block list had no screen at all, so a block could not be
+                // seen, checked or undone once it was made.
+                NavigationLink {
+                    BlockedPeopleScreen()
+                } label: {
+                    Label("Blocked people", systemImage: "hand.raised")
+                }
             } footer: {
                 if case .rejected(let why) = verification.stage {
                     Text(why).foregroundStyle(.red)
