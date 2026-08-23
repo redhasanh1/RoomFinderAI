@@ -792,7 +792,10 @@
             <div class="modal-content">
                 <span class="close-button">×</span>
                 <h2 id="modalTitle" class="text-2xl font-bold text-gray-800 mb-4"></h2>
-                <img id="modalImage" src="" alt="Listing" class="listing-image mb-4">
+                <!-- No src attribute at all. An empty one is not "no image": the browser
+                     resolves it against the page and fetches listings.html itself,
+                     then draws a broken-image icon where the photo should be. -->
+                <img id="modalImage" alt="Listing" class="listing-image mb-4">
                 <p id="modalPrice" class="text-xl font-bold text-blue-600 mb-2"></p>
                 <p id="modalLocation" class="text-gray-600 mb-2"></p>
                 <div id="modalDetails" class="text-gray-600 mb-4"></div>
