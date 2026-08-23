@@ -9,6 +9,49 @@
 
     <!-- Unified CSS System - No Inline Styles -->
     <link rel="stylesheet" href="/modules/css/main.css"/>
+    <style>
+      /* This page has no Tailwind and no layout wrapper, so the policy text sat
+         raw against the left edge underneath the fixed header, and the header's
+         avatar - sized only by Tailwind's w-10 h-10, which never loaded here -
+         rendered at its natural 800px and covered the page.
+
+         Written out in full rather than pulled from a CDN: Apple opens this URL
+         during review, and a legal page that depends on a third-party script to
+         be readable is a page that can fail to be readable. */
+      body {
+        max-width: 820px;
+        margin: 0 auto;
+        padding: 7rem 1.25rem 4rem;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-size: 1rem;
+        line-height: 1.65;
+        color: #1f2937;
+        background: #fff;
+      }
+      body > h1 { font-size: 2rem; line-height: 1.2; margin: 0 0 .35rem; color: #111827; }
+      body > h2 { font-size: 1.4rem; margin: 2.25rem 0 .6rem; color: #111827; }
+      body > h3 { font-size: 1.1rem; margin: 1.6rem 0 .4rem; color: #111827; }
+      body > h4 { font-size: 1rem; margin: 1.2rem 0 .3rem; color: #374151; }
+      body > p, body > ul { margin: 0 0 1rem; }
+      body > ul { padding-left: 1.4rem; }
+      body > ul li { margin-bottom: .4rem; }
+      a { color: #4f46e5; }
+
+      /* The header is fixed, hence the padding above; keep its own contents
+         from inheriting the page's reading width. */
+      header, header * { box-sizing: border-box; }
+      #profileLogo, .profile-logo {
+        width: 40px !important;
+        height: 40px !important;
+        object-fit: cover;
+        border-radius: 50%;
+      }
+
+      @media (max-width: 640px) {
+        body { padding: 6rem 1rem 3rem; font-size: .97rem; }
+        body > h1 { font-size: 1.6rem; }
+      }
+    </style>
 </head>
 <body>
     <h1>Privacy Policy</h1>
