@@ -225,13 +225,19 @@ function registerComplianceRoutes(app, getSupabase, getSupabaseAuth = getSupabas
                 .eq('id', blockedProfileId)
                 .maybeSingle();
 
+            // The link between a roommate profile and an account is stored two
+            // different ways depending on when the row was written, which is
+            // why both are tried here. Checking only `id` resolved nobody for
+            // half the profiles. See the same loop in messaging.js.
             if (profile?.user_id) {
-                const { data: owner } = await supabase
-                    .from('profiles')
-                    .select('email')
-                    .eq('id', profile.user_id)
-                    .maybeSingle();
-                blockedEmail = owner?.email || null;
+                for (const column of ['id', 'user_id']) {
+                    const { data: owner } = await supabase
+                        .from('profiles')
+                        .select('email')
+                        .eq(column, profile.user_id)
+                        .maybeSingle();
+                    if (owner?.email) { blockedEmail = owner.email; break; }
+                }
             }
 
             if (!blockedEmail) {

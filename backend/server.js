@@ -1458,9 +1458,14 @@ app.get('/api/roommate-profiles', async (req, res) => {
             if (blockedEmails.length) {
                 const { data: blockedProfiles } = await supabase
                     .from('profiles')
-                    .select('id')
+                    // Both, because roommate_profiles.user_id points at one or
+                    // the other depending on when the row was written. Taking
+                    // only `id` left half the blocked people still visible.
+                    .select('id, user_id')
                     .in('email', blockedEmails);
-                blockedUserIds = (blockedProfiles || []).map((row) => row.id).filter(Boolean);
+                blockedUserIds = (blockedProfiles || [])
+                    .flatMap((row) => [row.id, row.user_id])
+                    .filter(Boolean);
             }
         }
 
