@@ -223,12 +223,8 @@ struct PostListingSheet: View {
             if !photos.isEmpty {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
-                            Image(uiImage: image)
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(width: 78, height: 78)
-                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        ForEach(Array(photos.enumerated()), id: \.offset) { index, image in
+                            thumbnail(image, at: index, size: 78)
                         }
                     }
                 }
@@ -448,12 +444,8 @@ struct PostListingSheet: View {
                 if !photos.isEmpty {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .aspectRatio(contentMode: .fill)
-                                    .frame(width: 74, height: 74)
-                                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            ForEach(Array(photos.enumerated()), id: \.offset) { index, image in
+                                thumbnail(image, at: index, size: 74)
                             }
                         }
                         .padding(.vertical, 4)
@@ -595,6 +587,65 @@ struct PostListingSheet: View {
         //
         // Taking another photo is a button on the screen below instead. One
         // extra tap, and nothing that can race.
+    }
+
+    /// A photo with a way to take it back off the listing.
+    ///
+    /// Without this a mis-taken shot was permanent for the life of the sheet:
+    /// the only way to drop one was to cancel the whole posting and start over.
+    @ViewBuilder
+    private func thumbnail(_ image: UIImage, at index: Int, size: CGFloat) -> some View {
+        Image(uiImage: image)
+            .resizable()
+            .aspectRatio(contentMode: .fill)
+            .frame(width: size, height: size)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    Haptics.impact(.light)
+                    removePhoto(at: index)
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 20))
+                        .symbolRenderingMode(.palette)
+                        // White glyph on a dark disc, so it reads on a photo of
+                        // any colour rather than disappearing into a pale one.
+                        .foregroundStyle(.white, .black.opacity(0.65))
+                }
+                .buttonStyle(.plain)
+                // Nudged over the corner, and given room to be hit: a 20pt
+                // glyph is under the size a finger reliably lands on.
+                .offset(x: 7, y: -7)
+                .contentShape(Rectangle())
+                .accessibilityLabel("Remove photo \(index + 1)")
+            }
+            // So the badge hanging over the corner is not clipped by the row.
+            .padding(.top, 7)
+            .padding(.trailing, 7)
+    }
+
+    /// Drops one photo, from whichever list it came from.
+    ///
+    /// `photos` is the camera shots followed by the library picks, so the index
+    /// has to be mapped back before anything is removed — taking it out of the
+    /// wrong list would delete a different picture than the one tapped.
+    private func removePhoto(at index: Int) {
+        guard photos.indices.contains(index) else { return }
+
+        if index < cameraPhotos.count {
+            cameraPhotos.remove(at: index)
+            if cameraData.indices.contains(index) { cameraData.remove(at: index) }
+        } else {
+            let libraryIndex = index - cameraPhotos.count
+            if libraryPhotos.indices.contains(libraryIndex) { libraryPhotos.remove(at: libraryIndex) }
+            if libraryData.indices.contains(libraryIndex) { libraryData.remove(at: libraryIndex) }
+            // Also drop the selection it came from, or the next trip to the
+            // library hands the same picture straight back.
+            if pickerItems.indices.contains(libraryIndex) { pickerItems.remove(at: libraryIndex) }
+        }
+
+        photos = cameraPhotos + libraryPhotos
+        photoData = cameraData + libraryData
     }
 
     /// Read the first photo and move on. Driven by the button on the photo
