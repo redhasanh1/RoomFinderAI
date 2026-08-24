@@ -35,6 +35,13 @@ final class SpeechDictation: NSObject, ObservableObject {
     /// ones before — otherwise every pause wiped what had been said.
     private var committed = ""
 
+    /// Set once a pass has failed in a way that on-device recognition causes,
+    /// so the retry asks Apple's servers instead. Dictation being switched off
+    /// in Settings takes the on-device recogniser with it, and the failure that
+    /// produces looks like a fault in the app rather than a setting on the
+    /// phone.
+    private var forceServerRecognition = false
+
     var isAvailable: Bool { recogniser?.isAvailable ?? false }
 
     /// Asks for both permissions, then starts. Two are needed and they are
@@ -44,6 +51,7 @@ final class SpeechDictation: NSObject, ObservableObject {
         errorMessage = nil
         transcript = ""
         committed = ""
+        forceServerRecognition = false
 
         // requestPermissions sets its own message, which says which of the two
         // is missing. Replacing it here with one sentence covering both lost
@@ -172,7 +180,8 @@ final class SpeechDictation: NSObject, ObservableObject {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         // Keeps the audio on the phone when the phone can manage it.
-        request.requiresOnDeviceRecognition = recogniser.supportsOnDeviceRecognition
+        request.requiresOnDeviceRecognition =
+            recogniser.supportsOnDeviceRecognition && !forceServerRecognition
         self.request = request
 
         let input = engine.inputNode
@@ -210,14 +219,37 @@ final class SpeechDictation: NSObject, ObservableObject {
                 guard self.isListening else { return }
 
                 if let error {
+                    let problem = error as NSError
+
                     // Cancelling a task on the way out surfaces here too, and
                     // is not something to report to anyone.
-                    let code = (error as NSError).code
-                    let cancelled = code == 203 || code == 216 || code == 301
-                    if !cancelled {
-                        let problem = error as NSError
-                        self.errorMessage = "Dictation stopped.\n(\(problem.domain) \(problem.code): \(problem.localizedDescription))"
+                    let cancelled = problem.code == 203 || problem.code == 216 || problem.code == 301
+                    if cancelled { self.stop(); return }
+
+                    // 201 and 1101/1107 all mean the on-device recogniser could
+                    // not be used — most often because Dictation itself is
+                    // switched off in Settings, which also removes the local
+                    // speech assets. Apple's servers can still do it, so that
+                    // is tried once before giving up.
+                    let onDeviceUnavailable = problem.domain == "kAFAssistantErrorDomain"
+                        && [201, 1101, 1107].contains(problem.code)
+
+                    if onDeviceUnavailable, !self.forceServerRecognition,
+                       let recogniser = self.recogniser {
+                        self.forceServerRecognition = true
+                        self.task = nil
+                        self.request = nil
+                        do {
+                            try self.startTask(with: recogniser)
+                            return
+                        } catch {
+                            // Falls through to the message below.
+                        }
                     }
+
+                    self.errorMessage = onDeviceUnavailable
+                        ? "Dictation is turned off on this iPhone.\n\nOpen Settings, then General, then Keyboard, and turn on Enable Dictation."
+                        : "Dictation stopped.\n(\(problem.domain) \(problem.code): \(problem.localizedDescription))"
                     self.stop()
                     return
                 }
