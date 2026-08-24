@@ -101,18 +101,31 @@ final class ShellUITests: XCTestCase {
 
         app.tabBars.buttons["Post"].tap()
 
-        XCTAssertTrue(app.navigationBars["Post a Room"].waitForExistence(timeout: 15),
+        // "Add Photos", because posting opens on the photo step. This asserted
+        // on "Post a Room" — a title the sheet has not had since posting was
+        // split into two screens — so it failed on a screen that was working,
+        // and had been failing unnoticed ever since.
+        XCTAssertTrue(app.navigationBars["Add Photos"].waitForExistence(timeout: 15),
                       "The Post tab did not open the posting sheet")
 
-        // Autofill is the reason most people finish posting at all.
+        // Both ways in: the photo, which is the one people use, and the escape
+        // hatch for someone with no photo to hand.
         XCTAssertTrue(app.buttons.containing(
-            NSPredicate(format: "label CONTAINS[c] 'Write it for me' OR label CONTAINS[c] 'Fill in from my photo'")
-        ).firstMatch.exists, "The post form has no AI autofill")
+            NSPredicate(format: "label CONTAINS[c] 'Add photos of the room'")
+        ).firstMatch.waitForExistence(timeout: 5), "The post form has no way to add a photo")
 
-        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.buttons.containing(
+            NSPredicate(format: "label CONTAINS[c] 'Fill it in myself'")
+        ).firstMatch.exists, "The post form has no way in without a photo")
 
-        // Back on Listings, not on an empty Post screen.
-        XCTAssertTrue(app.navigationBars["Home"].waitForExistence(timeout: 15),
+        // The toolbar's Cancel specifically. A bare app.buttons["Cancel"] also
+        // matches the one in the "Take Photo / Choose from Library" dialog, and
+        // resolving to that taps nothing.
+        app.navigationBars["Add Photos"].buttons["Cancel"].tap()
+
+        // Back on Home, not on an empty Post screen.
+        XCTAssertTrue(app.tabBars.buttons["Home"].waitForExistence(timeout: 15)
+                      && app.tabBars.buttons["Home"].isSelected,
                       "Dismissing the sheet did not return to the previous tab")
     }
 

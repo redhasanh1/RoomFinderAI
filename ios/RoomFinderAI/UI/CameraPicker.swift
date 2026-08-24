@@ -18,6 +18,13 @@ struct CameraPicker: UIViewControllerRepresentable {
     /// what it was given rather than re-encoding.
     let onCapture: (UIImage, Data) -> Void
 
+    /// Called when the person leaves the camera, whether they took photos or
+    /// not. The caller uses it to know a run of shots has finished — anything
+    /// that changes the screen underneath has to wait until then, because
+    /// re-presenting the camera while that screen is mid-transition wedges the
+    /// presentation and the capture screen never goes away.
+    var onFinish: (() -> Void)? = nil
+
     @Environment(\.dismiss) private var dismiss
 
     /// Whether this device can actually take a photo. Simulators cannot, and
@@ -37,16 +44,20 @@ struct CameraPicker: UIViewControllerRepresentable {
     func updateUIViewController(_ controller: UIImagePickerController, context: Context) {}
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onCapture: onCapture, dismiss: { dismiss() })
+        Coordinator(onCapture: onCapture, onFinish: onFinish, dismiss: { dismiss() })
     }
 
     final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
 
         private let onCapture: (UIImage, Data) -> Void
+        private let onFinish: (() -> Void)?
         private let dismiss: () -> Void
 
-        init(onCapture: @escaping (UIImage, Data) -> Void, dismiss: @escaping () -> Void) {
+        init(onCapture: @escaping (UIImage, Data) -> Void,
+             onFinish: (() -> Void)?,
+             dismiss: @escaping () -> Void) {
             self.onCapture = onCapture
+            self.onFinish = onFinish
             self.dismiss = dismiss
         }
 
@@ -67,6 +78,7 @@ struct CameraPicker: UIViewControllerRepresentable {
 
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             dismiss()
+            onFinish?()
         }
     }
 }

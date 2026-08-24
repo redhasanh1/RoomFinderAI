@@ -140,9 +140,11 @@ struct PostListingSheet: View {
         // Full screen, because a camera in a sheet-sized window is a viewfinder
         // you cannot frame a room in.
         .fullScreenCover(isPresented: $showingCamera) {
-            CameraPicker { image, data in
+            CameraPicker(onCapture: { image, data in
                 addCaptured(image: image, data: data)
-            }
+            }, onFinish: {
+                finishedTakingPhotos()
+            })
             .ignoresSafeArea()
         }
         // Only Cancel closes this.
@@ -515,45 +517,53 @@ struct PostListingSheet: View {
     /// Adds a photo taken just now, and runs the same analysis a picked one
     /// gets. Appends rather than replaces, so taking a second shot does not
     /// throw away the first.
+    /// Adds a photo taken just now and goes straight back to the viewfinder.
+    ///
+    /// Deliberately does nothing else. It used to also start the autofill and
+    /// animate the sheet to the details step, which meant the camera was being
+    /// re-presented over a screen that was mid-transition: the presentation
+    /// wedged and the capture screen never went away. The work waits for
+    /// finishedTakingPhotos() now.
     private func addCaptured(image: UIImage, data: Data) {
         guard photos.count < 6 else { return }
-        let isFirst = photos.isEmpty
 
         cameraPhotos.append(image)
         cameraData.append(data)
         photos = cameraPhotos + libraryPhotos
         photoData = cameraData + libraryData
 
-        // Straight back to the viewfinder for the next one, up to six.
         // UIImagePickerController closes itself after every shot, so without
-        // this, photographing a room meant reopening the camera once per
+        // this, photographing a room means reopening the camera once per
         // picture. Cancel is how you stop.
         if photos.count < 6 {
             // A beat, so the capture screen has finished dismissing before the
-            // next one is presented — presenting into a controller that is
-            // still going away does nothing at all.
+            // next is presented — presenting into a controller that is still
+            // going away does nothing at all.
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                 showingCamera = true
             }
+        } else {
+            finishedTakingPhotos()
         }
+    }
 
-        // A camera photo is the one case where the coordinates are worth
-        // asking for: the person is standing in the room they are posting.
-        // The capture itself carries none, because UIImagePickerController
-        // hands back a re-encoded image with the metadata gone.
+    /// The camera was closed. Now, with nothing being presented over this
+    /// screen, it is safe to read the first photo and move on.
+    private func finishedTakingPhotos() {
+        guard !cameraPhotos.isEmpty, step == .photos else { return }
+        let first = cameraPhotos[0]
+
         loadTask?.cancel()
         loadTask = Task {
+            // Someone posting a room is standing in it, and a capture arrives
+            // with its metadata stripped, so the device is the only source of
+            // coordinates here.
             if photoLocation == nil, let coordinate = await locations.currentCoordinate() {
                 photoLocation = .init(latitude: coordinate.latitude,
                                       longitude: coordinate.longitude)
             }
-            // Only the first photo drives the autofill, matching the library
-            // path — re-running it on every extra shot would overwrite whatever
-            // the person had already corrected by hand.
-            if isFirst {
-                await runAutofill(using: image)
-                withAnimation { step = .details }
-            }
+            await runAutofill(using: first)
+            withAnimation { step = .details }
         }
     }
 
