@@ -40,6 +40,16 @@ struct PostRoommateSheet: View {
     @State private var avatarData: Data?
 
     @State private var roomItems: [PhotosPickerItem] = []
+    /// Camera or library, for the two places this sheet takes pictures. The
+    /// avatar in particular is a photo of your own face, which nobody has
+    /// sitting in their library ready to go.
+    private enum Shot: String, Identifiable {
+        case avatar, room
+        var id: String { rawValue }
+    }
+    @State private var choosingSourceFor: Shot?
+    @State private var cameraFor: Shot?
+    @State private var libraryFor: Shot?
     @State private var roomPhotos: [UIImage] = []
     @State private var roomPhotoData: [Data] = []
 
@@ -166,7 +176,9 @@ struct PostRoommateSheet: View {
     private var photoSection: some View {
         Section {
             HStack(spacing: 14) {
-                PhotosPicker(selection: $avatarItem, matching: .images) {
+                Button {
+                    if CameraPicker.isAvailable { choosingSourceFor = .avatar } else { libraryFor = .avatar }
+                } label: {
                     Group {
                         if let avatar {
                             Image(uiImage: avatar)
@@ -198,7 +210,9 @@ struct PostRoommateSheet: View {
             .padding(.vertical, 4)
 
             if kind == .hasSpot {
-                PhotosPicker(selection: $roomItems, maxSelectionCount: 6, matching: .images) {
+                Button {
+                    if CameraPicker.isAvailable { choosingSourceFor = .room } else { libraryFor = .room }
+                } label: {
                     Label(roomPhotos.isEmpty
                           ? "Add photos of the room"
                           : "\(roomPhotos.count) photo\(roomPhotos.count == 1 ? "" : "s") of the room",
@@ -225,6 +239,26 @@ struct PostRoommateSheet: View {
         }
         .onChange(of: avatarItem) { _, item in
             Task { await loadAvatar(item) }
+        }
+        .confirmationDialog("Add a photo",
+                            isPresented: Binding(get: { choosingSourceFor != nil },
+                                                 set: { if !$0 { choosingSourceFor = nil } }),
+                            titleVisibility: .visible) {
+            Button("Take Photo") { cameraFor = choosingSourceFor; choosingSourceFor = nil }
+            Button("Choose from Library") { libraryFor = choosingSourceFor; choosingSourceFor = nil }
+            Button("Cancel", role: .cancel) { choosingSourceFor = nil }
+        }
+        .photosPicker(isPresented: Binding(get: { libraryFor == .avatar },
+                                           set: { if !$0 { libraryFor = nil } }),
+                      selection: $avatarItem, matching: .images)
+        .photosPicker(isPresented: Binding(get: { libraryFor == .room },
+                                           set: { if !$0 { libraryFor = nil } }),
+                      selection: $roomItems, maxSelectionCount: 6, matching: .images)
+        .fullScreenCover(item: $cameraFor) { shot in
+            CameraPicker { image, _ in
+                if shot == .avatar { avatar = image } else if roomPhotos.count < 6 { roomPhotos.append(image) }
+            }
+            .ignoresSafeArea()
         }
         .onChange(of: roomItems) { _, items in
             Task { await loadRoomPhotos(items) }

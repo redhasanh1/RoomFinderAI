@@ -30,6 +30,12 @@ struct PostListingSheet: View {
     @State private var description = ""
 
     @State private var pickerItems: [PhotosPickerItem] = []
+    /// Which way of adding a photo the person chose. The library is presented
+    /// with .photosPicker rather than a PhotosPicker label, so that one button
+    /// can offer both the camera and the library.
+    @State private var choosingPhotoSource = false
+    @State private var showingCamera = false
+    @State private var showingLibrary = false
     @State private var photos: [UIImage] = []
     /// The bytes each photo arrived as, in the same order.
     ///
@@ -110,6 +116,26 @@ struct PostListingSheet: View {
                 }
             }
         }
+        // Camera or library. Only asked when the device actually has a camera;
+        // on one that does not, the button opens the library directly rather
+        // than offering a choice of one.
+        .confirmationDialog("Add a photo", isPresented: $choosingPhotoSource, titleVisibility: .visible) {
+            Button("Take Photo") { showingCamera = true }
+            Button("Choose from Library") { showingLibrary = true }
+            Button("Cancel", role: .cancel) { }
+        }
+        .photosPicker(isPresented: $showingLibrary,
+                      selection: $pickerItems,
+                      maxSelectionCount: 6,
+                      matching: .images)
+        // Full screen, because a camera in a sheet-sized window is a viewfinder
+        // you cannot frame a room in.
+        .fullScreenCover(isPresented: $showingCamera) {
+            CameraPicker { image, data in
+                addCaptured(image: image, data: data)
+            }
+            .ignoresSafeArea()
+        }
         // Only Cancel closes this.
         //
         // On iPad a tap outside the sheet dismissed it, and a swipe down did
@@ -145,7 +171,9 @@ struct PostListingSheet: View {
         VStack(spacing: 22) {
             Spacer(minLength: 8)
 
-            PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
+            Button {
+                addPhotoTapped()
+            } label: {
                 VStack(spacing: 14) {
                     Image(systemName: "photo.badge.plus")
                         .font(.system(size: 54, weight: .light))
@@ -348,7 +376,9 @@ struct PostListingSheet: View {
 
 
             Section {
-                PhotosPicker(selection: $pickerItems, maxSelectionCount: 6, matching: .images) {
+                Button {
+                    addPhotoTapped()
+                } label: {
                     Label(photos.isEmpty ? "Add photos" : "\(photos.count) photo\(photos.count == 1 ? "" : "s") selected",
                           systemImage: "photo.on.rectangle.angled")
                 }
@@ -460,6 +490,47 @@ struct PostListingSheet: View {
 
         guard latitude != 0 || longitude != 0 else { return nil }
         return .init(latitude: latitude, longitude: longitude)
+    }
+
+    /// One button, two ways in. Skips the question on a device with no camera,
+    /// where the only honest answer is the library.
+    private func addPhotoTapped() {
+        Haptics.impact(.light)
+        if CameraPicker.isAvailable {
+            choosingPhotoSource = true
+        } else {
+            showingLibrary = true
+        }
+    }
+
+    /// Adds a photo taken just now, and runs the same analysis a picked one
+    /// gets. Appends rather than replaces, so taking a second shot does not
+    /// throw away the first.
+    private func addCaptured(image: UIImage, data: Data) {
+        guard photos.count < 6 else { return }
+        let isFirst = photos.isEmpty
+
+        photos.append(image)
+        photoData.append(data)
+
+        // A camera photo is the one case where the coordinates are worth
+        // asking for: the person is standing in the room they are posting.
+        // The capture itself carries none, because UIImagePickerController
+        // hands back a re-encoded image with the metadata gone.
+        loadTask?.cancel()
+        loadTask = Task {
+            if photoLocation == nil, let coordinate = await locations.currentCoordinate() {
+                photoLocation = .init(latitude: coordinate.latitude,
+                                      longitude: coordinate.longitude)
+            }
+            // Only the first photo drives the autofill, matching the library
+            // path — re-running it on every extra shot would overwrite whatever
+            // the person had already corrected by hand.
+            if isFirst {
+                await runAutofill(using: image)
+                withAnimation { step = .details }
+            }
+        }
     }
 
     private func loadPhotos(_ items: [PhotosPickerItem]) async {

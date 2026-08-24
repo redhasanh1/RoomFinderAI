@@ -19,6 +19,17 @@ struct VerificationScreen: View {
     @State private var document: UIImage?
     @State private var selfie: UIImage?
 
+    /// Which of the two pictures the person is adding. Both used to come from
+    /// the photo library only, which for the selfie meant being asked to look
+    /// at the camera by a screen that could not open one.
+    private enum Shot: String, Identifiable {
+        case document, selfie
+        var id: String { rawValue }
+    }
+    @State private var choosingSourceFor: Shot?
+    @State private var cameraFor: Shot?
+    @State private var libraryFor: Shot?
+
     private var canSubmit: Bool { document != nil && selfie != nil && !service.isUploading }
 
     var body: some View {
@@ -34,6 +45,7 @@ struct VerificationScreen: View {
                     title: "Government ID",
                     detail: "Passport or driving licence, all four corners visible",
                     symbol: "person.text.rectangle.fill",
+                    shot: .document,
                     item: $documentItem,
                     image: $document
                 )
@@ -42,6 +54,7 @@ struct VerificationScreen: View {
                     title: "Selfie",
                     detail: "Just you, looking at the camera, in good light",
                     symbol: "person.crop.square.badge.camera.fill",
+                    shot: .selfie,
                     item: $selfieItem,
                     image: $selfie
                 )
@@ -85,12 +98,38 @@ struct VerificationScreen: View {
             }
         }
         .interactiveDismissDisabled(service.isUploading)
+        .confirmationDialog("Add a photo",
+                            isPresented: Binding(get: { choosingSourceFor != nil },
+                                                 set: { if !$0 { choosingSourceFor = nil } }),
+                            titleVisibility: .visible) {
+            Button("Take Photo") { cameraFor = choosingSourceFor; choosingSourceFor = nil }
+            Button("Choose from Library") { libraryFor = choosingSourceFor; choosingSourceFor = nil }
+            Button("Cancel", role: .cancel) { choosingSourceFor = nil }
+        }
+        .photosPicker(isPresented: Binding(get: { libraryFor != nil },
+                                           set: { if !$0 { libraryFor = nil } }),
+                      selection: libraryFor == .selfie ? $selfieItem : $documentItem,
+                      matching: .images,
+                      photoLibrary: .shared())
+        .fullScreenCover(item: $cameraFor) { shot in
+            CameraPicker { image, _ in
+                // Straight onto the image the form submits. These two never go
+                // through PhotosPickerItem, so there is nothing to decode.
+                if shot == .selfie { selfie = image } else { document = image }
+                service.errorMessage = nil
+            }
+            .ignoresSafeArea()
+        }
     }
 
-    private func picker(title: String, detail: String, symbol: String,
+    private func picker(title: String, detail: String, symbol: String, shot: Shot,
                         item: Binding<PhotosPickerItem?>, image: Binding<UIImage?>) -> some View {
         Section {
-            PhotosPicker(selection: item, matching: .images, photoLibrary: .shared()) {
+            Button {
+                // Straight to the library where there is no camera, rather than
+                // offering a choice of one.
+                if CameraPicker.isAvailable { choosingSourceFor = shot } else { libraryFor = shot }
+            } label: {
                 HStack(spacing: 12) {
                     if let chosen = image.wrappedValue {
                         Image(uiImage: chosen)
