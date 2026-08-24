@@ -143,7 +143,8 @@ struct PostListingSheet: View {
             CameraPicker(onCapture: { image, data in
                 addCaptured(image: image, data: data)
             }, onFinish: {
-                finishedTakingPhotos()
+                // Nothing to do. Closing the camera returns to the photo
+                // screen, which now shows what was taken and how to go on.
             })
             .ignoresSafeArea()
         }
@@ -212,6 +213,57 @@ struct PostListingSheet: View {
                 )
             }
             .disabled(isDrafting)
+
+            // What has been taken so far, and the two ways on from here.
+            //
+            // Without this the screen gave no sign a photo had been taken and,
+            // worse, no way to continue: advancing was a side effect of the
+            // camera closing, so anything that closed it differently stranded
+            // the person here.
+            if !photos.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
+                            Image(uiImage: image)
+                                .resizable()
+                                .aspectRatio(contentMode: .fill)
+                                .frame(width: 78, height: 78)
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        }
+                    }
+                }
+
+                Button {
+                    Haptics.impact(.medium)
+                    useThesePhotos()
+                } label: {
+                    HStack(spacing: 8) {
+                        if isDrafting { ProgressView().tint(.white) }
+                        Text(isDrafting
+                             ? "Reading your photo…"
+                             : "Continue with \(photos.count) photo\(photos.count == 1 ? "" : "s")")
+                            .font(.body.weight(.semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Theme.gradient)
+                    )
+                }
+                .disabled(isDrafting)
+
+                if photos.count < 6 {
+                    Button {
+                        addPhotoTapped()
+                    } label: {
+                        Label("Add another photo", systemImage: "plus.circle")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .disabled(isDrafting)
+                }
+            }
 
             // States what happens next, so the automatic analysis is expected
             // rather than a surprise.
@@ -532,26 +584,24 @@ struct PostListingSheet: View {
         photos = cameraPhotos + libraryPhotos
         photoData = cameraData + libraryData
 
-        // UIImagePickerController closes itself after every shot, so without
-        // this, photographing a room means reopening the camera once per
-        // picture. Cancel is how you stop.
-        if photos.count < 6 {
-            // A beat, so the capture screen has finished dismissing before the
-            // next is presented — presenting into a controller that is still
-            // going away does nothing at all.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                showingCamera = true
-            }
-        } else {
-            finishedTakingPhotos()
-        }
+        // The camera is NOT reopened here.
+        //
+        // It used to re-present itself half a second after each shot, so a room
+        // could be photographed without reopening it by hand. That put the
+        // whole flow on a timing guess: when the reopen and the dismissal
+        // crossed, the camera closed for good and left the person on the photo
+        // screen with a picture taken, no camera, and — because moving on was
+        // triggered by the camera closing — no way forward at all.
+        //
+        // Taking another photo is a button on the screen below instead. One
+        // extra tap, and nothing that can race.
     }
 
-    /// The camera was closed. Now, with nothing being presented over this
-    /// screen, it is safe to read the first photo and move on.
-    private func finishedTakingPhotos() {
-        guard !cameraPhotos.isEmpty, step == .photos else { return }
-        let first = cameraPhotos[0]
+    /// Read the first photo and move on. Driven by the button on the photo
+    /// screen, not by the camera closing: making it a side effect of dismissal
+    /// meant any other way of closing the camera left no way forward.
+    private func useThesePhotos() {
+        guard let first = photos.first, step == .photos else { return }
 
         loadTask?.cancel()
         loadTask = Task {
