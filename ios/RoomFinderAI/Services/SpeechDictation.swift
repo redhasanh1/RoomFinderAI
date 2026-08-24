@@ -18,6 +18,9 @@ final class SpeechDictation: NSObject, ObservableObject {
     @Published private(set) var isListening = false
     @Published private(set) var transcript = ""
     @Published var errorMessage: String?
+    /// Set when the only way forward is the Settings app, so the alert can
+    /// offer to open it rather than describing where to go.
+    @Published var needsSettings = false
 
     private let recogniser = SFSpeechRecognizer(locale: Locale.current)
     private let engine = AVAudioEngine()
@@ -42,12 +45,20 @@ final class SpeechDictation: NSObject, ObservableObject {
         transcript = ""
         committed = ""
 
-        guard await requestPermissions() else {
-            errorMessage = "Allow the microphone and speech recognition in Settings to talk instead of typing."
+        // requestPermissions sets its own message, which says which of the two
+        // is missing. Replacing it here with one sentence covering both lost
+        // exactly the detail the person needed.
+        guard await requestPermissions() else { return }
+        guard let recogniser else {
+            errorMessage = "Dictation isn't available for this language (\(Locale.current.identifier))."
             return
         }
-        guard let recogniser, recogniser.isAvailable else {
-            errorMessage = "Dictation isn't available right now."
+        guard recogniser.isAvailable else {
+            // Usually means no network on a device that cannot transcribe
+            // on-device, which is worth saying rather than leaving as a shrug.
+            errorMessage = recogniser.supportsOnDeviceRecognition
+                ? "Dictation isn't ready yet. Try again in a moment."
+                : "Dictation needs a connection on this device."
             return
         }
 
@@ -59,7 +70,13 @@ final class SpeechDictation: NSObject, ObservableObject {
             // half-open engine and fails for a reason that has nothing to do
             // with it.
             teardown()
-            errorMessage = "Couldn't start the microphone."
+            // The underlying reason is included on purpose. "Couldn't start the
+            // microphone" alone is untestable from the outside: it is the same
+            // sentence whether the session was misconfigured, the route was not
+            // ready or the engine refused, and someone reporting the fault has
+            // nothing to tell you.
+            let reason = (error as NSError)
+            errorMessage = "Couldn't start the microphone.\n(\(reason.domain) \(reason.code): \(reason.localizedDescription))"
         }
     }
 
@@ -87,15 +104,52 @@ final class SpeechDictation: NSObject, ObservableObject {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
+    /// Asks for speech and then for the microphone.
+    ///
+    /// Both are checked before being asked for. iOS only ever shows each prompt
+    /// once: after a refusal — or a prompt dismissed by a swipe — the request
+    /// returns "denied" immediately and nothing appears on screen. Asking again
+    /// therefore looks exactly like a button that does nothing, which is what
+    /// it looked like, because the refusal was reported into a message the app
+    /// never displayed.
     private func requestPermissions() async -> Bool {
-        let speech = await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
-        }
-        guard speech == .authorized else { return false }
+        needsSettings = false
 
-        return await withCheckedContinuation { continuation in
+        var speech = SFSpeechRecognizer.authorizationStatus()
+        if speech == .notDetermined {
+            speech = await withCheckedContinuation { continuation in
+                SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
+            }
+        }
+        guard speech == .authorized else {
+            needsSettings = (speech == .denied || speech == .restricted)
+            errorMessage = needsSettings
+                ? "Speech Recognition is turned off for RoomFinderAI. Turn it on in Settings to talk instead of typing."
+                : "Speech Recognition wasn't allowed."
+            return false
+        }
+
+        let record = AVAudioApplication.shared.recordPermission
+        if record == .granted { return true }
+        guard record == .undetermined else {
+            needsSettings = true
+            errorMessage = "The Microphone is turned off for RoomFinderAI. Turn it on in Settings to talk instead of typing."
+            return false
+        }
+
+        // A beat between the two system alerts. Presenting the second while the
+        // first is still going away drops it, and the microphone prompt never
+        // appears at all.
+        try? await Task.sleep(for: .milliseconds(400))
+
+        let granted = await withCheckedContinuation { continuation in
             AVAudioApplication.requestRecordPermission { continuation.resume(returning: $0) }
         }
+        if !granted {
+            needsSettings = true
+            errorMessage = "The Microphone wasn't allowed. Turn it on in Settings to talk instead of typing."
+        }
+        return granted
     }
 
     private func beginSession(with recogniser: SFSpeechRecognizer) throws {
@@ -160,7 +214,10 @@ final class SpeechDictation: NSObject, ObservableObject {
                     // is not something to report to anyone.
                     let code = (error as NSError).code
                     let cancelled = code == 203 || code == 216 || code == 301
-                    if !cancelled { self.errorMessage = "Dictation stopped unexpectedly." }
+                    if !cancelled {
+                        let problem = error as NSError
+                        self.errorMessage = "Dictation stopped.\n(\(problem.domain) \(problem.code): \(problem.localizedDescription))"
+                    }
                     self.stop()
                     return
                 }
@@ -221,6 +278,23 @@ struct DictationButton: View {
         }
         .disabled(isDisabled)
         .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Talk instead of typing")
+        // Every one of these failures used to be silent: the microphone was set
+        // to report a reason and nothing ever displayed it, so a dictation that
+        // could not start looked like a button that flickered and did nothing.
+        .alert("Dictation",
+               isPresented: Binding(get: { dictation.errorMessage != nil },
+                                    set: { if !$0 { dictation.errorMessage = nil } })) {
+            if dictation.needsSettings {
+                Button("Open Settings") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                }
+            }
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(dictation.errorMessage ?? "")
+        }
         .onChange(of: dictation.transcript) { _, spoken in
             guard !spoken.isEmpty else { return }
             text = textBeforeDictating.isEmpty

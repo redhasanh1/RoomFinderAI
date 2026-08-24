@@ -29,7 +29,11 @@
       "Bash(git -C /Users/Arsalan Amir Ali/Developer/GitHub/RoomFinderAI log --oneline -20)",
       "Bash(/tmp/migrate_html.sh:*)",
       "Bash(/tmp/add_css.sh:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Read(//Users/has/Documents/GitHub/**)",
+      "Read(//Users/has/Documents/**)",
+      "Bash(git config *)",
+      "Bash(gh auth *)"
     ],
     "deny": [],
     "ask": [],
