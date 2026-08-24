@@ -105,6 +105,7 @@ struct PostListingSheet: View {
             // details form, which is not in the hierarchy while the photo step
             // is showing — so picking a photo on the first screen changed
             // pickerItems with nothing listening, and nothing happened at all.
+            .task { seedPhotosForTesting() }
             .onChange(of: pickerItems) { _, items in
                 // Replace any load still running, rather than racing it.
                 loadTask?.cancel()
@@ -587,6 +588,37 @@ struct PostListingSheet: View {
         //
         // Taking another photo is a button on the screen below instead. One
         // extra tap, and nothing that can race.
+    }
+
+    /// Test-only: pre-loads the sheet with plain images.
+    ///
+    /// The remove badge and the continue button are this screen's logic, but
+    /// reaching them in a test means driving the system photo picker, which
+    /// runs in another process and moves between OS versions. Seeding the same
+    /// state directly keeps the test about this screen rather than about
+    /// Apple's picker. Only ever runs under `-uiTestingSeedPhotos`.
+    private func seedPhotosForTesting() {
+        let raw = UserDefaults.standard.string(forKey: "uiTestingSeedPhotos")
+        guard let count = raw.flatMap(Int.init), count > 0 else { return }
+        guard photos.isEmpty else { return }
+
+        let colours: [UIColor] = [.systemBrown, .systemTeal, .systemIndigo,
+                                  .systemPink, .systemGreen, .systemOrange]
+        var images: [UIImage] = []
+        var data: [Data] = []
+        for index in 0..<min(count, 6) {
+            let size = CGSize(width: 240, height: 240)
+            let image = UIGraphicsImageRenderer(size: size).image { context in
+                colours[index % colours.count].setFill()
+                context.fill(CGRect(origin: .zero, size: size))
+            }
+            images.append(image)
+            if let jpeg = image.jpegData(compressionQuality: 0.8) { data.append(jpeg) }
+        }
+        cameraPhotos = images
+        cameraData = data
+        photos = images
+        photoData = data
     }
 
     /// A photo with a way to take it back off the listing.

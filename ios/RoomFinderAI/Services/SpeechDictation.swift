@@ -24,6 +24,14 @@ final class SpeechDictation: NSObject, ObservableObject {
     private var request: SFSpeechAudioBufferRecognitionRequest?
     private var task: SFSpeechRecognitionTask?
 
+    /// What earlier passes of the recogniser already settled on.
+    ///
+    /// A recognition task ends for good once it reports a final result, which
+    /// it does after a second or two of quiet. Listening carries on across
+    /// those endings by starting a fresh task, so this holds the words from the
+    /// ones before — otherwise every pause wiped what had been said.
+    private var committed = ""
+
     var isAvailable: Bool { recogniser?.isAvailable ?? false }
 
     /// Asks for both permissions, then starts. Two are needed and they are
@@ -32,6 +40,7 @@ final class SpeechDictation: NSObject, ObservableObject {
         guard !isListening else { return }
         errorMessage = nil
         transcript = ""
+        committed = ""
 
         guard await requestPermissions() else {
             errorMessage = "Allow the microphone and speech recognition in Settings to talk instead of typing."
@@ -46,27 +55,37 @@ final class SpeechDictation: NSObject, ObservableObject {
             try beginSession(with: recogniser)
             isListening = true
         } catch {
+            // Tear down whatever did start, or the next attempt inherits a
+            // half-open engine and fails for a reason that has nothing to do
+            // with it.
+            teardown()
             errorMessage = "Couldn't start the microphone."
-            stop()
         }
     }
 
     func stop() {
         guard isListening || engine.isRunning else { return }
+        isListening = false
+        teardown()
+    }
 
-        engine.stop()
+    // MARK: - Pieces
+
+    /// Unwinds the engine, the tap and the session. Safe to call twice, and
+    /// safe to call when only half of it ever started.
+    private func teardown() {
+        if engine.isRunning { engine.stop() }
+        // Always, not only when the engine was running: a tap left installed
+        // makes the next installTap throw.
         engine.inputNode.removeTap(onBus: 0)
         request?.endAudio()
         task?.cancel()
         request = nil
         task = nil
-        isListening = false
 
         // Hand the microphone back, or other audio in the app stays ducked.
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
-
-    // MARK: - Pieces
 
     private func requestPermissions() async -> Bool {
         let speech = await withCheckedContinuation { continuation in
@@ -81,9 +100,21 @@ final class SpeechDictation: NSObject, ObservableObject {
 
     private func beginSession(with recogniser: SFSpeechRecognizer) throws {
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.record, mode: .measurement, options: .duckOthers)
+        // .duckOthers used to be passed here alongside .record. Ducking belongs
+        // to a category that plays audio, and pairing it with a record-only
+        // category made the configuration fail outright on some devices — the
+        // microphone then reported that it "couldn't start" for no visible
+        // reason. Bluetooth is allowed so a headset is a route rather than a
+        // failure.
+        try session.setCategory(.record, mode: .measurement, options: [.allowBluetooth])
         try session.setActive(true, options: .notifyOthersOnDeactivation)
 
+        try startTask(with: recogniser)
+    }
+
+    /// Starts one recognition pass. Called again each time a pass finalises,
+    /// for as long as the microphone is meant to be on.
+    private func startTask(with recogniser: SFSpeechRecognizer) throws {
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         // Keeps the audio on the phone when the phone can manage it.
@@ -92,22 +123,60 @@ final class SpeechDictation: NSObject, ObservableObject {
 
         let input = engine.inputNode
         input.removeTap(onBus: 0)
-        input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
+
+        // The hardware format is only meaningful once the session is active. A
+        // route still settling reports zero channels, and installing a tap with
+        // that format raises an exception Swift cannot catch — the app simply
+        // disappears.
+        let format = input.outputFormat(forBus: 0)
+        guard format.sampleRate > 0, format.channelCount > 0 else {
+            throw NSError(domain: "SpeechDictation", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "The microphone is not ready."])
+        }
+
+        input.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             request.append(buffer)
         }
 
-        engine.prepare()
-        try engine.start()
+        if !engine.isRunning {
+            engine.prepare()
+            try engine.start()
+        }
 
         task = recogniser.recognitionTask(with: request) { [weak self] result, error in
             guard let self else { return }
             Task { @MainActor in
                 if let result {
-                    self.transcript = result.bestTranscription.formattedString
+                    let words = result.bestTranscription.formattedString
+                    self.transcript = self.committed.isEmpty
+                        ? words
+                        : self.committed + " " + words
                 }
-                // A final result or a failure both mean this turn is over.
-                if error != nil || result?.isFinal == true {
+
+                guard self.isListening else { return }
+
+                if let error {
+                    // Cancelling a task on the way out surfaces here too, and
+                    // is not something to report to anyone.
+                    let code = (error as NSError).code
+                    let cancelled = code == 203 || code == 216 || code == 301
+                    if !cancelled { self.errorMessage = "Dictation stopped unexpectedly." }
                     self.stop()
+                    return
+                }
+
+                // A pass ended after a pause. Keep what it settled on and open
+                // a new one, so a breath mid-sentence does not end dictation.
+                if result?.isFinal == true {
+                    self.committed = self.transcript
+                    self.task = nil
+                    self.request = nil
+                    guard let recogniser = self.recogniser, recogniser.isAvailable else { return }
+                    do {
+                        try self.startTask(with: recogniser)
+                    } catch {
+                        self.stop()
+                    }
                 }
             }
         }
@@ -126,6 +195,10 @@ struct DictationButton: View {
     var isDisabled = false
 
     @StateObject private var dictation = SpeechDictation()
+    /// Whatever was already in the box when the microphone was switched on.
+    /// Dictation used to assign straight over it, so speaking wiped a
+    /// half-typed message rather than adding to it.
+    @State private var textBeforeDictating = ""
 
     var body: some View {
         Button {
@@ -134,6 +207,7 @@ struct DictationButton: View {
                 if dictation.isListening {
                     dictation.stop()
                 } else {
+                    textBeforeDictating = text
                     await dictation.start()
                 }
             }
@@ -149,7 +223,9 @@ struct DictationButton: View {
         .accessibilityLabel(dictation.isListening ? "Stop dictation" : "Talk instead of typing")
         .onChange(of: dictation.transcript) { _, spoken in
             guard !spoken.isEmpty else { return }
-            text = spoken
+            text = textBeforeDictating.isEmpty
+                ? spoken
+                : textBeforeDictating + " " + spoken
         }
         // Never leave the microphone open because someone navigated away.
         .onDisappear { dictation.stop() }
