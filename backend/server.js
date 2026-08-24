@@ -1482,6 +1482,26 @@ app.get('/api/roommate-profiles', async (req, res) => {
             query = query.not('user_id', 'in', `(${blockedUserIds.join(',')})`);
         }
 
+        // A profile with no account behind it cannot be messaged — the
+        // conversation endpoint answers "isn't linked to an account yet" —
+        // and cannot be blocked either, because there is no address to block.
+        // Showing one is offering a person you cannot contact: every tap on
+        // them ends in an error, which reads as the feature being broken
+        // rather than the row being a placeholder.
+        //
+        // Set SHOW_UNLINKED_ROOMMATE_PROFILES=true to put them back.
+        const hideUnlinked = process.env.SHOW_UNLINKED_ROOMMATE_PROFILES !== 'true';
+        let linkedUserIds = null;
+        if (hideUnlinked) {
+            const { data: accounts } = await supabase.from('profiles').select('id, user_id');
+            linkedUserIds = [...new Set((accounts || [])
+                .flatMap((row) => [row.id, row.user_id])
+                .filter(Boolean))];
+            if (linkedUserIds.length) {
+                query = query.in('user_id', linkedUserIds);
+            }
+        }
+
         if (userType === 'seeking' || userType === 'has_spot') {
             query = query.eq('user_type', userType);
         }
