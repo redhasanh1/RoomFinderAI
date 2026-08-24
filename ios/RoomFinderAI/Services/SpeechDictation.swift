@@ -49,6 +49,7 @@ final class SpeechDictation: NSObject, ObservableObject {
     func start() async {
         guard !isListening else { return }
         errorMessage = nil
+        needsSettings = false
         transcript = ""
         committed = ""
         forceServerRecognition = false
@@ -64,9 +65,8 @@ final class SpeechDictation: NSObject, ObservableObject {
         guard recogniser.isAvailable else {
             // Usually means no network on a device that cannot transcribe
             // on-device, which is worth saying rather than leaving as a shrug.
-            errorMessage = recogniser.supportsOnDeviceRecognition
-                ? "Dictation isn't ready yet. Try again in a moment."
-                : "Dictation needs a connection on this device."
+            needsSettings = true
+            errorMessage = "Dictation isn't available on this device yet.\n\nCheck that Settings → General → Keyboard → Enable Dictation is on, and that you have a connection."
             return
         }
 
@@ -247,9 +247,15 @@ final class SpeechDictation: NSObject, ObservableObject {
                         }
                     }
 
-                    self.errorMessage = onDeviceUnavailable
-                        ? "Dictation is turned off on this iPhone.\n\nOpen Settings, then General, then Keyboard, and turn on Enable Dictation."
-                        : "Dictation stopped.\n(\(problem.domain) \(problem.code): \(problem.localizedDescription))"
+                    if onDeviceUnavailable {
+                        // Settings has no public link to the Keyboard page, so
+                        // the button can only open Settings itself and the way
+                        // from there has to be spelled out.
+                        self.needsSettings = true
+                        self.errorMessage = "Dictation is turned off on this device.\n\nIn Settings, go to General → Keyboard and turn on Enable Dictation."
+                    } else {
+                        self.errorMessage = "Dictation stopped.\n(\(problem.domain) \(problem.code): \(problem.localizedDescription))"
+                    }
                     self.stop()
                     return
                 }
