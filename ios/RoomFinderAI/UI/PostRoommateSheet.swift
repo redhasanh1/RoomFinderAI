@@ -47,6 +47,11 @@ struct PostRoommateSheet: View {
         case avatar, room
         var id: String { rawValue }
     }
+    /// Kept apart for the same reason as the listing sheet: the library hands
+    /// back its whole selection each time, so one list would let a trip to the
+    /// library wipe the shots already taken.
+    @State private var cameraRoomPhotos: [UIImage] = []
+    @State private var libraryRoomPhotos: [UIImage] = []
     @State private var choosingSourceFor: Shot?
     @State private var cameraFor: Shot?
     @State private var libraryFor: Shot?
@@ -253,10 +258,22 @@ struct PostRoommateSheet: View {
                       selection: $avatarItem, matching: .images)
         .photosPicker(isPresented: Binding(get: { libraryFor == .room },
                                            set: { if !$0 { libraryFor = nil } }),
-                      selection: $roomItems, maxSelectionCount: 6, matching: .images)
+                      selection: $roomItems,
+                      maxSelectionCount: max(1, 6 - cameraRoomPhotos.count),
+                      matching: .images)
         .fullScreenCover(item: $cameraFor) { shot in
             CameraPicker { image, _ in
-                if shot == .avatar { avatar = image } else if roomPhotos.count < 6 { roomPhotos.append(image) }
+                if shot == .avatar {
+                    avatar = image
+                } else if roomPhotos.count < 6 {
+                    cameraRoomPhotos.append(image)
+                    roomPhotos = cameraRoomPhotos + libraryRoomPhotos
+                    // Back to the viewfinder for the next one, as in the
+                    // listing sheet — the picker closes after every shot.
+                    if roomPhotos.count < 6 {
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { cameraFor = .room }
+                    }
+                }
             }
             .ignoresSafeArea()
         }
@@ -285,7 +302,8 @@ struct PostRoommateSheet: View {
                 payloads.append(shrunk)
             }
         }
-        roomPhotos = images
+        libraryRoomPhotos = images
+        roomPhotos = cameraRoomPhotos + libraryRoomPhotos
         roomPhotoData = payloads
     }
 

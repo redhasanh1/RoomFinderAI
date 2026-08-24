@@ -36,6 +36,15 @@ struct PostListingSheet: View {
     @State private var choosingPhotoSource = false
     @State private var showingCamera = false
     @State private var showingLibrary = false
+    /// Camera shots and library picks are kept apart because they arrive
+    /// differently: the library hands back the whole selection every time, so
+    /// storing them together meant a trip to the library replaced the photos
+    /// already taken with the camera. `photos` is the two lists joined, in that
+    /// order, and stays the single thing the rest of the screen uploads.
+    @State private var cameraPhotos: [UIImage] = []
+    @State private var cameraData: [Data] = []
+    @State private var libraryPhotos: [UIImage] = []
+    @State private var libraryData: [Data] = []
     @State private var photos: [UIImage] = []
     /// The bytes each photo arrived as, in the same order.
     ///
@@ -126,7 +135,7 @@ struct PostListingSheet: View {
         }
         .photosPicker(isPresented: $showingLibrary,
                       selection: $pickerItems,
-                      maxSelectionCount: 6,
+                      maxSelectionCount: max(1, 6 - cameraPhotos.count),
                       matching: .images)
         // Full screen, because a camera in a sheet-sized window is a viewfinder
         // you cannot frame a room in.
@@ -510,8 +519,23 @@ struct PostListingSheet: View {
         guard photos.count < 6 else { return }
         let isFirst = photos.isEmpty
 
-        photos.append(image)
-        photoData.append(data)
+        cameraPhotos.append(image)
+        cameraData.append(data)
+        photos = cameraPhotos + libraryPhotos
+        photoData = cameraData + libraryData
+
+        // Straight back to the viewfinder for the next one, up to six.
+        // UIImagePickerController closes itself after every shot, so without
+        // this, photographing a room meant reopening the camera once per
+        // picture. Cancel is how you stop.
+        if photos.count < 6 {
+            // A beat, so the capture screen has finished dismissing before the
+            // next one is presented — presenting into a controller that is
+            // still going away does nothing at all.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
+                showingCamera = true
+            }
+        }
 
         // A camera photo is the one case where the coordinates are worth
         // asking for: the person is standing in the room they are posting.
@@ -555,8 +579,10 @@ struct PostListingSheet: View {
         }
 
         if Task.isCancelled { return }
-        photos = loaded
-        photoData = loadedData
+        libraryPhotos = loaded
+        libraryData = loadedData
+        photos = cameraPhotos + libraryPhotos
+        photoData = cameraData + libraryData
 
         // PhotosPicker hands back images with their location stripped, so the
         // EXIF read above usually finds nothing. Ask the device where it is
