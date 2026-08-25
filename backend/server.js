@@ -160,14 +160,14 @@ async function testBrevoApiKey() {
 setTimeout(testBrevoApiKey, 2000);
 
 /**
- * True when the request came from inside the iOS app's web view.
+ * True when the request came from inside one of our apps.
  *
- * The app appends its own marker to the stock user agent (see
- * WebViewStore's applicationNameForUserAgent), so this identifies app traffic
- * without the app pretending to be Safari.
+ * Each app appends its own marker to the stock user agent - iOS via
+ * WebViewStore's applicationNameForUserAgent, Android via AppUserAgent - so
+ * this identifies app traffic without either app pretending to be a browser.
  */
 function isAppRequest(req) {
-    return /RoomFinderAI\/[\d.]+ iOS/.test(req?.headers?.['user-agent'] || '');
+    return /RoomFinderAI\/[\d.]+ (iOS|Android)/.test(req?.headers?.['user-agent'] || '');
 }
 
 /**
