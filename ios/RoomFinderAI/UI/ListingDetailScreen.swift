@@ -13,6 +13,10 @@ struct ListingDetailScreen: View {
     @EnvironmentObject private var state: AppState
     @Environment(\.dismiss) private var dismiss
     @State private var isReporting = false
+    @State private var confirmingDelete = false
+    @State private var isDeleting = false
+    @State private var deleteProblem: String?
+    @StateObject private var mine = MyListingsService()
     @State private var photoIndex = 0
     @State private var isViewingPhotos = false
     /// Filled only when the API sent fewer photos than the listing has.
@@ -166,13 +170,26 @@ struct ListingDetailScreen: View {
                         Label("Share", systemImage: "square.and.arrow.up")
                     }
                     Divider()
-                    // Guideline 1.2: reporting has to be reachable from the
-                    // content itself, not buried in a settings screen.
-                    Button(role: .destructive) {
-                        Haptics.impact(.light)
-                        isReporting = true
-                    } label: {
-                        Label("Report this listing", systemImage: "flag")
+                    // Your own room gets the owner's action; everyone else's
+                    // gets the reader's. Reporting your own listing is not an
+                    // action anyone wants, and offering it was how somebody
+                    // ended up filing a complaint against themselves.
+                    if isMyListing {
+                        Button(role: .destructive) {
+                            Haptics.impact(.medium)
+                            confirmingDelete = true
+                        } label: {
+                            Label("Delete this listing", systemImage: "trash")
+                        }
+                    } else {
+                        // Guideline 1.2: reporting has to be reachable from the
+                        // content itself, not buried in a settings screen.
+                        Button(role: .destructive) {
+                            Haptics.impact(.light)
+                            isReporting = true
+                        } label: {
+                            Label("Report this listing", systemImage: "flag")
+                        }
                     }
                 } label: {
                     MoreMenuLabel()
@@ -184,6 +201,35 @@ struct ListingDetailScreen: View {
         // conversation rather than to a screen that then has to load one.
         .navigationDestination(item: $thread) { conversation in
             ConversationScreen(conversation: conversation, messaging: MessagingService())
+        }
+        .confirmationDialog("Delete this listing?",
+                            isPresented: $confirmingDelete, titleVisibility: .visible) {
+            Button("Delete", role: .destructive) {
+                isDeleting = true
+                Task {
+                    let gone = await mine.delete(listingID: listing.id)
+                    isDeleting = false
+                    // Only leave once the server has actually removed it,
+                    // rather than closing on a request that failed.
+                    if gone { dismiss() } else { deleteProblem = mine.errorMessage }
+                }
+            }
+            Button("Keep it", role: .cancel) { }
+        } message: {
+            Text("This removes the room from RoomFinderAI for good, along with any saved copies. It can't be undone.")
+        }
+        .alert("Couldn't delete", isPresented: Binding(get: { deleteProblem != nil },
+                                                      set: { if !$0 { deleteProblem = nil } })) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(deleteProblem ?? "")
+        }
+        .overlay {
+            if isDeleting {
+                ProgressView("Deleting…")
+                    .padding(20)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+            }
         }
         .sheet(isPresented: $isReporting) {
             ReportSheet(

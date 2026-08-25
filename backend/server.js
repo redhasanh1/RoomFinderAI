@@ -1447,7 +1447,19 @@ app.get('/api/roommate-profiles', async (req, res) => {
         // match a block list against, and its attempt to do so compared a
         // profile id to an email address and never hid anybody.
         let blockedUserIds = [];
+        // The viewer's own account ids, so their profile is left out of the
+        // list. Browsing to your own card offers to message, report and block
+        // yourself — the server refuses the message with "that's your own
+        // profile", and the other two are simply nonsense.
+        let selfUserIds = [];
         const viewerEmail = String(req.query.userEmail || '').trim().toLowerCase();
+        if (viewerEmail) {
+            const { data: me } = await supabase
+                .from('profiles')
+                .select('id, user_id')
+                .ilike('email', viewerEmail);
+            selfUserIds = (me || []).flatMap((row) => [row.id, row.user_id]).filter(Boolean);
+        }
         if (viewerEmail) {
             const { data: blocks } = await supabase
                 .from('blocked_users')
@@ -1478,8 +1490,9 @@ app.get('/api/roommate-profiles', async (req, res) => {
             .eq('is_active', true)
             .order('created_at', { ascending: false });
 
-        if (blockedUserIds.length) {
-            query = query.not('user_id', 'in', `(${blockedUserIds.join(',')})`);
+        const hiddenUserIds = [...new Set([...blockedUserIds, ...selfUserIds])];
+        if (hiddenUserIds.length) {
+            query = query.not('user_id', 'in', `(${hiddenUserIds.join(',')})`);
         }
 
         // A profile with no account behind it cannot be messaged — the
