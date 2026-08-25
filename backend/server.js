@@ -3077,11 +3077,33 @@ async function verifyEmailHandler(req, res) {
         if (supabase) {
             try {
                 console.log('🔐 Creating Supabase Auth account for:', email);
-                const { data: authData, error: authError } = await supabaseAuth.auth.signUp({
+                // Created already-confirmed, with the service-role client.
+                //
+                // auth.signUp leaves the address unconfirmed and waits for the
+                // link Supabase emails. This app never uses that link — it
+                // verifies with its own six-digit code, which has already been
+                // checked by the time execution reaches here — so accounts were
+                // being created that Supabase then refused to sign in, and
+                // every new account was told its credentials were invalid.
+                let { data: authData, error: authError } = await supabase.auth.admin.createUser({
                     email: email,
-                    password: password
+                    password: password,
+                    email_confirm: true
                 });
-                
+
+                // Older deployments may not have service-role access here.
+                // Falling back keeps sign-up working rather than failing shut,
+                // at the cost of the account needing the emailed link.
+                if (authError) {
+                    console.warn('⚠️ admin.createUser failed, falling back to signUp:', authError.message);
+                    const fallback = await supabaseAuth.auth.signUp({
+                        email: email,
+                        password: password
+                    });
+                    authData = fallback.data;
+                    authError = fallback.error;
+                }
+
                 if (authError) {
                     console.error('❌ Supabase Auth signup failed:', authError.message);
                     return res.status(400).json({ error: 'Failed to create authentication account: ' + authError.message });
