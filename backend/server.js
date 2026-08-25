@@ -2969,7 +2969,7 @@ Date: ${new Date().toISOString()}
 }
 
 // API: Send verification email
-app.post('/api/send-verification', authRateLimitMiddleware, async (req, res) => {
+async function sendVerificationHandler(req, res) {
     try {
         console.log('📧 Received verification request:', req.body);
         const { firstName, lastName, email, password } = req.body;
@@ -3039,10 +3039,11 @@ app.post('/api/send-verification', authRateLimitMiddleware, async (req, res) => 
         console.error('❌ Error in /api/send-verification:', error.message);
         res.status(500).json({ error: 'Failed to send verification code: ' + error.message });
     }
-});
+}
+app.post('/api/send-verification', authRateLimitMiddleware, sendVerificationHandler);
 
 // API: Verify email code and complete registration
-app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
+async function verifyEmailHandler(req, res) {
     try {
         const { email, code } = req.body;
         
@@ -3161,7 +3162,8 @@ app.post('/api/verify-email', authRateLimitMiddleware, async (req, res) => {
         console.error('Error in /api/verify-email:', error.message);
         res.status(500).json({ error: 'Failed to verify email and create account' });
     }
-});
+}
+app.post('/api/verify-email', authRateLimitMiddleware, verifyEmailHandler);
 
 // API: User login with Supabase authentication
 app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
@@ -3477,7 +3479,10 @@ app.post('/api/register', async (req, res) => {
         };
         
         // Call the existing send-verification handler
-        await app._router.stack.find(r => r.route && r.route.path === '/api/send-verification').route.stack[0].handle(verificationReq, verificationRes);
+        // Called directly. This used to dig the handler out of app._router,
+        // which Express 5 removed — so every registration threw before it began
+        // and answered "Failed to process registration".
+        await sendVerificationHandler(verificationReq, verificationRes);
         
     } catch (error) {
         console.error('Registration error:', error);
@@ -3513,7 +3518,8 @@ app.post('/api/auth/verify-code', async (req, res) => {
         };
         
         // Call the existing verify-email handler
-        await app._router.stack.find(r => r.route && r.route.path === '/api/verify-email').route.stack[0].handle(verifyReq, verifyRes);
+        // Called directly, for the same reason as the registration route above.
+        await verifyEmailHandler(verifyReq, verifyRes);
         
         if (verifySuccess && userId) {
             // Get the newly created user
