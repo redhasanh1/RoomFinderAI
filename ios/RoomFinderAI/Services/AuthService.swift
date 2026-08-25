@@ -89,14 +89,39 @@ final class AuthService: ObservableObject {
         try adopt(loginResponse: data, fallbackEmail: email)
     }
 
-    func register(name: String, email: String, password: String) async throws {
+    /// Step one of making an account: emails a six-digit code.
+    ///
+    /// No account exists after this. The server creates it only once the code
+    /// comes back, which is why this used to fail every time: it registered and
+    /// then immediately tried to sign in, against an account that could not be
+    /// there yet, so every sign-up ended on an error and nobody could join.
+    func startRegistration(name: String, email: String, password: String) async throws {
         let body: [String: Any] = ["name": name, "email": email, "password": password]
         _ = try await post("api/register", body)
+    }
 
-        // Registering does not always return a session, so sign in for one
-        // rather than leaving someone on the login screen having just made an
-        // account.
+    /// Step two: hands the code back, which creates the account, then signs in
+    /// for a real session.
+    func completeRegistration(name: String, email: String, password: String, code: String) async throws {
+        let parts = name.split(separator: " ", maxSplits: 1).map(String.init)
+        let body: [String: Any] = [
+            "email": email,
+            "code": code,
+            "firstName": parts.first ?? name,
+            "lastName": parts.count > 1 ? parts[1] : "",
+            "password": password
+        ]
+        // The website's own endpoint, which is the one that actually creates
+        // the account. /api/auth/verify-code answers from an in-memory list and
+        // hands back a token the rest of the API does not accept.
+        _ = try await post("api/verify-email", body)
+
         try await signIn(email: email, password: password)
+    }
+
+    /// Sends a fresh code, for one that expired or never arrived.
+    func resendRegistrationCode(name: String, email: String, password: String) async throws {
+        try await startRegistration(name: name, email: email, password: password)
     }
 
     func signInWithGoogle(code: String, redirectURI: String) async throws {

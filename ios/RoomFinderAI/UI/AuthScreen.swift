@@ -16,6 +16,12 @@ struct AuthScreen: View {
     @State private var email = ""
     @State private var password = ""
     @State private var isWorking = false
+    /// Set once a code has been emailed, which swaps the form for the box to
+    /// type it into. Registration is two steps on the server — the account is
+    /// only made when the code comes back — and the app had nowhere to enter
+    /// it, so nobody could finish signing up.
+    @State private var awaitingCode = false
+    @State private var code = ""
     @State private var errorMessage: String?
 
     @FocusState private var focus: Field?
@@ -25,7 +31,9 @@ struct AuthScreen: View {
     @EnvironmentObject private var state: AppState
 
     private var canSubmit: Bool {
-        guard email.contains("@"), password.count >= 6, !isWorking else { return false }
+        guard !isWorking else { return false }
+        if awaitingCode { return code.trimmed.count >= 4 }
+        guard email.contains("@"), password.count >= 6 else { return false }
         if mode == .signUp { return !name.trimmingCharacters(in: .whitespaces).isEmpty }
         return true
     }
@@ -35,14 +43,18 @@ struct AuthScreen: View {
             VStack(spacing: 22) {
                 header
 
-                Picker("", selection: $mode) {
-                    Text("Sign in").tag(Mode.signIn)
-                    Text("Create account").tag(Mode.signUp)
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: mode) { _, _ in errorMessage = nil }
+                if !awaitingCode {
+                    Picker("", selection: $mode) {
+                        Text("Sign in").tag(Mode.signIn)
+                        Text("Create account").tag(Mode.signUp)
+                    }
+                    .pickerStyle(.segmented)
+                    .onChange(of: mode) { _, _ in errorMessage = nil }
 
-                fields
+                    fields
+                } else {
+                    codeStep
+                }
 
                 if let errorMessage {
                     Text(errorMessage)
@@ -196,15 +208,67 @@ struct AuthScreen: View {
         }
     }
 
+    /// The second half of signing up: the emailed code.
+    private var codeStep: some View {
+        VStack(spacing: 14) {
+            Text("Check your email")
+                .font(.title3.weight(.semibold))
+            Text("We sent a code to \(email.trimmed). Enter it to finish making your account.")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+
+            TextField("Six-digit code", text: $code)
+                .textContentType(.oneTimeCode)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(.title2.weight(.semibold))
+                .padding(.vertical, 12)
+                .background(RoundedRectangle(cornerRadius: 12).fill(Color(.secondarySystemBackground)))
+
+            HStack(spacing: 18) {
+                Button("Send a new code") {
+                    run {
+                        try await auth.resendRegistrationCode(
+                            name: name.trimmed, email: email.trimmed, password: password)
+                    }
+                }
+                .font(.footnote)
+
+                Button("Use a different email") {
+                    awaitingCode = false
+                    code = ""
+                    errorMessage = nil
+                }
+                .font(.footnote)
+            }
+            .disabled(isWorking)
+        }
+    }
+
     // MARK: - Actions
 
     private func submit() {
         focus = nil
-        run {
-            if mode == .signIn {
-                try await auth.signIn(email: email.trimmed, password: password)
-            } else {
-                try await auth.register(name: name.trimmed, email: email.trimmed, password: password)
+
+        if awaitingCode {
+            run {
+                try await auth.completeRegistration(name: name.trimmed,
+                                                    email: email.trimmed,
+                                                    password: password,
+                                                    code: code.trimmed)
+            }
+            return
+        }
+
+        if mode == .signIn {
+            run { try await auth.signIn(email: email.trimmed, password: password) }
+        } else {
+            // Only asks for the code once the server says it sent one.
+            run(after: { awaitingCode = true }) {
+                try await auth.startRegistration(name: name.trimmed,
+                                                 email: email.trimmed,
+                                                 password: password)
             }
         }
     }
@@ -234,13 +298,18 @@ struct AuthScreen: View {
 
     /// One place for the spinner, the haptic and the error, so no path can
     /// leave the button spinning forever.
-    private func run(_ work: @escaping () async throws -> Void) {
+    /// - Parameter after: run only when the work succeeded, for the step that
+    ///   should not appear if the request failed — asking for a code that was
+    ///   never sent is worse than showing the error.
+    private func run(after success: (() -> Void)? = nil,
+                     _ work: @escaping () async throws -> Void) {
         isWorking = true
         errorMessage = nil
 
         Task {
             do {
                 try await work()
+                success?()
                 Haptics.notify(.success)
             } catch is CancellationError {
                 // Backing out of a sign-in sheet is not a failure.
