@@ -6506,14 +6506,21 @@ function openAiRateLimitMiddleware(req, res, next) {
         const userEmail = req.body?.userEmail || req.headers['user-email'];
         const allowlisted = !!userEmail && AI_UNLIMITED_EMAILS.has(String(userEmail).toLowerCase());
 
-        // Pro is sold on the website through Stripe and is not available as an
-        // In-App Purchase, so the iOS app must not hand out anything it unlocks.
-        // App Store guideline 3.1.1 allows a subscription bought elsewhere to
-        // work inside an app only when the same subscription is also sold there
-        // as an In-App Purchase. Requests from the app therefore run on the free
-        // tier whatever the account has bought, and the website is unaffected.
+        // Someone who subscribed on the website gets what they paid for
+        // wherever they sign in, the app included.
+        //
+        // What App Store guideline 3.1.1 forbids is selling digital content
+        // inside the app without In-App Purchase, and steering people to buy
+        // elsewhere. It does not forbid an existing account carrying its own
+        // entitlements — a free app that signs somebody into an account they
+        // already hold is the ordinary companion-app arrangement. So the app
+        // contains no purchasing, no prices and no mention of buying anywhere,
+        // and this line simply honours what the account already has.
+        //
+        // The header is still read: it decides the wording when a free user
+        // runs out, which must not invite them to go and buy something.
         const fromApp = String(req.headers['x-roomfinder-client'] || '').toLowerCase() === 'ios';
-        const isPro = allowlisted || (!fromApp && userEmail ? await isUserProByEmail(userEmail) : false);
+        const isPro = allowlisted || (userEmail ? await isUserProByEmail(userEmail) : false);
 
         if (isPro) {
             req.aiRateLimitInfo = { isPro: true, unlimited: true };
