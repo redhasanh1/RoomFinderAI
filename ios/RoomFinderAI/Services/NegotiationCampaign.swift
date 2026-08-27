@@ -512,7 +512,7 @@ final class NegotiationCampaign: ObservableObject {
         persist()
 
         guard let me = CurrentUser.shared.email else { return }
-        var request = URLRequest(url: AppConfig.url("api/negotiate/reset"))
+        var request = AppConfig.request("api/negotiate/reset")
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 30

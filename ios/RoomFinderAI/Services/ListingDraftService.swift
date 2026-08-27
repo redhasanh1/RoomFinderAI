@@ -61,7 +61,7 @@ final class ListingDraftService {
             throw DraftError.failed("That photo could not be read.")
         }
 
-        var request = URLRequest(url: AppConfig.url("api/analyze-property-photo"))
+        var request = AppConfig.request("api/analyze-property-photo")
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // Vision models are slow; this is the one place a long wait is expected.
@@ -166,7 +166,7 @@ final class ListingDraftService {
         if let value = Int(price.filter(\.isNumber)), value > 0 { body["price"] = value }
         if !notes.isEmpty { body["notes"] = notes }
 
-        var request = URLRequest(url: AppConfig.url("api/listings/draft"))
+        var request = AppConfig.request("api/listings/draft")
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.timeoutInterval = 60

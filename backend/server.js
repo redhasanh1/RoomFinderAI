@@ -6397,9 +6397,16 @@ async function callOpenAI({ messages, model = 'gpt-4', maxTokens = 300, temperat
 // ========================================
 // OPENAI RATE LIMITING SYSTEM
 // ========================================
-const openAiRateLimitStore = new Map();
+const openAiRateLimitStore = new Map();   // still used by the older per-IP guards
 const OPENAI_HOURLY_LIMIT = 100;
 const OPENAI_DAILY_LIMIT = 500;
+
+/** What one free account may send in a day, and what the service may spend in
+ *  a month. The daily figure is the one that stops a single person emptying the
+ *  monthly budget in an afternoon; the service figure is the worst case for the
+ *  OpenAI bill. Both are overridable from the environment. */
+const AI_DAILY_LIMIT = Number(process.env.AI_DAILY_LIMIT) || 25;
+const AI_SERVICE_MONTHLY_LIMIT = Number(process.env.AI_SERVICE_MONTHLY_LIMIT) || 20000;
 // Counted per request, despite the name. One back and forth with the
 // negotiator is six or eight of these, so twenty meant a free account got two
 // conversations a month and then met an upgrade prompt. The hourly and daily
@@ -6444,60 +6451,143 @@ async function isUserProByEmail(email) {
     }
 }
 
+/**
+ * Per-person ceilings on AI use, and one ceiling over the whole service.
+ *
+ * Counts live in the `ai_usage` table rather than in memory. They used to sit
+ * in a Map, which meant every deploy handed everybody a fresh allowance — on a
+ * platform that redeploys on each push, the limits were close to decorative and
+ * the spend they were meant to cap was not actually capped.
+ *
+ * Three windows per person (day, month) plus a service-wide monthly ceiling, so
+ * one account cannot burn a month of budget in an afternoon and the total bill
+ * has a known worst case.
+ */
+async function bumpUsage(userKey, kind, windowStart) {
+    if (!supabase) return 0;
+
+    const { data: existing } = await supabase
+        .from('ai_usage')
+        .select('id, calls')
+        .eq('user_key', userKey)
+        .eq('window_kind', kind)
+        .eq('window_start', windowStart)
+        .maybeSingle();
+
+    if (existing) {
+        await supabase.from('ai_usage')
+            .update({ calls: existing.calls + 1, updated_at: new Date().toISOString() })
+            .eq('id', existing.id);
+        return existing.calls + 1;
+    }
+
+    await supabase.from('ai_usage').insert({
+        user_key: userKey, window_kind: kind, window_start: windowStart, calls: 1
+    });
+    return 1;
+}
+
+async function readUsage(userKey, kind, windowStart) {
+    if (!supabase) return 0;
+    const { data } = await supabase
+        .from('ai_usage')
+        .select('calls')
+        .eq('user_key', userKey)
+        .eq('window_kind', kind)
+        .eq('window_start', windowStart)
+        .maybeSingle();
+    return data?.calls || 0;
+}
+
+const isoDay = (date) => date.toISOString().slice(0, 10);
+
 function openAiRateLimitMiddleware(req, res, next) {
     (async () => {
         const userEmail = req.body?.userEmail || req.headers['user-email'];
         const allowlisted = !!userEmail && AI_UNLIMITED_EMAILS.has(String(userEmail).toLowerCase());
-        const isPro = allowlisted || (userEmail ? await isUserProByEmail(userEmail) : false);
+
+        // Pro is sold on the website through Stripe and is not available as an
+        // In-App Purchase, so the iOS app must not hand out anything it unlocks.
+        // App Store guideline 3.1.1 allows a subscription bought elsewhere to
+        // work inside an app only when the same subscription is also sold there
+        // as an In-App Purchase. Requests from the app therefore run on the free
+        // tier whatever the account has bought, and the website is unaffected.
+        const fromApp = String(req.headers['x-roomfinder-client'] || '').toLowerCase() === 'ios';
+        const isPro = allowlisted || (!fromApp && userEmail ? await isUserProByEmail(userEmail) : false);
 
         if (isPro) {
             req.aiRateLimitInfo = { isPro: true, unlimited: true };
             return next();
         }
 
-        const userId = userEmail || getUserId(req);
-        const monthKey = getCurrentMonthKey();
-        const sessionKey = `ai-monthly-${userId}-${monthKey}`;
-        const monthlyUsage = openAiRateLimitStore.get(sessionKey) || 0;
+        const now = new Date();
+        const today = isoDay(now);
+        const monthStart = isoDay(new Date(now.getFullYear(), now.getMonth(), 1));
 
-        if (monthlyUsage >= FREE_AI_MONTHLY_LIMIT) {
+        const tomorrow = new Date(now); tomorrow.setDate(now.getDate() + 1); tomorrow.setHours(0, 0, 0, 0);
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+        // The whole service first: if the bill ceiling is hit, nobody gets a
+        // call, however much of their own allowance is left.
+        const serviceCalls = await readUsage('__service__', 'month', monthStart);
+        if (serviceCalls >= AI_SERVICE_MONTHLY_LIMIT) {
             return res.status(429).json({
-                error: 'Monthly AI session limit reached',
-                message: `Free plan includes ${FREE_AI_MONTHLY_LIMIT} AI sessions per month. Upgrade to Pro for unlimited access.`,
-                limit: FREE_AI_MONTHLY_LIMIT,
-                used: monthlyUsage,
-                upgradeUrl: '/pricing.html',
+                error: 'Service busy',
+                message: `The AI assistant is at capacity for this month. It comes back on ${nextMonth.toLocaleDateString('en-CA', { day: 'numeric', month: 'long' })}.`,
+                retryAfter: nextMonth.toISOString(),
                 isPro: false
             });
         }
 
-        const hourKey = `openai-hour-${userId}-${getHourKey()}`;
-        const dayKey = `openai-day-${userId}-${getDayKey()}`;
-        const hourlyUsage = openAiRateLimitStore.get(hourKey) || 0;
-        const dailyUsage = openAiRateLimitStore.get(dayKey) || 0;
+        const userId = String(userEmail || getUserId(req)).toLowerCase();
+        const dayCalls = await readUsage(userId, 'day', today);
+        const monthCalls = await readUsage(userId, 'month', monthStart);
 
-        if (hourlyUsage >= OPENAI_HOURLY_LIMIT) {
+        if (dayCalls >= AI_DAILY_LIMIT) {
             return res.status(429).json({
-                error: 'Rate limit exceeded',
-                message: `Maximum ${OPENAI_HOURLY_LIMIT} AI requests per hour. Please wait before trying again.`,
-                retryAfter: 'next hour'
+                error: 'Daily limit reached',
+                message: `You've used all ${AI_DAILY_LIMIT} of today's AI messages. You get another ${AI_DAILY_LIMIT} tomorrow.`,
+                limit: AI_DAILY_LIMIT,
+                used: dayCalls,
+                resetsAt: tomorrow.toISOString(),
+                isPro: false
             });
         }
 
-        if (dailyUsage >= OPENAI_DAILY_LIMIT) {
+        if (monthCalls >= FREE_AI_MONTHLY_LIMIT) {
+            // The app is told the limit and when it lifts, and nothing else.
+            // The website's wording invites the reader to upgrade and links to
+            // the pricing page; inside an iOS app that is steering someone to
+            // buy outside the App Store, which Apple does not allow.
             return res.status(429).json({
-                error: 'Daily rate limit exceeded',
-                message: `Maximum ${OPENAI_DAILY_LIMIT} AI requests per day. Limit resets at midnight.`,
-                retryAfter: 'tomorrow'
+                error: 'Monthly limit reached',
+                message: fromApp
+                    ? `You've used all ${FREE_AI_MONTHLY_LIMIT} of this month's AI messages. They reset on ${nextMonth.toLocaleDateString('en-CA', { day: 'numeric', month: 'long' })}.`
+                    : `Free plan includes ${FREE_AI_MONTHLY_LIMIT} AI messages a month. Upgrade to Pro for unlimited access.`,
+                limit: FREE_AI_MONTHLY_LIMIT,
+                used: monthCalls,
+                resetsAt: nextMonth.toISOString(),
+                ...(fromApp ? {} : { upgradeUrl: '/pricing.html' }),
+                isPro: false
             });
         }
 
-        openAiRateLimitStore.set(sessionKey, monthlyUsage + 1);
-        openAiRateLimitStore.set(hourKey, hourlyUsage + 1);
-        openAiRateLimitStore.set(dayKey, dailyUsage + 1);
-        req.aiRateLimitInfo = { isPro: false, used: monthlyUsage + 1, limit: FREE_AI_MONTHLY_LIMIT };
+        const [used] = await Promise.all([
+            bumpUsage(userId, 'month', monthStart),
+            bumpUsage(userId, 'day', today),
+            bumpUsage('__service__', 'month', monthStart)
+        ]);
+
+        req.aiRateLimitInfo = {
+            isPro: false,
+            used,
+            limit: FREE_AI_MONTHLY_LIMIT,
+            dailyUsed: dayCalls + 1,
+            dailyLimit: AI_DAILY_LIMIT
+        };
         next();
     })().catch((err) => {
+        // Never lock people out because the counter failed.
         console.error('AI rate limit error:', err);
         next();
     });

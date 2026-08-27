@@ -17,6 +17,21 @@ enum AppConfig {
     /// links: `roomfinderai://listings.html?id=123`.
     static let urlScheme = "roomfinderai"
 
+    /// Marks a request as coming from the iOS app.
+    ///
+    /// The server runs these on the free tier whatever the account has bought.
+    /// Pro is sold on the website through Stripe and is not available as an
+    /// In-App Purchase, and App Store guideline 3.1.1 only allows a
+    /// subscription bought elsewhere to work inside an app when the same
+    /// subscription is also sold there — which it cannot be until the Paid Apps
+    /// Agreement is active. So the app unlocks nothing that was paid for
+    /// outside it, and the website is unaffected.
+    static func request(_ path: String) -> URLRequest {
+        var request = URLRequest(url: url(path))
+        request.setValue("ios", forHTTPHeaderField: "X-RoomFinder-Client")
+        return request
+    }
+
     static func url(_ path: String) -> URL {
         URL(string: path, relativeTo: origin)?.absoluteURL ?? origin
     }

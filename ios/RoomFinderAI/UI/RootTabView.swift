@@ -59,7 +59,10 @@ struct RootTabView: View {
             // person with messages waiting.
             _ = AuthService.shared
             UnreadCounter.shared.start()
-            ProSubscription.shared.start()
+            // ProSubscription is not started for 1.0. There is nothing to sell
+            // until the subscription leaves MISSING_METADATA, and listening for
+            // entitlements to a product the store does not carry only produces
+            // a screen offering an upgrade that cannot be bought.
         }
         .task {
             // Asked once, shortly after the app is up.

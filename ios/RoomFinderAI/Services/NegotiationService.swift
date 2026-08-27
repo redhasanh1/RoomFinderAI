@@ -130,7 +130,7 @@ final class NegotiationService: ObservableObject {
         if let email = CurrentUser.shared.email { body["userEmail"] = email }
 
         do {
-            var request = URLRequest(url: AppConfig.url("api/chat"))
+            var request = AppConfig.request("api/chat")
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.timeoutInterval = 60

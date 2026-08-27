@@ -280,7 +280,7 @@ final class LandlordNegotiationService: ObservableObject {
         ]
         body["lastLandlordMessage"] = landlordLine ?? ""
 
-        var request = URLRequest(url: AppConfig.url("api/negotiate/reply"))
+        var request = AppConfig.request("api/negotiate/reply")
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         // The model reads the whole transcript; this is the slow call.
