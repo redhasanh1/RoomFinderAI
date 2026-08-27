@@ -6520,7 +6520,17 @@ function openAiRateLimitMiddleware(req, res, next) {
         // The header is still read: it decides the wording when a free user
         // runs out, which must not invite them to go and buy something.
         const fromApp = String(req.headers['x-roomfinder-client'] || '').toLowerCase() === 'ios';
-        const isPro = allowlisted || (userEmail ? await isUserProByEmail(userEmail) : false);
+        // Held off until the review of 1.0 (22) is decided.
+        //
+        // Honouring a website subscription here is allowed — a free app with no
+        // purchasing and no mention of buying, signing somebody into an account
+        // they already hold, is the ordinary companion arrangement. But the
+        // reply already sent to App Review states plainly that nothing bought
+        // elsewhere unlocks anything in the app, and that submission can no
+        // longer be replied to. Turning it on now would make a statement Apple
+        // is reading while they review the build untrue. It goes back on in
+        // 1.1, described accurately in that submission's notes.
+        const isPro = allowlisted || (!fromApp && userEmail ? await isUserProByEmail(userEmail) : false);
 
         if (isPro) {
             req.aiRateLimitInfo = { isPro: true, unlimited: true };
