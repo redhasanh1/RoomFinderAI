@@ -785,6 +785,44 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
     res.send(body);
 });
 
+/**
+ * One address per page, and no dead pages answering 200.
+ *
+ * roomfinderai.com and www.roomfinderai.com both served every page with a 200,
+ * so search engines saw two copies of the site and split whatever ranking it
+ * had between them. The sitemap has always said www, so that is the one kept.
+ *
+ * Runs before the static handler, so it catches every page rather than only
+ * the routes declared below it. API calls are left alone: a redirect in the
+ * middle of a POST would lose the body.
+ */
+const CANONICAL_HOST = process.env.CANONICAL_HOST || 'www.roomfinderai.com';
+
+app.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+    if (req.path.startsWith('/api/')) return next();
+
+    const host = (req.headers.host || '').toLowerCase().split(':')[0];
+
+    // Only the bare apex is moved. Railway's own hostname and anything local
+    // are left alone so previews and health checks keep working.
+    if (host === 'roomfinderai.com') {
+        return res.redirect(301, `https://${CANONICAL_HOST}${req.originalUrl}`);
+    }
+
+    // Pages that no longer exist, sent to the nearest thing that does rather
+    // than answering 200 with content that was removed from navigation months
+    // ago. student-housing was dropped but is still being served and indexed.
+    const GONE = {
+        '/student-housing.html': '/listings.html',
+        '/student-housing': '/listings.html'
+    };
+    const moved = GONE[req.path.toLowerCase()];
+    if (moved) return res.redirect(301, `https://${CANONICAL_HOST}${moved}`);
+
+    next();
+});
+
 app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
         // Disable caching for JavaScript and HTML files to ensure updates are loaded immediately
