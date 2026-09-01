@@ -19,6 +19,11 @@ struct MessagesScreen: View {
     @State private var showingGoals = false
     @State private var confirmingReset = false
     @State private var askingAboutNotifications = false
+    /// Confirming the goals is what sets the negotiator writing to landlords,
+    /// so the disclosure comes before that too.
+    @ObservedObject private var disclosure = AIDisclosure.shared
+    @State private var showingDisclosure = false
+    @State private var startAfterAgreeing = false
     @ObservedObject private var push = PushService.shared
     @StateObject private var messaging = MessagingService()
     @ObservedObject private var chat = NegotiationService.shared
@@ -102,6 +107,17 @@ struct MessagesScreen: View {
                 Text("Your AI keeps negotiating after you close the app, and landlords can take hours to reply. We'll ping you the moment one agrees.")
             }
             .task { push.refreshStatus() }
+            .aiDisclosure(isPresented: $showingDisclosure) {
+                guard startAfterAgreeing else { return }
+                startAfterAgreeing = false
+                campaign.confirmGoals()
+                if !campaign.queued.isEmpty {
+                    Task { await campaign.start() }
+                }
+                if push.authorizationStatus == .notDetermined {
+                    askingAboutNotifications = true
+                }
+            }
             // Reset deletes the conversations themselves, so it asks first.
             // The website's does the same, and it is not recoverable.
             .confirmationDialog("Reset negotiations?",
@@ -118,6 +134,11 @@ struct MessagesScreen: View {
                     goals: $campaign.goals,
                     queuedCount: campaign.queued.count,
                     onConfirm: {
+                        guard disclosure.hasAgreed else {
+                            startAfterAgreeing = true
+                            showingDisclosure = true
+                            return
+                        }
                         campaign.confirmGoals()
                         // Confirming is the go-ahead. Anything already lined up
                         // starts now, and the negotiations appear above.

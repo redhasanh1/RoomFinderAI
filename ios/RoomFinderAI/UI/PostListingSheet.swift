@@ -33,6 +33,12 @@ struct PostListingSheet: View {
     /// Which way of adding a photo the person chose. The library is presented
     /// with .photosPicker rather than a PhotosPicker label, so that one button
     /// can offer both the camera and the library.
+    /// A photo sent for analysis leaves the phone, so the same disclosure the
+    /// negotiator shows is shown here before the first one goes.
+    @ObservedObject private var disclosure = AIDisclosure.shared
+    @State private var showingDisclosure = false
+    @State private var pendingAutofill: UIImage?
+
     @State private var choosingPhotoSource = false
     @State private var showingCamera = false
     @State private var showingLibrary = false
@@ -129,6 +135,21 @@ struct PostListingSheet: View {
         // Camera or library. Only asked when the device actually has a camera;
         // on one that does not, the button opens the library directly rather
         // than offering a choice of one.
+        .aiDisclosure(isPresented: $showingDisclosure) {
+            let image = pendingAutofill
+            pendingAutofill = nil
+            Task {
+                await runAutofill(using: image)
+                withAnimation { step = .details }
+            }
+        }
+        // Declining leaves the photos attached and opens the form, so the
+        // listing can still be written by hand.
+        .onChange(of: showingDisclosure) { _, showing in
+            guard !showing, !disclosure.hasAgreed, pendingAutofill != nil else { return }
+            pendingAutofill = nil
+            withAnimation { step = .details }
+        }
         .confirmationDialog("Add a photo", isPresented: $choosingPhotoSource, titleVisibility: .visible) {
             Button("Take Photo") { showingCamera = true }
             Button("Choose from Library") { showingLibrary = true }
@@ -695,8 +716,7 @@ struct PostListingSheet: View {
                 photoLocation = .init(latitude: coordinate.latitude,
                                       longitude: coordinate.longitude)
             }
-            await runAutofill(using: first)
-            withAnimation { step = .details }
+            await autofillOrDisclose(using: first)
         }
     }
 
@@ -743,8 +763,7 @@ struct PostListingSheet: View {
         // hunt for the thing that uses it. If it fails the details screen still
         // opens, just empty, so a bad photo never blocks posting.
         if !loaded.isEmpty {
-            await runAutofill(using: loaded.first)
-            withAnimation { step = .details }
+            await autofillOrDisclose(using: loaded.first)
         }
     }
 
@@ -762,6 +781,20 @@ struct PostListingSheet: View {
     ///   relying on the write having propagated meant it could see an empty
     ///   array, take the no-photo branch and fail with "add a photo first"
     ///   having just been given one.
+    /// Reads the photo, unless this is the first time — in which case the
+    /// disclosure comes first and the photo is only sent if the person agrees.
+    /// Declining still opens the form, so a listing can be written by hand.
+    @MainActor
+    private func autofillOrDisclose(using image: UIImage?) async {
+        guard disclosure.hasAgreed else {
+            pendingAutofill = image
+            showingDisclosure = true
+            return
+        }
+        await runAutofill(using: image)
+        withAnimation { step = .details }
+    }
+
     private func runAutofill(using image: UIImage?) async {
         isDrafting = true
         draftNote = nil

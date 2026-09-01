@@ -18,6 +18,13 @@ struct NegotiatorScreen: View {
     @State private var draft = ""
     @FocusState private var inputFocused: Bool
 
+    /// Nothing is sent to an AI service until the person has been told what
+    /// goes and to whom. Held here so the message they were trying to send is
+    /// sent for them once they agree, rather than being lost.
+    @ObservedObject private var disclosure = AIDisclosure.shared
+    @State private var showingDisclosure = false
+    @State private var pendingMessage: String?
+
     /// Openers, so the first message is a tap rather than a blank page.
     private let suggestions = [
         "Find me a 1 bedroom under $1500",
@@ -26,6 +33,15 @@ struct NegotiatorScreen: View {
     ]
 
     var body: some View {
+        content
+            .aiDisclosure(isPresented: $showingDisclosure) {
+                guard let text = pendingMessage else { return }
+                pendingMessage = nil
+                Task { await service.send(text) }
+            }
+    }
+
+    private var content: some View {
         VStack(spacing: 0) {
             transcript
 
@@ -86,7 +102,7 @@ struct NegotiatorScreen: View {
                 ForEach(suggestions, id: \.self) { suggestion in
                     Button {
                         Haptics.impact(.light)
-                        Task { await service.send(suggestion) }
+                        sendOrDisclose(suggestion)
                     } label: {
                         Text(suggestion)
                             .font(.subheadline)
@@ -178,6 +194,17 @@ struct NegotiatorScreen: View {
         let text = draft
         draft = ""
         Haptics.impact(.light)
+        sendOrDisclose(text)
+    }
+
+    /// Sends, unless this is the first time — in which case the disclosure
+    /// comes first and the message goes only if the person agrees.
+    private func sendOrDisclose(_ text: String) {
+        guard disclosure.hasAgreed else {
+            pendingMessage = text
+            showingDisclosure = true
+            return
+        }
         Task { await service.send(text) }
     }
 }

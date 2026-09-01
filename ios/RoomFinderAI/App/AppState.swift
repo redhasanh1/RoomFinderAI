@@ -105,6 +105,18 @@ final class AppState: ObservableObject {
         // depending on the order they happened to run in.
         if ProcessInfo.processInfo.arguments.contains("-uiTestingResetState") {
             UserDefaults.standard.removeObject(forKey: tabKey)
+            // The AI disclosure is remembered once agreed, so a test that wants
+            // to see it has to start from nothing having been agreed to.
+            UserDefaults.standard.removeObject(forKey: "aiDisclosureAcceptedVersion")
+
+            // Negotiations are restored from disk on launch, and a restored
+            // campaign replaces the negotiator's opening screen with the list
+            // of rooms it is already working on. Left behind, one test's
+            // negotiation decided what the next test was looking at.
+            for key in UserDefaults.standard.dictionaryRepresentation().keys
+            where key.hasPrefix("negotiationCampaign.") {
+                UserDefaults.standard.removeObject(forKey: key)
+            }
             return .home
         }
         guard let raw = UserDefaults.standard.string(forKey: tabKey),

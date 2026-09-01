@@ -7,13 +7,12 @@ struct DebugInfoView: View {
     NavigationView {
       VStack(alignment: .leading, spacing: 20) {
         Group {
-          Text("OpenAI Configuration")
+          Text("AI Service Status")
             .font(.headline)
           
           VStack(alignment: .leading, spacing: 8) {
-            Text("Key type: \(Secrets.openAIKey.hasPrefix("sk-proj-") ? "project" : "classic")")
+            Text("Provider: OpenAI")
             Text("Model: \(Secrets.openAIModel)")
-            Text("Organization: \(Secrets.openAIOrgID ?? "nil")")
             Text("Status: \(status)")
           }
           .font(.system(.body, design: .monospaced))
@@ -23,14 +22,14 @@ struct DebugInfoView: View {
         }
         
         Group {
-          Text("Supabase Configuration")
+          Text("Privacy")
             .font(.headline)
           
           VStack(alignment: .leading, spacing: 8) {
-            Text("URL: \(Secrets.supabaseURL)")
-            Text("Key: \(String(Secrets.supabaseAnonKey.prefix(20)))...")
+            Text("AI chats are processed by OpenAI")
+            Text("See the Privacy Policy for details")
           }
-          .font(.system(.body, design: .monospaced))
+          .font(.subheadline)
           .padding()
           .background(Color(.secondarySystemBackground))
           .cornerRadius(8)

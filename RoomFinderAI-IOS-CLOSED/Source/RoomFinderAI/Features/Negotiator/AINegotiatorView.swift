@@ -5,8 +5,10 @@ import Supabase
 struct AINegotiatorView: View {
     @StateObject private var viewModel: AINegotiatorViewModel
     @Environment(\.supabase) private var supabase
+    @Environment(\.dismiss) private var dismiss
     @State private var showingExportSheet = false
     @State private var exportedText = ""
+    @State private var showingDisclosure = true
     
     // Parameters for automatic negotiation start
     private let autoStartParams: AutoStartParams?
@@ -53,27 +55,45 @@ struct AINegotiatorView: View {
     }
     
     var body: some View {
-        NavigationView {
-            // Clean Chat Interface Only
-            cleanChatView
+        Group {
+            if showingDisclosure {
+                AIDataDisclosureView(
+                    listingTitle: autoStartParams?.listing.title,
+                    onContinue: {
+                        showingDisclosure = false
+                        startNegotiationIfNeeded()
+                    },
+                    onCancel: { dismiss() }
+                )
+            } else {
+                NavigationView {
+                    // Clean Chat Interface Only
+                    cleanChatView
+                }
+                .navigationTitle("AI Assistant")
+                .navigationBarTitleDisplayMode(.inline)
+            }
         }
-        .navigationTitle("AI Assistant")
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             // Use the environment supabase client
             viewModel.updateSupabaseClient(supabase)
             
-            // Auto-start negotiation if parameters were provided
-            if let params = autoStartParams {
-                Task {
-                    await viewModel.start(
-                        conversationId: params.conversationId,
-                        listing: params.listing,
-                        budget: params.budget,
-                        userEmail: params.userEmail
-                    )
-                }
+            // Only auto-start after the disclosure is accepted
+            if autoStartParams != nil && !showingDisclosure {
+                startNegotiationIfNeeded()
             }
+        }
+    }
+    
+    private func startNegotiationIfNeeded() {
+        guard let params = autoStartParams else { return }
+        Task {
+            await viewModel.start(
+                conversationId: params.conversationId,
+                listing: params.listing,
+                budget: params.budget,
+                userEmail: params.userEmail
+            )
         }
     }
     
