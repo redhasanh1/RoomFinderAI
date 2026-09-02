@@ -1,13 +1,18 @@
-priority,platform,group,members,focus,status,notes
-1,Facebook,"Scarborough Student Housing - Room for Rent (Centennial College)",48900,students+rooms,not joined,"Biggest found. Campus-specific = highest intent. Punjabi/Indian heavy in recent posts."
-2,Facebook,"Rentals Mississauga & Brampton",38300,rooms,not joined,"Landlords post here daily with prices. Emoji-heavy name, search exactly."
-3,Facebook,"Mississauga Rooms & Apartments for Rent",37800,rooms,not joined,"Explicitly welcomes people posting available rooms."
-4,Facebook,"Brampton Rental - Post Rentals & Find Your Next Rental",25400,rooms,not joined,"Name literally invites posting rentals."
-5,Facebook,"Rooms For Rent in North York, Canada",16700,rooms,not joined,"North York = your home turf."
-6,Facebook,"Rooms For Rent Mississauga, CA",12600,rooms,not joined,
-7,Facebook,"Indians in Scarborough",7600,community,not joined,"Community group, room posts appear. Landlords AND tenants."
-8,Facebook,"Rooms For Rent, Flat share, Sublets, Room share in Brampton, Canada",5000,rooms,not joined,
-9,Facebook,"Punjabi in Scarborough",1500,community,not joined,"Small but tight. A member there asked if a Scarborough Punjabi WhatsApp group exists - WhatsApp groups spawn out of these."
-10,Facebook,"Room for Rent in Brampton, Mississauga, Toronto. Ontario",1300,rooms,not joined,
-11,Facebook,"GTA, North York, Scarborough, Housing, Room Rentals, Sublet, Roommate Finds",,rooms,not joined,"Seen referenced in cross-posts; confirm size."
-12,Facebook,"Indians In Brampton",,community,not joined,"Room posts confirmed in results."
+priority,platform,group,members,posts_per_day,focus,status,notes
+1,Facebook,"House/Condo/Basement for Rent in Brampton, Mississauga, Toronto & Malton",69000,40,rooms,not joined,"Biggest found. Malton in the name - exactly the target market."
+2,Facebook,"Rent Room/Basement/Apartment Toronto Brampton Mississauga GTA (Canada)",63000,80,rooms,JOINED 2026-09-02,"Joined instantly, no admin approval needed. First group. Nothing posted yet."
+3,Facebook,"Scarborough Student Housing - Room for Rent (Centennial College)",48900,,students+rooms,not joined,"Campus-specific = highest intent."
+4,Facebook,"Mississauga Rooms & Apartments for Rent",38000,90,rooms,not joined,"90+ posts/day - very high volume, post must be short."
+5,Facebook,"Rentals Mississauga & Brampton",38300,,rooms,not joined,"Emoji-heavy name, search exactly."
+6,Facebook,"Brampton Rental - Post Rentals & Find Your Next Rental",25400,,rooms,not joined,"Name literally invites posting rentals."
+7,Facebook,"Rooms For Rent in North York, Canada",16700,10,rooms,not joined,"North York = home turf."
+8,Facebook,"Rooms For Rent Mississauga, CA",12000,6,rooms,not joined,"Only 6 posts/day - a post here stays visible far longer."
+9,Facebook,"Brampton Rentals",11000,40,rooms,not joined,
+10,Facebook,"North York Housing, Apartments for Rent, Rooms, Sublets",11000,10,rooms,not joined,
+11,Facebook,"Indians in Scarborough",7600,,community,not joined,"Community group - landlords AND tenants."
+12,Facebook,"Brampton Apartments for rent",7000,70,rooms,not joined,
+13,Facebook,"Room Rental - Brampton and Mississauga",6500,10,rooms,not joined,
+14,Facebook,"Rooms For Rent/Flat share/Sublets Brampton",5000,,rooms,not joined,
+15,Facebook,"Punjabi in Scarborough",1500,,community,not joined,"Small and tight. Best first post - lowest risk if tone is off."
+16,Facebook,"Room for Rent in Brampton, Mississauga, Toronto",1300,,rooms,not joined,
+17,Facebook,"North York Looking Housing, Apartment Room Rentals, Sublets",556,2,rooms,not joined,
