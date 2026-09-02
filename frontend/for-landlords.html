@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <title>List a Room — RoomFinderAI</title>
+<!-- SEO:start (managed) -->
+    <meta name="description" content="List a room for rent in the GTA, free. No fee, no commission, no contract. Rooms near Sheridan, Humber, York, Seneca and U of T.">
+    <link rel="canonical" href="https://www.roomfinderai.com/for-landlords.html">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="RoomFinderAI">
+    <meta property="og:title" content="List a Room — RoomFinderAI">
+    <meta property="og:description" content="List a room for rent in the GTA, free. No fee, no commission, no contract.">
+    <meta property="og:url" content="https://www.roomfinderai.com/for-landlords.html">
+    <meta property="og:image" content="https://www.roomfinderai.com/android-chrome-512x512.png">
+    <meta property="og:locale" content="en_CA">
+
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="List a Room — RoomFinderAI">
+    <meta name="twitter:description" content="List a room for rent in the GTA, free. No fee, no commission, no contract.">
+    <meta name="twitter:image" content="https://www.roomfinderai.com/android-chrome-512x512.png">
+<!-- SEO:end -->
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root { --ll-gradient: linear-gradient(135deg, #1e3a5f 0%, #2d5a87 55%, #3d7ea6 100%); }
+        body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #0f172a; }
+        .gradient-bg-ll { background: var(--ll-gradient); }
+        .card { background: #fff; border: 1px solid #e2e8f0; border-radius: 18px; }
+        .step-num { font-family: 'Space Grotesk', sans-serif; }
+    </style>
+</head>
+<body>
+
+    <!--
+      A landlord-facing page, deliberately separate from the homepage.
+
+      The homepage sells the AI negotiator to tenants and its hero demo
+      advertises "Negotiated $1200/month (was $1400)". That is the wrong first
+      sentence for someone we are asking to list a room, so landlord traffic
+      is pointed here instead.
+
+      No "AI" in the pitch. Airbnb and liv.rent already ship AI listing
+      generation; it is not a differentiator and it reads as a product looking
+      for a problem. The pitch is the landlord's actual situation in 2026:
+      the room is empty and it did not used to be.
+    -->
+
+    <div class="sticky top-0 z-50 bg-white bg-opacity-95 backdrop-blur-lg border-b border-gray-200">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <a href="index.html" class="flex items-center space-x-3">
+                <div class="gradient-bg-ll w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-xl">R</div>
+                <span class="font-bold text-xl">RoomFinderAI</span>
+            </a>
+            <a href="listings.html#add-listing" class="px-5 py-2 gradient-bg-ll text-white rounded-xl font-semibold text-sm">List your room</a>
+        </div>
+    </div>
+
+    <div class="gradient-bg-ll text-white">
+        <div class="max-w-5xl mx-auto px-6 py-20">
+            <p class="uppercase tracking-widest text-xs font-semibold text-blue-200 mb-4">For landlords</p>
+            <h1 class="text-4xl md:text-5xl font-bold leading-tight max-w-3xl">
+                Empty room? Put it in front of students looking for exactly that.
+            </h1>
+            <p class="text-lg text-blue-100 mt-6 max-w-2xl leading-relaxed">
+                Nearly one in nineteen rental units in the GTA is sitting vacant right now &mdash;
+                the highest since 2021. If your room has been up a while, that is why, and it
+                is not you.
+            </p>
+            <div class="flex flex-wrap gap-3 mt-9">
+                <a href="listings.html#add-listing" class="px-7 py-3 bg-white text-slate-800 rounded-xl font-semibold">List your room &mdash; free</a>
+                <a href="mailto:support@roomfinderai.com?subject=Post%20my%20room%20for%20me" class="px-7 py-3 border border-blue-300 text-white rounded-xl font-semibold">Send me photos, I'll post it</a>
+            </div>
+            <p class="text-sm text-blue-200 mt-5">No fee. No commission. No contract. Keep your ad wherever else it is.</p>
+        </div>
+    </div>
+
+    <div class="max-w-5xl mx-auto px-6 py-16 space-y-14">
+
+        <section>
+            <h2 class="text-2xl font-bold mb-3">Why bother with another site</h2>
+            <p class="text-slate-600 max-w-3xl leading-relaxed mb-8">
+                Because everyone on RoomFinderAI is looking for a <strong>room</strong>. Your
+                listing is not buried under four hundred one-bedroom condos it was never
+                competing with.
+            </p>
+            <div class="grid md:grid-cols-3 gap-5">
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">Rooms, not apartments</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Students searching here have already decided they want a room in a house.
+                        That is a much shorter conversation than a general rental site.
+                    </p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">Near the campuses</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Sheridan, Humber, York, Seneca, U of T, TMU, McMaster. People search by
+                        the campus they are commuting to, not by postal code.
+                    </p>
+                </div>
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">You keep control</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        You choose who you reply to and who views. We do not screen, rank or
+                        score applicants, and we never will.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold mb-8">Two minutes, start to finish</h2>
+            <div class="space-y-5">
+                <div class="flex gap-5">
+                    <div class="step-num text-2xl font-bold text-slate-300 w-8 shrink-0">1</div>
+                    <div>
+                        <h3 class="font-semibold">Photos and the address</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">The photos do most of the work. Phone photos are fine &mdash; daylight, curtains open.</p>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="step-num text-2xl font-bold text-slate-300 w-8 shrink-0">2</div>
+                    <div>
+                        <h3 class="font-semibold">Rent, and whether utilities are in</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">Not sure what to ask? Say so and we will tell you what comparable rooms in your area are actually listed at.</p>
+                    </div>
+                </div>
+                <div class="flex gap-5">
+                    <div class="step-num text-2xl font-bold text-slate-300 w-8 shrink-0">3</div>
+                    <div>
+                        <h3 class="font-semibold">Who else lives there</h3>
+                        <p class="text-slate-600 text-sm leading-relaxed">
+                            The single most-asked question about a room, and the one most ads leave out.
+                            How many housemates, students or working, quiet or social, any house rules.
+                            Answering it up front cuts out the viewings that were never going to work.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card p-8">
+            <h2 class="text-2xl font-bold mb-3">Rather not fill in a form?</h2>
+            <p class="text-slate-600 leading-relaxed max-w-3xl mb-5">
+                Email the photos, the address and the rent to
+                <a class="text-blue-700 font-semibold underline" href="mailto:support@roomfinderai.com?subject=Post%20my%20room%20for%20me">support@roomfinderai.com</a>
+                and we will build the listing and send it back for you to check before anything
+                goes live. Nothing gets published that you have not read.
+            </p>
+            <p class="text-slate-500 text-sm">
+                We only put in writing what you have confirmed. We do not invent features, we do
+                not touch up photos, and we do not describe a room we have not been told about.
+            </p>
+        </section>
+
+        <section>
+            <h2 class="text-2xl font-bold mb-6">Straight answers</h2>
+            <div class="space-y-5">
+                <div>
+                    <h3 class="font-semibold mb-1">What does it cost?</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Nothing. There is no listing fee, no commission on the rent, and no time limit on the ad.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">How big is this site, honestly?</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Small and new. We would rather tell you that than have you find out.
+                        What we can promise is that listing costs you two minutes and nothing else,
+                        and that your ad is not competing against condos.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Do I have to take it down elsewhere?</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">No. Keep it on every site you are already using. This is one more channel, not a replacement.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">What happens to my details?</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">
+                        Renters message you through the site &mdash; your email is not published on the
+                        listing. See the <a class="text-blue-700 underline" href="privacy-policy.html">Privacy Policy</a>.
+                    </p>
+                </div>
+                <div>
+                    <h3 class="font-semibold mb-1">Can I take the listing down?</h3>
+                    <p class="text-slate-600 text-sm leading-relaxed">Any time, from your profile, in one tap. Once the room is rented you delete it and you are done.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="gradient-bg-ll text-white rounded-2xl p-10 text-center">
+            <h2 class="text-2xl font-bold mb-3">Put the room up</h2>
+            <p class="text-blue-100 mb-7 max-w-xl mx-auto">Free, and if nobody messages you, you have lost two minutes.</p>
+            <a href="listings.html#add-listing" class="inline-block px-8 py-3 bg-white text-slate-800 rounded-xl font-semibold">List your room</a>
+        </section>
+
+    </div>
+
+    <div class="max-w-5xl mx-auto px-6 pb-14 text-center text-slate-500 text-sm">
+        <a class="underline" href="index.html">Home</a> &middot;
+        <a class="underline" href="listings.html">Browse rooms</a> &middot;
+        <a class="underline" href="privacy-policy.html">Privacy</a> &middot;
+        <a class="underline" href="terms-of-service.html">Terms</a> &middot;
+        <a class="underline" href="support.html">Support</a>
+    </div>
+
+</body>
+</html>

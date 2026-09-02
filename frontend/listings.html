@@ -4797,6 +4797,26 @@
                     }
                 }, 500);
             }
+
+            // Open the posting form directly from #add-listing.
+            // for-landlords.html sends landlords straight here, and the form
+            // lives in a section that starts hidden - without this, the link
+            // lands on the browse page with no visible way to post, which is
+            // the last thing to show someone we just persuaded to list a room.
+            if (window.location.hash.includes('add-listing')) {
+                setTimeout(() => {
+                    const section = document.getElementById('addListingSection');
+                    if (!section) {
+                        return;
+                    }
+                    if (typeof showAddListingForm === 'function') {
+                        showAddListingForm();
+                    } else {
+                        section.classList.remove('hidden');
+                    }
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 500);
+            }
         }
         
         // Filter listings based on search criteria
