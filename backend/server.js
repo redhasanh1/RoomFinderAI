@@ -228,6 +228,14 @@ app.use((req, res, next) => {
     if (req.method !== 'GET' && req.method !== 'HEAD') return next();
     if (req.path.startsWith('/api/')) return next();
 
+    // ads.txt answers on whichever host asked for it, rather than being sent to
+    // www. AdSense registered the site as the bare apex, so its crawler starts
+    // there, and from plain http that was two hops to reach the file. Ad
+    // verification crawlers cap how many redirects they follow, and a miss here
+    // marks the whole site's inventory unauthorised. The file is identical on
+    // both hosts, so there is nothing to keep in sync by serving it twice.
+    if (req.path.toLowerCase() === '/ads.txt') return next();
+
     const host = (req.headers.host || '').toLowerCase().split(':')[0];
 
     // Only the bare apex is moved. Railway's own hostname and anything local
