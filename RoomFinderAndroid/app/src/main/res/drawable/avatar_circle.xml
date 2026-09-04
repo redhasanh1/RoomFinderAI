@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Initials avatar: the brand gradient, so a profile without a photo still
+     looks deliberate rather than empty. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="oval">
+    <gradient
+        android:angle="315"
+        android:startColor="@color/gradient_start_primary"
+        android:endColor="@color/gradient_end_primary" />
+</shape>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Type scale, modelled on the iOS one.
+
+  Every screen was picking its own sizes and setting textStyle="bold" on almost
+  everything, so nothing had more weight than anything else. Here weight is
+  reserved for titles, tracking tightens as size grows, and body copy stays
+  regular - which is what makes a dense screen readable rather than shouty.
+-->
+<resources>
+
+    <!-- 30sp. Screen titles only: Home, Subleases, RoomPal. -->
+    <style name="Text.Display" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">30sp</item>
+        <item name="android:letterSpacing">-0.022</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+
+    <!-- 21sp. Section headers inside a screen. -->
+    <style name="Text.Title" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">21sp</item>
+        <item name="android:letterSpacing">-0.018</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+
+    <!-- 17sp. Card titles, row titles, the primary line of anything. -->
+    <style name="Text.Headline" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:letterSpacing">-0.012</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+
+    <!-- 15sp regular. Body copy and form text. -->
+    <style name="Text.Body" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:letterSpacing">-0.006</item>
+        <item name="android:textColor">@color/ink</item>
+    </style>
+
+    <!-- 15sp, quieter. The supporting line under a headline. -->
+    <style name="Text.Body.Secondary" parent="Text.Body">
+        <item name="android:textColor">@color/ink_secondary</item>
+    </style>
+
+    <!-- 13sp. Metadata: counts, dates, bed/bath lines. -->
+    <style name="Text.Footnote" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">13sp</item>
+        <item name="android:textColor">@color/ink_secondary</item>
+    </style>
+
+    <!-- 11sp medium. Badges and tab labels. -->
+    <style name="Text.Caption" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">@color/ink_secondary</item>
+    </style>
+
+    <style name="Text.TabLabel" parent="TextAppearance.Material3.LabelSmall">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">11sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="Text.TabLabel.Active" parent="Text.TabLabel">
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+</resources>

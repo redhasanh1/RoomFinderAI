@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Result count and a way out of the filters, as the iOS screen shows under
+     its sections. Without it a short list looks like a broken query rather
+     than a narrow one. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingHorizontal="@dimen/gutter"
+    android:paddingTop="4dp"
+    android:paddingBottom="20dp">
+
+    <TextView
+        android:id="@+id/summaryText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="15 rooms"
+        android:textAppearance="@style/Text.Footnote" />
+
+    <TextView
+        android:id="@+id/clearFiltersAction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:fontFamily="sans-serif-medium"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="6dp"
+        android:text="Clear filters"
+        android:textColor="@color/brand"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+</LinearLayout>

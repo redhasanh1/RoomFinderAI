@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Section header: title3 bold plus a footnote subtitle, as on iOS. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/gutter"
+    android:paddingTop="22dp"
+    android:paddingBottom="12dp">
+
+    <TextView
+        android:id="@+id/sectionTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Featured"
+        android:textAppearance="@style/Text.Title" />
+
+    <TextView
+        android:id="@+id/sectionSubtitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:text="Newest rooms on RoomFinderAI"
+        android:textAppearance="@style/Text.Footnote" />
+
+</LinearLayout>

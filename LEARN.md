@@ -2,6 +2,61 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 — The sign-in wall, and the bug that only a running emulator found
+
+`PostFragment.onResume()` called `requireSignIn()`, so a signed-out person who
+installed the app and tapped **Post** got a modal before touching a single
+field. That gate was not careless — the comment above it records that gating at
+*submit* had already been tried and was worse: someone filled the whole form,
+tapped Publish, was thrown to the login screen, and lost everything. Given only
+those two options, gating on entry was the right call.
+
+The third option is what actually removes the choice: **build the listing
+signed out, ask for the account at Publish, and carry the draft across the
+login round trip.** The bug that forced the entry gate was never "we asked at
+the wrong time", it was "we did not save their work". So `saveDraft()` runs
+before `LoginActivity` starts, `restoreDraft()` runs in `onResume()`, and
+`onPause()` saves too — Android kills backgrounded processes without warning,
+and a landlord who switches away to look up a postcode must not come back to an
+empty form. Draft lives in SharedPreferences and is cleared only after the
+server accepts the listing, never on a failed publish.
+
+The piece that made this small: **photos needed no special handling.**
+`uploadedPhotoUrls` already holds remote URLs, because `AttachmentUploadService`
+uploads each photo the moment it is picked. There are no `content://` URIs to
+keep alive across a process death and no permission to re-request — persisting
+the URL strings is the whole job.
+
+**The bug worth recording.** The first version compiled clean and looked right.
+Run on an emulator, it greeted a returning landlord with a toast: *"Pick a type
+of place to continue"* — about a chip that was re-selected two lines later.
+Cause: `setText()` on a restored field fires its `TextWatcher`, which calls
+`validateStep1()`, which ran while `selectedPropertyType` was still empty
+because the text was being restored before the model. Fixed with a
+`restoringDraft` guard (cleared in a `finally`, so a throw mid-restore cannot
+leave validation permanently off) plus reordering so model and chips are set
+before any text. A compile would never have caught this, and it would have
+shipped as the first thing a returning landlord saw.
+
+Also learned the hard way about restoring chips: the property type is stored
+normalised (`house`) while the chip reads `🏢 House`, so it matches on
+`contains`, while bedrooms/bathrooms store the chip's own text and match
+exactly. Get it wrong and it is silent — the value posts correctly and the
+screen just looks unanswered.
+
+Verified on an API 35 emulator, signed out, end to end: Post opens straight to
+the form with no dialog and "Let AI write it" visible; filled four fields and
+three chips; backgrounding wrote every field to
+`shared_prefs/post_listing_draft.xml`; `am force-stop` then relaunch restored
+step, both chips, all text, no toast; added a photo, reached Review, tapped
+Post Listing and got "Almost there" with the draft saved at step 4 including
+the uploaded photo URL.
+
+One pre-existing rough edge noticed and left alone: after granting the photo
+permission the picker does not reopen, so you have to tap "Tap to add photos"
+a second time. Not caused by this change, but it is friction on the exact step
+the whole pitch depends on.
+
 ## 2026-09-04 — Why every shared listing link opened Chrome instead of the app
 
 Play flagged "one deep link may be failing because the domains are not

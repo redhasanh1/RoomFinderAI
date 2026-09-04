@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/navigation_home"
+        android:icon="@drawable/ic_home"
+        android:title="@string/nav_home" />
+
+    <!-- iOS tab 2: People (roommates and subleases). Search is not a tab
+         there; the search field lives at the top of Home. -->
+    <item
+        android:id="@+id/navigation_search"
+        android:icon="@drawable/ic_people"
+        android:title="@string/nav_people" />
+
+    <item
+        android:id="@+id/navigation_post"
+        android:icon="@drawable/ic_add"
+        android:title="@string/nav_post" />
+
+    <!-- iOS tab 4 is Chat. Saved properties stay reachable from Profile
+         ("savedPropertiesCard"), which is where iOS keeps them too. -->
+    <item
+        android:id="@+id/navigation_chat"
+        android:icon="@drawable/ic_chat"
+        android:title="@string/nav_messages" />
+
+    <item
+        android:id="@+id/navigation_profile"
+        android:icon="@drawable/ic_person"
+        android:title="@string/nav_profile" />
+
+</menu>

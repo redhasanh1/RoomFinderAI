@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Price badge over the photo: iOS uses black at 70%, corner radius 6. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/ios_price_badge" />
+    <corners android:radius="6dp" />
+</shape>

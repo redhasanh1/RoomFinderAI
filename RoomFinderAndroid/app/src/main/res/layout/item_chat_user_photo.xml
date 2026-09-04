@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="16dp"
+    android:gravity="end">
+
+    <!-- Message Content Container -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="80dp"
+        android:layout_marginEnd="16dp"
+        android:gravity="end">
+
+        <!-- Photo Message Bubble -->
+        <FrameLayout
+            android:id="@+id/messageBubbleContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:background="@drawable/chat_bubble_user_premium"
+            android:elevation="4dp"
+            android:padding="6dp">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
+                <!-- Photo Container -->
+                <FrameLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="6dp">
+
+                    <!-- Photo ImageView -->
+                    <ImageView
+                        android:id="@+id/photoImageView"
+                        android:layout_width="200dp"
+                        android:layout_height="150dp"
+                        android:scaleType="centerCrop"
+                        android:background="@color/gray_200"
+                        android:contentDescription="Sent photo"
+                        app:cornerRadius="12dp" />
+
+                    <!-- Loading Progress -->
+                    <ProgressBar
+                        android:id="@+id/photoLoadingProgress"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:layout_gravity="center"
+                        android:visibility="gone"
+                        android:indeterminateTint="@color/white" />
+
+                    <!-- Error Overlay -->
+                    <FrameLayout
+                        android:id="@+id/photoErrorOverlay"
+                        android:layout_width="match_parent"
+                        android:layout_height="match_parent"
+                        android:background="#80000000"
+                        android:visibility="gone">
+
+                        <ImageView
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:src="@drawable/ic_info"
+                            android:tint="@color/white"
+                            android:contentDescription="Failed to load image" />
+
+                    </FrameLayout>
+
+                </FrameLayout>
+
+                <!-- Photo Caption (Optional) -->
+                <TextView
+                    android:id="@+id/photoCaptionText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_marginBottom="8dp"
+                    android:text="Photo caption here"
+                    android:textColor="@color/white"
+                    android:textSize="14sp"
+                    android:lineSpacingExtra="2dp"
+                    android:maxWidth="200dp"
+                    android:visibility="gone" />
+
+            </LinearLayout>
+
+        </FrameLayout>
+
+        <!-- Message Metadata -->
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="6dp"
+            android:layout_marginEnd="6dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+            
+            <!-- Delivery Status Icons -->
+            <ImageView
+                android:id="@+id/deliveryStatus"
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_marginEnd="6dp"
+                android:src="@drawable/ic_check"
+                android:tint="@color/success"
+                android:alpha="0.7"
+                android:visibility="gone"
+                android:contentDescription="Photo delivered" />
+            
+            <TextView
+                android:id="@+id/timestamp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:34 PM"
+                android:textColor="@color/text_secondary"
+                android:textSize="12sp"
+                android:fontFamily="sans-serif" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+    <!-- User Avatar (Optional) -->
+    <ImageView
+        android:id="@+id/userAvatar"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/circle_background"
+        android:backgroundTint="@color/gray_300"
+        android:src="@drawable/ic_person"
+        android:tint="@color/text_secondary"
+        android:padding="8dp"
+        android:visibility="gone"
+        android:contentDescription="Your avatar" />
+
+</LinearLayout>

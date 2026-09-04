@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bedrooms / bathrooms / type tiles: a soft brand tint instead of #f5f5f5. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="@color/surface_variant" />
+    <stroke android:width="1dp" android:color="#1F667EEA" />
+    <corners android:radius="16dp" />
+</shape>

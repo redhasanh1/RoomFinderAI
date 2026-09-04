@@ -77,6 +77,14 @@ RoomFinderAndroid-CLOSED/local.properties
 RoomFinderAndroid-CLOSED/.gradle/
 RoomFinderAndroid-CLOSED/build/
 RoomFinderAndroid-CLOSED/app/build/
+
+# Live Android project - source is tracked, gradle caches and build output are not.
+# (Same rules as the CLOSED copy above; this directory had none, which is why
+# nothing under it was ever committed.)
+RoomFinderAndroid/local.properties
+RoomFinderAndroid/.gradle/
+RoomFinderAndroid/build/
+RoomFinderAndroid/app/build/
 archive/legacy-android/android/app/google-services.json
 archive/legacy-android/android/keystore.properties
 

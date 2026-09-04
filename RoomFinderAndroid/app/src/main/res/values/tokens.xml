@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Design tokens.
+
+  The app had accumulated three palettes at once: a legacy purple set, an iOS
+  grey set, and one-off hex values inline in layouts. Everything that mattered
+  was painted brand purple - prices, pins, chips, badges, tab bar - which is
+  what made it read as loud rather than considered.
+
+  iOS gets its calm from restraint: text is ink, surfaces are white on a near
+  white page, and the brand colour appears only where it means something
+  (a selected state, the primary action, a link). These are the only colours
+  screens should reference from here on.
+-->
+<resources>
+
+    <!-- Ink: text and icons. Not pure black; pure black on white vibrates. -->
+    <color name="ink">#0B0B0F</color>
+    <color name="ink_secondary">#6B6B76</color>
+    <color name="ink_tertiary">#9A9AA4</color>
+    <color name="ink_on_brand">#FFFFFF</color>
+
+    <!-- Surfaces -->
+    <color name="surface_page">#F7F7F9</color>
+    <color name="surface_card">#FFFFFF</color>
+    <color name="surface_sunken">#F0F0F4</color>
+    <color name="surface_field">#F2F2F6</color>
+
+    <!-- Lines. Hairlines, not borders: they separate without drawing. -->
+    <color name="separator">#E8E8EE</color>
+    <color name="separator_strong">#D8D8E0</color>
+
+    <!-- The one accent. -->
+    <color name="brand">#5B62E0</color>
+    <color name="brand_deep">#764BA2</color>
+    <color name="brand_soft">#EEEFFC</color>
+    <color name="brand_hairline">#D9DCF7</color>
+
+    <!-- Status, used sparingly and never decoratively. -->
+    <color name="positive">#1E9E6A</color>
+    <color name="negative">#D13B3B</color>
+
+    <!-- Scrims over photography -->
+    <color name="scrim_strong">#A6000000</color>
+    <color name="scrim_soft">#38000000</color>
+
+    <!-- Spacing scale, so gutters stop being guessed per screen. -->
+    <dimen name="space_1">4dp</dimen>
+    <dimen name="space_2">8dp</dimen>
+    <dimen name="space_3">12dp</dimen>
+    <dimen name="space_4">16dp</dimen>
+    <dimen name="space_5">20dp</dimen>
+    <dimen name="space_6">24dp</dimen>
+    <dimen name="space_8">32dp</dimen>
+
+    <!-- The page gutter. One value, everywhere. -->
+    <dimen name="gutter">20dp</dimen>
+    <dimen name="card_radius">20dp</dimen>
+    <dimen name="control_radius">14dp</dimen>
+
+</resources>

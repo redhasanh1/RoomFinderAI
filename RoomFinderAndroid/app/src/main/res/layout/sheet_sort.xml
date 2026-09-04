@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sort, as a bottom sheet.
+
+  It was a PopupMenu anchored to a small button: the options appeared in a tiny
+  floating card with no indication of which one was already active, and there
+  was nowhere to grow when price and bedroom filters land here too.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/sheet_background"
+    android:orientation="vertical"
+    android:paddingBottom="10dp">
+
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="14dp"
+        android:background="@drawable/sheet_handle" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/gutter"
+        android:paddingBottom="8dp"
+        android:text="Sort rooms by"
+        android:textAppearance="@style/Text.Title" />
+
+    <TextView
+        android:id="@+id/sortPriceLow"
+        style="@style/Widget.RoomFinder.SheetRow"
+        android:text="Price: low to high" />
+
+    <TextView
+        android:id="@+id/sortPriceHigh"
+        style="@style/Widget.RoomFinder.SheetRow"
+        android:text="Price: high to low" />
+
+    <TextView
+        android:id="@+id/sortNewest"
+        style="@style/Widget.RoomFinder.SheetRow"
+        android:text="Newest first" />
+
+    <TextView
+        android:id="@+id/sortOldest"
+        style="@style/Widget.RoomFinder.SheetRow"
+        android:text="Oldest first" />
+
+</LinearLayout>

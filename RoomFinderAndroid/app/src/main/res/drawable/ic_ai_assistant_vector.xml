@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    
+    <!-- AI Brain/Circuit Design -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.9"
+        android:pathData="M12,2C6.48,2 2,6.48 2,12s4.48,10 10,10s10,-4.48 10,-10S17.52,2 12,2zM12,20c-4.41,0 -8,-3.59 -8,-8s3.59,-8 8,-8s8,3.59 8,8S16.41,20 12,20z"/>
+    
+    <!-- Neural Network Nodes (using path circles) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8"
+        android:pathData="M9,8 C9.55,8 10,8.45 10,9 C10,9.55 9.55,10 9,10 C8.45,10 8,9.55 8,9 C8,8.45 8.45,8 9,8z"/>
+    
+    <path
+        android:fillColor="#FFFFFF" 
+        android:fillAlpha="0.8"
+        android:pathData="M15,8 C15.55,8 16,8.45 16,9 C16,9.55 15.55,10 15,10 C14.45,10 14,9.55 14,9 C14,8.45 14.45,8 15,8z"/>
+        
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.8" 
+        android:pathData="M12,14 C12.55,14 13,14.45 13,15 C13,15.55 12.55,16 12,16 C11.45,16 11,15.55 11,15 C11,14.45 11.45,14 12,14z"/>
+        
+    <!-- Connecting Lines -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeAlpha="0.6"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:pathData="M9,9 L15,9 M10,9 L12,15 M14,9 L12,15"/>
+</vector>

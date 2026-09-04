@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <array name="default_budget_range">
+        <item>1200</item>
+        <item>2100</item>
+    </array>
+</resources>

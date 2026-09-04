@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Pressed state (when button is being clicked) -->
+    <item android:state_pressed="true" android:drawable="@drawable/ic_favorite_filled" />
+    
+    <!-- Selected state (when item is favorited) -->
+    <item android:state_selected="true" android:drawable="@drawable/ic_favorite_filled" />
+    
+    <!-- Default state (not favorited) -->
+    <item android:drawable="@drawable/ic_favorite_border" />
+</selector>

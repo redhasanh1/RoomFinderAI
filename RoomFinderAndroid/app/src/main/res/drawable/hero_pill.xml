@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Translucent white pill for badges sitting on the brand gradient. The
+     glass background used before was near-white, so white text on it was
+     effectively invisible. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <solid android:color="#33FFFFFF" />
+    <stroke android:width="1dp" android:color="#4DFFFFFF" />
+    <corners android:radius="20dp" />
+</shape>

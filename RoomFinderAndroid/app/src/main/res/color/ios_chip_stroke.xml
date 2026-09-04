@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Unselected chips carry no outline: a row of outlined pills reads as a row
+     of buttons, all competing. Fill alone is enough to say "tappable". -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_checked="true" android:color="@color/brand" />
+    <item android:color="@android:color/transparent" />
+</selector>
