@@ -3526,6 +3526,101 @@ async function verifyEmailHandler(req, res) {
 app.post('/api/verify-email', authRateLimitMiddleware, verifyEmailHandler);
 
 // API: User login with Supabase authentication
+/**
+ * Gives a legacy account a real Supabase Auth session.
+ *
+ * Background. /api/login has three outcomes and only one produced a genuine
+ * session. Supabase Auth success returns data.session.access_token, a signed
+ * JWT. The other two mint strings - `profile_token_<id>_<millis>` and
+ * `token_<id>` - which are signed by nothing and guessable from a row id and a
+ * clock. The Android app stores whichever it gets and, until today, ignored it
+ * and sent the anon key to Supabase instead.
+ *
+ * That is why `messages` and `conversations` have to allow anonymous reads:
+ * with no real session there is no auth.uid(), so no row-level policy can be
+ * written that the app itself would survive. Closing that hole starts here, by
+ * making every successful login yield a session that identifies somebody.
+ *
+ * What this does. The caller has already proved the password by matching the
+ * bcrypt hash in `profiles`. If Supabase Auth has no account for that email -
+ * the normal case for rows created before Auth was wired up - one is created
+ * with the same password and immediately signed in, so the caller gets a real
+ * session and every later login takes the Auth path naturally. Migration
+ * happens gradually, on use, with no bulk job and nobody asked to reset
+ * anything.
+ *
+ * The awkward case is an Auth account that exists but whose password differs,
+ * which is why signInWithPassword failed before we reached here.
+ * /api/reset-password updates `profiles` and Auth together, so the two stores
+ * should not drift and this should be rare. When it happens the Auth password
+ * is brought into line with the one just proved. That grants no new access: the
+ * profiles password already logs this account in today and has full use of it,
+ * so aligning the stores hands an attacker nothing they did not already hold,
+ * and it stops the account being stranded on a made-up token forever. It is
+ * logged loudly, because seeing it often would mean the reset flow is letting
+ * the stores drift and wants looking at.
+ *
+ * Returns a session, or null when migration could not run - in which case the
+ * caller keeps its old behaviour rather than failing. Somebody with the correct
+ * password must never be locked out because a migration step did not work.
+ */
+async function ensureRealSession(email, password) {
+    if (!supabaseAuth || !supabase) {
+        return null;
+    }
+    try {
+        const { data: listed, error: listError } = await supabase.auth.admin.listUsers();
+        if (listError) {
+            console.error('ensureRealSession: could not list auth users:', listError.message);
+            return null;
+        }
+
+        const existing = (listed && listed.users ? listed.users : [])
+            .find((u) => (u.email || '').toLowerCase() === email.toLowerCase());
+
+        if (!existing) {
+            const { error: createError } = await supabase.auth.admin.createUser({
+                email,
+                password,
+                email_confirm: true
+            });
+            if (createError) {
+                console.error('ensureRealSession: createUser failed:', createError.message);
+                return null;
+            }
+            console.log('ensureRealSession: created an Auth account for a legacy profile:', email);
+        } else {
+            console.warn(
+                'ensureRealSession: Auth account exists but its password did not match the one ' +
+                'just verified against profiles. Realigning it. If this appears often the reset ' +
+                'flow is letting the two stores drift. Email:', email
+            );
+            const { error: updateError } = await supabase.auth.admin.updateUserById(
+                existing.id,
+                { password, email_confirm: true }
+            );
+            if (updateError) {
+                console.error('ensureRealSession: updateUserById failed:', updateError.message);
+                return null;
+            }
+        }
+
+        const { data: signedIn, error: signInError } =
+            await supabaseAuth.auth.signInWithPassword({ email, password });
+        if (signInError || !signedIn || !signedIn.session) {
+            console.error(
+                'ensureRealSession: sign-in still failed after migration:',
+                signInError ? signInError.message : 'no session returned'
+            );
+            return null;
+        }
+        return signedIn.session;
+    } catch (err) {
+        console.error('ensureRealSession threw:', err);
+        return null;
+    }
+}
+
 app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -3601,12 +3696,26 @@ app.post('/api/login', authRateLimitMiddleware, async (req, res) => {
                                     console.log('📸 Using profile image from database:', profileImageUrl);
                                 }
                                 
-                                // Generate a token for this user
-                                const token = `profile_token_${profile.id}_${Date.now()}`;
-                                
+                                                                // The password is proved. Turn this legacy
+                                // profile into a real Auth session so the
+                                // client gets a signed JWT rather than a string
+                                // we invented - see ensureRealSession above.
+                                const migrated = await ensureRealSession(email, password);
+                                if (migrated) {
+                                    console.log('Login: issued a real session to a migrated profile:', email);
+                                }
+                                // The old token remains only as a fallback for
+                                // when migration could not run. Somebody with
+                                // the correct password must not be locked out
+                                // because of it.
+                                const token = migrated
+                                    ? migrated.access_token
+                                    : `profile_token_${profile.id}_${Date.now()}`;
+
                                 return res.json({
                                     message: 'Login successful',
                                     access_token: token,
+                                    refresh_token: migrated ? migrated.refresh_token : undefined,
                                     userId: profile.id,
                                     user: {
                                         firstName: profile.first_name || 'User',
