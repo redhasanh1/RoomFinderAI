@@ -2,6 +2,45 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 - Rooms posted from the app were invisible to city search
+
+Follow-on from the postal code break, and arguably worse, because it would not
+have produced an error - just listings nobody found.
+
+submitListing() sent the single typed Address line as BOTH `city` and
+`street`. The city field is not decoration: listings are filtered with
+`.eq('city', ...)` in one server path and `.ilike('%city%')` in others, so a
+listing whose city reads "7280 Airport Rd" never matches a renter filtering by
+Mississauga. Every room posted from the app would have been reachable only by
+scrolling the full list - and filtering by city is the main way renters narrow
+one.
+
+`splitAddress()` now parses the line. Addresses in these groups are typed
+"7280 Airport Rd, Mississauga" or "7280 Airport Rd, Mississauga, ON L4T 1G7",
+so the second comma-separated part is the city and the tail is province and
+postcode. The postal code is matched by pattern rather than position, since it
+can sit anywhere in the tail, and the province suffix is stripped off the city.
+With no comma there is nothing to split on and both fields keep the whole
+string - the old behaviour, kept deliberately rather than guessing which half of
+"7280 Airport Rd Mississauga" is the city.
+
+Absent stays absent: `postalCode` is omitted entirely rather than sent as "",
+which is the empty value that made the server reject every listing this app
+produced in the first place.
+
+Tested against eight real-shaped inputs by extracting the method and running it
+directly, rather than trusting the compile:
+
+```
+"7280 Airport Rd, Mississauga"            -> street=7280 Airport Rd  city=Mississauga  postal=null
+"7280 Airport Rd, Mississauga, ON L4T 1G7"-> street=7280 Airport Rd  city=Mississauga  postal=L4T 1G7
+"55 Queen St W, Toronto, ON, M5H 2M9"     -> street=55 Queen St W    city=Toronto      postal=M5H 2M9
+"7280 Airport Rd Mississauga"             -> both fields keep the whole line
+```
+
+The general shape of today: the server fix unbreaks posting, and this makes the
+listing findable once posted. Neither is much use without the other.
+
 ## 2026-09-04 — The app on Google Play could not post a listing. At all.
 
 The worst thing found this week, and it was found by reading `server.js` for an

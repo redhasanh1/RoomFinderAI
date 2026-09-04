@@ -69,6 +69,11 @@ public class PostFragment extends Fragment {
     private static final String DRAFT_PHOTOS = "photos";
     private static final String DRAFT_STEP = "step";
 
+    /** A1A 1A1 / A1A1A1, anywhere in the line, case-insensitive. */
+    private static final java.util.regex.Pattern CANADIAN_POSTAL_CODE =
+            java.util.regex.Pattern.compile(
+                    "[A-Za-z][0-9][A-Za-z][ -]?[0-9][A-Za-z][0-9]");
+
     /**
      * Suppresses validation while a draft is being written back into the form.
      *
@@ -1259,6 +1264,76 @@ public class PostFragment extends Fragment {
         binding.previewDetails.setText(details);
     }
     
+    /** Street, city and postal code pulled out of one typed address line. */
+    private static final class Address {
+        final String street;
+        final String city;
+        final String postalCode;
+
+        Address(String street, String city, String postalCode) {
+            this.street = street;
+            this.city = city;
+            this.postalCode = postalCode;
+        }
+    }
+
+    /**
+     * Splits the single "Address" field into the parts the API expects.
+     *
+     * The form asks for one address line, but the server stores street, city
+     * and postal code separately - and the city is not decoration. Listings are
+     * filtered with `.eq('city', ...)` in one path and `.ilike('%city%')` in
+     * others, so a listing whose city reads "7280 Airport Rd" never appears
+     * when a renter filters by Mississauga. This used to send the whole line as
+     * BOTH street and city, which made every room posted from the app invisible
+     * to city search - the main way renters narrow a list.
+     *
+     * Canadian addresses in these groups are typed as
+     * "7280 Airport Rd, Mississauga" or "7280 Airport Rd, Mississauga, ON L4T 1G7",
+     * so the second comma-separated part is the city and anything after it is
+     * province and postcode. With no comma there is nothing to split on and both
+     * fields keep the whole string, which is what happened before - no worse,
+     * and honest about not knowing.
+     *
+     * The postal code is taken by pattern rather than by position, since it may
+     * sit anywhere in the tail. Absent is left absent: the key is omitted
+     * entirely rather than sent as "", which is exactly the empty value that
+     * made the server reject every listing this app produced.
+     */
+    private Address splitAddress(String raw) {
+        String line = raw == null ? "" : raw.trim();
+
+        String postalCode = null;
+        java.util.regex.Matcher m = CANADIAN_POSTAL_CODE.matcher(line);
+        if (m.find()) {
+            postalCode = m.group().toUpperCase(Locale.CANADA);
+        }
+
+        List<String> parts = new ArrayList<>();
+        for (String part : line.split(",")) {
+            String trimmed = part.trim();
+            if (!trimmed.isEmpty()) {
+                parts.add(trimmed);
+            }
+        }
+
+        if (parts.size() < 2) {
+            // Nothing to split on. Keep the old behaviour rather than guessing
+            // which half of "7280 Airport Rd Mississauga" is the city.
+            return new Address(line, line, postalCode);
+        }
+
+        String street = parts.get(0);
+        // Strip a postal code out of the city part - "Mississauga ON L4T 1G7"
+        // should file under Mississauga, not under the whole tail.
+        String city = CANADIAN_POSTAL_CODE.matcher(parts.get(1)).replaceAll("").trim();
+        city = city.replaceAll("\\s+(ON|Ontario|BC|AB|QC|NS|NB|MB|SK|PE|NL|YT|NT|NU)$", "").trim();
+        if (city.isEmpty()) {
+            city = parts.get(1);
+        }
+        return new Address(street, city, postalCode);
+    }
+
     private void submitListing() {
         // requireSignInToPublish() is the gate; this is the backstop for any
         // other caller, and it keeps the draft rather than discarding it.
@@ -1282,9 +1357,12 @@ public class PostFragment extends Fragment {
                 JSONObject body = new JSONObject();
                 String location = binding.locationInput.getText().toString().trim();
                 body.put("title", binding.titleInput.getText().toString().trim());
-                body.put("city", location);
-                body.put("street", location);
-                body.put("postalCode", "");
+                                Address parsed = splitAddress(location);
+                body.put("city", parsed.city);
+                body.put("street", parsed.street);
+                if (parsed.postalCode != null) {
+                    body.put("postalCode", parsed.postalCode);
+                }
                 body.put("price", binding.priceInput.getText().toString().trim());
                 body.put("houseType", selectedPropertyType.isEmpty() ? "apartment" : selectedPropertyType);
                 String bedroomsValue = selectedBedrooms.replace("+", "").trim();
