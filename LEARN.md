@@ -2,6 +2,67 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 — The app on Google Play could not post a listing. At all.
+
+The worst thing found this week, and it was found by reading `server.js` for an
+unrelated reason.
+
+`PostFragment.submitListing()` builds its request body with:
+
+```java
+body.put("postalCode", "");
+```
+
+The app asks the host for one "Address" line and has no postal code field, so
+it sends an empty string. `validateListingInput()` did `if (!data.postalCode)
+errors.push('Postal Code is required')`, and an empty string is falsy. The
+validation runs *before* the auth check, so it fires for everyone.
+
+Confirmed against production before touching anything — same body twice, only
+the postal code differing:
+
+```
+postalCode ""     -> 400 {"errors":["Postal Code is required"]}
+postalCode "L4T"  -> 401 {"error":"User authentication required"}
+```
+
+The 401 is the tell: with a postal code the request sails through validation
+and gets as far as the auth gate. Without one it never does. So a landlord
+installed the app, signed in, filled four steps, uploaded photos, tapped
+"Post Listing" — and got a failure toast. **The single action the app exists
+for has never worked in production.**
+
+**Fixed on the server, not in the app, and that choice is the point.** An
+app-side fix ships in the next Play release and does nothing for the copies of
+1.0.2 already on people's phones. Relaxing the server repairs those the moment
+it deploys. The website is unaffected: its form has a `required` postal code
+input, so it keeps sending one, and making the field optional server-side takes
+nothing away from listings that have it. `postal_code` is now stored as `null`
+rather than `""` when absent.
+
+**The knock-on nobody would have seen until listings existed.** The app sends
+its single address line as *both* `street` and `city`. Four render sites used
+`${street}, ${city}, ${postalCode}` unconditionally, which for an app listing
+gives:
+
+    7280 Airport Rd, 7280 Airport Rd,
+
+a duplicated address and a dangling comma. Added `formatListingLocation()` to
+`listings.html` and `listing_details.html` — drops empty parts, drops
+case-insensitive duplicates, joins the rest. Checked against five cases: app
+listing with and without an empty postcode, a full website listing, a
+case-differing duplicate, and everything missing.
+
+Two lessons. First, an integration this important deserved one real
+end-to-end post before the app shipped; nothing in the Android code or the
+server code is wrong *on its own*, and the contract between them was never
+exercised. Second, the entry-gate sign-in wall (see the entry above) was
+hiding this: almost nobody got far enough into the form to hit the 400, so
+there were no complaints to investigate.
+
+Restated because it matters: this does nothing until the backend deploys.
+Until then the app on Play still cannot post a room.
+
 ## 2026-09-04 — Two defects on the photo step, both only visible on a device
 
 Found while verifying the draft-persistence change, on the step the whole app's

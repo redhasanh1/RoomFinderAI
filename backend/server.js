@@ -756,11 +756,41 @@ async function generateMarketplaceUrl({ location, price, size, amenities, roomTy
 }
 
 // Validate listing input
+/**
+ * Validates a new listing.
+ *
+ * Postal code is NOT required, and that is the whole point of this function's
+ * current shape.
+ *
+ * The Android app posts here with `postalCode: ""` - it asks the host for a
+ * single "Address" line and has no separate postal code field at all. An empty
+ * string is falsy, so every listing submitted from the app was rejected with
+ * 400 "Postal Code is required". The app is live on Google Play and its single
+ * most important action could not complete for anybody: a landlord signed in,
+ * filled four steps, uploaded photos, tapped "Post Listing" and got a failure
+ * toast.
+ *
+ * Confirmed against production before changing anything - same body both
+ * times, only the postal code differing:
+ *
+ *   postalCode ""     -> 400 {"errors":["Postal Code is required"]}
+ *   postalCode "L4T"  -> 401 {"error":"User authentication required"}
+ *
+ * So the postal code was the only thing standing between the app and a
+ * listing.
+ *
+ * Fixed here rather than in the app on purpose. An app-side fix ships in the
+ * next Play release and does nothing for the copies of 1.0.2 already on
+ * people's phones; relaxing the server repairs those the moment it deploys.
+ *
+ * The website is unaffected: its form has a `required` postal code input, so
+ * it keeps sending one. Making the field optional server-side takes nothing
+ * away from listings that do have it.
+ */
 function validateListingInput(data) {
     const errors = [];
     if (!data.city) errors.push('City is required');
     if (!data.street) errors.push('Street is required');
-    if (!data.postalCode) errors.push('Postal Code is required');
     if (!data.title) errors.push('Title is required');
     if (!data.price || isNaN(data.price)) errors.push('Valid price is required');
     if (!data.houseType) errors.push('House type is required');
@@ -795,7 +825,7 @@ app.post('/api/listings', async (req, res) => {
                     id: uuidv4(),
                     city,
                     street,
-                    postal_code: postalCode,
+                    postal_code: postalCode || null,
                     title,
                     price: parseFloat(price),
                     house_type: houseType,
