@@ -88,6 +88,54 @@ public class RealTimeChatService {
         void onError(String error);
     }
     
+    /**
+     * The value for the Supabase Authorization header.
+     *
+     * Every request here used to send the anon key as the bearer, which is why
+     * `messages` and `conversations` have to allow anonymous reads for the app
+     * to work at all - and why, at the time of writing, all 167 messages on the
+     * platform are readable by anybody holding that key. It is handed out on
+     * every page load by /api/config, so that is everybody.
+     *
+     * The anon key stays in the `apikey` header, which is what Supabase expects
+     * and what identifies the project. What changes is the bearer: when the
+     * signed-in user has a genuine Supabase session token, that goes instead,
+     * so PostgREST evaluates the request as that user and `auth.uid()` is
+     * populated. Without this, no row-level policy can be written at all -
+     * there is nobody to write it about.
+     *
+     * The JWT test is deliberate and not cosmetic. AuthManager and two of the
+     * three /api/login branches mint their own strings - "local_...",
+     * "profile_token_...", "token_..." - which are not signed by anyone and
+     * which Supabase would reject outright. Sending one as a bearer would break
+     * messaging for those users. So anything that is not a real three-part JWT
+     * falls back to the anon key, exactly as before.
+     *
+     * That fallback is the reason this change is safe to ship on its own and
+     * also the reason it is not the whole fix: until those accounts get real
+     * sessions, locking the tables would cut them off. This is the first of the
+     * two steps, not the finish.
+     */
+    private String supabaseBearer() {
+        try {
+            AuthManager authManager = AuthManager.getInstance(context);
+            com.roomfinder.android.models.User user = authManager.getCurrentUser();
+            if (user != null && isRealJwt(user.getAccessToken())) {
+                return user.getAccessToken();
+            }
+        } catch (Exception e) {
+            Log.w(TAG, "Could not read the session token; using the anon key", e);
+        }
+        return ApiKeys.SUPABASE_ANON_KEY;
+    }
+
+    /** A signed JWT has three dot-separated parts and a base64url header starting "ey". */
+    private static boolean isRealJwt(String token) {
+        return token != null
+                && token.startsWith("ey")
+                && token.split("\\.").length == 3;
+    }
+
     private RealTimeChatService(Context context) {
         this.context = context.getApplicationContext();
         this.supabaseClient = SupabaseClient.getInstance();
@@ -165,7 +213,7 @@ public class RealTimeChatService {
         
             Request request = new Request.Builder()
                     .url(urlBuilder.build())
-                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + supabaseBearer())
                     .build();
             
             EventSourceListener listener = new EventSourceListener() {
@@ -325,7 +373,7 @@ public class RealTimeChatService {
                     Request request = new Request.Builder()
                             .url(url)
                             .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                            .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                            .addHeader("Authorization", "Bearer " + supabaseBearer())
                             .addHeader("Content-Type", "application/json")
                             .build();
                     
@@ -393,7 +441,7 @@ public class RealTimeChatService {
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + supabaseBearer())
                     .addHeader("Content-Type", "application/json")
                     .build();
             
@@ -706,7 +754,7 @@ public class RealTimeChatService {
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + supabaseBearer())
                     .addHeader("Content-Type", "application/json")
                     .build();
             
@@ -736,7 +784,7 @@ public class RealTimeChatService {
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + supabaseBearer())
                     .addHeader("Content-Type", "application/json")
                     .build();
             
@@ -794,7 +842,7 @@ public class RealTimeChatService {
                     .url(url)
                     .post(body)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + supabaseBearer())
                     .addHeader("Content-Type", "application/json")
                     .addHeader("Prefer", "return=representation")
                     .build();
@@ -865,7 +913,7 @@ public class RealTimeChatService {
                         .url(url)
                         .post(body)
                         .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + supabaseBearer())
                         .addHeader("Content-Type", "application/json")
                         .addHeader("Prefer", "return=representation")
                         .build();
@@ -1002,7 +1050,7 @@ public class RealTimeChatService {
                         .url(url)
                         .post(body)
                         .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + supabaseBearer())
                         .addHeader("Content-Type", "application/json")
                         .addHeader("Prefer", "return=representation")
                         .build();
@@ -1048,7 +1096,7 @@ public class RealTimeChatService {
                 Request request = new Request.Builder()
                         .url(url)
                         .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + supabaseBearer())
                         .addHeader("Content-Type", "application/json")
                         .build();
                 
@@ -1230,7 +1278,7 @@ public class RealTimeChatService {
                 Request request = new Request.Builder()
                         .url(url)
                         .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + supabaseBearer())
                         .addHeader("Content-Type", "application/json")
                         .build();
                 
@@ -1283,7 +1331,7 @@ public class RealTimeChatService {
             Request request = new Request.Builder()
                     .url(url)
                     .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                    .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                    .addHeader("Authorization", "Bearer " + supabaseBearer())
                     .addHeader("Content-Type", "application/json")
                     .build();
             
@@ -1333,7 +1381,7 @@ public class RealTimeChatService {
                 Request request = new Request.Builder()
                         .url(url)
                         .addHeader("apikey", ApiKeys.SUPABASE_ANON_KEY)
-                        .addHeader("Authorization", "Bearer " + ApiKeys.SUPABASE_ANON_KEY)
+                        .addHeader("Authorization", "Bearer " + supabaseBearer())
                         .addHeader("Content-Type", "application/json")
                         .build();
                 

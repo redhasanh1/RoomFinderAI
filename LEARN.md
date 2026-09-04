@@ -2,6 +2,51 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 - The messages table is world-readable, and authentication is why
+
+Probing the Supabase tables the app talks to directly, with nothing but the
+public anon key that /api/config hands out on every page load:
+
+```
+messages            200  READABLE  columns include: content, file_url, sender/receiver
+conversations       200  READABLE  columns include: receiver_email, landlord_id
+roommate_profiles   200  READABLE  bios, budgets, lifestyle
+listings            200  READABLE  (fine - listings are public)
+profiles            401  correctly locked
+```
+
+167 messages, 17 conversations. `profiles` returning 401 is the important part:
+RLS demonstrably works on this project, so this is a per-table omission, not a
+setting somebody forgot globally.
+
+**Why it cannot simply be switched on.** `RealTimeChatService` sent
+`Authorization: Bearer <ANON_KEY>` on all 12 of its Supabase calls. Supabase
+therefore evaluates every request as anonymous, `auth.uid()` is null, and any
+correct row-level policy would deny the app its own data. The open table is not
+sitting next to working auth - **the app depends on the table being open.**
+
+**And the tokens are not real.** `AuthManager.generateLocalToken()` returns
+`"local_" + sha256(email + timestamp)`, minted on the phone and signed by
+nobody. Two of the three `/api/login` branches are no better -
+`profile_token_<id>_<millis>` and `token_<id>`, both guessable. Only the
+Supabase Auth branch returns a genuine session, and `AuthService.java:243` does
+store that `access_token` - it was simply never used for anything.
+
+So the first step is to use it. `supabaseBearer()` now sends the stored session
+token when it is a real three-part JWT and falls back to the anon key otherwise,
+which keeps every account working exactly as before while making `auth.uid()`
+resolve for accounts that have real sessions. The `apikey` header stays the anon
+key, which is what Supabase expects of it.
+
+That fallback is what makes this safe to ship alone, and also what stops it
+being the whole fix: until the fake-token accounts are migrated onto real
+sessions, locking the tables would cut them off. Verified the JWT test against
+all three fake formats plus a real JWT, null, empty and a malformed two-part
+token - only the real one is treated as a user.
+
+Sequence from here: migrate the login paths so every account gets a real
+session, then write the policies, then deny anon. Not before.
+
 ## 2026-09-04 - Rooms posted from the app were invisible to city search
 
 Follow-on from the postal code break, and arguably worse, because it would not
