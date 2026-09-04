@@ -832,6 +832,45 @@ app.get('/.well-known/apple-app-site-association', (req, res) => {
     res.send(body);
 });
 
+// Android App Links: the app's manifest declares an intent-filter for
+// https://www.roomfinderai.com/listing_details.html with autoVerify="true",
+// which makes Android fetch this file at install time and check that the
+// domain vouches for this package and signing certificate. It was returning
+// 404 in production, so verification failed and every listing link anyone
+// pasted into a group chat opened Chrome instead of the app - including for
+// people who had already installed it.
+//
+// Served as a route for the same reason as the Apple file above: express.static
+// defaults to dotfiles: 'ignore', so anything under /.well-known is skipped and
+// a file placed there would 404 exactly as the missing one did.
+//
+// The fingerprint is Play's APP SIGNING certificate, not the upload
+// certificate - Play re-signs every build with its own key, so the upload
+// fingerprint would never match what is installed on a device. From
+// Play Console -> Test and release -> App integrity -> App signing.
+//
+// Android does not follow redirects when verifying, so the apex domain's 301
+// to www is not covered; roomfinderai.com would need its own intent-filter and
+// its own copy of this file.
+const ANDROID_ASSET_LINKS = [
+    {
+        relation: ['delegate_permission/common.handle_all_urls'],
+        target: {
+            namespace: 'android_app',
+            package_name: 'com.roomfinderai.android',
+            sha256_cert_fingerprints: [
+                '1E:49:95:05:54:3E:FA:51:8A:DA:CC:5A:38:39:7F:48:C1:18:DB:95:3A:48:55:AF:28:76:AC:D0:40:39:FE:71'
+            ]
+        }
+    }
+];
+
+app.get('/.well-known/assetlinks.json', (req, res) => {
+    res.setHeader('Content-Type', 'application/json');
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    res.send(JSON.stringify(ANDROID_ASSET_LINKS, null, 2));
+});
+
 app.use(express.static(frontendPath, {
     setHeaders: (res, path) => {
         // Disable caching for JavaScript and HTML files to ensure updates are loaded immediately
@@ -1073,11 +1112,42 @@ async function generateMarketplaceUrl({ location, price, size, amenities, roomTy
 }
 
 // Validate listing input
+/**
+ * Validates a new listing.
+ *
+ * Postal code is NOT required, and that is the whole point of this function's
+ * current shape.
+ *
+ * The Android app posts here with `postalCode: ""` - it asks the host for one
+ * "Address" line and has no postal code field at all. An empty string is
+ * falsy, so every listing submitted from the app was rejected with 400
+ * "Postal Code is required". This validation runs before the auth check below,
+ * so it fired for everyone. The app is live on Google Play and the single
+ * action it exists for could not complete: a landlord signed in, filled four
+ * steps, uploaded photos, tapped "Post Listing" and got a failure toast.
+ *
+ * Confirmed against production before changing anything - identical bodies,
+ * only the postal code differing:
+ *
+ *   postalCode ""     -> 400 {"errors":["Postal Code is required"]}
+ *   postalCode "L4T"  -> 401 {"error":"User authentication required"}
+ *
+ * The 401 is the tell: with a postal code the request clears validation and
+ * reaches the auth gate; without one it never gets there.
+ *
+ * Fixed on the server rather than in the app deliberately. An app-side fix
+ * ships in the next Play release and does nothing for the copies of 1.0.2
+ * already on people's phones; relaxing this repairs those the moment it
+ * deploys.
+ *
+ * The website is unaffected - its form has a `required` postal code input
+ * (listings.html), so it keeps sending one. Making the field optional here
+ * takes nothing away from listings that have one.
+ */
 function validateListingInput(data) {
     const errors = [];
     if (!data.city) errors.push('City is required');
     if (!data.street) errors.push('Street is required');
-    if (!data.postalCode) errors.push('Postal Code is required');
     if (!data.title) errors.push('Title is required');
     if (!data.price || isNaN(data.price)) errors.push('Valid price is required');
     if (!data.houseType) errors.push('House type is required');
@@ -1264,7 +1334,8 @@ app.post('/api/listings', async (req, res) => {
                     id: uuidv4(),
                     city,
                     street,
-                    postalCode: postalCode,
+                    // Absent is absent - do not write "" into the column.
+                    postalCode: postalCode || null,
                     title,
                     price: parseFloat(price),
                     house_type: houseType,

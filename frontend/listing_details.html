@@ -337,6 +337,35 @@
             }
         }
 
+        /**
+         * Joins a listing's address parts into one line.
+         *
+         * Written because listings posted from the Android app render badly
+         * without it. The app collects a single "Address" line and sends it as
+         * BOTH street and city, with no postal code at all, so the old
+         * `${street}, ${city}, ${postalCode}` produced:
+         *
+         *     7280 Airport Rd, 7280 Airport Rd,
+         *
+         * a duplicated address and a dangling comma. Dropping empties fixes the
+         * comma; dropping case-insensitive duplicates fixes the repetition.
+         * Both are worth doing for website listings too - someone typing
+         * "Mississauga" into street and city gets the same result.
+         */
+        function formatListingLocation(listing) {
+            const seen = new Set();
+            return [listing.street, listing.city, listing.postalCode]
+                .map(part => (part == null ? '' : String(part).trim()))
+                .filter(part => {
+                    if (!part) { return false; }
+                    const key = part.toLowerCase();
+                    if (seen.has(key)) { return false; }
+                    seen.add(key);
+                    return true;
+                })
+                .join(', ');
+        }
+
         function showError(message) {
             document.getElementById('listing-content').innerHTML = `
                 <div class="glass-card p-8 text-center">
@@ -437,7 +466,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
-                                <span>${listing.street}, ${listing.city}${listing.postalCode ? ', ' + listing.postalCode : ''}</span>
+                                <span>${formatListingLocation(listing)}</span>
                             </div>
 
                             <!-- Badges -->
