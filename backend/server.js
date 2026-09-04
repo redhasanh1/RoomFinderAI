@@ -1308,6 +1308,226 @@ app.post('/api/listings/draft', openAiRateLimitMiddleware, async (req, res) => {
     }
 });
 
+// ---------------------------------------------------------------------------
+// Ported from the hasan branch so that deploying this one does not REMOVE
+// account deletion. Production already answers POST /api/account/delete (401
+// "Email is required" on an empty body) while origin/main has no such route,
+// so a deploy straight from main would take away a feature that Google Play's
+// Data safety declaration and /delete-account.html both promise works.
+//
+// The Android app sends { email, password } (AccountDeletionService line 60),
+// which is exactly what this handler expects.
+// ---------------------------------------------------------------------------
+/**
+ * Delete a user's account and the data attached to it.
+ *
+ * The Android app had a "Delete account" button that cleared local
+ * SharedPreferences, said "Account deleted successfully" and logged the user
+ * out. Nothing left the server: the profile, the listings and the messages
+ * were all still there, and the confirmation dialog promised the opposite.
+ * Google Play's Data safety declaration says deletion works, and
+ * /delete-account.html says so publicly, so it has to actually work.
+ *
+ * Identity is proved with the account password rather than the `user-email`
+ * header the other endpoints trust. That header is fine for deleting one
+ * listing - the worst case is bounded and recoverable. It is not fine here:
+ * anyone who guessed an email could erase somebody's account. The password is
+ * checked exactly the way /api/login checks it, Supabase Auth first and the
+ * bcrypt hash in `profiles` second, so an account created either way can be
+ * closed by its owner and by nobody else.
+ *
+ * Accounts created through Google sign-in have no password to check. Those get
+ * a 409 and are pointed at the documented email route rather than a weaker
+ * check that would undermine the whole point of asking.
+ *
+ * Row deletion is best-effort per table and deliberately does not abort on the
+ * first failure. The schema has grown tables at different times, not all of
+ * them have the same owner column, and some may not exist in every
+ * environment. Stopping at the first missing table would leave an account
+ * half-deleted, which is worse than continuing and reporting what was removed.
+ * The auth user is deleted last, so a failure part-way through leaves an
+ * account the owner can still sign into and retry with.
+ */
+app.post('/api/account/delete', authRateLimitMiddleware, async (req, res) => {
+    try {
+        const { email, password } = req.body || {};
+
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
+        }
+        if (!supabase) {
+            return res.status(500).json({ error: 'Database not connected' });
+        }
+
+        const normalisedEmail = String(email).trim().toLowerCase();
+
+        // ---- prove it is really them -------------------------------------
+        let authUserId = null;
+        let verified = false;
+
+        try {
+            const { data, error } = await supabase.auth.signInWithPassword({
+                email: normalisedEmail,
+                password: password
+            });
+            if (!error && data && data.user) {
+                verified = true;
+                authUserId = data.user.id;
+            }
+        } catch (e) {
+            console.log('Account delete: Supabase Auth check failed:', e.message);
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, email, password')
+            .eq('email', normalisedEmail)
+            .maybeSingle();
+
+        if (!verified && profile && profile.password) {
+            try {
+                verified = await bcrypt.compare(password, profile.password);
+            } catch (e) {
+                console.log('Account delete: bcrypt check failed:', e.message);
+            }
+        }
+
+        if (!verified) {
+            // Distinguish "wrong password" from "this account never had one",
+            // because the second is not the user's mistake and needs a
+            // different instruction rather than a retry.
+            if (profile && !profile.password) {
+                return res.status(409).json({
+                    error: 'This account signs in with Google, so there is no password to confirm. ' +
+                           'Email support@roomfinderai.com from this address and we will delete it for you.',
+                    code: 'no_password'
+                });
+            }
+            return res.status(401).json({ error: 'Incorrect password', code: 'bad_password' });
+        }
+
+        console.log('Deleting account and data for:', normalisedEmail);
+
+        // ---- remove the rows ---------------------------------------------
+        // (table, column) pairs. Unknown tables and columns are skipped, not
+        // fatal - see the comment above.
+        const ownedByEmail = [
+            ['listings', 'user_email'],
+            ['favorites', 'user_email'],
+            ['sublease_requests', 'user_email'],
+            ['sublease_matches', 'user_email'],
+            ['user_verifications', 'user_email'],
+            ['subscriptions', 'user_email'],
+            ['user_activities', 'user_email'],
+            ['user_payment_methods', 'user_email'],
+            ['bank_information', 'user_email'],
+            ['ai_negotiations', 'user_email'],
+            ['ai_chats', 'user_email'],
+            ['govdocs', 'user_email'],
+            ['notifications', 'user_email'],
+            ['conversations', 'user_email'],
+            // the same tables again, for the ones that store `email`
+            ['favorites', 'email'],
+            ['subscriptions', 'email'],
+            ['user_verifications', 'email'],
+            ['user_activities', 'email'],
+            ['ai_chats', 'email'],
+            ['notifications', 'email']
+        ];
+
+        const removed = [];
+        const skipped = [];
+
+        for (const [table, column] of ownedByEmail) {
+            try {
+                const { error } = await supabase.from(table).delete().eq(column, normalisedEmail);
+                if (error) {
+                    skipped.push(table + '.' + column + ': ' + error.message);
+                } else {
+                    removed.push(table + '.' + column);
+                }
+            } catch (e) {
+                skipped.push(table + '.' + column + ': ' + e.message);
+            }
+        }
+
+        // Uploaded files: listing photos and profile pictures live in storage,
+        // not in a table, so deleting rows alone would leave the images public.
+        for (const bucket of ['profile-images', 'listing-images']) {
+            try {
+                const { data: files } = await supabase.storage.from(bucket).list(normalisedEmail, { limit: 200 });
+                if (files && files.length) {
+                    await supabase.storage
+                        .from(bucket)
+                        .remove(files.map(function (f) { return normalisedEmail + '/' + f.name; }));
+                    removed.push('storage:' + bucket);
+                }
+            } catch (e) {
+                skipped.push('storage:' + bucket + ': ' + e.message);
+            }
+        }
+
+        // The profile row last among the tables, so the steps above can still
+        // look the account up if any of them need to.
+        try {
+            const { error } = await supabase.from('profiles').delete().eq('email', normalisedEmail);
+            if (error) {
+                skipped.push('profiles: ' + error.message);
+            } else {
+                removed.push('profiles');
+            }
+        } catch (e) {
+            skipped.push('profiles: ' + e.message);
+        }
+
+        // ---- and finally the login itself --------------------------------
+        // Without this the address stays taken and they could still sign in.
+        // Needs the service-role key; with only the anon key this is a no-op
+        // and we say so rather than pretending.
+        let authDeleted = false;
+        if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+            try {
+                if (!authUserId) {
+                    const { data: list } = await supabase.auth.admin.listUsers();
+                    const match = list && list.users
+                        ? list.users.find(function (u) { return (u.email || '').toLowerCase() === normalisedEmail; })
+                        : null;
+                    if (match) authUserId = match.id;
+                }
+                if (authUserId) {
+                    const { error } = await supabase.auth.admin.deleteUser(authUserId);
+                    if (error) {
+                        skipped.push('auth user: ' + error.message);
+                    } else {
+                        authDeleted = true;
+                        removed.push('auth user');
+                    }
+                }
+            } catch (e) {
+                skipped.push('auth user: ' + e.message);
+            }
+        } else {
+            skipped.push('auth user: SUPABASE_SERVICE_ROLE_KEY not set on this server');
+        }
+
+        console.log('Account delete for ' + normalisedEmail + ': removed=' + removed.length +
+                    ', skipped=' + skipped.length + ', authDeleted=' + authDeleted);
+        if (skipped.length) {
+            console.log('   skipped:', skipped.join(' | '));
+        }
+
+        return res.json({
+            message: 'Account deleted',
+            email: normalisedEmail,
+            authDeleted: authDeleted,
+            removed: removed
+        });
+    } catch (error) {
+        console.error('Error in /api/account/delete:', error.message);
+        return res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
 // API: Add a new listing
 app.post('/api/listings', async (req, res) => {
     try {

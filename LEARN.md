@@ -2,6 +2,31 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 - Production is ahead of `main`, not just different from `hasan`
+
+Worth stating separately because it changes what a deploy means.
+
+`POST /api/account/delete` answers on production - 401 `{"error":"Email is
+required"}` on an empty body, and a route that does not exist returns a plain
+404 HTML page, so that is a real handler. `origin/main` has no such route. Its
+implementation also differs from the one written on `hasan`, which answers
+"Email and password are required" for the same request.
+
+So production is running code that exists in **no branch**. Deploying `main`
+unchanged would have removed account deletion - which Google Play's Data safety
+declaration and /delete-account.html both promise works. Ported the `hasan`
+version onto the deploy branch so the feature survives; the app sends
+`{ email, password }`, which is what that handler expects.
+
+The frontend, by contrast, turned out to be clean. Production's index.html
+differs from main's by exactly three asset tags, and main's own
+`html-inject.js` injects those three at serve time. listings.html and
+listing_details.html are byte-identical to main. An earlier note in this session
+claimed the frontend had drifted from every branch - that was wrong, and it was
+wrong because the working tree had `hasan`'s html-inject.js checked out, which
+injects different assets. **Compare against the branch you mean, not the one you
+happen to have checked out.**
+
 ## 2026-09-04 — `hasan` is not `main` plus work. It is an older, smaller server.
 
 Worth knowing before anyone deploys anything.
