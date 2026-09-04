@@ -40,6 +40,26 @@
 --             until that is fixed.
 --   4. Only then: run this.
 --
+-- THE WEBSITE NEEDS NO CHANGE, WHICH IS NOT OBVIOUS
+--
+-- frontend/listings.html builds its client with the anon key and queries
+-- `messages` directly, which looks like the same problem the app had. It is
+-- not. login.html already calls UniversalAuth.applySupabaseSession() with the
+-- tokens from /api/login, so the browser's client becomes authenticated - but
+-- only behind this guard (login.html:417):
+--
+--     if (... && result.refresh_token) {
+--
+-- The legacy password branch never returned a refresh_token, so for exactly the
+-- accounts this migration would lock out, that line never ran and the browser
+-- stayed anonymous. ensureRealSession now returns one, so those sessions start
+-- applying on the web the moment step 2 ships. The guard was already correct
+-- and waiting for a value nothing supplied.
+--
+-- Consequence: fixing the server fixes both clients. Nothing in frontend/ needs
+-- editing for this migration - but step 2 must ship first, or the website is
+-- locked out alongside the app.
+--
 -- HOW TO CHECK BEFORE RUNNING
 --
 -- Every active account must appear in auth.users. Anyone in `profiles` but not
