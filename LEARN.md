@@ -2,6 +2,51 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 — Two defects on the photo step, both only visible on a device
+
+Found while verifying the draft-persistence change, on the step the whole app's
+pitch depends on: photo in, AI writes the listing.
+
+**The permission grant went nowhere.** Tap "Photo Gallery", grant the
+permission, and you land back on the form with nothing open and no message.
+`onRequestPermissionsResult` existed, correctly called `openGallery()` on grant
+— and had never once run. Both call sites used
+`ActivityCompat.requestPermissions(requireActivity(), ...)`, which delivers the
+result to the *activity's* callback, and `MainActivity` does not override it.
+The grant was dropped on the floor. The only way forward was to tap again and
+guess it would work the second time.
+
+The fix is the fragment's own `requestPermissions()`. But for the gallery the
+better fix is not to ask at all: **Android 13+ has a system photo picker that
+needs no permission**, the user picks the photos and the app receives only
+those. That also removes a dead end that was waiting on Android 14+ — asking for
+`READ_MEDIA_IMAGES` there offers "Allow limited access", which grants
+`READ_MEDIA_VISUAL_USER_SELECTED` and leaves `READ_MEDIA_IMAGES` *denied*, so
+the permission check would fail again on the next tap and prompt forever.
+Skipping the permission avoids the loop rather than special-casing it. The
+pre-33 path keeps `READ_EXTERNAL_STORAGE`, now correctly routed.
+
+**A success tick on a failure.** `showDraftResult()` ended every attempt by
+showing `aiStatusDone` — a brand-blue check circle — including the failures. Fed
+a screenshot, the app said, under a tick:
+
+> Could not read that photo — The image is a screenshot of an app interface,
+> not a photograph of a rental property.
+
+The copy was doing its job and the icon was contradicting it, and the icon is
+read first. Added an `ok` flag that swaps to an amber `ic_info`. Amber rather
+than red on purpose: a draft that fails is not an error the host made, the form
+still works and they can type it themselves.
+
+Both verified on an API 35 emulator after `pm clear` (which resets permissions,
+so it is a genuine fresh install): tapping "Let AI write it" → "Photo Gallery"
+opens the picker immediately with no prompt, the photo uploads, the vision model
+answers, and the failure now carries the amber mark.
+
+The general lesson is the same one as the draft toast in the entry above: these
+compile, they read correctly, and all three were only visible by running the
+thing and looking at it.
+
 ## 2026-09-04 — The sign-in wall, and the bug that only a running emulator found
 
 `PostFragment.onResume()` called `requireSignIn()`, so a signed-out person who

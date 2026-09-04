@@ -539,10 +539,11 @@ public class PostFragment extends Fragment {
      * Open camera to take a photo
      */
     private void openCamera() {
-        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) 
+                if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA)
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(), 
-                    new String[]{Manifest.permission.CAMERA}, 
+            // Fragment's own requestPermissions, not ActivityCompat with the
+            // activity - see the note on onRequestPermissionsResult below.
+            requestPermissions(new String[]{Manifest.permission.CAMERA},
                     REQUEST_CAMERA_PERMISSION);
             return;
         }
@@ -577,17 +578,33 @@ public class PostFragment extends Fragment {
      */
     private void openGallery() {
         // Check permissions based on Android version
-        String permission;
-        if (Build.VERSION.SDK_INT >= 33) { // Android 13 (API 33)
-            permission = Manifest.permission.READ_MEDIA_IMAGES;
-        } else {
-            permission = Manifest.permission.READ_EXTERNAL_STORAGE;
+                // Android 13+ has a system photo picker that needs no permission at
+        // all. The user chooses the photos, the app receives only those, and
+        // there is no runtime prompt in the way.
+        //
+        // This is not just tidier, it removes a dead end. Asking for
+        // READ_MEDIA_IMAGES on Android 14+ offers "Allow limited access", which
+        // grants READ_MEDIA_VISUAL_USER_SELECTED and leaves READ_MEDIA_IMAGES
+        // denied - so the check would fail again on the next tap and prompt
+        // forever. Skipping the permission avoids the loop rather than
+        // special-casing it.
+        if (Build.VERSION.SDK_INT >= 33) {
+            try {
+                Intent picker = new Intent(MediaStore.ACTION_PICK_IMAGES);
+                picker.setType("image/*");
+                startActivityForResult(picker, REQUEST_IMAGE_PICK);
+                return;
+            } catch (Exception e) {
+                // Fall through to the intent chain below - some OEM builds and
+                // stripped-down images ship without the picker.
+                Log.w(TAG, "System photo picker unavailable, falling back", e);
+            }
         }
-        
-        if (ContextCompat.checkSelfPermission(requireContext(), permission) 
+
+        if (ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.READ_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(requireActivity(), 
-                    new String[]{permission}, 
+            requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
                     REQUEST_STORAGE_PERMISSION);
             return;
         }
@@ -653,6 +670,21 @@ public class PostFragment extends Fragment {
         return image;
     }
     
+        /**
+     * Retries whatever the permission was asked for.
+     *
+     * This method existed and had never once run. Both call sites used
+     * ActivityCompat.requestPermissions(requireActivity(), ...), which delivers
+     * the result to the *activity's* callback - and MainActivity does not
+     * override it, so the grant went nowhere. On an emulator the symptom was:
+     * tap "Photo Gallery", grant the permission, and land back on the form with
+     * nothing open and no message. The only way forward was to tap again and
+     * guess that it would work the second time.
+     *
+     * That sat on step 3 of posting a room, which is the step the vision model
+     * runs on and the only reason to use this app over Kijiji. Switching to the
+     * fragment's own requestPermissions() is the whole fix.
+     */
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
@@ -669,10 +701,11 @@ public class PostFragment extends Fragment {
                 if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     openGallery();
                 } else {
-                    String message = Build.VERSION.SDK_INT >= 33 ? 
-                        "Media access permission required to select photos" : 
-                        "Storage permission required to select photos";
-                    Toast.makeText(getContext(), message, Toast.LENGTH_LONG).show();
+                                        // Only reachable below API 33; above that the system
+                    // photo picker is used and never asks for this.
+                    Toast.makeText(getContext(),
+                            "Storage permission required to select photos",
+                            Toast.LENGTH_LONG).show();
                 }
                 break;
         }
@@ -751,7 +784,7 @@ public class PostFragment extends Fragment {
                             return;
                         }
                         restoreWriteButton();
-                        showDraftResult("Description written", "Edit it however you like");
+                        showDraftResult("Description written", "Edit it however you like", true);
                         if (draft.title != null && isBlank(binding.titleInput)) {
                             binding.titleInput.setText(draft.title);
                         }
@@ -767,7 +800,7 @@ public class PostFragment extends Fragment {
                             return;
                         }
                         restoreWriteButton();
-                        showDraftResult("Could not write it", message);
+                        showDraftResult("Could not write it", message, false);
                     }
                 });
     }
@@ -828,7 +861,7 @@ public class PostFragment extends Fragment {
                         // A rejected photo carries a specific, useful reason
                         // ("a styled interior rendering, not a photograph of a
                         // real rental"). Worth keeping on screen.
-                        showDraftResult("Could not read that photo", message);
+                        showDraftResult("Could not read that photo", message, false);
                     }
                 });
     }
@@ -887,7 +920,7 @@ public class PostFragment extends Fragment {
         String detail = draft.features.isEmpty()
                 ? "Title, rent and description are filled in - edit anything you like"
                 : summary.toString();
-        showDraftResult("Filled in from your photo", detail);
+        showDraftResult("Filled in from your photo", detail, true);
         updateStepUI();
     }
 
@@ -944,13 +977,39 @@ public class PostFragment extends Fragment {
     }
 
     /** The finished state: what it filled in, kept on screen rather than flashed. */
-    private void showDraftResult(String title, String detail) {
+        /**
+     * Shows the outcome of an AI draft attempt.
+     *
+     * `ok` exists because this card used to end every attempt with a brand
+     * blue tick, including the ones that failed - so "Could not read that
+     * photo" arrived under a success mark. On an emulator, feeding it a
+     * screenshot produced exactly that: a tick, and the words "The image is a
+     * screenshot of an app interface, not a photograph of a property."
+     *
+     * The copy was doing its job and the icon was contradicting it. An icon
+     * that says the opposite of the sentence beside it is worse than no icon,
+     * because it is read first.
+     *
+     * A failed draft is not an error the host made - the form still works and
+     * they can type it themselves - so it gets an amber info mark rather than
+     * anything alarming.
+     */
+    private void showDraftResult(String title, String detail, boolean ok) {
         if (binding == null) {
             return;
         }
         binding.aiStatusCard.setVisibility(View.VISIBLE);
         binding.aiStatusSpinner.setVisibility(View.GONE);
         binding.aiStatusDone.setVisibility(View.VISIBLE);
+        binding.aiStatusDone.setImageResource(ok
+                ? com.roomfinder.android.R.drawable.ic_check_circle
+                : com.roomfinder.android.R.drawable.ic_info);
+        androidx.core.widget.ImageViewCompat.setImageTintList(
+                binding.aiStatusDone,
+                android.content.res.ColorStateList.valueOf(
+                        androidx.core.content.ContextCompat.getColor(requireContext(),
+                                ok ? com.roomfinder.android.R.color.brand
+                                   : com.roomfinder.android.R.color.warning)));
         binding.aiStatusTitle.setText(title);
         binding.aiStatusDetail.setText(detail);
     }
