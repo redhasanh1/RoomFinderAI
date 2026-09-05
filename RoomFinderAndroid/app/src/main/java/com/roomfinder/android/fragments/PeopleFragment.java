@@ -4,7 +4,10 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.util.Log;
 import android.widget.Toast;
+
+import com.roomfinder.android.auth.AuthManager;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -198,12 +201,105 @@ public class PeopleFragment extends Fragment implements PeopleAdapter.Listener {
         showEmptyState(true, message, "Pull down to try again");
     }
 
+    /**
+     * Opens a conversation with the person whose card was tapped.
+     *
+     * This used to raise a toast saying messaging was "coming next", which was
+     * not true: the chat is fully built and opens from listing detail,
+     * favourites and the AI chat. What was missing is smaller and less obvious.
+     *
+     * roommate_profiles carries user_id but no email, and IndividualChatActivity
+     * identifies the other party by email - so there was nothing here to open a
+     * chat *with*. Rather than expose emails on a public table, the server
+     * resolves it: POST /api/roommate-conversations takes { profileId,
+     * userEmail }, looks the owner up, finds or creates the conversation, and
+     * returns its id along with the other party. That is the same endpoint the
+     * iOS app calls from its roommate detail screen.
+     *
+     * It answers 409 for your own profile, and 409 again when the owner has no
+     * account to message - both of which are worth saying out loud rather than
+     * failing silently, so the server's own message is shown.
+     */
     @Override
     public void onRoommateClick(RoommateProfile profile) {
-        // Messaging a roommate goes through the same chat the listings use.
+        AuthManager authManager = AuthManager.getInstance(requireContext());
+        if (!authManager.isUserAuthenticated()) {
+            Toast.makeText(requireContext(),
+                    "Sign in from the Profile tab to send a message",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        final String me = authManager.getUserEmail();
+        if (me == null || me.isEmpty()) {
+            Toast.makeText(requireContext(),
+                    "Could not tell which account you are signed in as",
+                    Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Toast.makeText(requireContext(),
-                "Messaging " + profile.getDisplayName() + " is coming next",
+                "Opening chat with " + profile.getDisplayName(),
                 Toast.LENGTH_SHORT).show();
+
+        new Thread(() -> {
+            try {
+                org.json.JSONObject body = new org.json.JSONObject();
+                body.put("profileId", profile.getId());
+                body.put("userEmail", me);
+
+                okhttp3.OkHttpClient client = new okhttp3.OkHttpClient.Builder()
+                        .connectTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                        .readTimeout(30, java.util.concurrent.TimeUnit.SECONDS)
+                        .build();
+
+                okhttp3.Request request = new okhttp3.Request.Builder()
+                        .url("https://www.roomfinderai.com/api/roommate-conversations")
+                        .post(okhttp3.RequestBody.create(
+                                body.toString(),
+                                okhttp3.MediaType.parse("application/json")))
+                        .build();
+
+                try (okhttp3.Response response = client.newCall(request).execute()) {
+                    String payload = response.body() != null ? response.body().string() : "";
+                    org.json.JSONObject parsed = new org.json.JSONObject(payload);
+
+                    if (!response.isSuccessful() || !parsed.optBoolean("success", false)) {
+                        // The server explains itself well here - own profile,
+                        // no account behind the profile - so pass it through
+                        // rather than replacing it with something vaguer.
+                        final String message = parsed.optString("message",
+                                "Could not open that conversation");
+                        postToUi(() -> Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show());
+                        return;
+                    }
+
+                    org.json.JSONObject data = parsed.getJSONObject("data");
+                    final String conversationId = data.getString("id");
+                    final String otherParty = data.optString("otherParty", "");
+
+                    postToUi(() -> com.roomfinder.android.activities.IndividualChatActivity
+                            .openExistingConversation(requireContext(), conversationId, otherParty));
+                }
+            } catch (Exception e) {
+                Log.e("PeopleFragment", "Could not open a roommate conversation", e);
+                postToUi(() -> Toast.makeText(requireContext(),
+                        "Could not reach the server. Check your connection.",
+                        Toast.LENGTH_LONG).show());
+            }
+        }).start();
+    }
+
+    /** Runs on the UI thread, but only while the fragment is still attached. */
+    private void postToUi(Runnable action) {
+        if (!isAdded() || getActivity() == null) {
+            return;
+        }
+        getActivity().runOnUiThread(() -> {
+            if (isAdded() && binding != null) {
+                action.run();
+            }
+        });
     }
 
     @Override
