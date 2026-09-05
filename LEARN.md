@@ -2,6 +2,42 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-04 - 72dp of dead space above the tab bar, on every screen
+
+Hasan spotted it; I had photographed it a dozen times today and not seen it.
+
+The space below the fragment content was reserved twice:
+
+```xml
+<FrameLayout android:id="@+id/fragmentContainer"
+             android:layout_marginBottom="72dp" />   <!-- activity_main.xml -->
+```
+```java
+binding.fragmentContainer.setPadding(0, bars.top, 0, tabBarHeight(bars.bottom));
+```
+
+72dp of margin plus the tab bar's full measured height as padding, against a tab
+bar that is 110dp tall. Total reserved 182dp for a 110dp bar, leaving 72dp of
+empty background above the menu on every single tab.
+
+Measured on device rather than guessed, which is what made it obvious:
+
+```
+before   ScrollView bottom = 1922   bottomNavigation top = 2111   gap 189px = 72dp
+after    ScrollView bottom = 2111   bottomNavigation top = 2111   gap 0
+```
+
+The margin is the one to delete. The runtime padding measures the real tab bar,
+which already includes the gesture-bar inset, so it is correct on any device;
+the 72dp was a guess from before that code existed. The comment above the
+padding records why it was added - the Post wizard buttons were sitting under
+the tab bar and could not be tapped - so the padding replaced the margin's job
+and nobody removed the margin.
+
+Worth remembering: a hardcoded dp reservation and a measured inset for the same
+system bar will silently add up. When both exist, the measured one wins and the
+constant goes.
+
 ## 2026-09-04 - The messages table is world-readable, and authentication is why
 
 Probing the Supabase tables the app talks to directly, with nothing but the

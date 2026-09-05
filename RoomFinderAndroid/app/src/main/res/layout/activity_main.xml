@@ -6,11 +6,20 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
+    <!--
+        No bottom margin here on purpose. MainActivity.applySystemBarInsets()
+        sets this container's bottom padding to the tab bar's own measured
+        height, which already covers the gesture bar on every device.
+
+        A 72dp margin used to sit here as well, so the space below the content
+        was reserved twice: 72dp of margin plus 110dp of padding against a tab
+        bar that is only 110dp tall. The leftover 72dp showed as a dead band
+        above the menu on every single tab.
+    -->
     <FrameLayout
         android:id="@+id/fragmentContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginBottom="72dp" />
+        android:layout_height="match_parent" />
 
     <View
         android:id="@+id/tabBarSeparator"

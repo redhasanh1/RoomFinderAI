@@ -92,7 +92,7 @@ public class SupabaseService {
                         .apply();
                 Log.d(TAG, "💾 Cached " + listings.size() + " listings");
             } catch (Exception e) {
-                Log.e(TAG, "❌ Failed to cache listings: " + e.getMessage());
+                Log.e(TAG, "❌ Failed to cache listings: " + e.getMessage(), e);
                 // Continue without caching rather than crashing
             }
         }
