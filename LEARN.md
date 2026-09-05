@@ -2,6 +2,41 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-05 - Play now refuses anything below targetSdk 36
+
+Uploading 1.0.3 to internal testing was rejected outright:
+
+    Error: Your app currently targets API level 35 and must target at least
+    API level 36 to ensure that it is built on the latest APIs.
+
+Not a warning - the Save and publish button stayed disabled with "To save, fix
+errors". This applies to internal testing too, not just production, so there is
+no way to get a build onto a tester phone without bumping first.
+
+compileSdkVersion and targetSdkVersion both moved 35 -> 36. Gradle installed
+platform 36 on its own; android-36.1 and build-tools 36.1.0/37.0.0 were already
+present.
+
+targetSdk 36 is Android 16, which tightens edge-to-edge further, so this was
+smoke-tested on a device before upload rather than trusted: the tab-bar spacing
+fix still measures a 0px gap between content and menu, the app launches, and
+logcat shows no errors. Worth re-checking on a real API 36 device when one is
+available - an API 35 emulator cannot exercise the new platform behaviour, only
+prove the build is not broken by the bump itself.
+
+Three version codes were burned getting this out: 4 (targetSdk 35, rejected),
+5 (consumed by an upload that then failed validation), 6 (shipped). Play retires
+a version code permanently the moment a bundle carrying it is accepted for
+upload, even if that release is never published - so a rejected release still
+costs the number.
+
+Two process notes from the same session. Removing a bundle from a draft release
+opens a confirmation dialog that must be answered; clicking the menu item alone
+looks like it worked and silently does nothing, which cost several rounds
+because screenshots were failing and the dialog was invisible. And the release
+notes field is pre-populated with a language tag from the previous release -
+typing into it without clearing produces "Line 3: expected </en-GB>".
+
 ## 2026-09-04 - 72dp of dead space above the tab bar, on every screen
 
 Hasan spotted it; I had photographed it a dozen times today and not seen it.
