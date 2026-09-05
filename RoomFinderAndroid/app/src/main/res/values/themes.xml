@@ -89,7 +89,7 @@
 
     <style name="Theme.RoomFinder.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/gradient_start_primary</item>
-        <item name="windowSplashScreenAnimatedIcon">@drawable/house_3d_modern</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
         <item name="postSplashScreenTheme">@style/Theme.RoomFinder</item>
     </style>
     

@@ -188,7 +188,7 @@ public class ChatFragment extends Fragment {
                 .setNegativeButton("Cancel", (dialog, which) -> {
                     dialog.dismiss();
                 })
-                .setIcon(R.drawable.ai_negotiator_icon)
+                .setIcon(R.drawable.ic_ai_negotiator)
                 .show();
     }
     

@@ -10,6 +10,7 @@ import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
@@ -228,12 +229,15 @@ public class FullscreenImageActivity extends AppCompatActivity {
                     binding.imageViewPager.setCurrentItem(currentPosition, false);
                 }
                 
+                buildPageIndicator();
+
                 // Setup page change listener
                 binding.imageViewPager.registerOnPageChangeCallback(new ViewPager2.OnPageChangeCallback() {
                     @Override
                     public void onPageSelected(int position) {
                         currentPosition = position;
                         updateImageCounter();
+                        updatePageIndicator();
                         resetAutoHideTimer();
                     }
                 });
@@ -276,6 +280,61 @@ public class FullscreenImageActivity extends AppCompatActivity {
         hideControlsRunnable = this::hideControls;
     }
     
+    /**
+     * Fills the page indicator with one dot per photo.
+     *
+     * The indicator was a LinearLayout carrying a dark rounded-pill background,
+     * 16dp of horizontal padding, 12dp of vertical padding, and a comment
+     * saying "Dynamic dots will be added programmatically". Nothing ever added
+     * them. So it drew its own background and nothing else: an empty dark
+     * lozenge floating over the photo, about 32dp by 24dp, which reads as a
+     * stray blob rather than as a control. page_indicator_selector - the 8dp
+     * dots this was meant to use - was referenced nowhere in this screen.
+     *
+     * A single dot tells you nothing you cannot already see, so a one-photo
+     * listing hides the indicator entirely rather than showing a lone dot in a
+     * pill.
+     */
+    private void buildPageIndicator() {
+        if (binding == null || binding.pageIndicator == null) {
+            return;
+        }
+        binding.pageIndicator.removeAllViews();
+
+        int count = imageUrls == null ? 0 : imageUrls.size();
+        if (count < 2) {
+            binding.pageIndicator.setVisibility(View.GONE);
+            return;
+        }
+
+        float density = getResources().getDisplayMetrics().density;
+        int size = Math.round(8 * density);
+        int gap = Math.round(4 * density);
+
+        for (int i = 0; i < count; i++) {
+            View dot = new View(this);
+            // Explicit size: the selector declares 8dp, but a View with
+            // wrap_content and a shape background measures to zero.
+            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(size, size);
+            lp.setMarginStart(i == 0 ? 0 : gap);
+            dot.setLayoutParams(lp);
+            dot.setBackgroundResource(R.drawable.page_indicator_selector);
+            binding.pageIndicator.addView(dot);
+        }
+        updatePageIndicator();
+    }
+
+    /** Marks the dot for the page now on screen; the selector does the rest. */
+    private void updatePageIndicator() {
+        if (binding == null || binding.pageIndicator == null) {
+            return;
+        }
+        int children = binding.pageIndicator.getChildCount();
+        for (int i = 0; i < children; i++) {
+            binding.pageIndicator.getChildAt(i).setSelected(i == currentPosition);
+        }
+    }
+
     private void updateImageCounter() {
         if (imageUrls != null && imageUrls.size() > 1) {
             binding.imageCounter.setText(String.format("%d / %d", currentPosition + 1, imageUrls.size()));

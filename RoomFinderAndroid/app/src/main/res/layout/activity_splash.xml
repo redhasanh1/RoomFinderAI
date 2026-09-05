@@ -20,7 +20,7 @@
             android:layout_width="96dp"
             android:layout_height="96dp"
             android:contentDescription="@string/roomfinder_logo_description"
-            android:src="@drawable/house_3d_modern" />
+            android:src="@drawable/ic_launcher_foreground" />
 
         <TextView
             android:layout_width="wrap_content"

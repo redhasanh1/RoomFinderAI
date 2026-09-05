@@ -1,7 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Adaptive icon foreground: the roomfinderai.com mark, a house outline with a
-  tick inside.
+  Adaptive icon foreground: the RoomFinderAI mark, a house outline with a
+  doorway.
+
+  Matched to the iOS app icon, at
+  ios/RoomFinderAI/Resources/Assets.xcassets/AppIcon.appiconset/AppIcon-1024.png
+  on main. Android drew a tick inside the house where iOS draws a door - same
+  family, different glyph, so the two stores showed what looked like two
+  different apps. iOS is the version that reads well, so Android follows it.
+
+  The door is filled rather than stroked. At icon size a stroked arch closes
+  into a white blob: the walls are 35 units apart, the door is about 15 of
+  those, and a 6.9 stroke either side leaves almost no gap. Filled also matches
+  iOS, where the door is solid white against the gradient.
 
   It replaces a version that drew a house, a magnifying glass, an amber chip
   and a green circle all at once - unreadable at 48dp, and the chip sat outside
@@ -27,13 +38,10 @@
         android:fillColor="#00000000"
         android:pathData="M54,26.7 L81.3,52.5 L71.7,52.5 L71.7,81.3 L36.3,81.3 L36.3,52.5 L26.7,52.5 Z" />
 
-    <!-- Tick, kept below the eave line and inside the walls so it does not
-         merge into the roof slope. -->
+    <!-- Doorway: a solid arch standing on the floor line, centred between the
+         walls. Its top stops well below the eaves so it never merges into the
+         roof slope at launcher size. -->
     <path
-        android:strokeColor="#FFFFFF"
-        android:strokeWidth="6.9"
-        android:strokeLineJoin="round"
-        android:strokeLineCap="round"
-        android:fillColor="#00000000"
-        android:pathData="M44.1,62.4 L51.1,69.7 L63.7,55.9" />
+        android:fillColor="#FFFFFF"
+        android:pathData="M46.4,81.3 L46.4,70.6 A7.6,7.6 0 0 1 61.6,70.6 L61.6,81.3 Z" />
 </vector>

@@ -343,9 +343,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             SpannableString newSpannable = new SpannableString(text);
             
             // Replace all icon placeholders with the AI Negotiator Assistant logo
-            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:home]", R.drawable.ai_negotiator_logo, context);
-            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:handshake]", R.drawable.ai_negotiator_logo, context);
-            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:document]", R.drawable.ai_negotiator_logo, context);
+            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:home]", R.drawable.ic_ai_negotiator, context);
+            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:handshake]", R.drawable.ic_ai_negotiator, context);
+            newSpannable = replaceIconWithDrawable(newSpannable, "[ICON:document]", R.drawable.ic_ai_negotiator, context);
             
             return newSpannable;
         }

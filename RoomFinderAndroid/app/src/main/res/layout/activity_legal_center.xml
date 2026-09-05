@@ -299,7 +299,7 @@
                             android:background="@drawable/circle_background"
                             android:backgroundTint="@color/purple_light"
                             android:padding="12dp"
-                            android:src="@drawable/ai_negotiator_icon"
+                            android:src="@drawable/ic_ai_negotiator"
                             android:tint="@color/purple_primary" />
 
                         <!-- Content -->

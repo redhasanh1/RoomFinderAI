@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The AI negotiator mark: two speech bubbles, one answering the other.
+
+  Replaces ai_negotiator_icon.webp and ai_negotiator_logo.jpg, which were the
+  same piece of stock clipart - a handshake inside a house - in two formats.
+  Four things were wrong with them:
+
+    - The .jpg has no alpha, so it painted a pale grey rectangle wherever it
+      landed. It was being used as the AI's avatar in chat bubbles.
+    - The .jpg had "AI Negotiator Assistant" baked into the pixels, next to a
+      label that already said so, at whatever size the ImageView happened to be.
+    - The .webp is 721x1080 - portrait - so in a square slot it drew small and
+      sat high, with a third of the frame empty.
+    - 103KB and 47KB respectively, for a glyph rendered at about 40dp.
+
+  The shape follows iOS, which uses bubble.left.and.text.bubble.right.fill for
+  the same feature. A conversation reads instantly at 24dp; a handshake with
+  individual fingers does not survive below about 96dp.
+
+  Drawn white, because most of its slots are avatars on a filled purple circle.
+  The two places that sit on a light background - the tools card and the typing
+  indicator - set android:tint themselves. No tint is declared on the vector: a
+  ?attr/ reference here resolves against whatever context inflates it, and these
+  are inflated from adapters as well as from layouts.
+
+  The bubbles deliberately do not overlap. With one fill colour an overlap needs
+  a knock-out gap to stay legible, and a knock-out has to be painted in the
+  background colour - which is not knowable here, since this sits on white, on
+  cards, and on the purple gradient.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+
+    <!-- Upper bubble: the one that speaks first, so it is the larger. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,6 H22 A5,5 0 0 1 27,11 V18 A5,5 0 0 1 22,23 H9 A5,5 0 0 1 4,18 V11 A5,5 0 0 1 9,6 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,22 L5,30 L16,22 Z" />
+
+    <!-- Reply, offset down and to the right. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M29.5,28 H39.5 A4.5,4.5 0 0 1 44,32.5 V37.5 A4.5,4.5 0 0 1 39.5,42 H29.5 A4.5,4.5 0 0 1 25,37.5 V32.5 A4.5,4.5 0 0 1 29.5,28 Z" />
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M39,41 L43,47 L32,41 Z" />
+</vector>

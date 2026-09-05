@@ -2,6 +2,62 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-05 - Android and iOS looked like two different apps
+
+Hasan: "both apps are so fuckign differnt". He was right, and the causes were
+four separate pieces of art rather than one design decision.
+
+**Look in the right place first.** I checked RoomFinderAI-IOS-CLOSED/ and
+reported that the iOS icon did not exist and that the negotiator was 131 lines
+with no goals screen. Both wrong. The live target is `ios/`, which exists on
+main and NOT on `hasan` - the branch all the Android work happens on. The real
+negotiator is 3,050 lines across 8 files including a 237-line
+NegotiationGoalsSheet. This is the same mistake as /api/listings/photos earlier
+in the week, which is already written up two entries below: **absent from the
+branch you have checked out is not absent.** Twice in two days.
+
+**The app icon.** iOS draws a house with a doorway on a blue-to-purple diagonal
+gradient (#88A0F0 -> #8A63B2, sampled from AppIcon-1024.png). Android drew a
+house with a *tick* on a flat #6366F1 - and the gradient drawable it needed was
+sitting unused in drawable/, because the adaptive icon referenced
+@color/ic_launcher_background rather than @drawable/. Same family, different
+glyph and different background, so the two stores showed what looked like two
+products. Android now matches, and the legacy mipmaps are regenerated straight
+from the iOS PNG.
+
+**The negotiator mark.** ai_negotiator_logo.jpg and ai_negotiator_icon.webp were
+the same stock clipart - a handshake inside a house - in two formats, 151KB
+between them. The .jpg had no alpha, so it painted a pale grey rectangle, and it
+was being used as the AI's avatar in chat bubbles. It also had "AI Negotiator
+Assistant" baked into the pixels, beside a label that already said so. The .webp
+is 721x1080, so in a square slot it drew small and sat high.
+
+iOS uses bubble.left.and.text.bubble.right.fill for the same feature. A
+conversation glyph reads at 24dp; a handshake with individual fingers does not
+survive below about 96dp. Replaced with a 1KB vector of two bubbles, deliberately
+not overlapping - with one fill colour an overlap needs a knock-out painted in
+the background colour, and this sits on white, on cards and on the gradient.
+
+**The splash.** windowSplashScreenAnimatedIcon pointed at house_3d_modern.webp,
+a 284KB photorealistic isometric render of a brick house with trees, on a white
+background - so it drew a white square on the purple gradient. Now the app mark.
+The render itself stays: ListingsAdapter uses it as the placeholder for listings
+with no photo, which is a fair use for it.
+
+**The empty oval on the photo viewer.** activity_fullscreen_image.xml has a
+pageIndicator LinearLayout with a dark 20dp-radius pill background, 16dp and
+12dp of padding, and a comment reading "Dynamic dots will be added
+programmatically". Nothing ever added them, in any file. So it drew its own
+background around nothing: a 32x24dp dark lozenge floating over the photo.
+page_indicator_selector, the 8dp dots it was meant to use, was referenced
+nowhere on that screen. Dots are now built from the page count, and a listing
+with one photo hides the indicator instead of showing a lone dot in a pill.
+
+Verified on device: new icon side by side with the old one in the app drawer,
+splash showing the mark on the gradient, and the indicator correctly absent on a
+one-photo listing. The dots themselves are unverified - every seed listing in
+this environment has a single photo, so the multi-photo path never ran.
+
 ## 2026-09-05 - Play now refuses anything below targetSdk 36
 
 Uploading 1.0.3 to internal testing was rejected outright:
