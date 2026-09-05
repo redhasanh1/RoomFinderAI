@@ -5550,19 +5550,26 @@ app.post('/api/analyze-property-photo', async (req, res) => {
             });
         }
 
-        // Look at the photo BEFORE generating anything from it.
+        // Look at the photo before generating from it - but no longer refuse.
         //
-        // The old check ran afterwards and judged the generated text, which
-        // always reads like a listing because it is built from a template with
-        // defaults. A logo came back as a two-bedroom house in Los Angeles.
+        // This used to return 422 and produce nothing when the picture was not
+        // a property, because an earlier version judged the generated text
+        // instead of the image and a logo came back as a two-bedroom house in
+        // Los Angeles. Refusing outright solved that and created a worse
+        // problem: a host who photographs the street, the building from across
+        // the road, or their own front door at a bad angle gets a dead end on
+        // the one step this app exists for, with nothing filled in at all.
+        //
+        // So the verdict is kept and reported rather than enforced. The draft
+        // is always produced from whatever can be read, and the response says
+        // plainly when the photo did not help so the client can tell the host
+        // to check the details rather than presenting guesses as fact. The
+        // honest failure mode is "we filled this in, please correct it", not
+        // "we refuse" and not a confident invention.
         const verdict = await validatePropertyPhoto(Buffer.from(image), config);
-        if (verdict.checked && !verdict.isProperty) {
-            console.log('🚫 Rejected non-property photo:', verdict.reason);
-            return res.status(422).json({
-                success: false,
-                rejected: true,
-                error: verdict.reason
-            });
+        const photoUnclear = Boolean(verdict.checked && !verdict.isProperty);
+        if (photoUnclear) {
+            console.log('⚠️ Photo does not look like a property, drafting anyway:', verdict.reason);
         }
 
         console.log(`🔗 Calling Cloudflare Worker: ${workerUrl}`);
@@ -5584,6 +5591,12 @@ app.post('/api/analyze-property-photo', async (req, res) => {
         console.log('📊 Analysis result:', JSON.stringify(workerResponse.data).substring(0, 200) + '...');
 
         const workerData = workerResponse.data;
+        // Carried through so the app can caveat the draft instead of hiding it.
+        if (photoUnclear && workerData && typeof workerData === 'object') {
+            workerData.photoUnclear = true;
+            workerData.photoNote = verdict.reason
+                || 'That photo was hard to read, so these details are a guess. Please check them.';
+        }
         const analysisPayload = workerData.analysis || workerData;
 
         res.json(workerData);
