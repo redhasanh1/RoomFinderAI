@@ -124,7 +124,7 @@
                     android:foreground="?attr/selectableItemBackground"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="16dp">
+                    android:padding="22dp">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -215,6 +215,74 @@
                     </LinearLayout>
 
                 </LinearLayout>
+
+
+                <!--
+                  Manual entry, offered as the smaller of two doors.
+                
+                  The AI card above and this one are the whole of step one until a choice is
+                  made: the form below starts hidden. Previously the gradient card and the
+                  eight-field form were on screen together, so the fastest route read as a
+                  banner above a wall of inputs rather than as an option, and most people
+                  simply started typing.
+                
+                  Deliberately quieter than the AI card - outlined rather than filled, one
+                  line rather than two. Both routes end at the same form; only one of them
+                  fills it in for you.
+                -->
+                <LinearLayout
+                    android:id="@+id/manualEntryCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="20dp"
+                    android:background="@drawable/ios_field_background"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="14dp">
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="Fill it in myself"
+                            android:textColor="@color/ink"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="Type the details by hand"
+                            android:textColor="@color/ink_secondary"
+                            android:textSize="13sp" />
+
+                    </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="\u203A"
+                        android:textColor="@color/ink_secondary"
+                        android:textSize="22sp" />
+
+                </LinearLayout>
+
+                <!-- Everything below is revealed once a route is chosen. -->
+                <LinearLayout
+                    android:id="@+id/manualFormContainer"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
 
                 <!-- Property Type Selection -->
                 <TextView
@@ -341,6 +409,8 @@
                     android:padding="8dp"
                     android:layout_marginBottom="16dp"
                     android:visibility="gone" />
+
+                </LinearLayout>
 
             </LinearLayout>
 

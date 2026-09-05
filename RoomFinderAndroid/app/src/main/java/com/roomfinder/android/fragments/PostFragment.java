@@ -249,6 +249,7 @@ public class PostFragment extends Fragment {
             // switched off - the form would then accept an empty listing.
             restoringDraft = false;
         }
+        revealManualForm();
         updateStepUI();
         Log.d(TAG, "Draft restored at step " + currentStep);
     }
@@ -332,6 +333,14 @@ public class PostFragment extends Fragment {
         });
         
         binding.nextButton.setOnClickListener(v -> {
+            // On step one the form may still be behind the two entry cards.
+            // Validating it then would paint errors onto invisible fields and
+            // look like the button had done nothing.
+            if (currentStep == 1 && binding.manualFormContainer != null
+                    && binding.manualFormContainer.getVisibility() != View.VISIBLE) {
+                revealManualForm();
+                return;
+            }
             if (validateCurrentStep()) {
                 if (currentStep < TOTAL_STEPS) {
                     currentStep++;
@@ -505,11 +514,47 @@ public class PostFragment extends Fragment {
         });
     }
     
+    /**
+     * Shows the form, and stands the two entry cards down.
+     *
+     * Step one now opens as a choice - the AI card, or "Fill it in myself" -
+     * with the form hidden behind it. Before, the gradient card sat directly
+     * above eight visible inputs, so the quick route read as an advertisement
+     * over a wall of typing rather than as an alternative to it, and most
+     * people just started typing.
+     *
+     * Called from both routes. The AI path calls it when a draft comes back, so
+     * the host lands on a form that is already filled rather than on an empty
+     * one they have to notice has changed.
+     *
+     * The cards go away once used: leaving "Fill it in myself" on screen above
+     * a form you are already filling in is noise, and leaving the AI card there
+     * invites a second analysis that would overwrite what was just typed.
+     */
+    private void revealManualForm() {
+        if (binding == null || binding.manualFormContainer == null) {
+            return;
+        }
+        if (binding.manualFormContainer.getVisibility() == View.VISIBLE) {
+            return;
+        }
+        binding.manualFormContainer.setVisibility(View.VISIBLE);
+        if (binding.manualEntryCard != null) {
+            binding.manualEntryCard.setVisibility(View.GONE);
+        }
+        if (binding.aiDraftBanner != null) {
+            binding.aiDraftBanner.setVisibility(View.GONE);
+        }
+    }
+
     private void setupPhotoUpload() {
         binding.photoUploadArea.setOnClickListener(v -> showPhotoOptions());
 
         // Both AI routes: a photo the model reads, or the facts already typed.
         binding.aiDraftBanner.setOnClickListener(v -> showPhotoOptions());
+
+        // The quieter of the two doors: straight to the form, nothing filled in.
+        binding.manualEntryCard.setOnClickListener(v -> revealManualForm());
         binding.writeForMeButton.setOnClickListener(v -> writeListingFromDetails());
     }
     
@@ -925,6 +970,7 @@ public class PostFragment extends Fragment {
         String detail = draft.features.isEmpty()
                 ? "Title, rent and description are filled in - edit anything you like"
                 : summary.toString();
+        revealManualForm();
         showDraftResult("Filled in from your photo", detail, true);
         updateStepUI();
     }
