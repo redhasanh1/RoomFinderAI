@@ -31,6 +31,7 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
     private static final int VIEW_TYPE_USER_PHOTO = 5;
     private static final int VIEW_TYPE_AI_PHOTO = 6;
     private static final int VIEW_TYPE_PROPERTY_CARD = 7;
+    private static final int VIEW_TYPE_DEAL_CARD = 8;
     
     private List<ChatMessage> messages;
     private String currentUserEmail;
@@ -60,6 +61,8 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         // Determine view type based on sender and typing status
         if (message.isTyping()) {
             return VIEW_TYPE_TYPING;
+        } else if (message.getType() == ChatMessage.MessageType.DEAL_CARD) {
+            return VIEW_TYPE_DEAL_CARD;
         } else if (message.getType() == ChatMessage.MessageType.PROPERTY_CARD) {
             return VIEW_TYPE_PROPERTY_CARD;
         } else if (message.isFileMessage()) {
@@ -115,6 +118,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             case VIEW_TYPE_PROPERTY_CARD:
                 View propertyCardView = inflater.inflate(R.layout.item_chat_property_card, parent, false);
                 return new PropertyCardViewHolder(propertyCardView);
+            case VIEW_TYPE_DEAL_CARD:
+                View dealView = inflater.inflate(R.layout.item_chat_deal_card, parent, false);
+                return new DealCardViewHolder(dealView);
             case VIEW_TYPE_SYSTEM:
             default:
                 View systemView = inflater.inflate(R.layout.item_chat_system, parent, false);
@@ -137,6 +143,9 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
             applySlideInAnimation(holder.itemView, VIEW_TYPE_USER);
         } else if (holder instanceof AiPhotoViewHolder) {
             ((AiPhotoViewHolder) holder).bind(message);
+            applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
+        } else if (holder instanceof DealCardViewHolder) {
+            ((DealCardViewHolder) holder).bind(message);
             applySlideInAnimation(holder.itemView, VIEW_TYPE_AI);
         } else if (holder instanceof PropertyCardViewHolder) {
             PropertyCardViewHolder propertyHolder = (PropertyCardViewHolder) holder;
@@ -678,6 +687,76 @@ public class ChatAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolder> {
         }
     }
     
+    /**
+     * The green card shown when a landlord agrees.
+     *
+     * Every line under the headline is optional. A landlord can agree without
+     * naming a figure, or agree only to a viewing, and the card is still worth
+     * showing - so absent values hide their row rather than printing "null" or
+     * an empty line.
+     */
+    static class DealCardViewHolder extends RecyclerView.ViewHolder {
+        private final android.widget.TextView headline;
+        private final android.widget.TextView room;
+        private final android.widget.TextView saving;
+        private final android.widget.TextView viewing;
+
+        DealCardViewHolder(@NonNull View itemView) {
+            super(itemView);
+            headline = itemView.findViewById(R.id.dealHeadline);
+            room = itemView.findViewById(R.id.dealRoom);
+            saving = itemView.findViewById(R.id.dealSaving);
+            viewing = itemView.findViewById(R.id.dealViewing);
+        }
+
+        void bind(ChatMessage message) {
+            ChatMessage.Deal deal = message.getDeal();
+            if (deal == null) {
+                // Should not happen, but a card with no deal must not crash the
+                // conversation it is sitting in.
+                headline.setText(message.getContent());
+                room.setVisibility(View.GONE);
+                saving.setVisibility(View.GONE);
+                viewing.setVisibility(View.GONE);
+                return;
+            }
+
+            headline.setText(deal.price != null
+                    ? String.format(java.util.Locale.CANADA, "We secured it at $%d/month", deal.price)
+                    : "We secured it");
+
+            if (deal.room != null && !deal.room.isEmpty()) {
+                room.setVisibility(View.VISIBLE);
+                room.setText(deal.room);
+            } else {
+                room.setVisibility(View.GONE);
+            }
+
+            Integer saved = deal.savedPerMonth();
+            if (saved != null) {
+                saving.setVisibility(View.VISIBLE);
+                // The yearly figure is what turns $75 into the $900 it is.
+                saving.setText(String.format(java.util.Locale.CANADA,
+                        "$%d a month under asking, about $%d over a year.", saved, saved * 12));
+            } else {
+                saving.setVisibility(View.GONE);
+            }
+
+            if (deal.viewing != null && !deal.viewing.isEmpty()) {
+                viewing.setVisibility(View.VISIBLE);
+                viewing.setText(String.format(java.util.Locale.CANADA,
+                        "Viewing booked for %s.", deal.viewing));
+            } else {
+                viewing.setVisibility(View.GONE);
+            }
+
+            itemView.setContentDescription(deal.price != null
+                    ? String.format(java.util.Locale.CANADA,
+                            "We secured it at $%d a month, %s", deal.price, deal.room)
+                    : "We secured " + deal.room);
+        }
+    }
+
     static class PropertyCardViewHolder extends RecyclerView.ViewHolder {
         TextView propertyTitle;
         TextView propertyLocation;

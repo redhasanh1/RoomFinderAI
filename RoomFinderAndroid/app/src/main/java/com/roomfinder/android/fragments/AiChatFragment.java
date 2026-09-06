@@ -124,6 +124,15 @@ public class AiChatFragment extends Fragment {
                         addMessageAndUpdate(aiMessage);
                     });
                 }
+
+                @Override
+                public void onDeal(ChatMessage.Deal deal) {
+                    // The one moment in this conversation worth interrupting
+                    // for, so it gets its own card rather than another grey
+                    // bubble that scrolls past.
+                    mainHandler.post(() -> addMessageAndUpdate(
+                            ChatMessage.createDealMessage("The landlord agreed.", deal)));
+                }
                 
                 @Override
                 public void onSearchResults(List<Listing> listings) {

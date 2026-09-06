@@ -19,6 +19,7 @@ public class ChatMessage {
     private Long fileSize; // For file messages
     private String fileType; // For file messages
     private Listing associatedListing; // For property card messages
+    private Deal deal; // For deal card messages
     
     public enum MessageType {
         TEXT,
@@ -29,7 +30,45 @@ public class ChatMessage {
         ERROR,
         USER_MESSAGE,
         FILE_MESSAGE,
-        PROPERTY_CARD
+        PROPERTY_CARD,
+        /** A landlord agreed. Rendered as the green deal card, not as chat text. */
+        DEAL_CARD
+    }
+
+    /**
+     * What was actually agreed, once a landlord says yes.
+     *
+     * Mirrors NegotiationMessage.Deal on iOS. Android announced a win as a line
+     * of chat - "Negotiation Success! I've successfully negotiated terms for
+     * listing 4f2a..." - which names a database id and no money. The whole
+     * point of the feature is the number, and the number was the one thing
+     * missing.
+     *
+     * asking is kept alongside price so the saving can be shown rather than
+     * asserted. Both are optional: a landlord can agree to a viewing or to
+     * terms without a figure changing hands, and a card saying "we secured it"
+     * is still worth showing.
+     */
+    public static class Deal {
+        public final String room;
+        public final Integer price;
+        public final Integer asking;
+        public final String viewing;
+
+        public Deal(String room, Integer price, Integer asking, String viewing) {
+            this.room = room;
+            this.price = price;
+            this.asking = asking;
+            this.viewing = viewing;
+        }
+
+        /** Only when the landlord actually came down; never a negative saving. */
+        public Integer savedPerMonth() {
+            if (price == null || asking == null || asking <= price) {
+                return null;
+            }
+            return asking - price;
+        }
     }
     
     // Constructors
@@ -108,6 +147,21 @@ public class ChatMessage {
         ChatMessage message = new ChatMessage(content, "ai", MessageType.PROPERTY_CARD);
         message.setAssociatedListing(listing);
         return message;
+    }
+
+    /** A landlord agreed. The content is the fallback for anything not showing the card. */
+    public static ChatMessage createDealMessage(String content, Deal deal) {
+        ChatMessage message = new ChatMessage(content, "ai", MessageType.DEAL_CARD);
+        message.setDeal(deal);
+        return message;
+    }
+
+    public Deal getDeal() {
+        return deal;
+    }
+
+    public void setDeal(Deal deal) {
+        this.deal = deal;
     }
     
     // Getters and Setters

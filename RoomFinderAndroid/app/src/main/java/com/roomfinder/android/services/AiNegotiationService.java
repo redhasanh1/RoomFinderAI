@@ -60,6 +60,8 @@ public class AiNegotiationService {
     
     // Conversation state management
     private Map<String, ConversationState> activeConversations = new HashMap<>();
+    /** Listing id to its title, so a deal card can name the room rather than an id. */
+    private final Map<String, String> listingTitles = new HashMap<>();
     
     // Track conversation IDs by listing ID for follow-up messages
     private Map<String, String> listingToConversationMap = new ConcurrentHashMap<>();
@@ -74,6 +76,12 @@ public class AiNegotiationService {
         void onNegotiationStarted(String listingId);
         void onNegotiationComplete(String listingId, String result);
         void onError(String error);
+
+        /**
+         * A landlord agreed. Carries the numbers so the chat can show the deal
+         * card rather than a sentence naming a listing id.
+         */
+        void onDeal(com.roomfinder.android.models.ChatMessage.Deal deal);
     }
     
     private AiChatCallback callback;
@@ -1478,14 +1486,63 @@ public class AiNegotiationService {
     /**
      * Handle negotiation success
      */
+    /**
+     * Turns the tracked prices into something worth showing.
+     *
+     * Returns null when there is nothing numeric to say - a landlord can agree
+     * without ever naming a figure, and an empty card is worse than a sentence.
+     *
+     * The asking price is the first figure the landlord quoted rather than the
+     * listing's advertised price. The advertised price is what they wanted; the
+     * first quote is what they were actually asking this tenant, and that is
+     * the gap the negotiator closed.
+     */
+    private ChatMessage.Deal buildDeal(String listingId, String finalTerms) {
+        try {
+            ConversationState state = activeConversations.get(listingId);
+            Integer agreed = state != null ? state.bestLandlordPrice : null;
+            Integer asking = null;
+            if (state != null && state.landlordPrices != null && !state.landlordPrices.isEmpty()) {
+                asking = state.landlordPrices.get(0);
+            }
+
+            String room = listingTitles.get(listingId);
+            if (room == null || room.isEmpty()) {
+                room = "the room";
+            }
+
+            if (agreed == null && asking == null) {
+                return null;
+            }
+            return new ChatMessage.Deal(room, agreed, asking, null);
+        } catch (Exception e) {
+            Log.e(TAG, "Could not assemble the deal card", e);
+            return null;
+        }
+    }
+
     private void handleNegotiationSuccess(org.json.JSONObject update) {
         try {
             String listingId = update.optString("listing_id", "");
             String finalTerms = update.optString("final_terms", "");
             
+            // The numbers, dug out of the state we have been keeping all
+            // along. This used to announce a win as "I've successfully
+            // negotiated terms for listing 4f2a-..." - a database id and no
+            // money, for a feature whose entire point is the money.
+            // bestLandlordPrice is what they came down to; the first price
+            // they quoted is where they started, and that gap is the saving.
+            final ChatMessage.Deal deal = buildDeal(listingId, finalTerms);
+
             mainHandler.post(() -> {
                 if (callback != null) {
-                    callback.onMessage("AI", "🎉 **Negotiation Success!** \n\nGreat news! I've successfully negotiated terms for listing " + listingId);
+                    if (deal != null) {
+                        callback.onDeal(deal);
+                    } else {
+                        // No figures to show. Still say it plainly rather
+                        // than going quiet about a landlord agreeing.
+                        callback.onMessage("AI", "Negotiation success. The landlord agreed.");
+                    }
                     if (!finalTerms.isEmpty()) {
                         callback.onMessage("AI", "📄 **Final Terms:** " + finalTerms);
                     }

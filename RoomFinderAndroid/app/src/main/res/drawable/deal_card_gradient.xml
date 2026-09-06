@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The background for a struck deal. Green, and the only green in the app.
+
+  Everything else here is the brand purple, which is exactly why this one is
+  not: a deal is the single moment worth interrupting the conversation for, and
+  it should not look like another assistant message.
+
+  Matches the iOS card, which uses a green gradient from top-leading to
+  bottom-trailing at 18pt corners.
+-->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <gradient
+        android:angle="315"
+        android:startColor="#2E9E63"
+        android:endColor="#1F7A4A" />
+    <corners android:radius="18dp" />
+</shape>
