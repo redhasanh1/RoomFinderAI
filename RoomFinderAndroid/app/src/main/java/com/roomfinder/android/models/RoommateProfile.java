@@ -138,6 +138,11 @@ public class RoommateProfile implements Serializable {
         return moveInDate;
     }
 
+    /** What they say about the room they have going, if they have one. */
+    public String getRoomDescription() {
+        return roomDescription;
+    }
+
     public List<String> getRoomPhotos() {
         return roomPhotos;
     }

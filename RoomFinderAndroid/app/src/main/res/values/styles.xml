@@ -20,4 +20,30 @@
         <item name="android:textSize">12sp</item>
         <item name="android:lineSpacingExtra">2dp</item>
     </style>
+
+    <!-- Sections and rows on the roommate detail screen. -->
+    <style name="RoommateSection">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingHorizontal">20dp</item>
+        <item name="android:paddingBottom">20dp</item>
+    </style>
+
+    <style name="RoommateSectionHeading">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginBottom">10dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/ink</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="RoommateDetailRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:paddingVertical">7dp</item>
+        <item name="android:textColor">@color/ink_secondary</item>
+        <item name="android:textSize">15sp</item>
+    </style>
 </resources>

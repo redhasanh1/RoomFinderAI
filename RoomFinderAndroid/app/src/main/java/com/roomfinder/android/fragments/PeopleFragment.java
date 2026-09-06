@@ -220,8 +220,49 @@ public class PeopleFragment extends Fragment implements PeopleAdapter.Listener {
      * account to message - both of which are worth saying out loud rather than
      * failing silently, so the server's own message is shown.
      */
+    /**
+     * Tapping a person opens their profile, not a conversation.
+     *
+     * Messaging straight from the list was the first version of this and it was
+     * too eager: it started a real thread with a stranger on a single tap, off
+     * the two lines that fit on a card. iOS opens the detail screen and puts
+     * "Message them" behind a second, deliberate tap, which is the right shape.
+     *
+     * The detail screen hands the profile back rather than opening the chat
+     * itself, so the server round trip that resolves a profile to its owner
+     * stays in one place.
+     */
+    /**
+     * The profile whose detail screen is open, so its "Message them" can be
+     * acted on when it comes back.
+     *
+     * The detail screen deliberately does not open the conversation itself:
+     * resolving a profile to a person is a server round trip - these rows carry
+     * a user_id and no email - and that belongs in one place rather than in
+     * every screen that lists people.
+     */
+    private RoommateProfile pendingProfile;
+
+    private final androidx.activity.result.ActivityResultLauncher<android.content.Intent> detailLauncher =
+            registerForActivityResult(
+                    new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(),
+                    result -> {
+                        if (result.getResultCode() == android.app.Activity.RESULT_OK
+                                && pendingProfile != null) {
+                            messageRoommate(pendingProfile);
+                        }
+                        pendingProfile = null;
+                    });
+
     @Override
     public void onRoommateClick(RoommateProfile profile) {
+        pendingProfile = profile;
+        detailLauncher.launch(
+                com.roomfinder.android.activities.RoommateDetailActivity.intent(requireContext(), profile));
+    }
+
+    /** Opens the conversation, once the detail screen asks for it. */
+    private void messageRoommate(RoommateProfile profile) {
         AuthManager authManager = AuthManager.getInstance(requireContext());
         if (!authManager.isUserAuthenticated()) {
             Toast.makeText(requireContext(),

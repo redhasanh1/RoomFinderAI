@@ -72,6 +72,11 @@
             android:windowSoftInputMode="adjustResize" />
             
         <activity
+            android:name=".activities.RoommateDetailActivity"
+            android:exported="false"
+            android:theme="@style/Theme.RoomFinder" />
+
+        <activity
             android:name=".activities.ListingDetailActivity"
             android:exported="true"
             android:windowSoftInputMode="adjustResize">
