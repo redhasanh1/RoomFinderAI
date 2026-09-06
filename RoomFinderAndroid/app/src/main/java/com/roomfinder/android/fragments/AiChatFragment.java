@@ -99,6 +99,10 @@ public class AiChatFragment extends Fragment {
     
     private void initializeServices() {
         aiService = new AiNegotiatorService();
+        // Whatever the tenant last confirmed, so the first message of the
+        // session already argues their case rather than a generic one.
+        aiService.setGoals(com.roomfinder.android.models.NegotiationGoals.load(
+                requireContext(), AuthManager.getInstance(requireContext()).getUserEmail()));
         mainHandler = new Handler(Looper.getMainLooper());
         
         // Initialize AI Negotiation Service for background messaging
@@ -292,6 +296,11 @@ public class AiChatFragment extends Fragment {
         NegotiationGoalsSheet.show(getParentFragmentManager(), goals -> {
             if (!isAdded()) {
                 return;
+            }
+            // Hand them straight to the service, or the change would not take
+            // effect until the screen was reopened.
+            if (aiService != null) {
+                aiService.setGoals(goals);
             }
             Toast.makeText(requireContext(),
                     "Goals set: " + goals.summary(),

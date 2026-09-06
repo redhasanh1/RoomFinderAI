@@ -295,6 +295,20 @@ public class AiNegotiatorService {
         }
     }
     
+    /**
+     * What the tenant told us to argue for, or null if they have not said.
+     *
+     * Held rather than loaded here because this service has no Context - the
+     * screen that owns it hands the goals in, and hands them in again when they
+     * are changed, so a negotiation started after a change uses the new ones.
+     */
+    private com.roomfinder.android.models.NegotiationGoals goals;
+
+    /** Called by the chat screen on open, and again whenever goals are confirmed. */
+    public void setGoals(com.roomfinder.android.models.NegotiationGoals goals) {
+        this.goals = goals;
+    }
+
     private String buildSystemPrompt() {
         return "You are an AI rental negotiation assistant for RoomFinderAI. Your role is to:\n\n" +
                "1. Help users find rental properties by understanding their criteria (location, price, type, etc.)\n" +
@@ -305,7 +319,86 @@ public class AiNegotiatorService {
                "When users provide search criteria, acknowledge what you understand and let them know you'll search the database. " +
                "For negotiation help, provide specific tactics and ready-to-send message templates. " +
                "Be professional, helpful, and focus on getting users the best rental deals possible.\n\n" +
-               "Keep responses concise but informative. Always ask clarifying questions when criteria are unclear.";
+               "Keep responses concise but informative. Always ask clarifying questions when criteria are unclear."
+               + goalsSection();
+    }
+
+    /**
+     * The tenant's own terms, appended to the prompt.
+     *
+     * Without this the negotiator argued in general: no budget to hold, no
+     * target to aim at, and one fixed manner however the tenant wanted it
+     * handled. iOS has sent these since it shipped; Android collected them and
+     * then ignored them, which is arguably worse than not asking.
+     *
+     * Only confirmed goals are used. Unconfirmed ones are a draft the tenant
+     * may still be editing, and this text goes into messages sent on their
+     * behalf - the same "lock in" gate the website applies.
+     *
+     * The maximum is stated as a hard limit rather than a preference because a
+     * model given "around $1500" will happily agree to $1600.
+     */
+    private String goalsSection() {
+        if (goals == null || !goals.isConfirmed() || !goals.isUsable()) {
+            return "";
+        }
+
+        StringBuilder b = new StringBuilder("\n\nTHE TENANT'S TERMS. Argue for these:\n");
+        b.append("- Never agree above $").append(Math.round(goals.maxRent))
+         .append(" a month. This is a hard limit, not a preference.\n");
+        if (goals.targetRent != null && goals.targetRent > 0) {
+            b.append("- Aim for $").append(Math.round(goals.targetRent)).append(" a month.\n");
+        }
+        if (goals.city != null && !goals.city.isEmpty()) {
+            b.append("- Looking in ").append(goals.city).append(".\n");
+        }
+        if (goals.moveInDate != null && !goals.moveInDate.isEmpty()) {
+            b.append("- Moving in from ").append(goals.moveInDate).append(".\n");
+        }
+        if (goals.leaseMonths != null && goals.leaseMonths > 0) {
+            b.append("- Wants a ").append(goals.leaseMonths).append(" month lease.\n");
+        }
+
+        StringBuilder musts = new StringBuilder();
+        if (goals.parkingNeeded) musts.append("parking, ");
+        if (goals.furnished) musts.append("furnished, ");
+        if (goals.utilitiesIncluded) musts.append("utilities included, ");
+        if (goals.petFriendly) musts.append("pet friendly, ");
+        if (musts.length() > 0) {
+            b.append("- Must have: ").append(musts.substring(0, musts.length() - 2)).append(".\n");
+        }
+
+        if (goals.askLowerDeposit || goals.askFirstMonthFree) {
+            b.append("- If the landlord will not move on rent, ask instead for ");
+            if (goals.askLowerDeposit && goals.askFirstMonthFree) {
+                b.append("a lower deposit or the first month free");
+            } else if (goals.askLowerDeposit) {
+                b.append("a lower deposit");
+            } else {
+                b.append("the first month free");
+            }
+            b.append(".\n");
+        }
+
+        // Their side of the case - why a landlord should want them.
+        StringBuilder about = new StringBuilder();
+        if (goals.employment != null && !goals.employment.isEmpty()) {
+            about.append(goals.employment).append(", ");
+        }
+        if (goals.occupants != null && !goals.occupants.isEmpty()) {
+            about.append(goals.occupants).append(", ");
+        }
+        if (goals.nonSmoker) about.append("non-smoker, ");
+        if (about.length() > 0) {
+            b.append("- About the tenant: ").append(about.substring(0, about.length() - 2)).append(".\n");
+        }
+        if (goals.notes != null && !goals.notes.isEmpty()) {
+            b.append("- They also said: ").append(goals.notes).append("\n");
+        }
+
+        b.append("- Negotiate in a manner that is ").append(goals.assertiveness.apiValue)
+         .append(", with a ").append(goals.tone.key).append(" tone.\n");
+        return b.toString();
     }
     
     private JSONObject buildOpenAiRequest(String systemPrompt, String userMessage) throws JSONException {
