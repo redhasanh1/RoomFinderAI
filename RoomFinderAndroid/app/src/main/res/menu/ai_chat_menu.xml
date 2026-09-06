@@ -2,6 +2,15 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
     
+
+    <!-- Ordered above Clear Chat: setting what the negotiator argues for is a
+         thing people do repeatedly, wiping the history is a thing they do once. -->
+    <item
+        android:id="@+id/action_negotiation_goals"
+        android:title="Negotiation goals"
+        app:showAsAction="never"
+        android:orderInCategory="10" />
+
     <item
         android:id="@+id/action_clear_chat"
         android:title="Clear Chat History"

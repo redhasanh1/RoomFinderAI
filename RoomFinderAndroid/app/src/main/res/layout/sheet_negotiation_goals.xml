@@ -1,0 +1,325 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What the negotiator argues for, and how hard.
+
+  Mirrors NegotiationGoalsSheet on iOS section for section. Android had no
+  equivalent at all, so every negotiation ran with no budget, no target and one
+  fixed manner regardless of what the tenant wanted.
+
+  Checkable chips rather than switches: this project already uses ChipGroup in
+  22 layouts and has no switch anywhere, so a row of switches would be the only
+  one in the app.
+-->
+<androidx.core.widget.NestedScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/surface_card">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="20dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:text="Negotiation goals"
+            android:textColor="@color/ink"
+            android:textSize="22sp" />
+
+        <TextView
+            android:id="@+id/goalsSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginBottom="20dp"
+            android:text="The negotiator argues for these. Nothing is sent to a landlord until you confirm them."
+            android:textColor="@color/ink_secondary"
+            android:textSize="13sp" />
+
+        <!-- ── Rent ─────────────────────────────────────────────── -->
+        <TextView style="@style/GoalsSectionHeading" android:text="Rent" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Most you would pay per month"
+            app:prefixText="$">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalMaxRent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="What you are hoping for"
+            app:prefixText="$">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalTargetRent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            style="@style/GoalsFootnote"
+            android:text="The negotiator will never agree above the lower of your maximum and the asking price." />
+
+        <!-- ── Where and when ───────────────────────────────────── -->
+        <TextView style="@style/GoalsSectionHeading" android:text="Where and when" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="City or area">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalCity"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textCapWords" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Move in from (e.g. 1 November)">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalMoveIn"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Lease length in months">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalLeaseMonths"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="number" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <!-- ── How it negotiates ────────────────────────────────── -->
+        <TextView style="@style/GoalsSectionHeading" android:text="How hard to push" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/goalAssertiveness"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipGentle"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Gentle" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFirm"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Firm" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAggressive"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Aggressive" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            android:id="@+id/goalAssertivenessExplainer"
+            style="@style/GoalsFootnote"
+            android:text="Holds your number, pushes back once or twice." />
+
+        <TextView style="@style/GoalsSectionHeading" android:text="Tone" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/goalTone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFriendly"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:text="Friendly" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipNeutral"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Neutral" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipProfessional"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Professional" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- ── Must-haves ───────────────────────────────────────── -->
+        <TextView style="@style/GoalsSectionHeading" android:text="Must-haves" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/goalMustHaves"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipParking"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Parking" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFurnished"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Furnished" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipUtilities"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Utilities included" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipPets"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Pet friendly" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- ── Concessions ──────────────────────────────────────── -->
+        <TextView style="@style/GoalsSectionHeading" android:text="Worth asking for" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/goalAsks"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipLowerDeposit"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Lower deposit" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipFirstMonthFree"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="First month free" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <TextView
+            style="@style/GoalsFootnote"
+            android:text="Used when the landlord will not move on rent. A smaller deposit is often easier for them to say yes to." />
+
+        <!-- ── Your case ────────────────────────────────────────── -->
+        <TextView style="@style/GoalsSectionHeading" android:text="Your case" />
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Work or study">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalEmployment"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Who is moving in">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalOccupants"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/goalAboutYou"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipNonSmoker"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Non-smoker" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="Anything else worth mentioning">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/goalNotes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="textMultiLine"
+                android:minLines="2" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/goalsConfirmButton"
+            style="@style/Widget.RoomFinder.Button"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:layout_marginTop="24dp"
+            android:text="Confirm and use these"
+            android:textSize="16sp"
+            app:cornerRadius="14dp" />
+
+        <TextView
+            style="@style/GoalsFootnote"
+            android:gravity="center"
+            android:text="You can change these at any time." />
+
+    </LinearLayout>
+</androidx.core.widget.NestedScrollView>

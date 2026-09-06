@@ -261,6 +261,10 @@ public class AiChatFragment extends Fragment {
                 popup.getMenuInflater().inflate(R.menu.ai_chat_menu, popup.getMenu());
                 
                 popup.setOnMenuItemClickListener(item -> {
+                    if (item.getItemId() == R.id.action_negotiation_goals) {
+                        openNegotiationGoals();
+                        return true;
+                    }
                     if (item.getItemId() == R.id.action_clear_chat) {
                         showClearChatConfirmation();
                         return true;
@@ -273,6 +277,28 @@ public class AiChatFragment extends Fragment {
         }
     }
     
+    /**
+     * Opens the goals sheet, and says what changed when it closes.
+     *
+     * Until now Android negotiated with no budget, no target and one fixed
+     * manner, whatever the tenant wanted - iOS has had NegotiationGoalsSheet
+     * and the website has had the same panel since the start.
+     *
+     * The confirmation toast repeats the numbers back. Goals are the one thing
+     * here that get sent to a real landlord on the tenant's behalf, so a silent
+     * save would leave them guessing whether it took.
+     */
+    private void openNegotiationGoals() {
+        NegotiationGoalsSheet.show(getParentFragmentManager(), goals -> {
+            if (!isAdded()) {
+                return;
+            }
+            Toast.makeText(requireContext(),
+                    "Goals set: " + goals.summary(),
+                    Toast.LENGTH_LONG).show();
+        });
+    }
+
     // Welcome message is now handled by AiNegotiationService to avoid duplicates
     
     // Check if user response matches conversation context (matching web ai-chat.js exactly)
