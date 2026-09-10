@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="apple-itunes-app" content="app-id=6802455334">
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <title>RoomFinderAI — Find a Room, Split the Rent, Negotiate It Down</title>
 <!-- SEO:start (managed) -->
@@ -62,6 +63,42 @@
               "urlTemplate": "https://www.roomfinderai.com/listings.html?search={search_term_string}"
             },
             "query-input": "required name=search_term_string"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://www.roomfinderai.com/#app-ios",
+          "name": "RoomFinderAI",
+          "operatingSystem": "iOS",
+          "applicationCategory": "LifestyleApplication",
+          "url": "https://apps.apple.com/ca/app/roomfinderai/id6802455334",
+          "installUrl": "https://apps.apple.com/ca/app/roomfinderai/id6802455334",
+          "description": "Browse rooms for rent, sublets and roommates in the GTA. Post a room from one photo.",
+          "publisher": {
+            "@id": "https://www.roomfinderai.com/#organization"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "CAD"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://www.roomfinderai.com/#app-android",
+          "name": "RoomFinderAI",
+          "operatingSystem": "Android",
+          "applicationCategory": "LifestyleApplication",
+          "url": "https://play.google.com/store/apps/details?id=com.roomfinderai.android",
+          "installUrl": "https://play.google.com/store/apps/details?id=com.roomfinderai.android",
+          "description": "Browse rooms for rent, sublets and roommates in the GTA. Post a room from one photo.",
+          "publisher": {
+            "@id": "https://www.roomfinderai.com/#organization"
+          },
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "CAD"
           }
         }
       ]
@@ -1534,6 +1571,9 @@
                 <!-- Listings - Standalone -->
                 <a href="listings.html" class="nav-item">Listings</a>
 
+                <!-- Landlord entry point: supply is the bottleneck, so it gets a top-level slot -->
+                <a href="for-landlords.html" class="nav-item">List a Room</a>
+
                 <!-- Browse Dropdown -->
                 <div class="dropdown">
                     <button class="nav-item dropdown-trigger" onclick="toggleDropdown('browse')">
@@ -1613,6 +1653,7 @@
                         </button>
                         <div class="mobile-section-content" id="browse-section">
                             <a href="listings.html" class="mobile-menu-item">Browse Listings</a>
+                            <a href="for-landlords.html" class="mobile-menu-item">List a Room</a>
                             <a href="sublease.html" class="mobile-menu-item">Sublease</a>
                         </div>
                     </div>

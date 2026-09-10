@@ -2,6 +2,33 @@
 
 Running log of non-obvious fixes and the reasoning behind them. Newest on top.
 
+## 2026-09-10 - App Store keywords and subtitle are frozen once a version is approved
+
+Tried to fix the iOS keyword field, which was missing the single highest-volume
+term in the Canadian market: it read `sublet,sublease,flatmate,...` and had no
+`roommate` at all. "Flatmate" is British; nobody here searches it.
+
+The App Store Connect UI accepted the edit, enabled Save, and then silently did
+nothing. The reason only showed up in the network log: the PATCH to
+`/iris/v1/appStoreVersionLocalizations/<id>` came back **409**, and the body
+said `Attribute 'keywords' cannot be edited at this time`. Subtitle failed the
+same way on `appInfoLocalizations` with `INVALID_STATE`.
+
+The cause is the version state. 1.0.1 is `READY_FOR_DISTRIBUTION` - approved and
+waiting to release - and Apple locks the indexed metadata fields in that state.
+They unlock only for a version that is still editable, which in practice means
+**keywords and subtitle can only change when you ship a new build**. Plan them
+with the release, not after it.
+
+`promotionalText` is the exception and PATCHed fine at any time, because it is
+not indexed for search and needs no review.
+
+Two process notes. The Save button stays enabled on failure, so "Save was
+clickable" proves nothing - read the network log or re-fetch the record and
+compare. And the earlier note that the subtitle was empty was simply wrong; it
+was `"Negotiate rent, find roommates"`, which is worth replacing anyway since
+"negotiate" has no search volume and "find" is already in the app name.
+
 ## 2026-09-04 - Production is ahead of `main`, not just different from `hasan`
 
 Worth stating separately because it changes what a deploy means.
