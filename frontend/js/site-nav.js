@@ -79,6 +79,11 @@
             // weakest of the four, so it sits last, just before the More menu.
             '<a href="index.html" class="nav-item">Home</a>' +
             '<a href="listings.html" class="nav-item">Listings</a>' +
+            // Supply is the bottleneck, so the landlord entry point is top
+            // level rather than buried in More. Every outreach email points
+            // at the site root, and an operator who lands there needs a way
+            // in that is not the tenant-facing negotiator hero.
+            '<a href="for-landlords.html" class="nav-item">List a Room</a>' +
             '<a href="ai-negotiator.html" class="nav-item">AI Negotiator</a>' +
             '<a href="roommate-matching.html" class="nav-item">RoomPal</a>' +
             '<a href="sublease.html" class="nav-item">Sublease</a>' +
@@ -131,6 +136,7 @@
             '<button type="button" class="mobile-section-header" onclick="toggleMobileSection(\'browse\')">Browse <span class="mobile-arrow" id="browse-arrow">▼</span></button>' +
             '<div class="mobile-section-content" id="browse-section">' +
             '<a href="listings.html" class="mobile-menu-item" onclick="closeMobileMenu()">Listings</a>' +
+            '<a href="for-landlords.html" class="mobile-menu-item" onclick="closeMobileMenu()">List a Room</a>' +
             
             '<a href="sublease.html" class="mobile-menu-item" onclick="closeMobileMenu()">Subleasing</a>' +
             '</div></div>' +
