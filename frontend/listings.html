@@ -595,6 +595,29 @@
                     </button>
                 </div>
                 
+            <!--
+              Photo-first entry. Every outreach email promises "add one photo
+              and it drafts the title, rent and description" - which was true
+              in the Android app and not on the web, where a landlord met ten
+              manual fields instead. Same /api/analyze-property-photo endpoint
+              the app uses. Fields stay editable and the copy says plainly that
+              a draft was filled in, so nothing is asserted on the landlord's
+              behalf without them seeing it.
+            -->
+            <div id="aiDraftBlock" class="mb-6 rounded-xl p-5 text-white" style="background:linear-gradient(135deg,#667eea,#764ba2)">
+                <div class="flex items-start justify-between gap-4 flex-wrap">
+                    <div>
+                        <h3 class="text-lg font-bold">Let AI write it</h3>
+                        <p class="text-sm text-white/90 mt-1">Add one photo of the room and it fills in the title, rent and description. You can edit everything after.</p>
+                    </div>
+                    <label class="shrink-0 cursor-pointer bg-white/20 hover:bg-white/30 border border-white/40 rounded-lg px-4 py-2 text-sm font-semibold transition">
+                        Choose a photo
+                        <input type="file" id="aiDraftPhoto" accept="image/*" class="hidden">
+                    </label>
+                </div>
+                <p id="aiDraftStatus" class="text-sm mt-3 hidden"></p>
+            </div>
+
             <form id="listingForm" class="space-y-6">
                 <div class="grid grid-cols-1 sm:grid-cols-4 gap-4">
                     <div class="relative">
@@ -2343,6 +2366,67 @@
                 console.log('Modal closed by clicking outside');
             }
         });
+
+        // Photo-first drafting on the web, matching what the app does and what
+        // the outreach emails promise. Failure is always explained in words the
+        // landlord can act on - a silent failure here loses the listing.
+        (function () {
+            const input = document.getElementById('aiDraftPhoto');
+            if (!input) return;
+            const status = document.getElementById('aiDraftStatus');
+            const say = (msg, ok) => {
+                status.textContent = msg;
+                status.className = 'text-sm mt-3 ' + (ok ? 'text-white' : 'text-yellow-200');
+                status.classList.remove('hidden');
+            };
+            input.addEventListener('change', async () => {
+                const file = input.files && input.files[0];
+                if (!file) return;
+                if (file.size > 8 * 1024 * 1024) {
+                    say('That photo is over 8MB. Try a smaller one.', false);
+                    return;
+                }
+                say('Reading the photo...', true);
+                try {
+                    const b64 = await new Promise((res, rej) => {
+                        const r = new FileReader();
+                        r.onload = () => res(String(r.result).split(',')[1]);
+                        r.onerror = () => rej(new Error('read failed'));
+                        r.readAsDataURL(file);
+                    });
+                    const resp = await fetch('/api/analyze-property-photo', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ imageBase64: b64 })
+                    });
+                    const data = await resp.json().catch(() => ({}));
+                    if (!resp.ok || !data.success || !data.analysis) {
+                        say(data.error || 'That photo could not be read. Try another, or fill the form in yourself.', false);
+                        return;
+                    }
+                    const a = data.analysis;
+                    const set = (id, val) => {
+                        const el = document.getElementById(id);
+                        if (el && val !== null && val !== undefined && val !== '' && !el.value) el.value = val;
+                    };
+                    set('title', a.title);
+                    set('description', a.description);
+                    set('bedrooms', a.bedrooms);
+                    set('price', a.price);
+                    if (a.house_type) {
+                        const sel = document.getElementById('houseType');
+                        if (sel && !sel.value) {
+                            const match = [...sel.options].find(o => o.value.toLowerCase() === String(a.house_type).toLowerCase());
+                            if (match) sel.value = match.value;
+                        }
+                    }
+                    say('Filled in a draft from your photo. Check it over and change anything that is wrong.', true);
+                } catch (e) {
+                    console.error('AI draft failed', e);
+                    say('Could not reach the drafting service. Fill the form in yourself and it will still post.', false);
+                }
+            });
+        })();
 
         // Form submission handled by modules/forms/add-listing-form.js (avoids double-submit)
 
