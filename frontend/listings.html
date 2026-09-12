@@ -6428,12 +6428,29 @@
                             await window.notificationManager.init();
                             console.log('✅ Notification system initialized');
 
-                            // Show notification prompt after delay
-                            setTimeout(() => {
-                                if (window.notificationManager.permission === 'default') {
-                                    window.notificationManager.requestPermission().catch(console.error);
+                            // Never interrupt someone who is mid-way through
+                            // posting a room. This fired on a blind 10s timer,
+                            // and "List your room" opens #add-listing
+                            // immediately - so a landlord arriving from our
+                            // outreach got a notifications permission dialog
+                            // dropped over a half-filled form. Asking somebody
+                            // who has already committed to posting, while they
+                            // are posting, is the worst possible moment.
+                            const postingFormOpen = () => {
+                                const el = document.getElementById('add-listing');
+                                return !!el && !el.classList.contains('hidden');
+                            };
+                            const promptWhenIdle = () => {
+                                if (window.notificationManager.permission !== 'default') return;
+                                if (postingFormOpen()) {
+                                    // Check back rather than dropping the prompt
+                                    // entirely - they may close the form.
+                                    setTimeout(promptWhenIdle, 15000);
+                                    return;
                                 }
-                            }, 10000);
+                                window.notificationManager.requestPermission().catch(console.error);
+                            };
+                            setTimeout(promptWhenIdle, 10000);
                         } catch (error) {
                             console.error('❌ Notification system failed:', error);
                         }
