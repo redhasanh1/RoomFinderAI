@@ -18,7 +18,13 @@ Allow: /accessibility.html
 Allow: /dmca-policy.html
 
 Disallow: /profile.html
-Disallow: /listing_details.html
+# listing_details.html carries <meta name="robots" content="noindex, follow">,
+# which keeps it out of search. It must stay CRAWLABLE for two reasons:
+#  1. Disallow + noindex is self-defeating - a crawler that cannot fetch
+#     the page never reads the noindex.
+#  2. Facebook and WhatsApp link crawlers honour robots.txt, so a Disallow
+#     here stops them fetching the Open Graph tags and every shared room
+#     link goes back to previewing as a bare URL.
 Disallow: /payment.html
 Disallow: /signup.html
 
