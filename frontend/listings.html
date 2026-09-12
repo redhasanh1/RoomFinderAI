@@ -6525,17 +6525,42 @@
                                 const el = document.getElementById('add-listing');
                                 return !!el && !el.classList.contains('hidden');
                             };
-                            const promptWhenIdle = () => {
+
+                            // Ask only after the visitor has actually done
+                            // something. A bare 10s timer fired a full-screen
+                            // permission dialog over the listings before anyone
+                            // had read a single card - and every visitor we get
+                            // arrives from an outreach email, so that was a tax
+                            // on all of our traffic, not an edge case.
+                            //
+                            // Engagement = a real click or a meaningful scroll.
+                            // Someone who has browsed and is still here is a
+                            // reasonable person to ask; someone who just landed
+                            // is not.
+                            let engaged = false;
+                            const markEngaged = () => { engaged = true; };
+                            document.addEventListener('click', markEngaged, { once: true, passive: true });
+                            window.addEventListener('scroll', function onScroll() {
+                                if (window.scrollY > 600) {
+                                    engaged = true;
+                                    window.removeEventListener('scroll', onScroll);
+                                }
+                            }, { passive: true });
+
+                            let waited = 0;
+                            const promptWhenReady = () => {
                                 if (window.notificationManager.permission !== 'default') return;
-                                if (postingFormOpen()) {
-                                    // Check back rather than dropping the prompt
-                                    // entirely - they may close the form.
-                                    setTimeout(promptWhenIdle, 15000);
+                                waited += 15000;
+                                // Give up quietly after ~2 minutes rather than
+                                // following someone around the page.
+                                if (waited > 120000) return;
+                                if (!engaged || postingFormOpen()) {
+                                    setTimeout(promptWhenReady, 15000);
                                     return;
                                 }
                                 window.notificationManager.requestPermission().catch(console.error);
                             };
-                            setTimeout(promptWhenIdle, 10000);
+                            setTimeout(promptWhenReady, 30000);
                         } catch (error) {
                             console.error('❌ Notification system failed:', error);
                         }
