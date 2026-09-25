@@ -2,7 +2,8 @@
 
 AI-powered rental search, negotiation, and marketplace platform.
 
-📖 **Full documentation:** [`DOCUMENTATION.md`](DOCUMENTATION.md)
+📖 **Full documentation:** [`DOCUMENTATION.md`](DOCUMENTATION.md)  
+🎓 **Interview learning plan:** [`docs/INTERVIEW_LEARNING_PLAN.md`](docs/INTERVIEW_LEARNING_PLAN.md)
 
 > **Platform notice (August 2026):** The **web app** is live at [roomfinderai.com](https://www.roomfinderai.com). A new **iOS app** lives in [`ios/`](ios/) and is being prepared for the App Store — see [`ios/README.md`](ios/README.md) for the remaining setup steps. The **Android** app is still closed. See [`docs/PLATFORM_STATUS.md`](docs/PLATFORM_STATUS.md).
 
