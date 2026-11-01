@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Strong shadow for floating effect -->
+    <item android:top="6dp" android:left="6dp" android:right="6dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="300dp"
+                android:startColor="#40000000"
+                android:endColor="#00000000" />
+            <corners android:radius="32dp" />
+        </shape>
+    </item>
+    <!-- Glass dock -->
+    <item android:bottom="6dp" android:left="6dp" android:right="6dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="135"
+                android:startColor="#60FFFFFF"
+                android:centerColor="#40FFFFFF"
+                android:endColor="#30FFFFFF" />
+            <corners android:radius="32dp" />
+            <stroke 
+                android:width="2dp" 
+                android:color="#80FFFFFF" />
+        </shape>
+    </item>
+    <!-- Top light reflection -->
+    <item android:top="6dp" android:left="6dp" android:right="6dp" android:bottom="20dp">
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="90"
+                android:startColor="#60FFFFFF"
+                android:endColor="#00FFFFFF" />
+            <corners android:radius="32dp" />
+        </shape>
+    </item>
+</layer-list>

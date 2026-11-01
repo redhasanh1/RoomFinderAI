@@ -1,0 +1,212 @@
+<resources>
+    <string name="app_name">RoomFinder</string>
+    
+    <!-- Navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_post">Post</string>
+    <string name="nav_tools">Tools</string>
+    <string name="nav_student_housing">Housing</string>
+    <string name="nav_chat">Chat</string>
+    <string name="nav_favorites">Favorites</string>
+    <string name="nav_profile">Profile</string>
+    
+    <!-- Common -->
+    <string name="loading">Loading...</string>
+    <string name="error_loading">Error loading data</string>
+    <string name="retry">Retry</string>
+    <string name="no_results">No results found</string>
+    <string name="search_hint">Search by location...</string>
+    
+    <!-- Listings -->
+    <string name="listings_title">Available Properties</string>
+    <string name="price_format">$%s/month</string>
+    <string name="bed_bath_format" formatted="false">%d bed • %d bath</string>
+    <string name="available_now">Available Now</string>
+    <string name="contact_landlord">Contact Landlord</string>
+    
+    <!-- Post Listing -->
+    <string name="post_listing_title">Post New Listing</string>
+    <string name="title_hint">Property Title</string>
+    <string name="description_hint">Description</string>
+    <string name="price_hint">Monthly Rent ($)</string>
+    <string name="location_hint">Location</string>
+    <string name="bedrooms_hint">Bedrooms</string>
+    <string name="bathrooms_hint">Bathrooms</string>
+    <string name="add_photos">Add Photos</string>
+    <string name="post_listing">Post Listing</string>
+    
+    <!-- Favorites -->
+    <string name="favorites_title">Saved Properties</string>
+    <string name="no_favorites">No saved properties yet</string>
+    
+    <!-- Profile -->
+    <string name="profile_title">Profile</string>
+    <string name="login">Login</string>
+    <string name="signup">Sign Up</string>
+    <string name="logout">Log out</string>
+    <string name="guest_user">Guest User</string>
+    <string name="login_to_continue">Login to access all features</string>
+    <string name="cd_avatar">Profile avatar</string>
+    <string name="cd_chevron">Go to</string>
+    
+    <!-- Student Housing -->
+    <string name="student_housing_title">Student Housing</string>
+    <string name="housing_budget_title">What\'s your housing budget?</string>
+    <string name="housing_budget_subtitle">Help us find options in your price range</string>
+    <string name="monthly_budget_label">Monthly housing budget</string>
+    <string name="budget_result_format">Great! We\'ll show you options under $%d/month</string>
+    <string name="housing_options_title">Housing Options</string>
+    <string name="quick_profiles_title">Quick Student Profiles</string>
+    <string name="university_search_hint">Search your university...</string>
+    <string name="trusted_by_students">Trusted by 50,000+ Students</string>
+    <string name="housing_made_simple">Made Simple</string>
+    <string name="housing_subtitle">Find housing at your university. Free for students.</string>
+    <string name="start_budget_calculator">Start Budget Calculator</string>
+    <string name="find_roommates">Find Roommates</string>
+    <string name="ready_to_master_housing">Ready to Master Student Housing?</string>
+    <string name="students_found_solution">Join 2.3M+ students who\'ve found their perfect housing solution</string>
+    
+    <!-- Tools -->
+    <string name="tools_title">RoomFinder Tools</string>
+    <string name="tools_subtitle">Everything you need for your housing journey</string>
+    <string name="available_tools">Available Tools</string>
+    <string name="quick_actions">Quick Actions</string>
+    <string name="coming_soon">Coming Soon</string>
+    <string name="legal_center_description">AI-powered legal guidance for housing rights and documents</string>
+    <string name="mortgage_tools_description">Mortgage calculators, pre-approval tools, and buying guides</string>
+    <string name="student_housing_description">Find housing at your university with budget calculator and roommate finder</string>
+    <string name="coming_soon_message">%s coming soon! Stay tuned for updates.</string>
+    
+    <!-- Chat -->
+    <string name="chat_title">Messages</string>
+    <string name="ai_negotiator_chat">AI Negotiator Chat</string>
+    <string name="normal_chat">Chat with Listing People</string>
+    <string name="ai_negotiator_description">Get help negotiating rent and property deals</string>
+    <string name="normal_chat_description">Connect directly with property owners and renters</string>
+    <string name="type_message">Type a message...</string>
+    <string name="send">Send</string>
+    <string name="ai_chat_title">AI Negotiator</string>
+    <string name="normal_chat_title">Property Messages</string>
+    
+    <!-- Auth -->
+    <string name="email_hint">Email</string>
+    <string name="password_hint">Password</string>
+    <string name="name_hint">Full Name</string>
+    <string name="confirm_password_hint">Confirm Password</string>
+    <string name="already_have_account">Already have an account? Login</string>
+    <string name="dont_have_account">Don\'t have an account? Sign Up</string>
+    <string name="skip_login">Skip for now</string>
+    
+    <!-- Enhanced Login Screen -->
+    <string name="roomfinder_logo_description">RoomFinderAI logo - AI-powered room finding platform</string>
+    <string name="login_title">Welcome back!</string>
+    <string name="login_subtitle">Find your perfect room with AI-powered search</string>
+    <string name="signup_title">Join RoomFinderAI</string>
+    <string name="signup_subtitle">Discover your ideal living space</string>
+    
+    <!-- Helper Text -->
+    <string name="name_helper">Used for your profile and communications</string>
+    <string name="email_helper">We\'ll send verification if needed</string>
+    <string name="email_suggestion">Did you mean %1$s?</string>
+    <string name="password_helper">Minimum 8 characters required</string>
+    <string name="confirm_password_helper">Re-enter your password to confirm</string>
+    
+    <!-- Accessibility Content Descriptions -->
+    <string name="name_icon_description">Person icon</string>
+    <string name="name_input_description">Enter your full name for account registration</string>
+    <string name="email_icon_description">Email icon</string>
+    <string name="email_input_description">Enter your email address for login</string>
+    <string name="password_icon_description">Password security icon</string>
+    <string name="password_input_description">Enter your secure password</string>
+    <string name="confirm_password_icon_description">Password confirmation icon</string>
+    <string name="confirm_password_input_description">Confirm your password by re-entering it</string>
+    <string name="biometric_icon_description">Fingerprint biometric authentication icon</string>
+    <string name="security_icon_description">Security shield icon</string>
+    <string name="offline_icon_description">No internet connection icon</string>
+    
+    <!-- Button Content Descriptions -->
+    <string name="login_button_description">Sign in to your RoomFinderAI account</string>
+    <string name="signup_button_description">Create new RoomFinderAI account</string>
+    <string name="google_signin_description">Continue with Google account</string>
+    <string name="apple_signin_description">Continue with Apple ID</string>
+    <string name="toggle_login_signup_description">Switch between login and signup modes</string>
+    <string name="continue_as_guest_description">Continue using the app without signing in</string>
+    <string name="forgot_password_description">Reset your forgotten password</string>
+    <string name="terms_checkbox_description">Agree to terms of service and privacy policy</string>
+    
+    <!-- Social Login -->
+    <string name="continue_with_google">Google</string>
+    <string name="continue_with_apple">Apple</string>
+    <string name="or_continue_with">Or continue with</string>
+    
+    <!-- Navigation and Actions -->
+    <string name="have_account">Already have an account? <b>Sign in</b></string>
+    <string name="continue_as_guest">Continue as guest</string>
+    <string name="forgot_password">Forgot password?</string>
+    <string name="use_password">Use password instead</string>
+    <string name="unlock">Unlock</string>
+    
+    <!-- Biometric Authentication -->
+    <string name="use_biometric">Quick sign-in with biometrics</string>
+    <string name="biometric_login_title">Biometric Authentication</string>
+    <string name="biometric_login_subtitle">Use your fingerprint or face to sign in securely</string>
+    
+    <!-- Password Strength -->
+    <string name="password_strength">Password Strength</string>
+    <string name="password_very_weak">Very Weak</string>
+    <string name="password_weak">Weak</string>
+    <string name="password_fair">Fair</string>
+    <string name="password_good">Good</string>
+    <string name="password_strong">Strong</string>
+    
+    <!-- Terms and Privacy -->
+    <string name="agree_terms_privacy">I agree to the <a href="https://roomfinderai.com/terms">Terms of Service</a> and <a href="https://roomfinderai.com/privacy">Privacy Policy</a></string>
+    <string name="privacy_security_notice">Your data is encrypted and secure. We never share your personal information.</string>
+    
+    <!-- Network Status -->
+    <string name="offline_message">No internet connection. Please check your network.</string>
+    
+    <!-- Error Messages -->
+    <string name="error_name_required">Name is required</string>
+    <string name="error_name_too_short">Name must be at least 2 characters</string>
+    <string name="error_email_required">Email is required</string>
+    <string name="error_email_invalid">Please enter a valid email address</string>
+    <string name="error_email_disposable">Please use a permanent email address</string>
+    <string name="error_password_required">Password is required</string>
+    <string name="error_password_too_short">Password must be at least 8 characters</string>
+    <string name="error_password_weak">Please choose a stronger password</string>
+    <string name="error_confirm_password_required">Please confirm your password</string>
+    <string name="error_passwords_dont_match">Passwords don\'t match</string>
+    <string name="login_failed">Login failed. Please check your credentials and try again.</string>
+    <string name="signup_failed">Account creation failed. Please try again.</string>
+    <string name="network_error">Network error. Please check your connection and retry.</string>
+    <string name="biometric_credentials_not_found">Biometric credentials not found. Please sign in with password.</string>
+    <string name="biometric_login_failed">Biometric authentication failed. Please use your password.</string>
+    <string name="rate_limit_message">Too many attempts. Please try again in %1$d seconds.</string>
+    
+    <!-- Success Messages -->
+    <string name="signup_success">Account created successfully! Please check your email for verification.</string>
+    <string name="login_success">Welcome back!</string>
+    <string name="biometric_setup_success">Biometric authentication is now enabled for quick sign-in.</string>
+    
+    <!-- Security and Trust Messages -->
+    <string name="security_notice">🔐 Your data is protected with bank-level encryption</string>
+    <string name="privacy_first">We prioritize your privacy and never sell your data</string>
+    <string name="verified_secure">✓ SSL secured connection</string>
+    
+    <!-- Placeholder for advanced features -->
+    <string name="two_factor_setup">Set up two-factor authentication for added security</string>
+    <string name="account_recovery">Account recovery options available</string>
+    <string name="secure_backup">Secure cloud backup enabled</string>
+    
+    <!-- Time and Date -->
+    <string name="last_login">Last login: %1$s</string>
+    <string name="session_expires">Session expires in %1$d minutes</string>
+    
+    <!-- Progress and Status -->
+    <string name="authenticating">Authenticating…</string>
+    <string name="creating_account">Creating your account…</string>
+    <string name="sending_verification">Sending verification email…</string>
+    <string name="verifying_credentials">Verifying credentials…</string>
+</resources>
