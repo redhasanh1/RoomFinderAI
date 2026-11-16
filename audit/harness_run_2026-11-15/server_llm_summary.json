@@ -1,0 +1,15 @@
+{
+  "calls": 408,
+  "ok": 408,
+  "failed": 0,
+  "blocked_groq": 0,
+  "swapped": 408,
+  "prompt_tokens": 258402,
+  "completion_tokens": 8149,
+  "models_seen": {
+    "gpt-4o-mini-2024-07-18": 408
+  },
+  "actual_cost_usd_gpt4o_mini_list": 0.0436,
+  "conservative_cost_usd_cap_pricing": 0.1414,
+  "cap_usd": 2.75
+}

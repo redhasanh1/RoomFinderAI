@@ -1,0 +1,171 @@
+{
+  "source_file": "audit/harness_run_2026-11-15/battle-2026-11-16T02-47-09-425Z.json",
+  "conversations_total": 30,
+  "conversations_succeeded": 30,
+  "conversations_errored": 0,
+  "errors": [],
+  "per_conversation": {
+    "deal_rate": {
+      "k": 30,
+      "n": 30,
+      "rate": 1,
+      "ci95": [
+        0.8865,
+        1
+      ],
+      "moe_halfwidth": 0.0568
+    },
+    "deal_rate_strict_agreed_price": {
+      "k": 23,
+      "n": 30,
+      "rate": 0.7667,
+      "ci95": [
+        0.5907,
+        0.8821
+      ],
+      "moe_halfwidth": 0.1457
+    },
+    "closed_without_price_discussion__rubric": {
+      "k": 0,
+      "n": 30,
+      "rate": 0,
+      "ci95": [
+        0,
+        0.1135
+      ],
+      "moe_halfwidth": 0.0568
+    },
+    "any_tenant_reply_affirmed_meeting_before_price__transcript": {
+      "k": 0,
+      "n": 30,
+      "rate": 0,
+      "ci95": [
+        0,
+        0.1135
+      ],
+      "moe_halfwidth": 0.0568
+    },
+    "deals_too_high__agreed_significantly_above_target__of_closed_deals_with_price": {
+      "k": 7,
+      "n": 23,
+      "rate": 0.3043,
+      "ci95": [
+        0.156,
+        0.5087
+      ],
+      "moe_halfwidth": 0.1763
+    },
+    "deals_above_budget__of_closed_deals_where_budget_set": {
+      "k": 0,
+      "n": 5,
+      "rate": 0,
+      "ci95": [
+        0,
+        0.4345
+      ],
+      "moe_halfwidth": 0.2172
+    },
+    "accepted_day_outside_availability": {
+      "k": 3,
+      "n": 30,
+      "rate": 0.1,
+      "ci95": [
+        0.0346,
+        0.2562
+      ],
+      "moe_halfwidth": 0.1108
+    },
+    "tenant_repeated_self": {
+      "k": 20,
+      "n": 30,
+      "rate": 0.6667,
+      "ci95": [
+        0.4878,
+        0.8077
+      ],
+      "moe_halfwidth": 0.1599
+    },
+    "hit_max_turns": {
+      "k": 2,
+      "n": 30,
+      "rate": 0.0667,
+      "ci95": [
+        0.0185,
+        0.2132
+      ],
+      "moe_halfwidth": 0.0974
+    }
+  },
+  "per_reply": {
+    "closing_phase_replies_affirming_meeting_without_price": {
+      "k": 0,
+      "n": 103,
+      "rate": 0,
+      "ci95": [
+        0,
+        0.036
+      ],
+      "moe_halfwidth": 0.018,
+      "cluster_bootstrap_ci95": [
+        0,
+        0
+      ],
+      "conversations_with_any_closing_reply": 30
+    },
+    "all_tenant_replies_affirming_meeting_without_price": {
+      "k": 0,
+      "n": 219,
+      "rate": 0,
+      "ci95": [
+        0,
+        0.0172
+      ],
+      "moe_halfwidth": 0.0086,
+      "cluster_bootstrap_ci95": [
+        0,
+        0
+      ]
+    }
+  },
+  "issue_counts": {
+    "agreed_significantly_above_target": 7,
+    "tenant_repeated_self": 20,
+    "closed_without_acceptance": 7,
+    "accepted_day_outside_availability": 3
+  },
+  "harness_aggregate": {
+    "total": 30,
+    "succeeded": 30,
+    "errored": 0,
+    "deals_closed": 30,
+    "close_rate": 1,
+    "avg_turns": 14,
+    "avg_score": 0.78,
+    "avg_agreed_price": 1825,
+    "top_issues": [
+      [
+        "tenant_repeated_self",
+        20
+      ],
+      [
+        "agreed_significantly_above_target",
+        7
+      ],
+      [
+        "closed_without_acceptance",
+        7
+      ],
+      [
+        "accepted_day_outside_availability",
+        3
+      ]
+    ],
+    "startedAt": "2026-11-16T02:42:11.602Z",
+    "endedAt": "2026-11-16T02:47:09.425Z",
+    "wallTimeSec": 298,
+    "iterations": 30,
+    "concurrency": 1
+  },
+  "avg_agreed_vs_listing": 0.9415,
+  "examples_premature_affirm": []
+}

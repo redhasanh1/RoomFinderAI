@@ -1,0 +1,14 @@
+{
+  "date": "2026-11-15",
+  "attempt": 2,
+  "commit": "d92ce563c55ef4c04692d7603ae3d2f293e63401",
+  "working_tree_note": "no tracked file modified; only untracked audit/",
+  "harness_sha256": "52dc7828867d6804454dfa1a96e012611cc772354e6a8cae9515aa9aa0a2bc66",
+  "server_sha256": "e046d74c1091f72a8ffa8d6e043818a1c8b647d68d2e5bf6f0926604cbefcdb2",
+  "node": "v22.20.0",
+  "server_command": "PORT=3999 NODE_ENV=development NEGOTIATOR_DAEMON=off AI_PROVIDER=auto ENABLE_DEMO_MODE=false SUPABASE_URL= SUPABASE_ANON_KEY= SUPABASE_SERVICE_ROLE_KEY= BREVO_API_KEY= STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= GROQ_API_KEY= BUDGET_CAP_USD=2.75 SELF_BASE_URL=http://127.0.0.1:3999 node -r ./audit/harness_run_2026-11-15/model_swap.cjs backend/server.js",
+  "harness_command": "SITE=http://127.0.0.1:3999 SUPABASE_URL=http://fixture.invalid SUPABASE_ANON=fixture HARNESS_ALLOWED_ORIGIN=http://127.0.0.1:3999 BUDGET_CAP_USD=2.75 node -r ./audit/harness_run_2026-11-15/guard.cjs scripts/negotiation_battle.js --iterations 30 --concurrency 1",
+  "models": { "tenant": "gpt-4o-mini (server requests gpt-3.5-turbo via OPENAI_MODEL; rewritten by model_swap.cjs)", "landlord": "gpt-4o-mini (hard-coded gpt-3.5-turbo rewritten by model_swap.cjs)", "groq": "disabled (key blank + blocked in preload)" },
+  "seed": "No RNG in harness: listing = i % 12, goal = i % 3, persona = i % 4. LLM sampling unseeded (temp 0.8/0.3 tenant, 0.85 landlord); transcripts not reproducible.",
+  "budget_guards": ["model_swap.cjs: real usage tokens priced at $0.50/$1.50 per 1M, refuses calls at $2.75", "guard.cjs: tokensUsed priced at $1.50/1M, aborts at $2.75"]
+}

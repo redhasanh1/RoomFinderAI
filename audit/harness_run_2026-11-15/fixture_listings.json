@@ -1,0 +1,122 @@
+[
+  {
+    "id": "fixture-01",
+    "title": "Bright Downtown Condo Near Union Station",
+    "city": "Toronto",
+    "price": 2150,
+    "house_type": "Condo",
+    "bedrooms": 1,
+    "user_email": "seed.alex@roomfinderai.test",
+    "description": "Sun-filled 1-bed condo steps from the waterfront, gym and 24/7 concierge. Perfect for young professionals."
+  },
+  {
+    "id": "fixture-02",
+    "title": "Cozy 2-Bed Apartment in The Annex",
+    "city": "Toronto",
+    "price": 2650,
+    "house_type": "Apartment",
+    "bedrooms": 2,
+    "user_email": "seed.maria@roomfinderai.test",
+    "description": "Charming 2-bedroom near U of T with hardwood floors, updated kitchen and a quiet leafy street."
+  },
+  {
+    "id": "fixture-03",
+    "title": "Modern Studio for Students - Waterloo",
+    "city": "Waterloo",
+    "price": 1250,
+    "house_type": "Apartment",
+    "bedrooms": 0,
+    "user_email": "seed.james@roomfinderai.test",
+    "description": "Fully furnished student studio a 5-minute walk to the University of Waterloo. All utilities and WiFi included."
+  },
+  {
+    "id": "fixture-04",
+    "title": "Spacious 3-Bed Townhouse in Mississauga",
+    "city": "Mississauga",
+    "price": 3200,
+    "house_type": "Townhouse",
+    "bedrooms": 3,
+    "user_email": "seed.priya@roomfinderai.test",
+    "description": "Family-friendly 3-bed townhouse with garage, finished basement and backyard. Close to Square One."
+  },
+  {
+    "id": "fixture-05",
+    "title": "Luxury 1-Bed with Mountain View - Vancouver",
+    "city": "Vancouver",
+    "price": 2450,
+    "house_type": "Condo",
+    "bedrooms": 1,
+    "user_email": "seed.alex@roomfinderai.test",
+    "description": "Stunning downtown Vancouver condo with floor-to-ceiling windows and mountain views. Steps to Stanley Park."
+  },
+  {
+    "id": "fixture-06",
+    "title": "Charming Plateau Apartment - Montreal",
+    "city": "Montreal",
+    "price": 1650,
+    "house_type": "Apartment",
+    "bedrooms": 2,
+    "user_email": "seed.maria@roomfinderai.test",
+    "description": "Classic Montreal 2-bed on the Plateau with exposed brick, spiral staircase and a balcony. Great cafes nearby."
+  },
+  {
+    "id": "fixture-07",
+    "title": "Quiet Detached House Near Carleton - Ottawa",
+    "city": "Ottawa",
+    "price": 2800,
+    "house_type": "House",
+    "bedrooms": 4,
+    "user_email": "seed.james@roomfinderai.test",
+    "description": "Roomy 4-bedroom detached house ideal for a group of students or a family. Minutes from Carleton University."
+  },
+  {
+    "id": "fixture-08",
+    "title": "Affordable Room in Shared Condo - Calgary",
+    "city": "Calgary",
+    "price": 950,
+    "house_type": "Condo",
+    "bedrooms": 1,
+    "user_email": "seed.priya@roomfinderai.test",
+    "description": "Private room in a friendly shared downtown Calgary condo. Utilities, internet and in-suite laundry included."
+  },
+  {
+    "id": "fixture-09",
+    "title": "Renovated 2-Bed Near Yorkdale - Toronto",
+    "city": "Toronto",
+    "price": 2400,
+    "house_type": "Apartment",
+    "bedrooms": 2,
+    "user_email": "seed.alex@roomfinderai.test",
+    "description": "Freshly renovated 2-bed with stainless appliances and subway access. Steps from Yorkdale Mall."
+  },
+  {
+    "id": "fixture-10",
+    "title": "Student House Steps from Western - London",
+    "city": "London",
+    "price": 1100,
+    "house_type": "House",
+    "bedrooms": 5,
+    "user_email": "seed.maria@roomfinderai.test",
+    "description": "Five-bedroom student house right by Western University. Big common area, two bathrooms, parking for three."
+  },
+  {
+    "id": "fixture-11",
+    "title": "Sleek Studio in Griffintown - Montreal",
+    "city": "Montreal",
+    "price": 1400,
+    "house_type": "Condo",
+    "bedrooms": 0,
+    "user_email": "seed.james@roomfinderai.test",
+    "description": "Brand-new studio in trendy Griffintown with rooftop pool, gym and co-working lounge. Utilities included."
+  },
+  {
+    "id": "fixture-12",
+    "title": "Family Home with Backyard - Surrey",
+    "city": "Surrey",
+    "price": 2900,
+    "house_type": "House",
+    "bedrooms": 4,
+    "user_email": "seed.priya@roomfinderai.test",
+    "description": "Spacious 4-bed family home with fenced backyard, double garage and close to SkyTrain and schools."
+  }
+]

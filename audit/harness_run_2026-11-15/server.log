@@ -1,0 +1,1394 @@
+🔕 APNs not configured (APNS_TEAM_ID / APNS_KEY_ID / APNS_PRIVATE_KEY) — device tokens will be stored but no pushes sent.
+🔍 DEBUG: Environment variables loaded
+🔍 DEBUG: SUPABASE_URL: NOT SET
+🔍 DEBUG: SUPABASE_ANON_KEY: NOT SET
+⚠️ Config file not found, using environment variables only
+🔧 Configuration priority: Environment variables > Config file > Defaults
+📧 Email configuration check:
+  - BREVO_API_KEY loaded: ❌ No
+  - Source: Config file
+🚀 Server starting - Environment variable check:
+- AZURE_DOCUMENT_INTELLIGENCE_KEY: Present (3e4UdQa89v...)
+- AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT: <redacted-azure-endpoint>
+- AZURE_FACE_KEY: Present (17b0sARArO...)
+- AZURE_FACE_ENDPOINT: <redacted-azure-endpoint>
+⚠️ Stripe not initialized - missing or default STRIPE_SECRET_KEY
+✅ AI providers available: openai
+🔍 DEBUG: Attempting Supabase initialization...
+🔍 DEBUG: config.SUPABASE_URL: NOT SET
+🔍 DEBUG: config.SUPABASE_ANON_KEY: NOT SET
+⚠️ Supabase not initialized - missing or default credentials
+🔍 DEBUG: URL includes "your-project"? undefined
+🔍 DEBUG: KEY includes "your-supabase"? undefined
+🌐 Serving frontend files from: <repo>/frontend
+🤝 negotiator daemon disabled by NEGOTIATOR_DAEMON=off
+🏠 Serving 3D House Models from: <repo>/3D House Models
+🔍 DEBUG: Mock listings initialized with 3 demo listings
+🚀 Starting server...
+Port: 3999
+Environment variables check:
+- STRIPE_SECRET_KEY: false
+- SUPABASE_URL: false
+- SUPABASE_ANON_KEY: false
+- AZURE_DOCUMENT_INTELLIGENCE_KEY: true
+- AZURE_FACE_KEY: true
+📦 Initializing storage buckets...
+⚠️ Skipping storage initialization - Supabase not available
+✅ RoomFinderAI Server running on port 3999
+🏥 Health check: http://localhost:3999/health
+🌐 Server ready at http://0.0.0.0:3999
+📦 Storage initialization completed
+⚠️ Skipping Brevo API test - no API key found
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2100 but target was $1828. Counter at $1964.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2500 but target was $2253. Counter at $2377.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $3100 but target was $2720. Counter at $2910.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2350 but target was $2083. Counter at $2217.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2600 but target was $2380. Counter at $2490.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2350 but target was $2040. Counter at $2195.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2900 but target was $2465. Counter at $2683.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator: CLOSING reply re-opened utilities/deposit — rewrote to a clean confirmation.
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ Backend validator: AI affirmed meeting before price was discussed. Rewriting (phase=PRICE_INTRODUCTION).
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $3200 but target was $2720. Counter at $2960.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2400 but target was $2083. Counter at $2242.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2700 but target was $2380. Counter at $2540.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3080/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2350 but target was $2040. Counter at $2195.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: max budget $3190/month; $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2900 but target was $2465. Counter at $2683.
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2100 but target was $1828. Counter at $1964.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: max budget $2915/month; $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ CLOSING gate: price never touched — reverting to price-probe prompt.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $3200 but target was $2720. Counter at $2960.
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only mon; morning; in-person ok | - price goal: max budget $3520/month; $200/month below asking; ask for utilities included | - about tenant: employed, strong income, has dog, non-smoker | - must-have: parking, in unit laundry | - style: firm tone, high assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🛡️ Backend validator (1x): AI accepted $2400 but target was $2083. Counter at $2242.
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only sat/sun; afternoon; in-person or video ok | - price goal: $100/month below asking | - about tenant: student, building income, no pets | - style: friendly tone, low assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'RAPPORT_BUILDING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'QUALIFICATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'PRICE_INTRODUCTION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🛡️ Backend validator: AI affirmed meeting before price was discussed. Rewriting (phase=PRICE_INTRODUCTION).
+🎯 Negotiation goals applied: {
+  phase: 'ACTIVE_NEGOTIATION',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🎯 Negotiation goals applied: {
+  phase: 'CLOSING',
+  tone: 'NEUTRAL',
+  goals: '- meet on: only tue/wed/thu; evening; in-person ok | - price goal: $150/month below asking; ask for lower deposit | - about tenant: self employed, strong income | - must-have: in unit laundry | - style: professional tone, medium assertiveness',
+  rules: 4
+}
+🔄 Received SIGTERM, shutting down gracefully
+✅ Server closed

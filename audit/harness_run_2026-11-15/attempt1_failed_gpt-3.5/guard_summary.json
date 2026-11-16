@@ -1,0 +1,7 @@
+{
+  "calls": 30,
+  "tokens_counted": 90000,
+  "est_cost_usd_conservative": 0.135,
+  "cap_usd": 2.75,
+  "exit_code": 0
+}

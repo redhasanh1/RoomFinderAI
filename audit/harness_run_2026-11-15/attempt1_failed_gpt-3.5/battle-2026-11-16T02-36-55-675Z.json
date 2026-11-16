@@ -1,0 +1,140 @@
+{
+  "aggregate": {
+    "total": 30,
+    "succeeded": 0,
+    "errored": 30,
+    "deals_closed": 0,
+    "close_rate": 0,
+    "avg_turns": 0,
+    "avg_score": 0,
+    "avg_agreed_price": null,
+    "top_issues": [],
+    "startedAt": "2026-11-16T02:36:46.783Z",
+    "endedAt": "2026-11-16T02:36:55.675Z",
+    "wallTimeSec": 9,
+    "iterations": 30,
+    "concurrency": 1
+  },
+  "results": [
+    {
+      "iter": 1,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 2,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 3,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 4,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 5,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 6,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 7,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 8,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 9,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 10,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 11,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 12,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 13,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 14,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 15,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 16,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 17,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 18,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 19,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 20,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 21,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 22,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 23,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 24,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 25,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 26,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 27,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 28,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 29,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    },
+    {
+      "iter": 30,
+      "error": "POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {\"error\":\"Failed to generate message\",\"details\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\"}"
+    }
+  ]
+}

@@ -1,0 +1,1320 @@
+{
+  "aggregate": {
+    "total": 30,
+    "succeeded": 30,
+    "errored": 0,
+    "deals_closed": 30,
+    "close_rate": 1,
+    "avg_turns": 14,
+    "avg_score": 0.78,
+    "avg_agreed_price": 1825,
+    "top_issues": [
+      [
+        "tenant_repeated_self",
+        20
+      ],
+      [
+        "agreed_significantly_above_target",
+        7
+      ],
+      [
+        "closed_without_acceptance",
+        7
+      ],
+      [
+        "accepted_day_outside_availability",
+        3
+      ]
+    ],
+    "startedAt": "2026-11-16T02:42:11.602Z",
+    "endedAt": "2026-11-16T02:47:09.425Z",
+    "wallTimeSec": 298,
+    "iterations": 30,
+    "concurrency": 1
+  },
+  "results": [
+    {
+      "iter": 1,
+      "listing": {
+        "id": "fixture-01",
+        "title": "Bright Downtown Condo Near Union Station",
+        "city": "Toronto",
+        "price": 2150,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "firm",
+      "turns": 17,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2050,
+        "landlord_last_named_price": 2050,
+        "tenant_last_offer": 2000,
+        "turns_to_close": 17,
+        "too_long": false,
+        "issues": [
+          "agreed_significantly_above_target",
+          "tenant_repeated_self"
+        ],
+        "score": 0.65
+      },
+      "elapsed_ms": 12881,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Bright Downtown Condo Near Union Station and really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. Let me know if you want to see it.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear! Just checking, does it have in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, it has in-unit laundry.",
+        "[QUALIFICATION] TENANT: Awesome! I’m a working professional with a steady income, so I can definitely handle rent. When would it be available for me to move in?",
+        "[QUALIFICATION] LANDLORD: It'll be available starting next month. When do you want to come by and check it out?",
+        "[PRICE_INTRODUCTION] TENANT: I'm flexible — I could move in as soon as it's available. Just to be upfront, my budget is around $1950/month. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I can go down to $2100/month, but that's as low as I can go.",
+        "[ACTIVE_NEGOTIATION] TENANT: I hear you. That's still a bit above what I was hoping for. What about $2000/month? I can commit to a longer lease if that helps.",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I appreciate the offer, but I can't go lower than $2100/month. Let me know if that works for you.",
+        "[CLOSING] TENANT: I hear you on $2100, but $1964 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I can meet you at $2050/month. That's my best offer.",
+        "[CLOSING] TENANT: Could we do $2000/month instead?",
+        "[CLOSING] LANDLORD: I really can't go lower than $2050. Let me know if that works for you.",
+        "[CLOSING] TENANT: Yes, that works. See you Monday.",
+        "[CLOSING] LANDLORD: Sounds good. See you Monday.",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 2,
+      "listing": {
+        "id": "fixture-02",
+        "title": "Cozy 2-Bed Apartment in The Annex",
+        "city": "Toronto",
+        "price": 2650,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "flexible",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2450,
+        "landlord_last_named_price": 2450,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 7299,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Cozy 2-Bed Apartment in The Annex, and I'm really loving the hardwood floors. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! The hardwood floors are a nice touch. Interested in setting up a time to see it?",
+        "[RAPPORT_BUILDING] TENANT: That’s great to hear! Quick question—what lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for at least a one-year lease. Does that work for you?",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2650 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can come down a bit, maybe to $2500. How does that sound?",
+        "[CLOSING] TENANT: I hear you on $2500, but $2377 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I appreciate your offer, but I can’t go that low. How about we meet in the middle at $2450?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good! Looking forward to it. What time works for you on Saturday?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 3,
+      "listing": {
+        "id": "fixture-03",
+        "title": "Modern Studio for Students - Waterloo",
+        "city": "Waterloo",
+        "price": 1250,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "chatty",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 1150,
+        "tenant_last_offer": null,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance"
+        ],
+        "score": 0.9
+      },
+      "elapsed_ms": 10707,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Modern Studio for Students in Waterloo, and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, the studio is still available. What do you like most about the layout?",
+        "[RAPPORT_BUILDING] TENANT: Hey! I really like the open feel of the space. Quick question, is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there is in-unit laundry, which makes things super convenient! Want to come check it out?",
+        "[QUALIFICATION] TENANT: That's awesome! I’m a working professional with steady income and always pay rent on time. When would be a good time for a viewing?",
+        "[QUALIFICATION] LANDLORD: Great to hear! How about we meet this Saturday? Does that work for you?",
+        "[CLOSING] TENANT: That could work, but first — is the $1250 firm or is there any room for negotiation? I’d like to align before scheduling a time.",
+        "[CLOSING] LANDLORD: I'm flexible, I can go down to about $1150. How does that sound?",
+        "[PRICE_INTRODUCTION] TENANT: I appreciate that! Just being honest, $1250 is a bit of a stretch for me. I’m more comfortable around $1100. Any chance we could make something work at that rate?",
+        "[PRICE_INTRODUCTION] LANDLORD: I understand where you're coming from, but $1150 is the best I can do. Let me know if that works for you!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good! Looking forward to it. See you Saturday!",
+        "[CLOSING] TENANT: Could we do Tuesday instead?",
+        "[CLOSING] LANDLORD: Sure, Tuesday works for me! What time do you prefer?",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 4,
+      "listing": {
+        "id": "fixture-04",
+        "title": "Spacious 3-Bed Townhouse in Mississauga",
+        "city": "Mississauga",
+        "price": 3200,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "realistic",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 2910,
+        "tenant_last_offer": null,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance"
+        ],
+        "score": 0.9
+      },
+      "elapsed_ms": 10565,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Spacious 3-Bed Townhouse in Mississauga and I'm really interested in the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! Let me know if you have any specific questions or if you'd like to set up a time to see it.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear it's still available! Quick question — is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry. It’s super convenient!",
+        "[QUALIFICATION] TENANT: That's awesome! I'm a working professional with steady income and solid references. Happy to share whatever you need to move forward.",
+        "[QUALIFICATION] LANDLORD: Sounds good! If you’re ready, we can set up a time to meet and discuss everything. What day works for you?",
+        "[CLOSING] TENANT: Mon could work, but quick first — is the $3200 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: The $3200 is pretty firm, but I can consider a small adjustment for the right tenant. Let me know your thoughts!",
+        "[PRICE_INTRODUCTION] TENANT: Thanks for considering it! Just to be upfront, my budget is more around $3000. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your offer, but I can't go down to $3000. How about we meet halfway at $3100?",
+        "[CLOSING] TENANT: $3100 is above my client's budget. Let's finalize at $3000.",
+        "[CLOSING] LANDLORD: I understand, but I really can’t go that low. $3100 is the best I can do. Let me know if that works for you!",
+        "[CLOSING] TENANT: I hear you on $3100, but $2910 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I appreciate your position, but I can’t accept $2910. Let’s stick with $3100. If that works, we can get everything set up!",
+        "[CLOSING] TENANT: $3100 works. Yes, let’s get everything set up."
+      ]
+    },
+    {
+      "iter": 5,
+      "listing": {
+        "id": "fixture-05",
+        "title": "Luxury 1-Bed with Mountain View - Vancouver",
+        "city": "Vancouver",
+        "price": 2450,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "firm",
+      "turns": 19,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2400,
+        "landlord_last_named_price": 2400,
+        "tenant_last_offer": null,
+        "turns_to_close": 19,
+        "too_long": true,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.7
+      },
+      "elapsed_ms": 12209,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I just saw your Luxury 1-Bed with Mountain View listing and that view is amazing! Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear! What lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for a minimum lease of 12 months.",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2450 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can go down to $2400, but that's my best offer.",
+        "[PRICE_INTRODUCTION] TENANT: Got it, thanks for letting me know! Just to be open, I'm more comfortable around $2350. Any chance we could make that work?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your position, but $2400 is as low as I can go.",
+        "[ACTIVE_NEGOTIATION] TENANT: I understand, and I really want to make this work. Would you be willing to do $2350 if I commit to a longer lease?",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I can't do $2350, even with a longer lease. $2400 is the best I can offer.",
+        "[CLOSING] TENANT: I hear you on $2350, but $2217 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I'm afraid I can't go that low. $2400 is the final offer.",
+        "[PRICE_INTRODUCTION] TENANT: I totally understand. Just to be honest, $2400 is a bit tight for me. Would you consider $2350?",
+        "[PRICE_INTRODUCTION] LANDLORD: I really can't come down further than $2400. That's my best price.",
+        "[ACTIVE_NEGOTIATION] TENANT: Okay, I get it. $2400 works for me! When can I come by to see it and sign?",
+        "[ACTIVE_NEGOTIATION] LANDLORD: Great! Let's meet this Saturday to go over everything. What time works for you?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good. See you Saturday!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 6,
+      "listing": {
+        "id": "fixture-06",
+        "title": "Charming Plateau Apartment - Montreal",
+        "city": "Montreal",
+        "price": 1650,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "flexible",
+      "turns": 7,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1500,
+        "landlord_last_named_price": 1500,
+        "tenant_last_offer": null,
+        "turns_to_close": 7,
+        "too_long": false,
+        "issues": [],
+        "score": 1
+      },
+      "elapsed_ms": 5129,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just checking in about the Charming Plateau Apartment. I'm really interested in the balcony! Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, the apartment is still available, and the balcony is a great spot. Do you want to set up a time to see it?",
+        "[RAPPORT_BUILDING] TENANT: That balcony sounds amazing! Before we set up a viewing, is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry, which is super convenient. Want to meet up to check it out?",
+        "[CLOSING] TENANT: That could work, but first — is the $1650 firm or is there any wiggle room? I’d like to align on price before scheduling a meeting.",
+        "[CLOSING] LANDLORD: I can come down a bit if you're a solid tenant, maybe around $1500. How does that sound?",
+        "[CLOSING] TENANT: Yes, that works. Looking forward to finalizing the deal."
+      ]
+    },
+    {
+      "iter": 7,
+      "listing": {
+        "id": "fixture-07",
+        "title": "Quiet Detached House Near Carleton - Ottawa",
+        "city": "Ottawa",
+        "price": 2800,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "chatty",
+      "turns": 19,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2600,
+        "landlord_last_named_price": 2675,
+        "tenant_last_offer": 2600,
+        "turns_to_close": 19,
+        "too_long": true,
+        "issues": [],
+        "score": 0.85
+      },
+      "elapsed_ms": 15648,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Quiet Detached House Near Carleton, and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, it's still available. Glad you like the layout!",
+        "[RAPPORT_BUILDING] TENANT: Awesome, thanks for confirming! Quick question—are utilities included in the rent?",
+        "[RAPPORT_BUILDING] LANDLORD: No, utilities aren't included in the rent. You'll handle those separately.",
+        "[PRICE_INTRODUCTION] TENANT: Got it, thanks for clarifying! So, I wanted to be upfront about budget—I'm working with around $2600/month. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty! I could come down to around $2700/month, how does that sound?",
+        "[ACTIVE_NEGOTIATION] TENANT: I hear you! That's still a bit above what I was hoping. What about $2600/month? I can commit to a longer lease if that helps.",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I understand where you're coming from, but $2600 is a bit low for me. I can do $2700, and a longer lease would definitely be a plus! What do you think?",
+        "[CLOSING] TENANT: I hear you on $2600, but $2490 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I really appreciate your offer, but $2490 is too low for me. I can stick with $2700—let's make it work!",
+        "[PRICE_INTRODUCTION] TENANT: Thanks for being open! I’m still leaning towards $2600. Would you consider that, maybe with utilities included?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate the offer, but I can't go down to $2600, even with utilities. How about $2700, and I can see about including one utility?",
+        "[PRICE_INTRODUCTION] TENANT: I get where you're coming from! Honestly, $2700 is still a bit high for me. I’d really need it closer to $2600. Any chance you could consider that?",
+        "[PRICE_INTRODUCTION] LANDLORD: I totally get it, but I can't go as low as $2600. How about we settle on $2675? It's a nice middle ground!",
+        "[CLOSING] TENANT: The agreed price is $2600. Please confirm meeting details.",
+        "[CLOSING] LANDLORD: I can't go down to $2600, but I can do $2675. If that works for you, let’s meet on [insert day]. What do you think?",
+        "[CLOSING] TENANT: Could we do Monday instead?",
+        "[CLOSING] LANDLORD: Sure, Monday works for me! Just to confirm, the rent would be $2675. What time should we meet?",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 8,
+      "listing": {
+        "id": "fixture-08",
+        "title": "Affordable Room in Shared Condo - Calgary",
+        "city": "Calgary",
+        "price": 950,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "realistic",
+      "turns": 13,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 850,
+        "landlord_last_named_price": 850,
+        "tenant_last_offer": null,
+        "turns_to_close": 13,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 8623,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Affordable Room in Shared Condo - Calgary and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! Let me know if you have any questions or want to set up a time to see it.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear! Quick question—what lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for a minimum lease of six months. Does that work for you?",
+        "[CLOSING] TENANT: That could work, but quick first — is the $950 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: It's pretty firm at $950, but I might consider a slight drop for the right tenant. What are you thinking?",
+        "[PRICE_INTRODUCTION] TENANT: I really like the place! Just being honest, $950 is a bit of a stretch for me. I’m more comfortable around $850. Any chance we could make that work?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty, but I really can't go as low as $850. How about we meet halfway at $900?",
+        "[CLOSING] TENANT: I understand. Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good! Looking forward to it. See you Saturday!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday!",
+        "[CLOSING] LANDLORD: Great! See you Saturday then.",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 9,
+      "listing": {
+        "id": "fixture-09",
+        "title": "Renovated 2-Bed Near Yorkdale - Toronto",
+        "city": "Toronto",
+        "price": 2400,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "firm",
+      "turns": 13,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2350,
+        "landlord_last_named_price": 2350,
+        "tenant_last_offer": null,
+        "turns_to_close": 13,
+        "too_long": false,
+        "issues": [
+          "agreed_significantly_above_target",
+          "tenant_repeated_self"
+        ],
+        "score": 0.65
+      },
+      "elapsed_ms": 9524,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Renovated 2-Bed Near Yorkdale on RoomFinder. The stainless features look great! Is the place still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. It's a popular spot, so let me know if you're interested.",
+        "[RAPPORT_BUILDING] TENANT: Got it, thanks! Just curious, is there in-unit laundry? That's a big plus for me!",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there's in-unit laundry. It's definitely a convenience.",
+        "[QUALIFICATION] TENANT: That's awesome to hear! I'm a working professional with a pretty stable job, so I’m confident I’d be a reliable tenant. What’s the lease length you're looking for?",
+        "[QUALIFICATION] LANDLORD: Looking for a minimum 1-year lease. That works for you?",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2400 firm or is there any room to negotiate? Want to align before locking a time.",
+        "[CLOSING] LANDLORD: I can come down to $2350, but that's as low as I can go. Let me know if that works for you.",
+        "[CLOSING] TENANT: I hear you on $2350, but $2195 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I can't go that low. $2350 is the best I can do. Let me know if you're interested!",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Sounds good. See you Tuesday!",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 10,
+      "listing": {
+        "id": "fixture-10",
+        "title": "Student House Steps from Western - London",
+        "city": "London",
+        "price": 1100,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "flexible",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1000,
+        "landlord_last_named_price": 1000,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "agreed_significantly_above_target",
+          "tenant_repeated_self"
+        ],
+        "score": 0.65
+      },
+      "elapsed_ms": 7899,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Student House Steps from Western - London, and the layout looks awesome. Just checking if it's still available?",
+        "[INTRODUCTION] LANDLORD: Yep, it's still available! Let me know if you’re interested.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear! Just want to confirm, is there in-unit laundry? That’s a must for me.",
+        "[RAPPORT_BUILDING] LANDLORD: No in-unit laundry, but there’s a laundry facility nearby. Would that work for you?",
+        "[QUALIFICATION] TENANT: Yeah, that's totally fine! I’m a working professional with steady income, so I’m ready to move forward if this place is still available.",
+        "[QUALIFICATION] LANDLORD: Awesome! The rent is $1100/month, but I could do $1000/month if you seem like a solid tenant. Sound good?",
+        "[PRICE_INTRODUCTION] TENANT: Thanks for that! So, just being honest, $1100 is a bit of a stretch for me. I’m more comfortable around $900. Any chance we could make something work?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate the honesty, but I can’t go that low. How about we meet at $1000? Let me know!",
+        "[CLOSING] TENANT: Yes, that works. See you Monday.",
+        "[CLOSING] LANDLORD: Sounds good! See you Monday.",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 11,
+      "listing": {
+        "id": "fixture-11",
+        "title": "Sleek Studio in Griffintown - Montreal",
+        "city": "Montreal",
+        "price": 1400,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "chatty",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1300,
+        "landlord_last_named_price": 1300,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 7341,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Sleek Studio in Griffintown — I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, it's still available. Glad you love the layout!",
+        "[RAPPORT_BUILDING] TENANT: Awesome, thanks for confirming! Quick question — what lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for a minimum of one year. Does that work for you?",
+        "[QUALIFICATION] TENANT: Yeah, that works for me! I’ve got a steady job and a good rental history, so I'm all set.",
+        "[QUALIFICATION] LANDLORD: Great to hear! Sounds like you're a solid candidate. When would you like to meet to discuss further?",
+        "[CLOSING] TENANT: That could work, but quick first — is the $1400 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can go down to $1300, but that's about as low as I can go. How does that sound?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Perfect! Let’s meet Saturday then. Looking forward to it!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 12,
+      "listing": {
+        "id": "fixture-12",
+        "title": "Family Home with Backyard - Surrey",
+        "city": "Surrey",
+        "price": 2900,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "realistic",
+      "turns": 13,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2800,
+        "landlord_last_named_price": 2800,
+        "tenant_last_offer": null,
+        "turns_to_close": 13,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 9827,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Family Home with Backyard in Surrey, and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! Let me know if you have any questions or want to set up a time to see it.",
+        "[RAPPORT_BUILDING] TENANT: Thanks for confirming! Quick question: is there in-unit laundry? That’s a must for me.",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry. It’s definitely a great feature of the home.",
+        "[QUALIFICATION] TENANT: That's awesome! I’m a working professional with steady income, so I’d love to move forward if all looks good. What's the lease length usually?",
+        "[QUALIFICATION] LANDLORD: Typically, a one-year lease is standard. If you're interested, we can discuss the details further!",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2900 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I’m firm at $2900, given the location and amenities. It’s a solid deal for the area.",
+        "[CLOSING] TENANT: I hear you on $2900, but $2683 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I appreciate your offer, but I can’t go that low. How about we meet in the middle at $2800?",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Deal! See you Tuesday.",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 13,
+      "listing": {
+        "id": "fixture-01",
+        "title": "Bright Downtown Condo Near Union Station",
+        "city": "Toronto",
+        "price": 2150,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "firm",
+      "turns": 5,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2100,
+        "landlord_last_named_price": 2100,
+        "tenant_last_offer": null,
+        "turns_to_close": 5,
+        "too_long": false,
+        "issues": [
+          "agreed_significantly_above_target"
+        ],
+        "score": 0.8
+      },
+      "elapsed_ms": 3266,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Bright Downtown Condo Near Union Station and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. When are you looking to move in?",
+        "[CLOSING] TENANT: Mon could work, but quick first — is the $2150 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can go down to $2100, but that's as low as I can go.",
+        "[CLOSING] TENANT: Sounds good — that works. See you then."
+      ]
+    },
+    {
+      "iter": 14,
+      "listing": {
+        "id": "fixture-02",
+        "title": "Cozy 2-Bed Apartment in The Annex",
+        "city": "Toronto",
+        "price": 2650,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "flexible",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2400,
+        "landlord_last_named_price": 2400,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 7448,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I just saw your listing for the Cozy 2-Bed Apartment in The Annex, and I really love the hardwood floors. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! The hardwood floors are a great touch.",
+        "[RAPPORT_BUILDING] TENANT: That’s awesome to hear! Is there in-unit laundry, or how does that work?",
+        "[RAPPORT_BUILDING] LANDLORD: There's no in-unit laundry, but there's a laundry facility just a short walk away.",
+        "[QUALIFICATION] TENANT: Thanks for letting me know! I’m a working professional with steady income, and I’ve never missed a rent payment. Just curious, what's the lease length you're looking for?",
+        "[QUALIFICATION] LANDLORD: I'm looking for a 1-year lease. Sounds like you’d be a solid tenant!",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2650 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can come down a bit, maybe to $2400. How does that sound?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good! Let's meet Saturday then.",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 15,
+      "listing": {
+        "id": "fixture-03",
+        "title": "Modern Studio for Students - Waterloo",
+        "city": "Waterloo",
+        "price": 1250,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "chatty",
+      "turns": 17,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1200,
+        "landlord_last_named_price": 1200,
+        "tenant_last_offer": 1150,
+        "turns_to_close": 17,
+        "too_long": false,
+        "issues": [
+          "accepted_day_outside_availability",
+          "agreed_significantly_above_target",
+          "tenant_repeated_self"
+        ],
+        "score": 0.25
+      },
+      "elapsed_ms": 13933,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Modern Studio in Waterloo, and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, the studio is still available. What do you like most about the layout?",
+        "[RAPPORT_BUILDING] TENANT: Hey! I like how open and spacious it feels. It seems perfect for my needs. Quick question, is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry! Super convenient for students. Want to come check it out?",
+        "[QUALIFICATION] TENANT: That's great to hear about the laundry! I'm a working professional with steady income, so I'm reliable for rent. When's a good time to view the place?",
+        "[QUALIFICATION] LANDLORD: I can do a showing on Saturday or Sunday. Which day works better for you?",
+        "[PRICE_INTRODUCTION] TENANT: That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.",
+        "[PRICE_INTRODUCTION] LANDLORD: I can be a bit flexible, maybe down to $1,200, but I'd like to keep it close to the asking price. How does that sound?",
+        "[ACTIVE_NEGOTIATION] TENANT: I get that. Would you consider $1,150? I can commit to a longer lease if that helps make it work.",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I appreciate your offer! I can go down to $1,200, but let’s keep it at that since it’s a great spot. Deal?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good! Looking forward to it on Saturday.",
+        "[CLOSING] TENANT: Could we do Tuesday instead?",
+        "[CLOSING] LANDLORD: Sure, Tuesday works for me! What time do you have in mind?",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Great! See you Tuesday!",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 16,
+      "listing": {
+        "id": "fixture-04",
+        "title": "Spacious 3-Bed Townhouse in Mississauga",
+        "city": "Mississauga",
+        "price": 3200,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "realistic",
+      "turns": 17,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 2960,
+        "tenant_last_offer": null,
+        "turns_to_close": 17,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance"
+        ],
+        "score": 0.9
+      },
+      "elapsed_ms": 15499,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I really liked the layout of your Spacious 3-Bed Townhouse in Mississauga. Is it still available? Would love to chat more about it!",
+        "[INTRODUCTION] LANDLORD: Yes, it’s still available! What do you want to know?",
+        "[RAPPORT_BUILDING] TENANT: Thanks for confirming! Quick question: is there in-unit laundry? That’s super important for me.",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there's in-unit laundry, which is a great convenience. What else would you like to know?",
+        "[QUALIFICATION] TENANT: That’s awesome! I’m a working professional with a steady job and never missed a rent payment, so I'm a reliable tenant. Anything else I should know about the place?",
+        "[QUALIFICATION] LANDLORD: Glad to hear that! The townhouse also has parking for two cars and is pet-friendly. Do you have any specific questions or concerns?",
+        "[PRICE_INTRODUCTION] TENANT: I’m really liking everything so far! Just to be upfront, I’m working with a budget around $3000/month. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your situation, but I’m firm on the price at $3200. It’s a great value for the space and location. How does that sound?",
+        "[ACTIVE_NEGOTIATION] TENANT: I hear you on the $3200, but that’s still a bit above what I was hoping. What about $3100? I can commit to a longer lease if that helps!",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I appreciate your offer, but I can't go lower than $3200. A longer lease is definitely a plus, but the price is set. Let me know if that works for you!",
+        "[CLOSING] TENANT: I hear you on $3200, but $2960 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I understand your budget constraints, but $2960 is too low for me. I can do $3200, or we can negotiate a bit on lease terms if that helps. What do you think?",
+        "[CLOSING] TENANT: $3200 works for me. Let's finalize the lease.",
+        "[CLOSING] LANDLORD: Great! Sounds good. When can we meet to go over the lease? How about this Saturday?",
+        "[CLOSING] TENANT: Could we do Monday instead?",
+        "[CLOSING] LANDLORD: Monday works for me! Let's meet then to finalize everything. What time is good for you?",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 17,
+      "listing": {
+        "id": "fixture-05",
+        "title": "Luxury 1-Bed with Mountain View - Vancouver",
+        "city": "Vancouver",
+        "price": 2450,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "firm",
+      "turns": 17,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2400,
+        "landlord_last_named_price": 2400,
+        "tenant_last_offer": null,
+        "turns_to_close": 17,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 12258,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Luxury 1-Bed with Mountain View in Vancouver, and that view looks amazing! Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. The mountain view is definitely a highlight.",
+        "[RAPPORT_BUILDING] TENANT: That view sounds awesome! Quick question, is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there is in-unit laundry.",
+        "[QUALIFICATION] TENANT: Great, that's definitely a plus! I'm a working professional with steady income, so I’m really hoping to move forward with this.",
+        "[QUALIFICATION] LANDLORD: That’s good to hear. What’s your timeframe for moving in?",
+        "[PRICE_INTRODUCTION] TENANT: I'm flexible — I could move in as soon as it's available. Just to be upfront, I’m working with a budget around $2350/month. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I can go down to $2400/month, but that's the best I can do.",
+        "[ACTIVE_NEGOTIATION] TENANT: I hear you, that’s close! Would you be able to do $2350 if I commit to a longer lease? Just trying to find a balance here.",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I appreciate the offer, but I can't go below $2400.",
+        "[ACTIVE_NEGOTIATION] TENANT: Okay, $2400 works for me — I’d love to take it. When can I come see it and sign?",
+        "[ACTIVE_NEGOTIATION] LANDLORD: Sounds good. How about we meet this Saturday to check it out and sign?",
+        "[CLOSING] TENANT: I hear you on $2400, but $2242 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I can’t go that low. $2400 is the best I can do.",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Deal. See you Saturday!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 18,
+      "listing": {
+        "id": "fixture-06",
+        "title": "Charming Plateau Apartment - Montreal",
+        "city": "Montreal",
+        "price": 1650,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "flexible",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1500,
+        "landlord_last_named_price": 1500,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 8299,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Charming Plateau Apartment and I'm really into that balcony feature. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! The balcony is a great perk.",
+        "[RAPPORT_BUILDING] TENANT: Awesome! I love a good balcony. Quick question—does the apartment have in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: No in-unit laundry, but there's a laundromat just a short walk away.",
+        "[QUALIFICATION] TENANT: Got it, thanks for clarifying! I'm a working professional with steady income, so I can definitely handle the laundry situation. What's the lease length you're typically looking for?",
+        "[QUALIFICATION] LANDLORD: Ideal lease length is usually 12 months, but I'm flexible if you have a different timeframe in mind.",
+        "[CLOSING] TENANT: That flexibility could work, but quick first — is the $1650 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can come down to $1500 if you're a solid tenant. Let me know what you think.",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Sounds good! Looking forward to it.",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 19,
+      "listing": {
+        "id": "fixture-07",
+        "title": "Quiet Detached House Near Carleton - Ottawa",
+        "city": "Ottawa",
+        "price": 2800,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "chatty",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 2650,
+        "tenant_last_offer": 2600,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance"
+        ],
+        "score": 0.9
+      },
+      "elapsed_ms": 11939,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Quiet Detached House Near Carleton and I'm really drawn to the layout. Is it still available? Would love to know more!",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, it’s still available. It's got a great layout with laundry and parking included. What else would you like to know?",
+        "[RAPPORT_BUILDING] TENANT: Thanks for confirming! That layout sounds awesome. What lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for a minimum lease of one year. Does that work for you?",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2800 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I'm flexible on the price, I could come down a bit. What were you thinking?",
+        "[PRICE_INTRODUCTION] TENANT: I really like the place! Just being honest, $2800 is a bit of a stretch for me. My comfortable range is around $2600. Any chance we could make something work?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty! I can do $2700, how does that sound?",
+        "[ACTIVE_NEGOTIATION] TENANT: That’s still a bit above what I was hoping for. What about $2600? I can commit to a longer lease if that helps!",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I really understand where you're coming from, but I can't go lower than $2700. How about we meet in the middle?",
+        "[CLOSING] TENANT: I hear you on $2700, but $2540 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I can’t quite go that low, but I can do $2650. Does that work for you?",
+        "[CLOSING] TENANT: Yes, that works. Let's finalize the agreement.",
+        "[CLOSING] LANDLORD: Great! Let’s meet on Saturday to go over the details and finalize everything. Does that work for you?",
+        "[CLOSING] TENANT: Could we do Monday instead?"
+      ]
+    },
+    {
+      "iter": 20,
+      "listing": {
+        "id": "fixture-08",
+        "title": "Affordable Room in Shared Condo - Calgary",
+        "city": "Calgary",
+        "price": 950,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "realistic",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 925,
+        "landlord_last_named_price": 925,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 7806,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I really liked the layout of your place in Calgary. Is it still available? Would love to know more!",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! It's a shared condo with laundry in-unit and street parking. What do you want to know?",
+        "[RAPPORT_BUILDING] TENANT: Thanks for confirming! Just wondering, what lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for a minimum of six months. How long were you thinking?",
+        "[QUALIFICATION] TENANT: I’m flexible — I can move in as soon as it’s available. I’ve got a steady job and never missed a rent payment, so I’m reliable!",
+        "[QUALIFICATION] LANDLORD: That's great to hear! I'm looking for someone stable, and it sounds like you fit that. Are you comfortable with the $950/month rent?",
+        "[PRICE_INTRODUCTION] TENANT: I really like the place! Just being honest, $950 is a bit of a stretch for me. I'm more around $850. Any chance we could make something work?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty, but I can't go that low. How about we meet in the middle at $925?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good, see you Saturday!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 21,
+      "listing": {
+        "id": "fixture-09",
+        "title": "Renovated 2-Bed Near Yorkdale - Toronto",
+        "city": "Toronto",
+        "price": 2400,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "firm",
+      "turns": 17,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2350,
+        "landlord_last_named_price": 2350,
+        "tenant_last_offer": null,
+        "turns_to_close": 17,
+        "too_long": false,
+        "issues": [
+          "agreed_significantly_above_target",
+          "tenant_repeated_self"
+        ],
+        "score": 0.65
+      },
+      "elapsed_ms": 12221,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Renovated 2-Bed Near Yorkdale. The stainless features look awesome! Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. Interested in scheduling a viewing?",
+        "[RAPPORT_BUILDING] TENANT: Great to hear it's still available! Quick question — does the unit have in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, it has in-unit laundry. When would you like to come by for a viewing?",
+        "[QUALIFICATION] TENANT: Awesome, I'm flexible — could move in as soon as it's available. Just wanted to mention I have a steady job and never missed a rent payment!",
+        "[QUALIFICATION] LANDLORD: Sounds good. We can discuss the details after you see the place. When are you free for a viewing?",
+        "[CLOSING] TENANT: That could work, but first — is the $2400 firm or is there any wiggle room? I'd like to align on price before scheduling a viewing.",
+        "[CLOSING] LANDLORD: I can come down to $2350, but that's my best offer. Let me know if that works for you.",
+        "[CLOSING] TENANT: I hear you on $2350, but $2195 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I appreciate your offer, but I can't go that low. $2350 is the best I can do. Let me know if you're interested.",
+        "[PRICE_INTRODUCTION] TENANT: Thanks for getting back to me! Honestly, $2350 is still a bit high for my budget. Would you consider lowering the rent or maybe the deposit? Just trying to see if we can make it work!",
+        "[PRICE_INTRODUCTION] LANDLORD: I understand, but I can't lower the rent any further. $2350 is firm. If you're still interested, we can set up a viewing.",
+        "[ACTIVE_NEGOTIATION] TENANT: Okay, I get it. Would you be open to a smaller deposit instead? If that could work, I'd love to come see the place!",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I can't adjust the deposit either, unfortunately. The rent and deposit terms are set. If you're still interested at $2350, let's schedule a viewing.",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Sounds good. Looking forward to it on Tuesday!",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 22,
+      "listing": {
+        "id": "fixture-10",
+        "title": "Student House Steps from Western - London",
+        "city": "London",
+        "price": 1100,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "flexible",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1050,
+        "landlord_last_named_price": 1050,
+        "tenant_last_offer": null,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "agreed_significantly_above_target",
+          "tenant_repeated_self"
+        ],
+        "score": 0.65
+      },
+      "elapsed_ms": 9933,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I just saw your listing for the Student House Steps from Western and I'm really into the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! Let me know if you have any questions or want to set up a time to chat.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear it's still available! Quick question — is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: No in-unit laundry, but there's a laundromat just a short walk away.",
+        "[QUALIFICATION] TENANT: I can work with that! Just so you know, I’m a working professional with steady income and a solid rental history.",
+        "[QUALIFICATION] LANDLORD: That's great to hear! Based on that, I could come down to $1,050/month if you're interested.",
+        "[PRICE_INTRODUCTION] TENANT: Thanks for being flexible! Just to be upfront, I'm around $900/month. Is there any wiggle room on that? I’d love to make it work!",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty, but I can't go that low. How about we settle at $1,050?",
+        "[ACTIVE_NEGOTIATION] TENANT: I totally understand. What if we met in the middle at $1,000? I can also commit to a longer lease if that helps.",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I can meet you at $1,050, but I appreciate the long-term commitment. Let’s lock in that price! When can we meet to finalize?",
+        "[CLOSING] TENANT: Could we do Monday instead?",
+        "[CLOSING] LANDLORD: Monday works for me! What time are you thinking?",
+        "[CLOSING] TENANT: Yes, that works. See you Monday.",
+        "[CLOSING] LANDLORD: Sounds good. Looking forward to it!",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 23,
+      "listing": {
+        "id": "fixture-11",
+        "title": "Sleek Studio in Griffintown - Montreal",
+        "city": "Montreal",
+        "price": 1400,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "chatty",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1300,
+        "landlord_last_named_price": 1300,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 7686,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Sleek Studio in Griffintown and I'm really into the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, it's still available. What do you like most about the layout?",
+        "[RAPPORT_BUILDING] TENANT: Hey! I love the open feel and the natural light. Quick question — is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yep, there's in-unit laundry, super convenient! When are you thinking of moving in?",
+        "[QUALIFICATION] TENANT: That's great to hear! I'm flexible — could move in as soon as it's available. Just to reassure you, I have a steady job and never miss a rent payment.",
+        "[QUALIFICATION] LANDLORD: That’s awesome! The studio is ready for you to move in right away. What’s your budget looking like?",
+        "[CLOSING] TENANT: Sat could work, but quick first — is the $1400 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can come down a bit, maybe to $1300. Let’s meet Saturday and chat more!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good! Looking forward to it on Saturday!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 24,
+      "listing": {
+        "id": "fixture-12",
+        "title": "Family Home with Backyard - Surrey",
+        "city": "Surrey",
+        "price": 2900,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "realistic",
+      "turns": 13,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 2900,
+        "tenant_last_offer": null,
+        "turns_to_close": 13,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance"
+        ],
+        "score": 0.9
+      },
+      "elapsed_ms": 9006,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Family Home with Backyard in Surrey, and the layout looks amazing. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it’s still available! Let me know if you have any questions.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear! Is there in-unit laundry? That's pretty important for me.",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry. It’s definitely convenient!",
+        "[QUALIFICATION] TENANT: Awesome, that’s a big plus! I’m a working professional with steady income, so I’m excited to move forward. What’s your preferred lease length?",
+        "[QUALIFICATION] LANDLORD: I usually prefer a one-year lease. Does that work for you?",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2900 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I’m looking for $2900, but I could consider $2800 if you're ready to move quickly. How does that sound?",
+        "[CLOSING] TENANT: $2800 sounds good. Let's finalize the agreement.",
+        "[CLOSING] LANDLORD: Great! Let's meet this Saturday to finalize everything. Does that work for you?",
+        "[CLOSING] TENANT: Could we do Tuesday instead?",
+        "[CLOSING] LANDLORD: Tuesday works for me. Let’s set a time then!",
+        "[CLOSING] TENANT: I hear you on $2900, but $2683 is more in my range. Could we land there?"
+      ]
+    },
+    {
+      "iter": 25,
+      "listing": {
+        "id": "fixture-01",
+        "title": "Bright Downtown Condo Near Union Station",
+        "city": "Toronto",
+        "price": 2150,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "firm",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 2100,
+        "tenant_last_offer": 2050,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance"
+        ],
+        "score": 0.9
+      },
+      "elapsed_ms": 10394,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I really love the layout of the condo you listed near Union Station. Is it still available? Would love to hear more about it!",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. It has in-suite laundry and no parking, but it's pet-friendly.",
+        "[RAPPORT_BUILDING] TENANT: Got it, thanks! Just to confirm, what lease length are you looking for?",
+        "[RAPPORT_BUILDING] LANDLORD: I'm looking for a minimum lease of one year.",
+        "[CLOSING] TENANT: Mon could work, but quick first — is the $2150 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can come down to $2100, but that's as low as I can go.",
+        "[CLOSING] TENANT: $2100 is acceptable. Let's finalize the agreement.",
+        "[CLOSING] LANDLORD: Great! Let's meet this Monday to finalize everything.",
+        "[CLOSING] TENANT: I hear you on $2100, but $1964 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I understand, but I can't go that low. $2100 is my final offer.",
+        "[PRICE_INTRODUCTION] TENANT: Got it! So, just to be upfront about my budget, I’m more comfortable around $1950. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty, but I can't go below $2100. That's my final price.",
+        "[ACTIVE_NEGOTIATION] TENANT: Okay, I get it. How about this: if I can commit to a longer lease, could we meet at $2050? That could work for both of us!",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I can do $2100 for a longer lease, but I can’t go down to $2050.",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 26,
+      "listing": {
+        "id": "fixture-02",
+        "title": "Cozy 2-Bed Apartment in The Annex",
+        "city": "Toronto",
+        "price": 2650,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "flexible",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2400,
+        "landlord_last_named_price": 2400,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 7060,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! Just saw your listing for the Cozy 2-Bed Apartment in The Annex and I’m really drawn to the hardwood floors. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, it’s still available. The hardwood floors are a nice touch!",
+        "[RAPPORT_BUILDING] TENANT: Cool, thanks for confirming! Quick question — is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry. Super convenient!",
+        "[QUALIFICATION] TENANT: That’s awesome! I'm a working professional with a steady income, so I can definitely handle rent without issues. What's the lease length you usually go with?",
+        "[QUALIFICATION] LANDLORD: I typically go for a one-year lease. Sounds like you’d be a solid tenant!",
+        "[CLOSING] TENANT: That could work, but quick first — is the $2650 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can come down a bit, maybe around $2400. What do you think?",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Great! Let’s meet Saturday then.",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 27,
+      "listing": {
+        "id": "fixture-03",
+        "title": "Modern Studio for Students - Waterloo",
+        "city": "Waterloo",
+        "price": 1250,
+        "owner": "seed.james@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "chatty",
+      "turns": 11,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1150,
+        "landlord_last_named_price": 1150,
+        "tenant_last_offer": null,
+        "turns_to_close": 11,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 8039,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Modern Studio in Waterloo and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Hey! Yes, it’s still available. Glad you love the layout!",
+        "[RAPPORT_BUILDING] TENANT: Awesome to hear! Quick question—does the unit have in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, it does have in-unit laundry. Super convenient!",
+        "[QUALIFICATION] TENANT: That's great! I'm a working professional with steady income and solid references, happy to share whatever you need to move forward. What's the lease length you're looking for?",
+        "[QUALIFICATION] LANDLORD: I’m looking for a lease of at least 12 months. Sounds like you’d be a great fit!",
+        "[CLOSING] TENANT: That could work, but quick first — is the $1250 firm or any room there? Want to be aligned before locking a time.",
+        "[CLOSING] LANDLORD: I can budge a bit, maybe down to $1150, but that’s about my limit. How does that sound?",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Great! Let’s meet Tuesday then. Looking forward to it!",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    },
+    {
+      "iter": 28,
+      "listing": {
+        "id": "fixture-04",
+        "title": "Spacious 3-Bed Townhouse in Mississauga",
+        "city": "Mississauga",
+        "price": 3200,
+        "owner": "seed.priya@roomfinderai.test"
+      },
+      "goals_template": "mon-only-firm",
+      "landlord_persona": "realistic",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": null,
+        "landlord_last_named_price": 3100,
+        "tenant_last_offer": null,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "closed_without_acceptance",
+          "accepted_day_outside_availability"
+        ],
+        "score": 0.5
+      },
+      "elapsed_ms": 10779,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I just saw your listing for the Spacious 3-Bed Townhouse in Mississauga and I really love the layout. Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available! Let me know if you’d like to come see it.",
+        "[RAPPORT_BUILDING] TENANT: Great to hear! Just to confirm, does the place come with in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, it has in-unit laundry. You’ll have all the convenience!",
+        "[QUALIFICATION] TENANT: Awesome, that’s a huge plus! I'm a working professional with steady income and good references, so I’m excited to move forward. What's the next step?",
+        "[QUALIFICATION] LANDLORD: That's great to hear! If you're interested, we can set up a viewing. When are you available?",
+        "[PRICE_INTRODUCTION] TENANT: I’m flexible and can move in as soon as it’s available. Just to be upfront about budget, I’m looking around $3000/month. Is there any flexibility on the rent?",
+        "[PRICE_INTRODUCTION] LANDLORD: I appreciate your honesty, but the asking price is $3200. I can’t go as low as $3000, but I might be able to meet you halfway at $3100. What do you think?",
+        "[CLOSING] TENANT: $3100 works for me. Let's finalize the agreement.",
+        "[CLOSING] LANDLORD: Sounds good! Let's meet this Saturday to go over everything and finalize the details. What time works for you?",
+        "[CLOSING] TENANT: Could we do Monday instead?",
+        "[CLOSING] LANDLORD: Monday works for me. Just let me know what time you'd like to meet!",
+        "[CLOSING] TENANT: I hear you on $3200, but $2960 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I understand budget concerns, but I can't go that low. The best I can do is $3100. Let me know if that works for you!",
+        "[CLOSING] TENANT: Yes, that works. See you Monday."
+      ]
+    },
+    {
+      "iter": 29,
+      "listing": {
+        "id": "fixture-05",
+        "title": "Luxury 1-Bed with Mountain View - Vancouver",
+        "city": "Vancouver",
+        "price": 2450,
+        "owner": "seed.alex@roomfinderai.test"
+      },
+      "goals_template": "weekend-friendly",
+      "landlord_persona": "firm",
+      "turns": 15,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 2400,
+        "landlord_last_named_price": 2400,
+        "tenant_last_offer": null,
+        "turns_to_close": 15,
+        "too_long": false,
+        "issues": [
+          "tenant_repeated_self"
+        ],
+        "score": 0.85
+      },
+      "elapsed_ms": 11416,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Luxury 1-Bed with Mountain View in Vancouver, and that view looks amazing! Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yes, it's still available. The mountain view is definitely a highlight.",
+        "[RAPPORT_BUILDING] TENANT: That view sounds fantastic! Just curious, is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry. It’s a nice convenience.",
+        "[QUALIFICATION] TENANT: Awesome, I really appreciate that! I'm a working professional with steady income and solid references, so I'm ready to move forward whenever you are.",
+        "[QUALIFICATION] LANDLORD: Great to hear! The rent is $2450/month. Let me know if you're comfortable with that.",
+        "[PRICE_INTRODUCTION] TENANT: I love the place! Just being honest, $2450 is a bit of a stretch for me. I’m more around $2350. Is there any flexibility on that?",
+        "[PRICE_INTRODUCTION] LANDLORD: I can come down to $2400, but that’s my best offer. Let me know if that works for you.",
+        "[CLOSING] TENANT: I hear you on $2400, but $2242 is more in my range. Could we land there?",
+        "[CLOSING] LANDLORD: I can't go that low. $2400 is as far as I can drop. Let me know if you're ready to move forward at that price.",
+        "[PRICE_INTRODUCTION] TENANT: Thanks for staying flexible! I really like the place, but I’m still hoping for closer to $2350. Is there any chance we can work something out?",
+        "[PRICE_INTRODUCTION] LANDLORD: $2400 is the best price I can offer. If that works for you, let's finalize the details.",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Sounds good. See you Saturday.",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday."
+      ]
+    },
+    {
+      "iter": 30,
+      "listing": {
+        "id": "fixture-06",
+        "title": "Charming Plateau Apartment - Montreal",
+        "city": "Montreal",
+        "price": 1650,
+        "owner": "seed.maria@roomfinderai.test"
+      },
+      "goals_template": "professional-medium",
+      "landlord_persona": "flexible",
+      "turns": 17,
+      "terminal_phase": "CLOSING",
+      "analysis": {
+        "deal_closed": true,
+        "agreed_price": 1500,
+        "landlord_last_named_price": 1500,
+        "tenant_last_offer": 1425,
+        "turns_to_close": 17,
+        "too_long": false,
+        "issues": [
+          "accepted_day_outside_availability",
+          "tenant_repeated_self"
+        ],
+        "score": 0.45
+      },
+      "elapsed_ms": 13179,
+      "transcript": [
+        "[INTRODUCTION] TENANT: Hey! I saw your listing for the Charming Plateau Apartment on RoomFinder, and that balcony looks amazing! Is it still available?",
+        "[INTRODUCTION] LANDLORD: Yep, it's still available! That balcony is a great spot to relax. Interested in checking it out?",
+        "[RAPPORT_BUILDING] TENANT: Cool, I’m definitely interested! Just to double-check, is there in-unit laundry?",
+        "[RAPPORT_BUILDING] LANDLORD: Yes, there’s in-unit laundry. Makes life much easier! Want to set up a time to see it?",
+        "[QUALIFICATION] TENANT: That’s awesome! I’m a reliable tenant with steady income, so I'd love to move forward. What days work for you to meet up?",
+        "[QUALIFICATION] LANDLORD: Great to hear you’re a reliable tenant! How about this Saturday? Does that work for you?",
+        "[PRICE_INTRODUCTION] TENANT: That could work — but quick first, is the rent firm or is there any flexibility? Want to make sure we're aligned before locking in a time.",
+        "[PRICE_INTRODUCTION] LANDLORD: I can come down a bit on the rent, maybe around $1,500/month if you're solid. How does that sound?",
+        "[ACTIVE_NEGOTIATION] TENANT: I appreciate that! Honestly, that's still a bit above what I was hoping for. What if we met in the middle at $1,425? I can commit to a longer lease if that helps!",
+        "[ACTIVE_NEGOTIATION] LANDLORD: I appreciate your offer, but I can only go down to $1,500. If you're willing to meet at that, let's set up a time to see the place!",
+        "[CLOSING] TENANT: Yes, that works. See you Saturday.",
+        "[CLOSING] LANDLORD: Deal! Looking forward to it. See you Saturday!",
+        "[CLOSING] TENANT: Could we do Tuesday instead?",
+        "[CLOSING] LANDLORD: Sure, Tuesday works for me. What time are you thinking?",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday.",
+        "[CLOSING] LANDLORD: Sounds good! See you Tuesday.",
+        "[CLOSING] TENANT: Yes, that works. See you Tuesday."
+      ]
+    }
+  ]
+}

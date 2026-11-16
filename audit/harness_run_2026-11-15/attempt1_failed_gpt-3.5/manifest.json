@@ -1,0 +1,15 @@
+{
+  "date": "2026-11-15",
+  "commit": "d92ce563c55ef4c04692d7603ae3d2f293e63401",
+  "working_tree_note": "only untracked audit/ files; no tracked file modified",
+  "harness_sha256": "52dc7828867d6804454dfa1a96e012611cc772354e6a8cae9515aa9aa0a2bc66",
+  "server_sha256": "e046d74c1091f72a8ffa8d6e043818a1c8b647d68d2e5bf6f0926604cbefcdb2",
+  "node": "v22.20.0",
+  "server_command": "PORT=3999 NODE_ENV=development NEGOTIATOR_DAEMON=off AI_PROVIDER=auto ENABLE_DEMO_MODE=false SUPABASE_URL= SUPABASE_ANON_KEY= SUPABASE_SERVICE_ROLE_KEY= BREVO_API_KEY= STRIPE_SECRET_KEY= STRIPE_WEBHOOK_SECRET= SELF_BASE_URL=http://127.0.0.1:3999 node backend/server.js",
+  "harness_command": "SITE=http://127.0.0.1:3999 SUPABASE_URL=http://fixture.invalid SUPABASE_ANON=fixture HARNESS_ALLOWED_ORIGIN=http://127.0.0.1:3999 BUDGET_CAP_USD=2.75 node -r ./audit/harness_run_2026-11-15/guard.cjs scripts/negotiation_battle.js --iterations 30 --concurrency 1",
+  "models": { "tenant": "OpenAI gpt-3.5-turbo via failover chain (OPENAI_MODEL from .env; AI_PROVIDER=auto), fallbacks Groq llama-3.1-8b-instant then llama-3.3-70b-versatile", "landlord": "OpenAI gpt-3.5-turbo (hard-coded in /api/landlord-simulator)" },
+  "seed": "No RNG in harness: listing = i % 12 fixtures, goal template = i % 3, persona = i % 4 (deterministic). LLM sampling is NOT seeded (temperature 0.8 tenant / 0.85 landlord; server sends no seed param), so transcripts are not reproducible.",
+  "fixtures": "fixture_listings.json: 12 listings parsed from database/sql/seed-test-data.sql",
+  "budget_guard": "guard.cjs: all tokens priced at $1.50/1M (conservative), abort at $2.75",
+  "max_turns": 18
+}

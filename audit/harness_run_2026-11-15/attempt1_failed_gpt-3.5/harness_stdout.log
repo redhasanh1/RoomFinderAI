@@ -1,0 +1,52 @@
+⚔️  negotiation_battle: 30 iterations, concurrency=1, maxTurns=18
+📋 fetched 12 listings
+❌ iter 1 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 2 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 3 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 4 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 5 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 6 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 7 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 8 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 9 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 10 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 11 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 12 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 13 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 14 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 15 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 16 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 17 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 18 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 19 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 20 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 21 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 22 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 23 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 24 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 25 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 26 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 27 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 28 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 29 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+❌ iter 30 failed: POST http://127.0.0.1:3999/api/negotiate/phase-message failed 500: {"error":"Failed to generate message","details":"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it."}
+💾 wrote <repo>/scripts/_results/battle-2026-11-16T02-36-55-675Z.json
+
+=== AGGREGATE ===
+{
+  "total": 30,
+  "succeeded": 0,
+  "errored": 30,
+  "deals_closed": 0,
+  "close_rate": 0,
+  "avg_turns": 0,
+  "avg_score": 0,
+  "avg_agreed_price": null,
+  "top_issues": [],
+  "startedAt": "2026-11-16T02:36:46.783Z",
+  "endedAt": "2026-11-16T02:36:55.675Z",
+  "wallTimeSec": 9,
+  "iterations": 30,
+  "concurrency": 1
+}
+harness exit code: 0
