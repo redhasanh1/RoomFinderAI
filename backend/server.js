@@ -29,6 +29,11 @@ const bcrypt = require('bcryptjs');
 
 // Load environment variables from .env file in development
 require('dotenv').config();
+
+// The one OpenAI chat model setting, shared by the negotiator and the landlord
+// simulator. The previous default model has been retired by OpenAI.
+const OPENAI_MODEL = process.env.OPENAI_MODEL?.trim() || 'gpt-4o-mini';
+
 console.log('🔍 DEBUG: Environment variables loaded');
 console.log('🔍 DEBUG: SUPABASE_URL:', process.env.SUPABASE_URL ? 'SET' : 'NOT SET');
 console.log('🔍 DEBUG: SUPABASE_ANON_KEY:', process.env.SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
@@ -91,7 +96,7 @@ config = {
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY?.trim() || config.SUPABASE_ANON_KEY,
     OPENAI_API_KEY: process.env.OPENAI_API_KEY?.trim() || config.OPENAI_API_KEY,
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID?.trim() || config.OPENAI_ORG_ID,
-    OPENAI_MODEL: process.env.OPENAI_MODEL?.trim() || config.OPENAI_MODEL || 'gpt-3.5-turbo',
+    OPENAI_MODEL: OPENAI_MODEL,
     GROQ_API_KEY: process.env.GROQ_API_KEY?.trim() || config.GROQ_API_KEY,
     GROQ_MODEL: process.env.GROQ_MODEL?.trim() || config.GROQ_MODEL || 'llama-3.1-8b-instant',
     GROQ_FALLBACK_MODEL: process.env.GROQ_FALLBACK_MODEL?.trim() || config.GROQ_FALLBACK_MODEL || 'llama-3.3-70b-versatile',
@@ -6051,7 +6056,7 @@ app.post('/api/ai-negotiate', openAiRateLimitMiddleware, async (req, res) => {
 
 // API: Landlord simulator — INTERNAL TESTING ONLY. Used by
 // scripts/negotiation_battle.js to drive the landlord side of an end-to-end
-// negotiation harness. Wraps OpenAI gpt-3.5-turbo with a landlord persona so
+// negotiation harness. Wraps the configured OpenAI model (OPENAI_MODEL) with a landlord persona so
 // we can stress-test the AI Negotiator without a real human on the other end.
 // Not exposed in any UI; safe to remove if the testing harness is retired.
 app.post('/api/landlord-simulator', openAiRateLimitMiddleware, async (req, res) => {
@@ -6104,7 +6109,7 @@ RULES:
                 ...(config.OPENAI_ORG_ID && { 'OpenAI-Organization': config.OPENAI_ORG_ID })
             },
             body: JSON.stringify({
-                model: 'gpt-3.5-turbo',
+                model: OPENAI_MODEL,
                 messages,
                 max_tokens: 90,
                 temperature: 0.85
@@ -7459,7 +7464,7 @@ app.post('/api/negotiate/phase-message', openAiRateLimitMiddleware, async (req, 
     }
 });
 
-// POST /api/negotiate/analyze-reply - Analyze landlord reply (GPT-3.5 - fast/cheap)
+// POST /api/negotiate/analyze-reply - Analyze landlord reply
 app.post('/api/negotiate/analyze-reply', openAiRateLimitMiddleware, async (req, res) => {
     try {
         const { replyContent, negotiationState, listing } = req.body;
@@ -7505,7 +7510,7 @@ RULES:
 
         const result = await callOpenAI({
             messages: [{ role: 'system', content: prompt }],
-            model: 'gpt-3.5-turbo',
+            model: OPENAI_MODEL,
             maxTokens: 300,
             temperature: 0.1
         });
@@ -7631,7 +7636,7 @@ RULES:
                     { role: 'system', content: 'You output strict JSON only. No markdown fences, no commentary.' },
                     { role: 'user', content: judgePrompt }
                 ],
-                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                model: OPENAI_MODEL,
                 maxTokens: 320,
                 temperature: 0
             });
@@ -7892,7 +7897,7 @@ Write your next message.`;
 
         const raw = await callOpenAI({
             messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-            model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+            model: OPENAI_MODEL,
             maxTokens: 260,
             temperature: 0.75
         });
@@ -8001,7 +8006,7 @@ Write your next message.`;
         }
 
         // Deterministic settled-topic guard. The prompt already forbids
-        // reopening an agreed rent or a booked viewing, but gpt-3.5 drifts back
+        // reopening an agreed rent or a booked viewing, but the model drifts back
         // to them under pressure — in a real transcript it asked "so what's the
         // rent going to be?" one message after agreeing, and re-asked a viewing
         // time the landlord had already given. Prompt rules are advisory; this
@@ -8175,7 +8180,7 @@ app.post('/api/negotiate/reset', async (req, res) => {
     }
 });
 
-// POST /api/negotiate/market-estimate - Get AI market data estimate (GPT-3.5)
+// POST /api/negotiate/market-estimate - Get AI market data estimate
 app.post('/api/negotiate/market-estimate', openAiRateLimitMiddleware, async (req, res) => {
     try {
         const { location, houseType, bedrooms } = req.body;
@@ -8200,7 +8205,7 @@ Return realistic estimates in this JSON format:
 
         const result = await callOpenAI({
             messages: [{ role: 'system', content: prompt }],
-            model: 'gpt-3.5-turbo',
+            model: OPENAI_MODEL,
             maxTokens: 300,
             temperature: 0.3
         });

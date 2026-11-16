@@ -23,7 +23,7 @@ The 401 authentication error occurs because the `OPENAI_API_KEY` environment var
 3. **Optional Variables** (for full functionality):
    ```
    OPENAI_ORG_ID=org-your-organization-id
-   OPENAI_MODEL=gpt-3.5-turbo
+   OPENAI_MODEL=gpt-4o-mini
    STRIPE_SECRET_KEY=sk_your-stripe-secret-key
    STRIPE_PUBLISHABLE_KEY=pk_your-stripe-publishable-key
    GOOGLE_API_KEY=your-google-api-key

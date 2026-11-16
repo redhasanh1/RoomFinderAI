@@ -15,7 +15,7 @@ async function testOpenAIAPI() {
     
     console.log('🔑 API Key found:', config.OPENAI_API_KEY.substring(0, 10) + '...');
     console.log('🏢 Organization ID:', config.OPENAI_ORG_ID || 'Not set');
-    console.log('🤖 Model:', config.OPENAI_MODEL || 'gpt-3.5-turbo');
+    console.log('🤖 Model:', config.OPENAI_MODEL || 'gpt-4o-mini');
     console.log();
     
     try {
@@ -29,7 +29,7 @@ async function testOpenAIAPI() {
                 'OpenAI-Organization': config.OPENAI_ORG_ID
             },
             body: JSON.stringify({
-                model: config.OPENAI_MODEL || 'gpt-3.5-turbo',
+                model: config.OPENAI_MODEL || 'gpt-4o-mini',
                 messages: [
                     {
                         role: 'user',

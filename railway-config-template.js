@@ -6,7 +6,7 @@ const config = {
     // OpenAI Configuration
     OPENAI_API_KEY: process.env.OPENAI_API_KEY || 'your_openai_api_key_here',
     OPENAI_ORG_ID: process.env.OPENAI_ORG_ID || 'your_openai_org_id_here',
-    OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-3.5-turbo',
+    OPENAI_MODEL: process.env.OPENAI_MODEL || 'gpt-4o-mini',
     
     // Supabase Configuration
     SUPABASE_URL: process.env.SUPABASE_URL || 'your_supabase_url_here',
