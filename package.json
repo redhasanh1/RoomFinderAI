@@ -7,7 +7,7 @@
     "start": "node backend/server.js",
     "dev": "node backend/server.js",
     "build": "echo 'Static frontend — no build step required'",
-    "test": "node --test tests/no-deprecated-model.test.js",
+    "test": "node --test tests/*.test.js",
     "validate": "node validate-config.js",
     "setup": "npm install && npm run validate",
     "postinstall": "npm install --prefix backend --production"
