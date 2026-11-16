@@ -11,12 +11,12 @@ public class ApiConfig {
     
     // Local development configuration values
     private static final String LOCAL_API_BASE_URL = "http://10.0.2.2:3000/";
-    private static final String LOCAL_OPENAI_API_KEY = "sk-proj-CbQtehx5UM0V9mXWrdZnM-hP3l98a0ZVguNWb51K7G63M0dfChAziWYeIO_AOPE2cEnVGOcwyT3BlbkFJliQDGy85OmZ3UGhQS7RSltE9YKO_5qrdLaLEweqkbxs-dDtMy3FMf6Msuot00O58p9L9XQBucA";
+    private static final String LOCAL_OPENAI_API_KEY = System.getenv("OPENAI_API_KEY");
     private static final String LOCAL_SUPABASE_URL = "https://fkktwhjybuflxqzopaex.supabase.co/";
-    private static final String LOCAL_SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZra3R3aGp5YnVmbHhxem9wYWV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc0OTg5NzQsImV4cCI6MjA2MzA3NDk3NH0.4vdk_ozdi_jNNP1dxpAlGF2Km2detytIhN-lMNXNFHs";
-    private static final String LOCAL_GOOGLE_API_KEY = "AIzaSyBzE8cPfeO5YkmpJFc8SLtVsz_eGB-wYYM";
-    private static final String LOCAL_STRIPE_PUBLISHABLE_KEY = "pk_test_51Rb76iEAbICBlW3MMGkAX58TJHxCWd3MoBD4PXwzdFnXi2EsFrf0iWUDvRVtoOfNzFMnd0cCkGMb2MAcAx4JIPTB00kPkbVXTV";
-    private static final String LOCAL_BREVO_API_KEY = "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";
+    private static final String LOCAL_SUPABASE_ANON_KEY = System.getenv("SUPABASE_ANON_KEY");
+    private static final String LOCAL_GOOGLE_API_KEY = System.getenv("GOOGLE_API_KEY");
+    private static final String LOCAL_STRIPE_PUBLISHABLE_KEY = System.getenv("STRIPE_PUBLISHABLE_KEY");
+    private static final String LOCAL_BREVO_API_KEY = System.getenv("BREVO_API_KEY");
     
     // Helper method to determine if we should use local config
     private static boolean useLocalConfig() {

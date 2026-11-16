@@ -1,0 +1,4 @@
+#!/bin/sh
+# Blocks commits that contain a secret-looking string or a secret file.
+# Active when: git config core.hooksPath scripts/git-hooks
+exec node scripts/check-secrets.js --staged

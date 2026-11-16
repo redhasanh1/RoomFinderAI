@@ -25,6 +25,17 @@ builds/
 .env.development.local
 .env.test.local
 .env.production.local
+# Any other .env variant, except the committed examples
+.env.*
+!.env.example
+!.env.template
+
+# Gradle caches and Android signing material (passwords and keystores stay local)
+.gradle/
+local.properties
+keystore.properties
+*.jks
+*.keystore
 
 # IDE files
 .vscode/

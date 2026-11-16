@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 
 // Google Maps API key (replace with your own)
-const GOOGLE_API_KEY = 'AIzaSyBzE8cPfeO5YkmpJFc8SLtVsz_eGB-wYYM'; // Replace with your API key from https://console.cloud.google.com/
+const GOOGLE_API_KEY = process.env.GOOGLE_API_KEY;
 
 // Override map for problematic North American cities
 const locationOverrides = {
